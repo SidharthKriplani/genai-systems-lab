@@ -34,21 +34,41 @@ export const RUNNER_DATA = {
       "The first naive fix is obvious: assign an integer ID to each character. 'a' is 97, 'b' is 98, and so on — a standard ASCII lookup. This keeps vocabulary tiny (128 characters) but creates a different problem: every letter becomes its own token. The word 'indemnify' is 9 characters, so it costs 9 tokens. The model burns context capacity processing individual letters, and has to learn spelling, morphology, and word boundaries from scratch instead of from meaning. Sequences become extremely long for almost no semantic gain.",
       "The second naive fix: assign an integer ID to each word. 'indemnify' gets one token, 'indemnified' gets a different one, 'indemnification' gets yet another. This is more efficient — until you count the vocabulary. English has hundreds of thousands of word forms. The three variations of 'indemnify' are completely unrelated entries. Any word outside the vocabulary is unknown (OOV), and the model can't generalize: it has to memorize every inflected form as if it were a different concept. Vocabulary size explodes, and generalization collapses on novel forms.",
       "Byte Pair Encoding (BPE) resolves both problems by building a vocabulary of subword units. It starts with individual characters. Then it iteratively merges the most frequent adjacent pair — 'e' and 'r' become 'er', 'er' and 'ing' become a single token — until a target vocabulary size is reached. Common words like 'the' or 'agreed' compress to a single token. Rare words split into in-vocabulary subwords: 'collateralized' might become 'collateral' + 'ized'. The model gets morphology for free from the subword structure, and vocabulary stays bounded.",
+      { type: "illustration", label: "BPE merge trace on one training corpus", content:
+`Start: every word is a sequence of characters (· = token boundary).
+Toy corpus (word : count):    low:5   lower:2   lowest:1
+
+  Initial:  l·o·w      l·o·w·e·r      l·o·w·e·s·t
+
+Iteratively merge the MOST FREQUENT adjacent pair, one merge per step:
+
+  merge #1:  'l' + 'o'  → 'lo'      (appears 8×, the most frequent pair)
+             lo·w       lo·w·e·r       lo·w·e·s·t
+  merge #2:  'lo' + 'w' → 'low'     (appears 8×)
+             low        low·e·r        low·e·s·t
+  merge #3:  'e' + 'r'  → 'er'      (from 'lower')
+             low        low·er         low·e·s·t
+
+Learned vocab now contains: low, er, ...   →  "low" is ONE token, "lower" = low + er.
+
+At encode time a NEW word reuses these merges:
+  "lowering"  →  low · er · ing   (in-vocab subwords, no OOV, morphology captured)` },
+      "BPE is one member of a family, and the variants matter in practice. WordPiece (used by BERT) is BPE-like but merges the pair that most increases corpus likelihood rather than the raw most-frequent pair, and marks intra-word continuations (e.g. '##ing'). Unigram / SentencePiece (used by T5, Llama tokenizers) works top-down instead: start from a large candidate vocabulary and prune tokens that hurt likelihood the least, and SentencePiece treats the raw text — spaces included — as the input so it is language-agnostic and reversible. Byte-level BPE (used by GPT-2/3/4) runs BPE over raw BYTES rather than Unicode characters: because every possible byte is in the base vocabulary, there is ZERO out-of-vocabulary — any Unicode string, emoji, or non-Latin script always encodes, at worst falling back to multiple byte-tokens. That zero-OOV guarantee is why byte-level BPE became the default for general-purpose LLMs.",
       "The direct consequence is that token count does not equal word count — and the ratio depends heavily on content type. Standard English prose sits at roughly 0.65–0.75 tokens per word. But financial figures, legal identifiers, UUIDs, and structured data tokenize far less efficiently. BPE was built on prose. Unusual character sequences have no frequent pairs to merge, so each character stays its own token or joins only short subwords.",
       { "type": "illustration", "label": "Token efficiency by content type", "content": "Content type comparison (same tokenizer):\n\nStandard English prose:   \"The defendant agreed to indemnify\"  →  6 tokens  (0.75/word)\nFinancial exhibit:        \"USD 4,832,190.00\"                   →  8 tokens\nJSON structure:           {\"amount\": 4832190}                  → 10 tokens\nUUID:                     \"a3f2-b891-4c12-9d03\"               →  8 tokens\nContract section header:  \"§ 14.2(b)(iii)\"                    →  7 tokens\n\nProse:      ~0.65–0.75 tokens/word\nCode/JSON:  often >1 token/word\nNumbers, IDs, symbols:  highly inefficient\n\nEffect on a 3,200-word contract with financial exhibits:\n  Prose sections:    ~2,100 tokens  (0.70/word)\n  Financial exhibits:   ~800 tokens for ~400 words  (2.0/word)\n  Legal identifiers:    ~200 tokens for ~100 words  (2.0/word)\n  Total:             ~3,100 tokens  ... before headers, symbols, and formatting\n  With full doc:     → 4,096 tokens easily consumed" },
       "Close the loop on the scenario: the 3,200-word document consuming 4,096 tokens is exactly this. The financial exhibits, section references (§ 14.2(b)(iii)), and legal identifiers tokenize at 1.5–2× the rate of plain prose. You measured word count. The context window measures tokens. The gap grows with every exhibit — which is why the truncation hits contracts with dense financial schedules harder than pure narrative sections."
     ],
     mcqs: [
       {
-        question: "A 500-word English document typically tokenizes to approximately how many tokens?",
+        question: "You size a 4,096-token context budget assuming '1 word ≈ 1 token,' so ~4,000 words should fit. In production, plain-English memos fit comfortably with room to spare, but documents full of dollar figures, UUIDs, and code snippets get truncated well before 4,000 words. What is the correct diagnosis and mental model for budgeting?",
         options: [
-          "325–375 tokens (correct estimate for standard English prose)",
-          "490–510 tokens (roughly one token per word)",
-          "750–800 tokens (more tokens than words due to subword splitting)",
-          "425–500 tokens (BPE merges common bigrams and trigrams, reducing token count slightly below word count by about 10–15%)",
+          "The 1:1 assumption is backwards on both counts: standard prose is ~0.65–0.75 tokens/word (so memos over-fit, leaving slack), while numbers/IDs/code lack frequent mergeable pairs and tokenize at well above 1 token/word — so budget in tokens benchmarked against the actual content type, not word count",
+          "The tokenizer is misconfigured; a correctly configured BPE tokenizer always produces exactly one token per word regardless of content, so the truncation indicates a bug to fix",
+          "Prose and structured content tokenize identically; the truncation must be caused by the context window being smaller than 4,096, unrelated to tokenization",
+          "Numbers and IDs tokenize more efficiently than prose because they are shorter strings, so the truncation is actually caused by the memos, not the structured documents",
         ],
         correct: 0,
-        explanation: "Standard English prose averages about 0.65–0.75 tokens per word. A 500-word document typically tokenizes to roughly 325–375 tokens — not 1:1. Option B (490–510) is the most common misconception: BPE merges frequent subword pairs so common words often become single tokens rather than mapping one-to-one with English words. Option C (750–800) reverses the direction — standard prose tokenizes more efficiently than 1:1, not less. Option D (425–500) sounds plausible — it reasons that BPE 'merges bigrams and trigrams' which is directionally correct, but badly underestimates the compression rate. BPE builds a vocabulary of common multi-character subwords, not just bigrams: 'tokenization' might be three tokens ('token', 'ization' or similar), and the net effect at the word level is that most common English words map to one or two tokens, pushing the ratio well below 0.9:1 to the 0.65–0.75 range.",
+        explanation: "Option A is correct: the 1:1 rule fails in both directions. Standard English prose averages ~0.65–0.75 tokens/word, so a 4,000-word memo is only ~2,600–3,000 tokens and fits with slack. But BPE was trained on prose, so dollar figures, UUIDs, and code have few frequent adjacent pairs to merge and stay split into many short subwords, pushing well above 1 token/word — which is exactly why the structured documents blow the budget first. The fix is to budget in tokens measured against your real content type, not word count. Option B is wrong because BPE deliberately does NOT produce one token per word; subword merging means common words are one token and rare/structured strings are several — this is by design, not a bug. Option C is wrong because prose and structured content tokenize very differently, and the symptom is content-dependent, which rules out a uniform window-size cause. Option D inverts reality: numbers and IDs tokenize LESS efficiently (more tokens per word) than prose, so the structured documents, not the memos, are what exhaust the budget.",
       },
       {
         question: "Two teams use the same BPE tokenizer. Team A processes 1,000 words of plain English narrative; Team B processes 1,000 words of financial exhibits full of dollar figures, UUIDs, and section references like '§ 14.2(b)(iii)'. Why does Team B consume far more tokens for the same word count?",
@@ -211,6 +231,21 @@ Softmax:
       "Attention gives every token selective access to every other token — but each attention output is still a linear combination of value vectors. Stacking attention layers compounds this: composing linear functions collapses to a single linear transformation regardless of depth. The model also has no notion of order: attention is a set operation that produces the same output whether token A precedes or follows token B. Two structural gaps remain after attention alone — no nonlinearity per position, no positional awareness — and neither can be fixed by adding more attention layers.",
       "The Feed-Forward Network (FFN) resolves the nonlinearity gap. After each attention sublayer, an FFN applies a learned nonlinear transformation independently to each position: two linear layers with a ReLU or GeLU activation between them, at 4× the hidden dimension. This is where most of the model's parametric knowledge concentrates — factual associations in trained models are predominantly stored in FFN weights. Position is handled separately via positional encoding added to each token's representation before the block stack. Modern models use Rotary Positional Embedding (RoPE), which encodes relative position directly in the attention computation and generalizes to sequences longer than those seen during training.",
       "The third structural requirement is depth, and depth creates a training problem. Backpropagation multiplies gradients through every layer from output to input. Without shortcut paths, gradients at early layers approach zero before the optimizer can use them — the network is too deep to train. Residual connections fix this: output = input + block(input). Each block now learns a correction to the identity path rather than a complete transformation, creating a direct gradient highway from the loss to every layer. Layer normalization, applied after each residual addition, handles a second problem residuals alone don't solve: as blocks stack, activation magnitudes drift — later layers receive inputs at wildly different scales, destabilizing training. Layer norm re-centers and rescales activations after each sublayer, keeping the signal stable regardless of depth. The 'add & layer-norm' in every Transformer block — attention sublayer, then FFN sublayer, each with residual + layer norm — is both gradient highway and activation stabilizer together.",
+      "WHERE you put the norm matters, and modern models moved it. The original Transformer used POST-NORM: block output = LayerNorm(x + Sublayer(x)) — the norm sits on the residual stream itself, after the add. That works but is fragile at depth: the norm is on the gradient highway, so gradients get rescaled every layer, and training deep post-norm models needs a careful learning-rate warmup or they diverge. PRE-NORM moves the norm INSIDE the residual branch: block output = x + Sublayer(LayerNorm(x)). Now the identity path x is never normalized — it is a clean, unscaled highway from the loss all the way to the input — and only the sublayer's input is normalized. That single move makes very deep models (GPT-2 onward, essentially every modern LLM) trainable without warmup and far more stable. A further simplification is RMSNorm: standard LayerNorm both re-centers (subtract the mean) and rescales (divide by standard deviation), plus a learned bias. RMSNorm DROPS the mean-centering and the bias entirely — it only divides by the root-mean-square of the activations and applies a learned scale. Empirically the mean-centering contributes little, so RMSNorm reaches about the same quality while doing less arithmetic (no mean, no bias), which is why Llama, Mistral, and most recent models use pre-norm + RMSNorm.",
+      { type: "illustration", label: "Activation-scale drift across layers: no norm vs pre-norm", content:
+`Typical RMS of activations entering each block (illustrative):
+
+           layer 1   layer 6   layer 12   layer 24
+  NO norm:   1.0  →   4.8   →    22.0   →   140.0     ← blows up with depth,
+             (residual adds compound; later layers see wild scales → unstable)
+
+  Pre-norm:  1.0  →   1.1   →     1.0   →     1.1      ← each block's INPUT is
+             (LayerNorm/RMSNorm renormalizes the sublayer input every layer)
+             meanwhile the residual stream x is left UNTOUCHED → clean gradient path
+
+Post-norm  = LayerNorm(x + Sublayer(x))   norm ON the residual stream  → needs warmup, fragile at depth
+Pre-norm   = x + Sublayer(LayerNorm(x))   norm INSIDE the branch       → stable deep, no warmup
+RMSNorm    = x / RMS(x) * g               drops mean-centering + bias   → ~same quality, cheaper (Llama/Mistral)` },
       "The final choice is causal masking. Encoders use bidirectional attention — every token attends to every other — producing the richest possible per-position representation. This makes encoders ideal for classification, retrieval, and embedding, where you need to understand text, not generate it. Decoders apply a causal mask that prevents each token from attending to future positions, because at generation time those tokens don't exist yet. This mask forces the model to predict each next token from left context only, which is exactly what autoregressive generation requires. In production: embedding models for RAG use encoder attention; generation models use decoder attention. Using a generation model's internal representations for retrieval produces poor results because the causal mask distorts the vector geometry — an asymmetry the 'add more layers' proposal ignores entirely.",
     ],
     mcqs: [
@@ -359,8 +394,23 @@ Softmax:
       "The forward pass produces logits — raw scores over every vocabulary token. Softmax converts them to a probability distribution over what comes next. The question is how to sample from that distribution. This is not a quality dial. It is a task-appropriateness dial. Getting it wrong costs you either accuracy (too random) or quality (too rigid). Both failure modes are real and both have production consequences.",
       "The naive answer is: always pick the highest-probability token. This is greedy decoding — temperature=0. It maximizes per-token likelihood and produces deterministic, reproducible output. Sounds right. The problem is that per-token maximum does not equal globally best response. Multi-step reasoning requires the model to commit to lower-probability intermediate tokens that unlock better final answers. A calculation that requires writing out 'let me check the interest rate compounded quarterly' as a step needs that intermediate token to be present even if 'quarterly' wasn't the single highest-probability word at that position. Greedy decoding precludes this path. Temperature=0 is 'most deterministic,' not 'most accurate.'",
       "Temperature T divides the logits before softmax. T < 1 sharpens the distribution: the highest-probability token dominates more strongly, lower-probability tokens recede. T > 1 flattens it: lower-probability tokens become more viable, output becomes more varied. Temperature doesn't change what the model computed — it changes how you sample from the distribution the model produced. The model's knowledge is fixed. Temperature controls how you use it.",
-      "Top-p (nucleus sampling) adds a second constraint: restrict candidates to the smallest set of tokens whose cumulative probability exceeds p. When the model's distribution is sharp — it knows confidently what comes next — the nucleus is small. When the distribution is flat — the model is genuinely uncertain — the nucleus is larger. Top-p adapts to the model's confidence dynamically; top-k (restrict to exactly the k highest-probability tokens) does not.",
-      "Task calibration: temperature=0 for structured extraction — SQL, JSON, code — where exact consistency is the goal and there is one correct answer. T=0.2–0.7 with top-p=0.9 as the general default for conversational and reasoning tasks. Higher temperature for creative generation where exploring lower-probability tokens is the point. The answer to 'what should the default be?' is: not 0, and not 1. It depends on what the user is doing — which is why a global default is the wrong abstraction.",
+      { type: "illustration", label: "Same logits, three temperatures → softmax(logits / T)", content:
+`Raw logits for 3 tokens:   A = 2.0    B = 1.0    C = 0.0
+Temperature rescales:      softmax( logit / T )
+
+  T = 0.5  (sharpen — logits ×2 before softmax → 4.0, 2.0, 0.0)
+     A ≈ 0.84    B ≈ 0.11    C ≈ 0.02     ← near-greedy, top token dominates
+
+  T = 1.0  (unchanged)
+     A ≈ 0.67    B ≈ 0.24    C ≈ 0.09     ← the model's raw distribution
+
+  T = 2.0  (flatten — logits ÷2 before softmax → 1.0, 0.5, 0.0)
+     A ≈ 0.51    B ≈ 0.31    C ≈ 0.19     ← flatter, lower-prob tokens viable
+
+Same underlying scores; T only reshapes how peaked the sampling distribution is.
+T→0 collapses to argmax (greedy);  T→∞ approaches uniform.` },
+      "Top-p (nucleus sampling) adds a second constraint: restrict candidates to the smallest set of tokens whose cumulative probability exceeds p. When the model's distribution is sharp — it knows confidently what comes next — the nucleus is small. When the distribution is flat — the model is genuinely uncertain — the nucleus is larger. Top-p adapts to the model's confidence dynamically; top-k (restrict to exactly the k highest-probability tokens) does not. Two more tail controls worth naming: min-p sets a floor relative to the top token's probability (keep only tokens with probability ≥ min-p × p_max), so the cutoff tightens automatically when the model is confident and loosens when it is unsure — a simpler, often more robust alternative to top-p. And repetition penalty (and its cousin, frequency penalty) directly down-weight the logits of tokens that have already appeared, discouraging the model from looping on the same words or phrases — a fix for the degeneration that pure probability-following can cause.",
+      "Task calibration: temperature=0 for structured extraction — SQL, JSON, code — where exact consistency is the goal and there is one correct answer. T=0.2–0.7 with top-p=0.9 as the general default for conversational and reasoning tasks. Higher temperature for creative generation where exploring lower-probability tokens is the point. The answer to 'what should the default be?' is: not 0, and not 1. It depends on what the user is doing — which is why a global default is the wrong abstraction. One boundary to keep clear: everything here is STOCHASTIC decoding (sample from the distribution). When the task has a single best SEQUENCE rather than one best next token — machine translation, transcription — you don't sample at all, you search: that's beam search, covered in the decoding-strategies module (tempgame).",
     ],
     mcqs: [
       {
@@ -403,99 +453,137 @@ Softmax:
   "nextoken": {
     depthTier: "light",
     interviewWeight: "high",
-    scenario: "A PM asks why the fine-tuned legal model 'forgot' general knowledge after training on 5,000 legal documents. It answers legal questions well but makes basic factual errors it didn't before. You need to explain the mechanism of catastrophic forgetting — and what to do about it next time.",
+    scenario: "In an interview, someone asks you to defend a claim that sounds absurd on its face: 'This model was only ever trained to guess the next word. Yet it translates French, writes working code, and reasons through multi-step math. How does guessing the next token turn into any of that?' You need to walk the mechanism from a single prediction to emergent capability — without hand-waving 'it's magic at scale.'",
     explanation: [
-      "Next-token prediction is the training signal that required no human labels, scaled to trillions of tokens, and rewarded every useful pattern in language. Applied across web text, textbooks, code, and conversations, it produced the capabilities we rely on in production — factual associations, multi-step reasoning, instruction following, code synthesis. These capabilities weren't designed. They're what gradient descent finds when a single prediction objective runs at sufficient scale and diversity. It's also why fine-tuning is fragile in a specific way.",
-      "The mechanism of capability is not memorization but statistical alignment. Predicting the next token across Wikipedia, medical literature, legal documents, and code simultaneously forces internal representations that encode world knowledge, reasoning patterns, and language structure in the same weight matrix. 'Paris is the capital of France' and 'the consideration clause constitutes binding agreement' are not stored in different compartments — they're both encoded as statistical patterns in shared weights that minimize prediction loss across the full training distribution.",
-      "Fine-tuning runs the exact same CLM objective on a new domain corpus. The optimizer has one job: minimize next-token prediction loss on the fine-tuning data. It has no preservation signal for prior knowledge. Weights that encode 'Paris is the capital of France' get updated whenever those same weights happen to reduce loss on a legal document token. The optimizer doesn't know what was previously encoded. It just minimizes the current loss. This is not a bug — it is the expected behavior of unconstrained gradient descent on a new distribution. The PM's model 'forgot' general knowledge because the fine-tuning optimizer overwrote the weights that encoded it.",
-      "The naive mitigation: use a very low learning rate. Lower LR reduces the magnitude of each update and slows the pace of overwriting. It doesn't eliminate it. The optimizer still has no mechanism to preserve prior knowledge — it just moves more slowly toward the same end state. On 5,000 documents with enough epochs, catastrophic forgetting occurs regardless of learning rate.",
-      "PEFT (Parameter-Efficient Fine-Tuning) methods like LoRA fix this by making the base weights read-only. LoRA inserts small low-rank adapter matrices at each layer. Only the adapter parameters — a tiny fraction of the total weights — are updated during fine-tuning. The weights encoding 'Paris is the capital of France' are outside the optimizer's update scope. They cannot be overwritten. The domain adaptation is encoded entirely in the adapter delta, which sits on top of frozen base weights. You fine-tune the difference, not the base model.",
+      "Start at the single step, because the whole story is built from it. The model reads a sequence of tokens and its forward pass emits LOGITS — one raw, unbounded score per token in the vocabulary (50K+ entries). Logits are not probabilities; they are just scores. SOFTMAX turns them into a probability distribution: exponentiate every logit, divide by the sum, and you get a number in [0,1] for every possible next token, all summing to 1. That distribution is the model's entire answer at this position: 'given everything so far, here is how likely each token is to come next.' Nothing else is predicted. One distribution, one step.",
+      "Now training needs a way to say how wrong that distribution was, and the answer is CROSS-ENTROPY loss. The training corpus already contains the true next token — the human wrote it. Cross-entropy looks only at the probability the model assigned to that one true token and takes its negative log: loss = −log(p_true). If the model put 0.9 on the correct token, loss = −log(0.9) ≈ 0.11 — small, barely nudge the weights. If it put 0.05 on the correct token, loss = −log(0.05) ≈ 3.0 — large, big gradient, big correction. The negative log is what makes confident-and-wrong catastrophic and confident-and-right nearly free. Every token in the corpus becomes one labeled example, and the label was free: it is just the next token the human already wrote. That is why this objective scaled to trillions of tokens with no human annotation.",
+      { type: "illustration", label: "Cross-entropy on one prediction", content:
+`Vocabulary (toy, 3 tokens):     ["cat", "dog", "the"]
+True next token:                 class 0  →  "cat"
+
+Model's softmax output:          [ 0.6,  0.3,  0.1 ]
+                                   cat    dog   the
+
+Cross-entropy = −log( p assigned to the TRUE token )
+              = −log( 0.6 )
+              ≈ 0.51
+
+  Compare against other guesses for the SAME true token:
+    p_true = 0.90  →  −log(0.90) ≈ 0.11   (confident + right → tiny loss)
+    p_true = 0.60  →  −log(0.60) ≈ 0.51   (this example)
+    p_true = 0.05  →  −log(0.05) ≈ 3.00   (confident + WRONG → huge loss)
+
+The gradient from this one number flows back through every weight,
+nudging them to raise p("cat") a little next time this context appears.` },
+      "One subtlety decides whether training is even stable: what do you feed the model at step N+1? The tempting answer is 'its own prediction from step N' — but early in training that prediction is garbage, and feeding garbage back in compounds error until the sequence is nonsense and the gradients are useless. TEACHER FORCING is the fix: during training you always feed the GROUND-TRUTH next token from the corpus, not the model's guess, as the input to the next position. So every position is predicted from a correct prefix, every position gets a clean gradient, and the whole sequence's positions can be trained in parallel in one forward pass. (This is also why training and inference differ: at inference there is no ground truth to feed, so the model must consume its own outputs — and small errors can now accumulate, which is one root of drift and repetition.)",
+      "Aggregate over the corpus and you need one number to track. Average the per-token cross-entropy over all tokens, then report PERPLEXITY = exp(average loss). Perplexity is the loss re-expressed as an effective branching factor: 'on average, how many equally-likely tokens is the model choosing among at each step?' Perplexity 1 means perfect certainty (always the right token). Perplexity 50,000 means no better than uniform guessing over the whole vocabulary. A model that drops from perplexity 20 to perplexity 8 is, at every position, effectively narrowing from ~20 plausible continuations to ~8 — it has genuinely learned structure. Perplexity is just exp of the same cross-entropy loss, made interpretable.",
+      "Here is the payoff, the answer to the interview question. There is only ONE objective — minimize next-token cross-entropy — and gradient descent will do ANYTHING to the weights that lowers it. To predict the next token in 'The capital of France is ___' you must encode a fact. To predict the closing bracket in a code block you must track scope. To predict the next step in a proof you must represent the prior steps' logic. To predict the English word that best renders a French sentence you must align two languages. None of these were separate training tasks — they are all just 'reduce next-token loss on this corpus,' and at sufficient scale and diversity the cheapest way for the optimizer to reduce that loss is to build world-knowledge, reasoning, and translation into the weights. Capability is not designed; it is the by-product of relentlessly minimizing this single number. And that is also the sting: the SAME objective that forces knowledge into the weights (see training-signal) rewards fluent, confident continuations regardless of truth — which is exactly why the model will also produce confident, wrong answers on things it never had signal for (see hallucination). One objective, both the capability and the failure mode.",
     ],
     mcqs: [
       {
-        question: "Why does full fine-tuning on a small domain corpus cause the model to 'forget' pre-trained general knowledge?",
+        question: "A colleague says perplexity is 'just some abstract loss number that doesn't mean anything concrete.' What does a model's perplexity actually represent?",
         options: [
-          "The model runs out of context window space to 'store' general knowledge once domain content is added",
-          "Domain fine-tuning selectively disables the attention heads that handled general-knowledge queries",
-          "The learning rate during fine-tuning is automatically set higher than during pre-training, erasing prior gradients",
-          "Gradient updates for domain-specific token prediction overwrite the weight values that encoded general knowledge — the optimizer has no mechanism to preserve prior learning",
-        ],
-        correct: 3,
-        explanation: "The optimizer minimizes loss on the fine-tuning corpus and updates weights accordingly, regardless of what those weights encoded during pre-training. There's no loss term for 'preserve general knowledge' — that information simply gets overwritten if the same weights are useful for domain prediction. Option D is the correct answer. Option A is wrong — the model has no 'context window' for storing knowledge; knowledge lives in the weights. Option B is false — fine-tuning doesn't selectively disable attention heads; it updates weight matrices across the full model. Option C is wrong — fine-tuning typically uses a LOWER learning rate than pre-training, not a higher one; even so, lower LR reduces but does not eliminate catastrophic forgetting.",
-      },
-      {
-        question: "A team plans to prevent catastrophic forgetting during legal-domain fine-tuning by simply using a very low learning rate. Per the module, why is this insufficient?",
-        options: [
-          "A low learning rate disables the attention heads responsible for general knowledge, so it causes forgetting rather than preventing it",
-          "A low learning rate increases the context window pressure, evicting general knowledge to make room",
-          "A low learning rate forces the model back to character-level tokenization, destroying word knowledge",
-          "A low learning rate only slows the pace of overwriting; the optimizer still has no preservation signal, so with enough epochs on the corpus the same forgetting occurs anyway",
-        ],
-        correct: 3,
-        explanation: "Option D is correct: the module says lower learning rate reduces each update's magnitude and slows overwriting but does not eliminate it, because the optimizer still has no mechanism to preserve prior knowledge, so with enough epochs on the corpus the same catastrophic forgetting occurs regardless of learning rate. Option A is wrong because fine-tuning updates weight matrices broadly and does not selectively disable the attention heads responsible for general knowledge, so a low learning rate does not cause forgetting that way. Option B is wrong because knowledge lives in the weights, not a context window, so a low learning rate does not increase context window pressure or evict knowledge. Option C is wrong because learning rate has nothing to do with tokenization granularity, so it does not force character-level tokenization.",
-      },
-      {
-        question: "How does LoRA (a PEFT method) actually prevent the base model's general knowledge from being overwritten during domain fine-tuning?",
-        options: [
-          "It periodically re-injects pre-training data so the optimizer is reminded of general facts",
-          "It inserts small low-rank adapter matrices and updates only those, keeping the base weights read-only so the weights encoding general facts are outside the optimizer's update scope",
-          "It raises the learning rate so domain adaptation finishes before forgetting can occur",
-          "It stores general knowledge in the context window while training adapters on domain text",
+          "The percentage of tokens the model predicts exactly correctly on the held-out set",
+          "exp(average cross-entropy loss) — an effective branching factor: how many equally-likely tokens the model is on average choosing among at each step, so lower is better and 1 is perfect certainty",
+          "The number of parameters in the model divided by the vocabulary size",
+          "The average number of tokens the model can generate before it starts repeating itself",
         ],
         correct: 1,
-        explanation: "Option B is correct: the module explains LoRA inserts small low-rank adapter matrices and updates only those tiny parameters, keeping the base weights read-only so the weights encoding general facts like 'Paris is the capital of France' are outside the optimizer's update scope and cannot be overwritten; the domain delta lives entirely in the adapter. Option A is wrong because LoRA freezes the base weights rather than periodically re-injecting pre-training data. Option C is wrong because LoRA's protection comes from freezing base weights, not from raising the learning rate to finish before forgetting occurs. Option D is wrong because the general knowledge is in the frozen weights, not stored in the context window, while adapters train on domain text.",
+        explanation: "Option B is correct: perplexity is exp of the average per-token cross-entropy loss, which re-expresses the loss as an effective branching factor — on average how many equally-likely continuations the model is choosing among at each position. Perplexity 1 is perfect certainty (always the true token), and a large perplexity toward vocabulary size means near-uniform guessing; dropping from 20 to 8 means the model narrowed from ~20 to ~8 plausible next tokens, i.e. it learned structure. Option A is wrong because perplexity is not an exact-match accuracy percentage; it is derived from the probability assigned to the true token, not a hard right/wrong count. Option C is wrong because perplexity has nothing to do with parameter count over vocabulary size; it is a function of the loss, not of model dimensions. Option D is wrong because perplexity measures predictive uncertainty per step, not a repetition threshold at generation time.",
+      },
+      {
+        question: "During training, at each position the model is fed the ground-truth next token from the corpus rather than its own predicted token. Why is this (teacher forcing) done?",
+        options: [
+          "It lets the model cheat by seeing the answer, which is why training accuracy is always higher than inference accuracy",
+          "Feeding the model's own early-training predictions back in compounds errors into nonsense and produces useless gradients; feeding ground truth gives every position a correct prefix, a clean gradient, and lets all positions train in parallel",
+          "It is required because softmax cannot be computed unless the true token is provided as input",
+          "It permanently prevents the model from ever generating tokens autoregressively, even at inference",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: early in training the model's own predictions are garbage, and feeding them back as the next input compounds error until the sequence is nonsense and the gradients are useless. Teacher forcing feeds the ground-truth next token at every position, so each prediction is made from a correct prefix, every position yields a clean gradient, and the whole sequence can be trained in one parallel forward pass. Option A is wrong because teacher forcing is a training-stability mechanism, not cheating; the train/inference gap comes from inference having no ground truth to feed, not from the model 'seeing the answer.' Option C is wrong because softmax is computed from the logits regardless of what the true token is; the true token is only used by the loss, not required as input for softmax. Option D is wrong because at inference the model does generate autoregressively by consuming its own outputs; teacher forcing applies only during training.",
+      },
+      {
+        question: "An interviewer asks how an objective as narrow as 'predict the next token' can yield a model that reasons, translates, and codes. What is the most accurate account?",
+        options: [
+          "The model is secretly trained on separate reasoning, translation, and coding objectives that are averaged together at the end",
+          "There is one objective — minimize next-token cross-entropy — and because predicting the next token in factual, code, proof, and bilingual text is only possible by encoding facts, tracking scope, representing logic, and aligning languages, at sufficient scale the cheapest way to reduce that single loss is to build those capabilities into the weights",
+          "Next-token prediction only produces fluent grammar; reasoning and translation are added afterward by hard-coded rules",
+          "Emergence is unexplained magic that appears once a model crosses a fixed parameter threshold, unrelated to the loss function",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: there is a single objective, and correctly predicting the next token across factual text, code, proofs, and bilingual pairs is only achievable by encoding world knowledge, tracking structure, representing reasoning steps, and aligning languages. At sufficient scale and diversity, the lowest-loss solution the optimizer can find is one that builds those capabilities into the weights — so capability is a by-product of minimizing that one number, not a separate design. Option A is wrong because there are no separate averaged objectives; it is one cross-entropy loss over the corpus. Option C is wrong because reasoning and translation are not bolted on by hard-coded rules; they emerge from the same predictive objective. Option D is wrong because emergence is not unexplained magic tied to a fixed parameter count; it is the mechanistic consequence of what it takes to reduce next-token loss on diverse data.",
       },
     ],
-    takeaway: "Next-token prediction is why LLMs have emergent capabilities — and why fine-tuning causes catastrophic forgetting. The optimizer has no preservation mechanism for prior knowledge. PEFT (LoRA) solves this by making base weights read-only and training only adapter parameters that encode the domain delta.",
+    takeaway: "One step: logits → softmax → a probability distribution over the vocabulary, scored against the true next token by cross-entropy (−log p_true), with teacher forcing feeding ground truth during training. Aggregate to perplexity = exp(loss) as the metric. The punchline: there is only ONE objective, and the cheapest way to minimize it at scale is to encode facts, reasoning, and translation into the weights — so next-token prediction is the source of both emergent capability and confident hallucination.",
   },
 
   "tempgame": {
     depthTier: "light",
     interviewWeight: "medium",
-    scenario: "Your healthcare AI team is deadlocked: accuracy team insists temperature=0 for clinical consistency; UX team says responses feel robotic and patients disengage. Neither team knows what temperature actually controls. You need to resolve this with mechanism, not opinion.",
+    scenario: "Your team ships a code-generation feature with greedy decoding (always take the top token) because 'the most likely token is the safest choice.' Quality is fine on short completions but the model produces subtly worse full functions than a competitor's — and on a translation feature it sometimes picks a locally-obvious word that dead-ends the sentence. A senior engineer asks: 'Why isn't always taking the top token the best strategy, and what else is there?' You need to explain the space of decoding strategies and when each wins.",
     explanation: [
-      "The sampling module established what next-token sampling is. This disagreement is about how concentrated the sampling distribution should be. That's a task-appropriateness question, not a quality question. Both teams are right within their own domain. Neither has the right answer for the other's use case.",
-      "Temperature T scales logits before softmax. At T close to 0, the distribution peaks sharply on the highest-probability token — same output consistently, formulaic prose that reads as robotic when it repeats the same sentence structure repeatedly across responses. At T > 0.7, the distribution flattens — lower-probability tokens become viable, output varies. For patient-facing prose generation, the specific failure of temperature=0 is repetition loops: when no single next token dominates — which happens during open-ended generation whenever the model faces genuine uncertainty — greedy decoding gets stuck selecting the same local maximum at each step. The output cycles through the same phrases.",
-      "The specific failure of high temperature in clinical queries is different: low-probability tokens can surface in outputs that should be factually precise. A dosing query answered at T=0.9 may occasionally land on a rare token that produces a plausible-sounding but inaccurate medication guidance. The consequence in healthcare is not aesthetic — it's liability. High temperature in clinical fact queries opens the distribution to rare tokens that happen to sound medically authoritative.",
-      "Resolution: per-use-case calibration, not a global setting. Clinical fact queries — drug dosing, interaction checks, contraindication lookups: T=0–0.2. Patient-facing prose summaries — where natural language quality and non-repetitive phrasing matter: T=0.3–0.5 with top-p=0.9. The accuracy team gets their setting for clinical queries. The UX team gets their setting for patient summaries. Neither gets a global default, because a global default is wrong for at least one of them.",
-      "The operational rule: document every temperature choice with the rationale and the use case it applies to. Undocumented temperature settings are one of the most common sources of unexplained production behavior shifts — a future engineer changes the global temperature 'slightly' without realizing it was calibrated to a specific clinical accuracy requirement, and accuracy degrades silently across all patient-facing queries.",
+      "Greedy decoding takes the single highest-probability token at every step. The trap is that it is a LOCAL maximum, not a global one. The model scores each next token given the prefix so far — but the highest-probability token NOW can lead into a region where every continuation is mediocre, while a slightly-lower-probability token now would open onto a far better complete sequence. Sequence probability is the product of per-token probabilities, and greedy never reconsiders: once it commits to token N it cannot back out, even if token N+1 reveals that the choice was a dead end. A word that looks obvious mid-sentence can strand the rest of the sentence. Greedy optimizes each step in isolation and hopes the steps compose — they often don't.",
+      "BEAM SEARCH attacks exactly this. Instead of keeping one running sequence, keep the top-b partial sequences (the 'beams') at every step. At each step, for every surviving beam, expand it by its candidate next tokens, score each resulting longer sequence by its cumulative log-probability, then prune back to the best b overall. Because you carry several hypotheses forward, a beam that took a slightly-lower-probability token early can overtake the greedy path later once its higher-probability continuations show up. Beam search approximates 'find the highest-probability whole sequence' rather than 'the highest-probability next token,' which is why it dominates on tasks with one right answer whose quality is the joint probability of the sequence: machine translation, speech transcription, constrained generation.",
+      { type: "illustration", label: "2-beam search trace (b=2) — beam beats greedy", content:
+`Task: complete "The weather is". Numbers = log-probs (higher = better).
+
+STEP 1 — expand the start, keep top b=2 beams:
+   "The weather is nice"    logP = −0.4   ← beam A  (greedy would lock here)
+   "The weather is going"   logP = −0.7   ← beam B
+   ( "The weather is very"  logP = −1.9   pruned )
+
+STEP 2 — expand BOTH beams, score cumulative logP, keep top 2:
+   from A:  "...nice today"       −0.4 + −1.6 = −2.0
+   from A:  "...nice ."           −0.4 + −2.1 = −2.5
+   from B:  "...going to rain"    −0.7 + −0.5 = −1.2   ← now BEST
+   from B:  "...going to clear"   −0.7 + −0.9 = −1.6
+
+   Survivors: "...going to rain" (−1.2),  "...going to clear" (−1.6)
+
+Greedy picked "nice" at step 1 (locally highest, −0.4) and was stuck.
+Beam kept "going" (−0.7) alive, and its continuation "to rain" (−0.5)
+made the WHOLE sequence more probable (−1.2 < −2.0).
+Local max ≠ global max — that gap is exactly what beam recovers.` },
+      "So why not beam-search everything? Because on OPEN-ENDED generation — chat, story-writing, brainstorming — maximizing sequence probability is the wrong objective. The highest-probability human-like continuation is bland and generic: 'I think that is a great question and I am happy to help.' Beam search, hunting for the most probable sequence, converges on exactly this safe, repetitive, low-information text, and it is prone to high-probability loops (the same phrase repeats because repeating it is locally very probable). For open-ended text you WANT some of the lower-probability, more surprising continuations — that is where the interesting, human-sounding output lives. This is the regime where you stop maximizing probability and start sampling from the distribution instead.",
+      "That hands off to stochastic decoding, covered in depth in the sampling module: temperature reshapes the distribution (T<1 sharpens toward greedy, T>1 flattens toward diversity), and top-p / top-k truncate the tail so you sample only among plausible tokens — dynamically with top-p, at a fixed count with top-k. Don't re-derive them here; the point is that temperature and top-p are the tools for the open-ended regime that beam search is wrong for. Newer contrastive methods (e.g. contrastive search / contrastive decoding) split the difference — they penalize tokens that are too similar to recent context to fight the blandness and repetition of pure probability-maximization while staying more grounded than free sampling.",
+      "The decision rule, by task. One-right-answer, quality = sequence probability → beam search (translation, ASR, structured/constrained output). Deterministic, exact, one correct string → greedy or temperature=0 (SQL, JSON, tool-call arguments). Open-ended, diversity and voice matter → sampling with temperature + top-p (chat, creative, ideation). And whatever you pick, DOCUMENT it: undocumented decode settings are a classic source of unexplained production drift — a future engineer flips a shared default from beam to sampling, or nudges temperature, and quality shifts silently across every downstream feature that was tuned to the original setting.",
     ],
     mcqs: [
       {
-        question: "For a medical information retrieval task where clinical accuracy and consistency are critical, which sampling configuration is most appropriate?",
+        question: "A team uses greedy decoding and gets locally-plausible but globally worse full sequences than a competitor. Why can always taking the top token per step produce a worse complete output?",
         options: [
-          "Low temperature (0.0–0.2) to maximize determinism and consistency, accepting that responses may be more formulaic",
-          "High temperature (0.9–1.0) to ensure diverse coverage of medical information across multiple conditions",
-          "Top-k=1 alone, never combined with temperature control, for guaranteed single-answer outputs",
-          "Temperature=0.5 with top-k=5 to balance creativity and accuracy for all medical queries",
+          "Greedy decoding is slower per token, so it times out before finishing high-quality sequences",
+          "Greedy takes the local maximum at each step and never reconsiders, so a slightly-lower-probability token now that would open onto a much better whole sequence is permanently missed — local max is not the same as the highest-probability sequence",
+          "Greedy decoding disables the softmax, so it samples from raw logits and picks noise",
+          "Greedy decoding always produces repetition loops, which is the only way it can underperform",
         ],
-        correct: 0,
-        explanation: "For accuracy-critical applications — medical, legal, financial — determinism is more valuable than variety. Low temperature (0.0–0.2) ensures the model consistently selects its highest-confidence output. Option B (high temperature 0.9–1.0) increases the probability of low-confidence tokens appearing, raising the risk of rare but consequential hallucinations in medical context — the wrong tradeoff. Option C (top-k=1 alone) is mathematically equivalent to temperature=0 but isn't the idiomatic configuration; combining temperature and top-k/top-p is how sampling is typically implemented in production. Option D (temperature=0.5 with top-k=5) is a general creative writing setting that introduces unnecessary variance into critical clinical queries.",
+        correct: 1,
+        explanation: "Option B is correct: greedy optimizes each step in isolation, taking the single highest-probability token and never backtracking. But sequence quality is the joint probability of the whole sequence, and the locally-best token can lead into a region where all continuations are mediocre, while a slightly-lower-probability token now would open onto a globally better sequence — greedy can never recover it because it does not carry alternatives forward. Option A is wrong because greedy is not slower per token and the issue is not a timeout; it is the local-vs-global optimization gap. Option C is wrong because greedy still uses the softmax distribution — it just takes the argmax of it, not raw-logit noise. Option D is wrong because repetition loops are one possible symptom, not the only or the primary reason greedy underperforms; the core reason is local maximization.",
       },
       {
-        question: "The UX team reports patient-facing summaries generated at temperature=0 sometimes get 'stuck' cycling through the same phrases. Per the module, what is the mechanism behind this specific failure?",
+        question: "Beam search excels at machine translation but produces bland, repetitive output when used for open-ended chat. Why?",
         options: [
-          "During open-ended generation no single next token dominates, so greedy decoding repeatedly selects the same local maximum at each step, producing repetition loops",
-          "Temperature=0 quantizes the output to a small vocabulary, which forces repeated tokens",
-          "Temperature=0 disables the softmax entirely, so the model emits raw logits that happen to repeat",
-          "Low temperature increases the nucleus size, which floods the output with high-probability duplicates",
+          "Beam search cannot be combined with a causal mask, so it corrupts long-context chat but not short translations",
+          "Beam search approximates the highest-probability whole sequence, which is exactly right when there is one correct answer (translation) but wrong for open-ended text, where the most-probable continuation is generic and safe and beam converges onto bland, loop-prone phrasing",
+          "Beam search uses a higher temperature than greedy, injecting randomness that only helps translation",
+          "Beam search only keeps one hypothesis, so it behaves identically to greedy in all settings",
         ],
-        correct: 0,
-        explanation: "Option A is correct: the module says the specific failure of temperature=0 in prose is repetition loops, when no single next token dominates during open-ended generation, greedy decoding repeatedly selects the same local maximum at each step. Option B is wrong because temperature=0 does not quantize the output to a small vocabulary; it just always picks the top token. Option C is wrong because temperature=0 concentrates the distribution on the highest-probability token rather than disabling the softmax or emitting raw logits. Option D is wrong because low temperature sharpens (shrinks) the effective candidate set rather than increasing the nucleus size, so it does not flood the output with high-probability duplicates that way.",
+        correct: 1,
+        explanation: "Option B is correct: beam search carries the top-b partial sequences and approximates finding the highest-probability whole sequence. For translation or ASR, where quality IS the joint sequence probability and there is essentially one right answer, that is exactly the right objective. But for open-ended chat the most-probable human-like continuation is bland and generic, and maximizing sequence probability drives beam toward safe, repetitive, high-probability text and loops — which is why open-ended generation switches to sampling instead. Option A is wrong because beam search is not incompatible with the causal mask; the failure is the objective mismatch, not masking. Option C is wrong because beam search does not use a higher temperature to inject randomness; it is a probability-maximizing search, not a sampler. Option D is wrong because beam search keeps b>1 hypotheses (only b=1 reduces to greedy), so it is not identical to greedy in general.",
       },
       {
-        question: "The module warns that undocumented temperature settings are a common source of unexplained production behavior shifts. What is the concrete failure scenario it describes?",
+        question: "For each of three features — SQL query generation, English-to-French translation, and an open-ended brainstorming chat — which decoding strategy fits best, per the module?",
         options: [
-          "A monitoring tool silently raises temperature whenever GPU load spikes, randomizing outputs under traffic",
-          "Temperature settings expire after a fixed number of requests and reset to a random default",
-          "A future engineer nudges the global temperature 'slightly' without realizing it was calibrated to a specific clinical accuracy requirement, silently degrading accuracy across all patient-facing queries",
-          "Different model versions interpret the same temperature value differently, so upgrades change behavior",
+          "Beam search for all three, because maximizing sequence probability is universally optimal",
+          "Sampling with high temperature for all three, because diversity always improves quality",
+          "SQL → greedy/temperature=0 (one exact correct string), translation → beam search (one right answer scored by sequence probability), brainstorming → sampling with temperature + top-p (open-ended, diversity and voice matter)",
+          "Greedy for all three, because taking the top token is always the safest choice",
         ],
         correct: 2,
-        explanation: "Option C is correct: the module describes the rule to document every temperature choice precisely because a future engineer might nudge the global temperature 'slightly' without realizing it was calibrated to a specific clinical accuracy requirement, silently degrading accuracy across all patient-facing queries. Option A is wrong because the module never describes a monitoring tool raising temperature on GPU load spikes; the risk is undocumented human edits, not load-based automatic changes. Option B is wrong because the module describes no expiry mechanism, so temperature settings do not reset to a random default after a fixed number of requests. Option D is wrong because the described failure is an undocumented manual change to a shared global setting, not different model versions interpreting the same temperature value differently.",
+        explanation: "Option C is correct: the module maps strategy to task. SQL generation needs one exact, deterministic string, so greedy / temperature=0 fits. Translation has essentially one right answer whose quality is the joint sequence probability, the regime where beam search dominates. Open-ended brainstorming needs diversity and voice, where maximizing probability produces bland output, so sampling with temperature and top-p is correct. Option A is wrong because beam search is wrong for open-ended generation, where it produces bland, repetitive text. Option B is wrong because high-temperature sampling would inject unwanted variance into SQL and translation, which need precise or single-best outputs. Option D is wrong because greedy misses globally better sequences on translation and produces bland/loop-prone open-ended text, so it is not universally safest.",
       },
     ],
-    takeaway: "Temperature is a task-appropriateness dial, not a quality dial. Low temperature for accuracy-critical consistency; moderate temperature with top-p for natural prose quality; higher for exploration. Per-use-case calibration is the production answer — and every temperature choice should be documented.",
+    takeaway: "Greedy takes the local max and can dead-end the whole sequence; beam search keeps top-b hypotheses to approximate the highest-probability SEQUENCE — great for one-right-answer tasks (translation, ASR) but bland and loop-prone for open-ended text. Open-ended generation switches to stochastic decoding (temperature + top-p, see the sampling module). Match the strategy to the task: greedy/T=0 for exact output, beam for single-best sequences, sampling for diverse chat — and document the choice.",
   },
 
   "training-signal": {
@@ -557,6 +645,26 @@ Softmax:
       "Attention gives every token selective access to every other token. But it is a set operation — it computes relationships between token pairs without any notion of which token comes first. Without position information, 'the cat sat on the mat' and 'the mat sat on the cat' produce identical attention scores. Word order doesn't exist for the mechanism. Positional encoding injects position information so the model can reason about sequence structure. How it's done determines whether long-context generalization works at all.",
       "The naive approach: add a fixed position vector to each token's embedding before the attention stack. Position 1 gets vector p_1, position 2 gets vector p_2, and so on. The model learns to interpret these offsets during training. This works for the positions seen during training. For a model trained on sequences up to 4K tokens, position vector p_4001 was never generated during training — it maps to a region of the embedding space the model's weights have never learned to interpret. Absolute encodings don't generalize past the training maximum.",
       "RoPE (Rotary Position Embedding) takes a different approach: instead of adding a position vector to each token embedding, it rotates the query and key vectors in attention by an angle proportional to their absolute position. The rotation is applied before the Q·K dot product. The result: the attention score between any two tokens depends on their rotational difference — the difference between their rotation angles — not on their absolute positions. A token at position 47 and a token at position 52 produce the same rotational difference regardless of where they appear in the sequence. This is relative position encoding: the model learns that 'this token is 5 positions before that one,' not 'this token is at absolute position 47.'",
+      "RoPE spreads that rotation across dimension pairs at DIFFERENT frequencies, and the frequencies are what make context extension hard. Each pair of dimensions i is rotated at frequency θ_i = 10000^(−2i/d), where d is the head dimension. Low-index pairs rotate fast (short-range, fine positional detail); high-index pairs rotate very slowly (long-range, coarse position). Worked example for d=128: pair i=0 → θ₀ = 10000^0 = 1.0 radian per position (rotates a full cycle every ~6 positions); pair i=32 → θ₃₂ = 10000^(−64/128) = 10000^(−0.5) = 0.01 (one full cycle only every ~628 positions); pair i=63 → θ₆₃ ≈ 10000^(−0.98) ≈ 0.00012 (barely rotates across the whole training window). During training the model only ever sees the rotation ANGLES that these frequencies produce up to the training length — e.g. position × θ_i for positions 0–4095. Push to position 128K and the slow, long-range pairs reach angles far outside anything seen in training: extrapolation, and it fails.",
+      "This frames the two ways to extend context. EXTRAPOLATION is what naive RoPE does past its window — feed positions beyond training and hope the unseen angles behave; they don't, attention degrades. INTERPOLATION instead squeezes the longer range back into trained angles: position interpolation linearly scales position indices (position 128K treated as 128K × 4096/128000 ≈ 4096) so every angle stays inside the trained range — but this crushes the fast, short-range frequencies and hurts local precision. NTK-aware scaling is the better fix: rather than scaling all positions uniformly, it stretches the base θ (10000 → a larger base) so that the SLOW long-range frequencies get interpolated (kept in-range) while the FAST short-range frequencies are left nearly untouched (local detail preserved). YaRN and LongRoPE build on this NTK idea with per-frequency schedules. The key point: you must remap the frequencies so long positions land on angles the model was trained on — the model cannot invent behavior for angles it never saw.",
+      "A different school drops rotation entirely: ALiBi (Attention with Linear Biases) adds NO positional rotation and NO learned position parameters. It simply subtracts a penalty proportional to distance directly from the raw attention scores: score(i,j) → score(i,j) − m·(i−j), where m is a fixed per-head slope. Tokens farther back get a larger linear penalty, so attention naturally decays with distance. Because the bias is a simple linear function of distance with no trained position embedding, ALiBi extrapolates to longer sequences BY CONSTRUCTION — the penalty for a distance of 100K is just a bigger number of the same form, nothing unseen. The tradeoff versus RoPE: ALiBi's recency bias is baked in and less expressive than RoPE's learned rotational relationships, so it trades some in-window modeling richness for clean, parameter-free length generalization. RoPE (with NTK-style scaling) dominates most current LLMs; ALiBi is the contrast that shows extrapolation can be a design property rather than a patch.",
+      { type: "illustration", label: "RoPE frequencies θ_i = 10000^(−2i/d) (d=128) and how extension works", content:
+`θ_i = 10000^(−2i/d),  d = 128  → exponent = −2i/128 = −i/64
+
+  i=0    θ₀   = 10000^0      = 1.0        full cycle every ~6 positions   (FAST, short-range)
+  i=16   θ₁₆  = 10000^(−.25) ≈ 0.100      full cycle every ~63 positions
+  i=32   θ₃₂  = 10000^(−.5)  = 0.010      full cycle every ~628 positions
+  i=48   θ₄₈  = 10000^(−.75) ≈ 0.00178    full cycle every ~3500 positions
+  i=63   θ₆₃  ≈ 10000^(−.98) ≈ 0.00012    barely rotates across 4K window (SLOW, long-range)
+
+Trained on positions 0–4095 → model has only seen angle = position × θ_i in that range.
+
+  Extrapolate to 128K:  slow pairs hit angles far outside training  → attention breaks
+  Interpolate (PI):     scale positions ×(4096/128000) into range   → but squashes fast pairs, hurts local detail
+  NTK-aware:            raise base θ so SLOW pairs interpolate, FAST pairs stay put → best of both (YaRN/LongRoPE)
+
+ALiBi (no rotation):   score −= m·(i−j)   linear distance penalty, no trained params
+                       distance 128K is just a bigger penalty of the same form → extrapolates by construction` },
       "RoPE makes position encoding inherently relative. This is a genuine advantage for generalization — relative distances are more semantically stable than absolute positions. But it does not solve the extrapolation problem. The rotation angles used at training time are calibrated to a 4K-token window. At position 128K, the rotation corresponds to an angle the model's weights have never encountered during training. Attention scores at those distances become unreliable because the Q and K vectors at those rotation values are outside the distribution the model learned from. The relative encoding improves within-training-window generalization; it does not extend the training window itself.",
       "Closing the scenario: 'just use RoPE, it extrapolates automatically' is wrong on both counts. RoPE doesn't extrapolate — it degrades gracefully within a range and unreliably beyond it. Extending a 4K-context model to 128K requires explicit context extension techniques: YaRN and LongRoPE rescale the rotation frequencies so that the full 128K range maps to rotation angles the model can handle, then validate perplexity at the target length to confirm the extension is working. RoPE is relative position encoding, not infinite-range position encoding. Using it is the starting point, not the conclusion.",
     ],
@@ -1830,8 +1938,31 @@ because long-prompt applications have 10-50× more input tokens than output toke
     interviewWeight: "medium",
     scenario: "Your company needs LLMs for three use cases: a real-time customer chat widget, a nightly batch document summarization job, and an internal coding assistant. A stakeholder suggests 'just use GPT-4 for everything.' You need to explain why model selection matters per use case — and what it costs to ignore it.",
     explanation: [
-      "Cost-latency-concepts established that model size is the primary driver of cost and latency. The failure that creates: 'which model?' must become a per-use-case decision, not a platform default. Using the same model everywhere — typically the best available — is the most common source of avoidable inference cost overruns. The gap between tiers is 20–50× in cost and 3–5× in latency. Frontier models (GPT-4o, Claude Opus): highest capability, highest cost. Mid-tier (GPT-4o-mini, Claude Sonnet): balance capability and efficiency. Small/fast (Claude Haiku, Gemini Flash Lite): optimize for speed and cost. Open-source (Llama 3, Mistral): self-hosted options across the same spectrum.",
-      "More parameters means more capability — that's true. But 'more capability' doesn't mean 'better per-use-case quality' for tasks already within a smaller model's ceiling. Intent classification with 5 categories is within the ceiling of Claude Haiku. Running GPT-4o on it adds zero accuracy while adding 20–50× the cost per request and 3–5× the latency. The frontier model's extra capability doesn't help; you're paying for unused headroom.",
+      "The stakeholder's 'just use GPT-4 for everything' feels safe — pick the strongest model and you never get caught under-powered. It is also the single most common source of avoidable inference-cost overruns, because it treats capability as free. It isn't: the gap between the top tier and the small tier is 20–50× in cost and 3–5× in latency, paid on every request forever. 'Which model?' is not a platform default you set once — it is a per-use-case decision, and defaulting to the biggest model means paying frontier prices for capability most of your traffic never uses. The tiers, cheapest capability last: frontier (GPT-4o, Claude Opus) — highest capability, highest cost; mid-tier (GPT-4o-mini, Claude Sonnet) — balanced; small/fast (Claude Haiku, Gemini Flash Lite) — optimized for speed and cost; open-source (Llama 3, Mistral) — self-hosted across the same spectrum.",
+      "More parameters means more capability — that's true. But 'more capability' doesn't mean 'better per-use-case quality' for tasks already within a smaller model's ceiling. Intent classification with 5 categories is within the ceiling of Claude Haiku. Running GPT-4o on it adds zero accuracy while adding 20–50× the cost per request and 3–5× the latency. The frontier model's extra capability doesn't help; you're paying for unused headroom — and that headroom compounds at volume.",
+      { type: "illustration", label: "1M classification requests — small vs frontier model (representative prices)", content: `Task: intent classification, ~500 input + ~20 output tokens
+per request, 1,000,000 requests/month.
+(Prices below are REPRESENTATIVE tiers, not live quotes.)
+
+SMALL/FAST model (e.g. Haiku / Flash-tier):
+  input  ~$0.25 / 1M tokens,  output ~$1.25 / 1M tokens
+  per request: 500×0.25e-6 + 20×1.25e-6
+             = $0.000125 + $0.000025 = $0.00015
+  × 1,000,000 requests  →  ~$150 / month
+
+FRONTIER model (e.g. GPT-4 / Opus-tier):
+  input  ~$5.00 / 1M tokens,  output ~$15.00 / 1M tokens
+  per request: 500×5e-6 + 20×15e-6
+             = $0.0025 + $0.0003 = $0.0028
+  × 1,000,000 requests  →  ~$2,800 / month
+
+  ─────────────────────────────────────────────────────
+  Monthly delta:  $2,800 − $150 ≈ $2,650   (~19× more)
+  Annualized:     ~$31,800 EXTRA per year
+
+Accuracy delta on a 5-category classifier: ≈ 0.
+You are paying ~$31.8k/yr for capability headroom this
+task never touches — the definition of wasted spend.` },
       "For the three use cases: the real-time chat widget has a 500ms latency budget — frontier models typically take 2–5s TTFT (Time To First Token — how long until the model begins outputting text) at peak load. A mid-tier or small model is required. The nightly batch job has no latency constraint but high volume — a mid-tier model at 1/10th the cost may be acceptable if summarization quality holds. The coding assistant needs strong reasoning and code generation — this is where frontier models justify their cost, because errors in generated code compound into debugging time that costs more than the API premium.",
       "Define the minimum acceptable quality bar per use case — not 'best possible quality' but 'good enough to ship.' Test your actual task — benchmarks like MMLU measure reasoning, not your specific summarization quality. Measure cost and latency at your expected request volume. The answer is almost never 'use the same model for everything.'",
     ],
@@ -2645,8 +2776,31 @@ For a 70B model across all attention layers:
     interviewWeight: "high",
     scenario: "Your team is evaluating whether to train a domain-specific model from scratch on three years of proprietary legal documents versus fine-tuning a foundation model on the same data. The CTO argues that training on legal data from scratch will produce better legal understanding. You need to explain what pretraining actually produces — and why that argument is almost always wrong in practice.",
     explanation: [
-      "Pretraining is the first and most expensive training phase: the model learns by predicting the next token across hundreds of billions of tokens of internet text, books, code, and structured data. What emerges from this at scale is not memorization of facts but learned representations: internal structure for grammar, world knowledge, reasoning patterns, and the ability to generalize to new inputs. The capabilities that matter most for applied use — instruction-following, multi-step reasoning, in-context learning — emerge from pretraining scale, not from fine-tuning. A model with 7B parameters trained on 1T tokens has fundamentally different capabilities than a 7B model trained on 100B tokens, even if both are then fine-tuned on the same task data.",
-      "The domain-specific pretraining argument — 'our data is so unique that a general model won't understand it' — is almost always wrong in practice. Legal text, medical records, and financial documents are well-represented in general pretraining corpora because they appear in large volumes online. What domain fine-tuning adds on top of a foundation model is a shift in token distribution for domain-specific terminology and patterns — the same shift you'd get from domain pretraining, at 100–1,000× lower compute cost. Training from scratch costs $1M–$10M+ in compute, takes weeks to months, and requires a data curation operation that is itself a full engineering project.",
+      "The CTO's intuition — 'train from scratch on our legal corpus and the model will understand law better than any general model' — feels obviously right and is almost always wrong. The hidden assumption is that legal understanding comes from seeing legal text. It doesn't. The capabilities that actually make a model useful on legal work — tracking entity references across a contract, following conditional logic, reasoning through multi-step arguments, following instructions — are not domain facts. They emerge from raw pretraining SCALE, and three years of proprietary documents is nowhere near enough scale to grow them. Train from scratch and you get a model that has seen a lot of law and cannot reason about any of it.",
+      "Pretraining is the phase where those capabilities form: the model learns by predicting the next token across hundreds of billions to trillions of tokens of internet text, books, code, and structured data. What emerges at scale is not memorization of facts but learned representations — internal structure for grammar, world knowledge, reasoning patterns, and the ability to generalize. A model with 7B parameters trained on 1T tokens has fundamentally different capabilities than a 7B model trained on 100B tokens, even if both are then fine-tuned on the same task data. Same parameters, different scale, different mind.",
+      "The domain-specific pretraining argument — 'our data is so unique that a general model won't understand it' — fails in practice for a second reason: legal text, medical records, and financial documents are already well-represented in general pretraining corpora because they appear in large volumes online. What domain fine-tuning adds on top of a foundation model is a shift in token distribution for domain-specific terminology and patterns — the same shift you'd get from domain pretraining, at 100–1,000× lower compute cost. The compute gap is the whole argument, so it is worth pricing out rather than asserting.",
+      { type: "illustration", label: "From-scratch vs fine-tune — the 100–1,000× compute gap", content: `Training compute follows C ≈ 6 × N × D FLOPs
+  (N = parameters, D = tokens processed)
+
+FROM SCRATCH — a Chinchilla-optimal 7B legal model:
+  N = 7 × 10⁹ params,  D ≈ 1.4 × 10¹² tokens (trillions)
+  C ≈ 6 × 7e9 × 1.4e12 ≈ 5.9 × 10²² FLOPs
+  → weeks on a large GPU cluster
+  → ~$1M–$10M+ in compute
+  → PLUS a full data-curation + dedup + filtering pipeline
+
+FINE-TUNE — same 7B base, adapt on the legal corpus:
+  D ≈ 10⁴–10⁶ examples (NOT trillions of tokens)
+  C is smaller by roughly the token-count ratio: ~10⁶–10⁸ ×
+  fewer tokens processed than a from-scratch run
+  → hours on a single node (LoRA: one 80GB GPU)
+  → typically < $1k
+  → reuses ALL the reasoning/language capability already
+    baked into the base model's weights
+
+Cost gap: ~100–1,000× cheaper to fine-tune, and you KEEP the
+emergent capabilities from-scratch training would have to
+re-grow from a corpus far too small to grow them.` },
       "The genuine case for domain pretraining exists only when the domain has data volumes exceeding 100B tokens AND fundamentally different token structure that a general model actively misrepresents — rare programming languages, highly specialized scientific notation, or languages underrepresented in general corpora. For standard legal text: the reasoning and language comprehension capabilities — understanding argument structure, tracking entity references, handling conditional logic — come from pretraining scale and cannot be acquired from 3 years of proprietary documents alone.",
       "For the scenario: fine-tune the best foundation model your compute budget can serve at inference time on your legal corpus, then evaluate before any decision to go further. The CTO's intuition is correct that domain exposure matters; the conclusion that pretraining from scratch is the way to get it is wrong.",
     ],
@@ -2696,7 +2850,8 @@ For a 70B model across all attention layers:
       "Hallucination is not a malfunction — it is a predictable consequence of how language models generate text. The model does not retrieve facts from a database and report them; it generates tokens by sampling from a probability distribution conditioned on everything before it. When the model has seen confident, authoritative text about quarterly audits in similar policy contexts during pretraining, 'quarterly audits' has high conditional probability following 'this policy requires' — regardless of whether the retrieved documents contain that claim. The model has no mechanism to distinguish 'I am generating this because it's in the retrieved context' from 'I am generating this because it appeared frequently in similar contexts during training.' Both produce the same token distribution.",
       "The client's question — 'AI error or data problem' — is a false dichotomy. It's an architectural property: the generation mechanism produces what is statistically plausible, not what is factually grounded. This applies to all language models, not a defect specific to your instance.",
       "Three hallucination types: closed-domain hallucination — the right document was retrieved but the model ignored it and answered from parametric memory. Fixable with faithfulness prompting and output validation. Confabulation — the model generates plausible-sounding but invented specific details (dates, numbers, names) when the correct answer is absent or uncertain; most dangerous because it sounds authoritative and passes casual review. Open-domain hallucination — the model is asked about something not in its training data or retrieved context and generates a confident but invented answer; fixable with abstention training. The March 2023 quarterly audit claim is confabulation: a specific invented detail inserted where the model had insufficient retrieved signal.",
-      "Faithfulness scoring checks whether every factual claim in the output can be traced to a specific span in the retrieved documents — any claim with no grounding source gets flagged or removed. Self-consistency sampling runs the same query multiple times and flags responses where the model gives different specific details — inconsistency is a reliable indicator of confabulation. For the scenario: verify that 'March 2023' and 'quarterly audits' both appear in the retrieved context before sending the response. If either claim cannot be sourced, cite uncertainty or block the response. This is an application-layer check, not a model retraining task.",
+      "Where this sits relative to training-signal: that module explains WHY the confidence exists (next-token prediction rewards fluent, assertive continuations regardless of truth, so the model has no calibrated know/don't-know signal). This module is the downstream view — the TAXONOMY of how that miscalibration surfaces (closed-domain, confabulation, open-domain) and the DETECTION methods you bolt on at the application layer. Same root cause, different job: one explains the disease, this one classifies the symptoms and screens for them.",
+      "Faithfulness scoring checks whether every factual claim in the output can be traced to a specific span in the retrieved documents — any claim with no grounding source gets flagged or removed. Self-consistency sampling runs the same query multiple times and flags responses where the model gives different specific details — inconsistency is a reliable indicator of confabulation. Concretely: ask 'When was the policy last updated?' three times at nonzero temperature and the runs come back 'March 2023,' 'January 2022,' and 'sometime in 2023' — the disagreement on a supposedly-factual date is the tell. A grounded fact (one that really appears in the retrieved context) tends to come back identically every run; a confabulated one wanders, because the model is sampling from 'what a plausible date sounds like' rather than reading a fixed source. For the scenario: verify that 'March 2023' and 'quarterly audits' both appear in the retrieved context before sending the response. If either claim cannot be sourced, cite uncertainty or block the response. This is an application-layer check, not a model retraining task.",
     ],
     mcqs: [
       {
@@ -2743,6 +2898,30 @@ For a 70B model across all attention layers:
     explanation: [
       "Fine-tuning and RAG solve different problems. RAG solves the knowledge retrieval problem: the model doesn't know your specific product documentation, current pricing, or internal policies because that information wasn't in its pretraining data or has changed since. Fine-tuning solves the behavior problem: the model doesn't respond in your specific format, doesn't use your brand voice, doesn't apply your domain-specific reasoning patterns, or doesn't handle your edge cases the way your team would. Conflating these two problems is the most common decision error in applied LLM work.",
       "Map failures to tools: wrong facts, stale information, or invented product details → RAG. Wrong tone, format, reasoning pattern, or inconsistent edge case handling → fine-tuning. Knowledge that changes frequently → RAG, because re-indexing takes hours while retraining takes days. Citation and auditability requirements → RAG, because the model can cite its source; fine-tuned knowledge cannot be traced to a specific document. Cost to update: RAG index rebuild is cheap and fast; fine-tuning dataset collection + training is expensive and slow.",
+      { type: "illustration", label: "Update cost — a doc changed. What does each path cost to absorb it?", content: `Trigger: product docs change (new pricing page, updated
+policy). How much does each approach cost to reflect it?
+
+RAG — re-index the changed documents:
+  1. chunk + embed the new/changed docs
+  2. upsert vectors into the index
+  → minutes to hours (scales with # changed docs)
+  → cost: embedding API calls only (cents–dollars)
+  → NO training, NO GPUs, NO eval run required
+  → the new fact is live on the very next query
+
+FINE-TUNE — bake the change into weights:
+  1. curate (instruction, response) examples for the change
+  2. run a training job (GPU hours)
+  3. run an eval suite to confirm no regression
+  4. redeploy the new checkpoint
+  → days (curation is the slow part, not the GPU time)
+  → cost: annotation labor + training + eval (much higher)
+  → and you repeat ALL of this the next time a fact changes
+
+  ─────────────────────────────────────────────────────────
+  This asymmetry is WHY dynamic knowledge → RAG: you re-index
+  in minutes vs. re-train in days for every single change.` },
+      "The two are not either/or — they COMPOSE. RAG fills the knowledge gap (current, citable product facts) and fine-tuning fills the behavior gap (your format, tone, escalation logic, edge-case handling) at the same time; a mature system usually runs both — RAG retrieving grounded context that a fine-tuned model then renders in the right voice. The rule is sequencing, not exclusivity: build RAG FIRST, close the knowledge failures, re-evaluate, then fine-tune on the behavioral residual.",
       "For the scenario: failures split equally means both tools are eventually needed, but the order matters. Build RAG over product documentation first — it addresses half the failures immediately at lower cost with faster iteration. After RAG, re-evaluate: if remaining failures concentrate in tone/format/edge cases, those are behavioral and fine-tuning on support tickets is the right next step. Fine-tuning before RAG is almost always the wrong order — you end up encoding the model's inability to retrieve current product information at the weight level.",
       "The 3 months of support tickets are behavioral signal — what did good support look like, how did experts handle edge cases, what tone and format worked. They are fine-tuning training data, not RAG content. Use them for fine-tuning after RAG has closed the knowledge gap.",
     ],
@@ -2790,7 +2969,37 @@ For a 70B model across all attention layers:
     scenario: "You're choosing between base Llama 3 70B and its instruction-tuned variant for a customer-facing Q&A tool. A researcher argues the base model scores higher on some benchmarks and is 'more capable.' You need to understand what instruction tuning actually changes before making this decision.",
     explanation: [
       "Pretraining established what the base model can do: predict the next token well across a vast range of text. What it didn't establish: instruction-following behavior. A base model prompted with 'Summarize this document:' is statistically as likely to continue writing more document text as it is to produce a summary — because both patterns appear in training data. The base model's capability is real. Its reliable compliance with arbitrary instruction formats is not.",
-      "Instruction tuning (SFT — Supervised Fine-Tuning) trains the model on a curated dataset of (instruction, ideal response) pairs using standard gradient descent. What changes: the model's response to instruction-shaped inputs shifts from 'complete the most statistically likely continuation' to 'follow the instruction.' What does NOT change: factual knowledge, reasoning capability, or internal representations of the world.",
+      "Instruction tuning (SFT — Supervised Fine-Tuning) trains the model on a curated dataset of (instruction, ideal response) pairs using standard gradient descent. What changes: the model's response to instruction-shaped inputs shifts from 'complete the most statistically likely continuation' to 'follow the instruction.' What does NOT change: factual knowledge, reasoning capability, or internal representations of the world. This is the same Stage-1 SFT step that opens the RLHF pipeline — instruction tuning IS RLHF's supervised first stage, run on its own without the later reward-model and RL stages.",
+      { type: "illustration", label: "Base vs instruct — same prompt, different behavior; why knowledge is untouched", content: `Prompt: "Summarize: The quarterly report shows revenue up
+         12%, driven by enterprise renewals and a new EMEA
+         region launch, though margins compressed slightly."
+
+BASE model (next-token prediction, no instruction prior):
+  → "The board will review these figures at the March
+     meeting. Analysts had expected 9% growth, so the
+     result modestly beats consensus. In the prior
+     quarter..."
+  (It CONTINUES the document — a summary and more report
+   text are both plausible completions, so it picks one.)
+
+INSTRUCT model (after SFT on (instruction, response) pairs):
+  → "Revenue rose 12% on enterprise renewals and an EMEA
+     launch; margins dipped slightly."
+  (It OBEYS the instruction — produces an actual summary.)
+
+WHY behavior flips but KNOWLEDGE does not:
+  SFT dataset      ≈ 10k–100k (instruction, response) pairs
+  Pretraining      ≈ 10¹²–10¹³ tokens (trillions)
+  ─────────────────────────────────────────────────────────
+  SFT touches ~10⁻⁷–10⁻⁸ of the data that encoded the
+  knowledge. It is far too small an update to rewrite what
+  the model KNOWS — it only re-weights HOW the model
+  responds to instruction-shaped inputs. Behavior shifts;
+  facts, reasoning, and world representations stay put.
+
+Named instruction-tuning datasets/methods: FLAN, T0, Alpaca,
+and self-instruct (bootstrapping instructions from the model
+itself).` },
       "The 'more capable' claim from benchmark scores needs careful interpretation. Some benchmarks are designed for completion-style prompting where the base model's flexibility is an advantage. Instruction-tuned models score lower on these because the benchmark format conflicts with the instruction-following prior — not because capability decreased. For any real task evaluation — answer a question, extract a field, follow a format — the instruction-tuned model outperforms the base model because instruction-following is the load-bearing capability for user-facing applications.",
       "For the scenario: the instruction-tuned variant is correct for a customer-facing Q&A tool, full stop. Every user interaction is an instruction. The benchmark advantage of the base model is a measurement artifact of benchmarks designed for completion-style prompting. Use the base model only when building a custom fine-tuning pipeline that requires clean parameter initialization without instruction-following bias baked in.",
     ],
