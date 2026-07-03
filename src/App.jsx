@@ -49,6 +49,10 @@ const CompanyTracksPage      = lazy(() => import("./CompanyTracks"));
 const AboutPage              = lazy(() => import("./About"));
 const MePage                 = lazy(() => import("./Me"));
 
+// R12 (2026-07-03): global search sources — Foundations gyms + questions + companies + cheatsheet.
+import { PREP_QUESTIONS, questionTier } from "./data/preplabQuestions";
+import { COMPANIES as CT_COMPANIES } from "./data/companyTracks";
+
 function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
 // ─── STYLES ───────────────────────────────────────────────────────────────────
@@ -981,6 +985,36 @@ const TAB_COLORS = {
   groundtruth: "#a78bfa",
 };
 
+// ─── GLOBAL SEARCH INDEX (R12, 2026-07-03) ────────────────────────────────────
+// One entry point over FOUR sources: Foundations gyms · Questions · Companies ·
+// Cheatsheet. Each entry carries a `route` (a navigateTo() arg) so onSelect can
+// dispatch anywhere. `kind` drives the badge + grouping.
+const SEARCH_GYMS = [
+  ["language-models", "Language Models"], ["retrieval", "Retrieval"], ["ai-agents", "AI Agents"],
+  ["evaluation", "Evaluation"], ["production", "Production Systems"], ["foundation-models", "Foundation Models"],
+  ["prompt-engineering", "Prompt Engineering"], ["vector-infrastructure", "Vector Infrastructure"],
+  ["multimodal", "Multimodal"], ["ai-safety-alignment", "AI Safety & Alignment"], ["voice-ai", "Voice & Speech AI"],
+  ["code-generation", "Code Generation"], ["inference-optimization", "Inference Optimization"],
+  ["model-customization", "Model Customization"],
+];
+const SEARCH_TABS = [
+  ["Foundations", "concepts"], ["Ground Truth", "groundtruth"], ["Question Bank", "preplab"],
+  ["Speaking & Mock", "fluency"], ["Company Tracks", "company-tracks"], ["Coding Dojo", "codelabs"],
+  ["Workshop", "career"], ["My Progress", "progress"], ["Review", "review"], ["My Tracks", "my-tracks"],
+  ["Leaderboard", "leaderboard"], ["Resources", "resources"], ["Start Here", "starthere"], ["About", "about"],
+];
+const GLOBAL_SEARCH_INDEX = [
+  ...SEARCH_TABS.map(([label, tab]) => ({ kind: "page", label, tag: "PAGE", route: { tab } })),
+  ...SEARCH_GYMS.map(([gymId, label]) => ({ kind: "gym", label, tag: "FOUNDATIONS", route: { tab: "concepts", gymId } })),
+  ...CT_COMPANIES.map(c => ({ kind: "company", label: c, tag: "COMPANY", route: { tab: "company-tracks" } })),
+  { kind: "cheatsheet", label: "Cheatsheet — 2hr / 1day / 3day / 1week plans", tag: "CHEATSHEET", route: { tab: "preplab", mode: "sprint" } },
+  ...PREP_QUESTIONS.map(qq => ({
+    kind: "question", label: qq.question, tag: (questionTier(qq) + " · " + (qq.topic || "q")).toUpperCase(),
+    route: { tab: "preplab", mode: "browse" },
+  })),
+];
+const KIND_ACCENT = { page: "#8b5cf6", gym: "#6366f1", company: "#22c55e", cheatsheet: "#f59e0b", question: "#38bdf8" };
+
 function SearchModal({ onClose, onSelect }) {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -989,13 +1023,12 @@ function SearchModal({ onClose, onSelect }) {
 
   const q = query.trim().toLowerCase();
   const results = q
-    ? ALL_MODULES_INDEX.filter(m =>
+    ? GLOBAL_SEARCH_INDEX.filter(m =>
         m.label.toLowerCase().includes(q) ||
         m.tag.toLowerCase().includes(q) ||
-        m.tab.toLowerCase().includes(q) ||
-        (m.tags && m.tags.some(t => t.toLowerCase().includes(q)))
-      )
-    : ALL_MODULES_INDEX.filter(m => m.moduleId !== null).slice(0, 9);
+        m.kind.toLowerCase().includes(q)
+      ).slice(0, 40)
+    : GLOBAL_SEARCH_INDEX.filter(m => m.kind === "gym" || m.kind === "page").slice(0, 9);
 
   function onKeyDown(e) {
     if (e.key === "ArrowDown") { e.preventDefault(); setCursor(c => Math.min(c + 1, results.length - 1)); }
@@ -1015,29 +1048,28 @@ function SearchModal({ onClose, onSelect }) {
           <input ref={inputRef} value={query}
             onChange={e => { setQuery(e.target.value); setCursor(0); }}
             onKeyDown={onKeyDown}
-            placeholder="Search modules & posts..."
-            aria-label="Search modules"
+            placeholder="Search foundations, questions, companies, cheatsheet…"
+            aria-label="Global search"
             className="flex-1 bg-transparent text-white text-sm outline-none placeholder-zinc-600"
           />
           <kbd className="text-[10px] font-mono text-zinc-500 border border-zinc-700 rounded px-1.5 py-0.5">Esc</kbd>
         </div>
         <div className="max-h-80 overflow-y-auto">
           {results.length === 0
-            ? <div className="px-4 py-8 text-center text-xs text-zinc-500">No modules found</div>
+            ? <div className="px-4 py-8 text-center text-xs text-zinc-500">No matches — try a concept, question, or company</div>
             : results.map((item, i) => {
+              const accent = KIND_ACCENT[item.kind] || "#888";
               return (
-                <button key={`${item.tab}-${item.moduleId || "tab"}-${i}`}
+                <button key={`${item.kind}-${i}`}
                   onClick={() => onSelect(item)}
                   className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-all ${cursor === i ? "bg-zinc-800" : "hover:bg-zinc-800/60"}`}>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-bold truncate text-white">{item.label}</div>
-                    <div className="text-xs text-zinc-500 capitalize flex items-center gap-1">
-                      {item.tab === "lab" ? "RAG Lab" : item.tab}
-                    </div>
+                    <div className="text-xs text-zinc-500 capitalize">{item.kind}</div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[10px] px-1.5 py-0.5 rounded font-mono"
-                      style={{ color: (TAB_COLORS[item.tab] || "#888") + "ee", background: (TAB_COLORS[item.tab] || "#888") + "22" }}>
+                      style={{ color: accent + "ee", background: accent + "22" }}>
                       {item.tag}
                     </span>
                   </div>
@@ -1581,12 +1613,8 @@ export default function App() {
         <SearchModal
           onClose={() => setSearchOpen(false)}
           onSelect={item => {
-            navigate(item.tab);
             track("search_performed", { query: item.label?.slice(0, 50) });
-            if ((item.tab === "systems" || item.tab === "evallab" || item.tab === "llmlab") && item.moduleId) setSystemsModule(item.moduleId);
-            if (item.tab === "explore"     && item.moduleId) setExploreModule(item.moduleId);
-            if ((item.tab === "agents" || item.tab === "agentlab") && item.moduleId) setAgentsModule(item.moduleId);
-            if (item.tab === "groundtruth" && item.moduleId) setGtPostId(item.moduleId);
+            navigateTo(item.route || { tab: "home" });  // R12: unified route dispatch across all 4 sources
             setSearchOpen(false);
           }}
         />
