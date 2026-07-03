@@ -31,6 +31,8 @@ import { PREP_QUESTIONS, questionTier, TIER_ORDER, TIER_META } from "./data/prep
 import { CommonTrapCallout, FeedbackBar } from "./shared";
 import { Icon } from "./Icon.jsx";
 import { CompanyLogo } from "./CompanyLogo.jsx";
+import JudgmentExam from "./JudgmentExam.jsx";            // M8: "The Call" — replaces the old timed ExamMode for the Judgment Exam
+import CheatsheetReference from "./CheatsheetReference.jsx"; // R11: searchable quick-reference tab in the Cheatsheet
 
 // ─── GATE MODAL ───────────────────────────────────────────────────────────────
 function GateModal({ onUnlock, onClose }) {
@@ -2975,8 +2977,8 @@ function BrowseMode({ onExit }) {
 
 const MODE_CARDS = [
   {
-    id: "exam", icon: "timer", title: "Judgment Exam", subtitle: "Timed · No hints",
-    description: "Timed 15–60 min exam with configurable focus and difficulty. All scores hidden until the end. Per-challenge-area breakdown shows exactly where your judgment breaks.",
+    id: "exam", icon: "timer", title: "Judgment Exam — The Call", subtitle: "Decide under pressure",
+    description: "High-stakes production scenarios across 5 lanes (incident triage, cost/latency, ship/no-ship, safety, build-vs-buy). Each one: make the call, justify it, spot the trap. Scored on your reasoning, not trivia — ends in a readiness verdict.",
     border: "border-indigo-500/40 hover:border-indigo-400", badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30"
   },
   {
@@ -3299,6 +3301,7 @@ const SPRINT_HORIZONS = [
 
 function InterviewSprintMode({ onExit, onNavigateTo }) {
   const [horizon, setHorizon] = useState("2h");
+  const [cheatTab, setCheatTab] = useState("plans"); // R11: "plans" | "reference"
   const h = SPRINT_HORIZONS.find(x => x.id === horizon);
 
   return (
@@ -3307,13 +3310,26 @@ function InterviewSprintMode({ onExit, onNavigateTo }) {
       <div className="shrink-0 px-6 pt-5 pb-4" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="flex items-center justify-between mb-1">
           <div>
-            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">INTERVIEW SPRINT</div>
-            <div className="text-lg font-bold text-zinc-100">Cheat Sheet by Time Horizon</div>
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">CHEATSHEET</div>
+            <div className="text-lg font-bold text-zinc-100">{cheatTab === "plans" ? "Cheat Sheet by Time Horizon" : "Quick reference"}</div>
           </div>
           <button onClick={onExit} className="text-[11px] text-zinc-500 hover:text-zinc-300 px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors">← Back</button>
         </div>
-        <p className="text-xs text-zinc-500 mt-1">Pick how much time you have. Get exactly what to do.</p>
+        <p className="text-xs text-zinc-500 mt-1">{cheatTab === "plans" ? "Pick how much time you have. Get exactly what to do." : "Search every core concept — formula, one-liner, and the gotcha."}</p>
+        {/* R11: plans vs searchable reference */}
+        <div className="flex gap-2 mt-3">
+          {[["plans","Study plans"],["reference","Quick reference"]].map(([id,label]) => (
+            <button key={id} onClick={() => setCheatTab(id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${cheatTab === id ? "bg-violet-600/20 border border-violet-500 text-violet-200" : "bg-zinc-800/60 border border-zinc-700 text-zinc-400 hover:text-white"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {cheatTab === "reference" ? (
+        <div className="flex-1 overflow-y-auto px-6 py-5"><CheatsheetReference /></div>
+      ) : (<>
 
       {/* Horizon tabs */}
       <div className="shrink-0 flex gap-2 px-6 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
@@ -3378,6 +3394,7 @@ function InterviewSprintMode({ onExit, onNavigateTo }) {
           </button>
         </div>
       </div>
+      </>)}
     </div>
   );
 }
@@ -3462,7 +3479,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   const dueQuestions = getDueQuestions();
   const PREPLAB_SIDEBAR = [
     ...(dueQuestions.length > 0 ? [{ id: "review", label: "Review Due", tag: "SPACED", desc: `${dueQuestions.length} question${dueQuestions.length > 1 ? "s" : ""} scheduled for review today.` }] : []),
-    { id: "exam",        label: "Judgment Exam",      tag: "EXAM",      desc: "Test yourself cold. Leave knowing where your reasoning breaks." },
+    { id: "exam",        label: "Judgment Exam",      tag: "THE CALL",   desc: "Production judgment scenarios — make the call, justify, spot the trap." },
     { id: "sprint",      label: "Cheatsheet",         tag: "CHEATSHEET", desc: "2 hrs / 1 day / 3 days / 1 week — exactly what to do." },
     // R10 (Rev-2): "Interview Strategy" (jdprep) removed from the sidebar — thin JD-template; readiness "work next" covers it.
     //   Component InterviewPrepMode + its render branch are KEPT (still reachable via initialMode / stale hash). Data intact.
@@ -3517,7 +3534,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
           PrepLab
         </button>
         {mode === "review"      && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} reviewQuestions={dueQuestions} user={user} />}
-        {mode === "exam"        && <ExamMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} user={user} />}
+        {mode === "exam"        && <JudgmentExam onExit={exitMode} />}
         {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} initialGroup={trainerInitGroup} />}
         {mode === "sprint"      && <InterviewSprintMode onExit={exitMode} onNavigateTo={onNavigateTo} />}
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}

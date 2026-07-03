@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Icon } from "./Icon.jsx";
 import SpeakMode from "./SpeakMode.jsx";
+import ReadinessDiagnostic from "./ReadinessDiagnostic.jsx"; // R10: adaptive "Are You Ready?" diagnostic
+import MockInterviewV2 from "./MockInterviewV2.jsx";         // R15: multi-turn mock interview
 
 // ─── PHRASE BANK DATA ─────────────────────────────────────────────────────────
 
@@ -2345,8 +2347,8 @@ const FLUENCY_MODULES = [
   //   self-scored key points. DRILLS content is folded into INTERVIEW_QUESTIONS (see MERGED_INTERVIEW_QUESTIONS).
   //   The old { id:"drills", label:"Timed Drills" } registry row is dropped; component TimedDrills kept in-file
   //   (unused, archived). Stale hash/state → falls back to the merged "interview" mode.
-  { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
-  { id: "assessment", label: "Readiness Check", tag: "QUICK DIAGNOSTIC" },  // GSL fix #8: label vs full Question Bank exam
+  { id: "interview", label: "Mock Interview", tag: "MULTI-TURN" },
+  { id: "assessment", label: "Are You Ready?", tag: "DIAGNOSTIC" },  // R10: adaptive diagnostic (was "Readiness Check")
   // ── R7 (Rev-2): "Company scenarios" (cases) dropped as a top-level mode — Company Tracks is now the ONE
   //   company home and links into it. Component CompanyCaseArena kept in-file; reachable via the
   //   `gsl-fluency-initial` localStorage handoff set by Company Tracks (see FluencyApp mount effect).
@@ -2435,8 +2437,8 @@ export default function FluencyApp() {
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
         {/* Live modes (Rev-2): Speak · Mock Interview · Readiness Check */}
         {activeModule === "speak" && <SpeakMode />}
-        {activeModule === "interview" && <MockInterview />}
-        {activeModule === "assessment" && <ReadinessAssessment />}
+        {activeModule === "interview" && <MockInterviewV2 />}
+        {activeModule === "assessment" && <ReadinessDiagnostic onNavigate={(tab) => { try { window.location.hash = tab; } catch {} }} />}
         {/* R7: Company Scenarios reachable only via Company Tracks handoff (archived from the sidebar) */}
         {activeModule === "cases" && <CompanyCaseArena />}
         {/* Archived modes (Rev-2) — components kept in-file; a stale hash/state falls back to a live mode:
