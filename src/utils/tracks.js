@@ -5,6 +5,8 @@
 // Note item:    { type: 'note', content, addedAt }
 
 const KEY = 'gsl-tracks-v1'
+const LAST_KEY = 'gsl-tracks-last-v1'      // id of the most-recently-added-to track
+const QUICK_KEY = 'gsl-tracks-quickadd-v1' // '1' = skip the picker, add straight to last track
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
@@ -46,6 +48,7 @@ export function addQuestion(trackId, questionId, title, topic, difficulty) {
     if (already) return t
     return { ...t, items: [...t.items, { type: 'preplab', questionId, title, topic, difficulty, addedAt: Date.now() }] }
   }))
+  setLastTrackId(trackId)
 }
 
 export function addNote(trackId, content) {
@@ -54,6 +57,7 @@ export function addNote(trackId, content) {
     if (t.id !== trackId) return t
     return { ...t, items: [...t.items, { type: 'note', content, addedAt: Date.now() }] }
   }))
+  setLastTrackId(trackId)
 }
 
 export function removeItem(trackId, index) {
@@ -89,6 +93,7 @@ export function addItem(trackId, type, itemId, label, meta = {}) {
     if (already) return t
     return { ...t, items: [...t.items, { type, itemId: String(itemId), label, meta, addedAt: Date.now() }] }
   }))
+  setLastTrackId(trackId)
 }
 
 // Returns array of track IDs containing this generic item
@@ -96,4 +101,27 @@ export function getTracksForItem(type, itemId) {
   return getTracks()
     .filter(t => t.items.some(i => i.type === type && i.itemId === String(itemId)))
     .map(t => t.id)
+}
+
+// ── Quick-add: skip the picker, drop into the most-recently-used track ────────
+
+function setLastTrackId(id) { try { if (id) localStorage.setItem(LAST_KEY, id) } catch { /* ignore */ } }
+export function getLastTrackId() { try { return localStorage.getItem(LAST_KEY) || null } catch { return null } }
+export function getLastTrack() { const id = getLastTrackId(); return id ? getTrack(id) : null }
+export function getQuickAdd() { try { return localStorage.getItem(QUICK_KEY) === '1' } catch { return false } }
+export function setQuickAdd(on) {
+  try { localStorage.setItem(QUICK_KEY, on ? '1' : '0'); window.dispatchEvent(new CustomEvent('gsl_tracks')) } catch { /* ignore */ }
+}
+
+// Add a generic item straight to the last-used track. Returns the track (for a
+// confirmation toast) or null if there's no valid last track.
+export function quickAddItem(type, itemId, label, meta = {}) {
+  const t = getLastTrack(); if (!t) return null
+  addItem(t.id, type, itemId, label, meta); return t
+}
+
+// PrepLab-question variant of quickAddItem.
+export function quickAddQuestion(questionId, title, topic, difficulty) {
+  const t = getLastTrack(); if (!t) return null
+  addQuestion(t.id, questionId, title, topic, difficulty); return t
 }
