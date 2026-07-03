@@ -14,6 +14,17 @@
 
 import { useState, useEffect } from "react";
 import { CODE_LABS } from "./data/codeLabsData";
+import { CODE_EXERCISES } from "./data/codeExercises";
+import CodeExercise, { ImplementBrowser } from "./CodeExercise.jsx";
+
+const EX_DONE_KEY = "gsl-code-exercises";
+function loadExDone() {
+  try { return new Set(JSON.parse(localStorage.getItem(EX_DONE_KEY) || "[]")); }
+  catch { return new Set(); }
+}
+function saveExDone(set) {
+  try { localStorage.setItem(EX_DONE_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
+}
 
 const CODELABS_KEY = "gsl-codelabs";
 
@@ -39,9 +50,38 @@ const DIFF_STYLE = {
 
 // ─── TOP-LEVEL ────────────────────────────────────────────────────────────────
 
+function ModeToggle({ mode, setMode }) {
+  const btn = (id, label, sub) => {
+    const active = mode === id;
+    return (
+      <button
+        key={id}
+        onClick={() => setMode(id)}
+        className={`flex-1 text-left rounded-lg border px-4 py-2.5 transition-all ${active ? "border-zinc-500 bg-zinc-800/70" : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700"}`}
+      >
+        <div className="text-sm font-semibold" style={{ color: active ? "var(--gal-build)" : "#e4e4e7" }}>{label}</div>
+        <div className="text-[11px] text-zinc-500 mt-0.5">{sub}</div>
+      </button>
+    );
+  };
+  return (
+    <div className="max-w-3xl mx-auto px-6 pt-8">
+      <div className="flex gap-3">
+        {btn("read", "Read & reason", "Walk real GenAI systems code, step by step")}
+        {btn("implement", "Implement it", "Write code from scratch — runs and auto-grades in your browser")}
+      </div>
+    </div>
+  );
+}
+
 export default function CodeWalkthrough({ onNavigate }) {
+  const [mode, setMode] = useState("read");
   const [doneSet, setDoneSet] = useState(loadDone);
   const [activeId, setActiveId] = useState(null);
+
+  // Implement-mode state
+  const [exDone, setExDone] = useState(loadExDone);
+  const [activeExId, setActiveExId] = useState(null);
 
   const markComplete = (id) => {
     setDoneSet((prev) => {
@@ -52,6 +92,36 @@ export default function CodeWalkthrough({ onNavigate }) {
     });
   };
 
+  const markExSolved = (id) => {
+    setExDone((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      saveExDone(next);
+      return next;
+    });
+  };
+
+  // ── Implement mode ──
+  if (mode === "implement") {
+    const activeEx = activeExId ? CODE_EXERCISES.find((e) => e.id === activeExId) : null;
+    if (activeEx) {
+      return (
+        <CodeExercise
+          exercise={activeEx}
+          onBack={() => setActiveExId(null)}
+          onSolved={() => markExSolved(activeEx.id)}
+        />
+      );
+    }
+    return (
+      <>
+        <ModeToggle mode={mode} setMode={setMode} />
+        <ImplementBrowser exercises={CODE_EXERCISES} doneSet={exDone} onOpen={setActiveExId} />
+      </>
+    );
+  }
+
+  // ── Read & reason mode ──
   const activeLab = activeId ? CODE_LABS.find((l) => l.id === activeId) : null;
 
   if (activeLab) {
@@ -66,7 +136,12 @@ export default function CodeWalkthrough({ onNavigate }) {
     );
   }
 
-  return <LabBrowser labs={CODE_LABS} doneSet={doneSet} onOpen={setActiveId} />;
+  return (
+    <>
+      <ModeToggle mode={mode} setMode={setMode} />
+      <LabBrowser labs={CODE_LABS} doneSet={doneSet} onOpen={setActiveId} />
+    </>
+  );
 }
 
 // ─── BROWSER (lab list) ───────────────────────────────────────────────────────
