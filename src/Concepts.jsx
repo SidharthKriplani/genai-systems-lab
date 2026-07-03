@@ -27,6 +27,11 @@ import {
   PromptInjectionPlayground, SpotHallucination, BiasDetector, ContextTetris,
   PromptLibrary, StreamingLab, FailureSimulator,
 } from "./Playground";
+// MSL-parity: real interactives for previously stub-only fully-taught modules.
+import PrefillDecodeViz from "./components/nicheViz/PrefillDecodeViz.jsx";
+import FIMTransformViz from "./components/nicheViz/FIMTransformViz.jsx";
+import GQAMemoryViz from "./components/nicheViz/GQAMemoryViz.jsx";
+import VoiceLatencyBudget from "./components/nicheViz/VoiceLatencyBudget.jsx";
 const SystemsApp   = lazy(() => import("./Systems"));      // evaluation + production gyms → Lab tab
 const LaunchChecklist = lazy(() => import("./AIPM").then(m => ({ default: m.LaunchChecklist }))); // salvaged from deleted ProductionHub → production gym
 
@@ -9751,18 +9756,18 @@ export const MODULES = [
   // ── Premium-niche tracks (2026-07-03) — FULL teaching in data/tracks/*.js renders via FoundationsRunner (RUNNER_DATA); component is StubModule→null so only the hands-on interactive is still pending (D2 relabel). ──
   // Voice / Speech AI
   { id: "voice-asr-architectures", label: "ASR Architectures", tag: "VOICE AI", level: "advanced", title: "ASR Architectures: CTC, RNN-T, Whisper", subtitle: "How audio becomes text — and the streaming-vs-accuracy fork.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
-  { id: "voice-streaming-latency", label: "Streaming & Latency", tag: "VOICE AI", level: "advanced", title: "Real-Time Voice: Streaming & Latency Budgets", subtitle: "Budget sub-second responsiveness across VAD → ASR → LLM → TTS.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "voice-streaming-latency", label: "Streaming & Latency", tag: "VOICE AI", level: "advanced", title: "Real-Time Voice: Streaming & Latency Budgets", subtitle: "Budget sub-second responsiveness across VAD → ASR → LLM → TTS.", fidelity: { tier: "conceptual", note: "Interactive — see explanation for precise details." }, component: VoiceLatencyBudget },
   { id: "voice-tts-cloning", label: "TTS & Voice Cloning", tag: "VOICE AI", level: "intermediate", title: "TTS & Voice Cloning", subtitle: "Acoustic model + vocoder, zero-shot cloning, and consent/deepfake risk.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "voice-realtime-agents", label: "Real-Time Voice Agents", tag: "VOICE AI", level: "advanced", title: "Real-Time Voice Agents: Turn-Taking", subtitle: "Endpointing, barge-in, cascaded vs speech-to-speech, tool use over voice.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "voice-eval-wer-mos", label: "Voice Eval (WER/MOS)", tag: "VOICE AI", level: "intermediate", title: "Evaluating Voice: WER, MOS, End-to-End", subtitle: "What WER misses, how MOS works, and evaluating the whole agent.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   // Code Generation / AI Coding Assistants
-  { id: "codegen-model-training-fim", label: "Code Models & FIM", tag: "CODE-GEN", level: "advanced", title: "Code Models & Fill-in-the-Middle", subtitle: "Why code models train with FIM — the basis of autocomplete.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "codegen-model-training-fim", label: "Code Models & FIM", tag: "CODE-GEN", level: "advanced", title: "Code Models & Fill-in-the-Middle", subtitle: "Why code models train with FIM — the basis of autocomplete.", fidelity: { tier: "conceptual", note: "Interactive — see explanation for precise details." }, component: FIMTransformViz },
   { id: "codegen-repo-context-retrieval", label: "Repo-Level Context", tag: "CODE-GEN", level: "advanced", title: "Repo-Level Context & Retrieval", subtitle: "Fuse lexical + dense + structural retrieval to feed the model the right code.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "codegen-agentic-loops", label: "Agentic Coding Loops", tag: "CODE-GEN", level: "advanced", title: "Agentic Coding Loops", subtitle: "Localize → edit → test → observe → retry, grounded in real feedback.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "codegen-eval-passk-swebench", label: "Code Eval (pass@k / SWE-bench)", tag: "CODE-GEN", level: "advanced", title: "Evaluating Code: pass@k & SWE-bench", subtitle: "pass@k, SWE-bench on real repos, and why leaderboards mislead.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "codegen-security-sandboxing", label: "Code-Agent Security", tag: "CODE-GEN", level: "advanced", title: "Securing Code-Executing Agents", subtitle: "Repo prompt injection, sandboxing, insecure/hallucinated dependencies.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   // Inference Optimization & Serving / On-device
-  { id: "infra-prefill-decode", label: "Prefill vs Decode", tag: "INFERENCE", level: "advanced", title: "Prefill vs Decode: The Two Phases", subtitle: "Compute-bound prefill (TTFT) vs memory-bound decode — the root framing.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "infra-prefill-decode", label: "Prefill vs Decode", tag: "INFERENCE", level: "advanced", title: "Prefill vs Decode: The Two Phases", subtitle: "Compute-bound prefill (TTFT) vs memory-bound decode — the root framing.", fidelity: { tier: "conceptual", note: "Interactive — see explanation for precise details." }, component: PrefillDecodeViz },
   { id: "infra-batching-throughput", label: "Continuous Batching", tag: "INFERENCE", level: "advanced", title: "Continuous Batching for Throughput", subtitle: "In-flight batching swaps sequences per decode step to saturate the GPU.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "infra-paged-attention-kv", label: "PagedAttention & KV Cache", tag: "INFERENCE", level: "advanced", title: "PagedAttention & KV-Cache Memory", subtitle: "OS-style paging of the KV cache — kill fragmentation, share prefixes.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "infra-serving-stacks", label: "Serving Stacks", tag: "INFERENCE", level: "advanced", title: "Serving Stacks: vLLM, TensorRT-LLM, Triton", subtitle: "Ease vs latency vs orchestration, plus tensor/pipeline parallelism.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
@@ -10103,8 +10108,13 @@ export const MODULES = [
 
   // ── D3: market-gap Foundations modules (teaching via RUNNER_DATA; interactive TBD) ──
   { id: "rope",       label: "RoPE",             tag: "LANG MODELS", level: "advanced",     title: "Rotary Position Embeddings (RoPE)", subtitle: "Why rotation encodes position — and how context length extends.",          fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
-  { id: "gqa-mqa",    label: "GQA / MQA",        tag: "LANG MODELS", level: "advanced",     title: "Grouped-Query & Multi-Query Attention", subtitle: "Shrinking the KV cache — the memory bottleneck at inference.",           fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "gqa-mqa",    label: "GQA / MQA",        tag: "LANG MODELS", level: "advanced",     title: "Grouped-Query & Multi-Query Attention", subtitle: "Shrinking the KV cache — the memory bottleneck at inference.",           fidelity: { tier: "conceptual", note: "Interactive — see explanation for precise details." }, component: GQAMemoryViz },
   { id: "grpo-rlvr",  label: "GRPO & RLVR",      tag: "FOUNDATION MODELS", level: "advanced", title: "GRPO & RLVR — Modern Post-Training", subtitle: "Critic-free RL and verifiable rewards beyond RLHF/DPO.",                    fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+
+  // ── Retrieval breadth (MSL-parity expansion; teaching via RUNNER_DATA) ──
+  { id: "dense-vs-sparse-retrieval", label: "Dense vs Sparse",    tag: "RETRIEVAL", level: "intermediate", title: "Dense vs Sparse Retrieval (and Hybrid)", subtitle: "When BM25 beats embeddings — and how RRF fuses them.",           fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "multi-hop-retrieval",       label: "Multi-Hop Retrieval", tag: "RETRIEVAL", level: "advanced",     title: "Multi-Hop Retrieval",                    subtitle: "Answers that need chaining across documents — decompose, retrieve, reason, repeat.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "query-rewriting",           label: "Query Rewriting",     tag: "RETRIEVAL", level: "intermediate", title: "Query Rewriting (HyDE, Step-Back, Expansion)", subtitle: "Fix under-specified queries before retrieval runs.",     fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
 ];
 
 const LEVEL_STYLE = {
@@ -11962,7 +11972,7 @@ export const GYMS = [
     label: "Retrieval",
     desc: "Embeddings, chunking strategies, the RAG pipeline end-to-end, context budgets, and reranking.",
     color: "#3b82f6",
-    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context", "reranking"],
+    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context", "reranking", "dense-vs-sparse-retrieval", "query-rewriting", "multi-hop-retrieval"],
     labId: "lab",
     labLabel: "RAG Lab",
   },

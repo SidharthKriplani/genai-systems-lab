@@ -32,6 +32,9 @@ import { RUNNER_PLAYGROUND } from "./playground/playground-labs";
 // ── D3: market-gap modules (RoPE, GQA/MQA, GRPO/RLVR) + D1: deepened thin modules ──
 import { RUNNER_MARKET_GAP } from "./foundations/market-gap";
 import { RUNNER_DEEPEN_THIN } from "./foundations/deepen-thin";
+// ── MSL-parity expansion: retrieval breadth modules + production-gym tone pass ──
+import { RUNNER_RETRIEVAL_BREADTH } from "./foundations/retrieval-breadth";
+import { RUNNER_PRODUCTION_TONE } from "./foundations/production-tone";
 
 export const RUNNER_DATA = {
 
@@ -3727,5 +3730,13 @@ itself).` },
   //    definitions above for reranking / rag-eval / llm-as-judge / chunking /
   //    observability-concepts / safety-measurement. ─────────────────────────────
   ...RUNNER_DEEPEN_THIN,
+
+  // ── Retrieval breadth (3 new modules, additive) ──────────────────────────────
+  ...RUNNER_RETRIEVAL_BREADTH,
+
+  // ── Production-gym TONE PASS — spread ABSOLUTELY LAST so it overrides the terse
+  //    cost-latency-concepts / observability-concepts / latency-planner (incl. the
+  //    D1 override of observability-concepts). ──────────────────────────────────
+  ...RUNNER_PRODUCTION_TONE,
 
 };
