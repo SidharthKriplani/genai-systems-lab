@@ -157,9 +157,24 @@ export const RETRIEVAL_CASE_CHAINS = [
   },
 ];
 
-// Public accessor — keeps the renderer decoupled from the array name and lets
-// future domains register their own chains here without touching the component.
+// Per-domain chains live in ./caseChains/<domain>.js so each can be authored
+// independently. They are aggregated here into ALL_CASE_CHAINS.
+import { AGENTS_CASE_CHAINS } from "./caseChains/agents";
+import { EVAL_CASE_CHAINS } from "./caseChains/evaluation";
+import { PRODUCTION_CASE_CHAINS } from "./caseChains/production";
+import { FOUNDATIONS_CASE_CHAINS } from "./caseChains/foundations";
+
+export const ALL_CASE_CHAINS = [
+  ...RETRIEVAL_CASE_CHAINS,
+  ...AGENTS_CASE_CHAINS,
+  ...EVAL_CASE_CHAINS,
+  ...PRODUCTION_CASE_CHAINS,
+  ...FOUNDATIONS_CASE_CHAINS,
+];
+
+// Public accessor — keeps the renderer decoupled from the array names and lets
+// each domain register its own chains without touching the component.
 export function getCaseChains(domain) {
-  if (!domain) return RETRIEVAL_CASE_CHAINS;
-  return RETRIEVAL_CASE_CHAINS.filter((c) => c.domain === domain);
+  if (!domain) return ALL_CASE_CHAINS;
+  return ALL_CASE_CHAINS.filter((c) => c.domain === domain);
 }

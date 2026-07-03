@@ -2,6 +2,7 @@ import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
 import { TradeoffCard } from "./shared";
+import CaseChains from "./CaseChains";
 
 const TRADEOFF = {
   title: "Which evaluation method fits your situation?",
@@ -154,6 +155,16 @@ export default function EvaluationHub({ onNavigate, onNavigateTo }) {
           </div>
           <div className="mt-4 flex items-center gap-2 text-sm font-bold" style={{ color: "#f59e0b" }}>Open Eval Lab →</div>
         </button>
+      </div>
+
+      {/* Case Chains (L2 · multi-step) */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <SectionLabel>Case Chains (L2 · multi-step)</SectionLabel>
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full" style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b" }}>Staff</span>
+        </div>
+        <p className="text-xs text-zinc-400 leading-relaxed max-w-2xl mb-4">Chase one LLM-as-judge eval failure down four layers — each fix you make exposes the next hidden bias in the pipeline.</p>
+        <CaseChains domain="eval" />
       </div>
 
       {/* Tradeoff */}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
 import { TradeoffCard } from "./shared";
+import CaseChains from "./CaseChains";
 
 const TRADEOFF = {
   title: "Which agent pattern fits your task?",
@@ -143,6 +144,21 @@ export default function AgentsHub({ onNavigate, onNavigateTo }) {
           </div>
           <div className="mt-4 flex items-center gap-2 text-sm font-bold" style={{ color: COLOR }}>Open Agent Lab →</div>
         </button>
+      </div>
+
+      {/* Case Chains (L2 · multi-step) */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <SectionLabel>Case Chains (L2 · multi-step)</SectionLabel>
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+            style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.3)", color: COLOR }}>
+            staff
+          </span>
+        </div>
+        <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-5">
+          Not one failure — a chain. An agent that passed eval degrades in production: wrong-tool routing → loops that never terminate → context blowup → state amnesia. Each diagnosis you get right resolves the current symptom and surfaces the next, exactly how a real agent incident unfolds.
+        </p>
+        <CaseChains domain="agents" />
       </div>
 
       {/* Tradeoff */}

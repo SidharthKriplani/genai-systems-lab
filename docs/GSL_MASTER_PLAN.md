@@ -727,3 +727,25 @@ plumbing:
 4. **Depth bar:** every step must have a real first-principles `finding` + a plausible distractor set +
    a `consequence` that genuinely surfaces the next layer. Reject any "chain" that is really N unrelated
    MCQs — the layered dependency IS the product.
+
+## P0.2 — L2 case-chains mass-produced across all domains (executed 2026-07-03)
+
+Pilot contract (see P0.2 pilot section) held; scaling was content, not plumbing. Now **5 domains, 1 staff-level chain each**, all rendered by the one generic renderer.
+
+**Plumbing added:**
+- `src/CaseChains.jsx` — generic renderer alias (re-exports the pilot's domain-agnostic `RetrievalCaseChains`). All hubs import this.
+- `src/data/caseChains/{agents,evaluation,production,foundations}.js` — one per-domain array each (`AGENTS_/EVAL_/PRODUCTION_/FOUNDATIONS_CASE_CHAINS`), authored independently.
+- `src/data/caseChains.js` — now imports the four per-domain arrays + retrieval into `ALL_CASE_CHAINS`; `getCaseChains(domain)` filters that. Bundle-verified (esbuild resolves all imports).
+
+**Chains authored (each 4 layers, real numbers/traces, plausible senior-mistake distractors, per-step `consequence` surfacing the next symptom):**
+- **Retrieval** (pilot): recall≠quality → reranker precision → multi-hop decomposition → version-blindness → abstention gate.
+- **Agents**: ambiguous tool interface (routing) → no termination criterion (loops) → observation/context blowup → state incoherence (tiered memory).
+- **Evaluation**: position/order bias → verbosity bias → offline↔online gap (stale/contaminated set) → judge-human calibration + self-preference (Simpson's trap).
+- **Production**: tail latency (no batching) → KV-cache memory bound (paged/quantized KV) → semantic-cache correctness → autoscaling/cold-start thrash.
+- **Foundations**: BPE tokenization fragmentation → lost-in-the-middle + RoPE context extension → LoRA rank vs catastrophic forgetting + SFT/DPO objective → int4 PTQ quality collapse (outliers/calibration).
+
+**Wiring:** each hub (`AgentsHub/EvaluationHub/ProductionHub/FoundationsHub`) got an additive "Case Chains (L2 · multi-step)" section rendering `<CaseChains domain="..." />` between its Lab and Tradeoff sections. Retrieval already had its section from the pilot.
+
+**Preserved:** additive only, nothing deleted; no routes/hashes/nav ids changed; single localStorage key `gsl-casechain-history` shared across domains.
+
+**Deferred (documented):** wire case-chain completion into `readiness.js` + Progress tile + My Tracks (additive, later); optional 2nd chain per domain for depth.

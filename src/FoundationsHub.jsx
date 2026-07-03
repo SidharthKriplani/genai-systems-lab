@@ -3,6 +3,7 @@ import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
 import { TradeoffCard } from "./shared";
 import { AddTrackBtn } from "./AddToTrackPopover";
+import CaseChains from "./CaseChains";
 
 const TRADEOFF = {
   title: "When do you need to touch the model?",
@@ -112,6 +113,21 @@ export default function FoundationsHub({ onNavigate, onNavigateTo }) {
         <p className="text-zinc-400 text-sm leading-relaxed max-w-2xl">
           Attention, tokenization, training dynamics, fine-tuning — understanding what's actually happening inside the model is what separates engineers who debug from engineers who guess. You don't need to build foundation models. You need to understand them well enough to make confident architectural decisions and answer the "why" questions in interviews.
         </p>
+      </div>
+
+      {/* Case Chains (L2 · multi-step) */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <SectionLabel>Case Chains (L2 · multi-step)</SectionLabel>
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+            style={{ background: "var(--gal-build-tint)", border: "1px solid var(--gal-build-border)", color: "var(--gal-build)" }}>
+            staff
+          </span>
+        </div>
+        <p className="text-xs text-zinc-400 leading-relaxed max-w-2xl mb-4">
+          One base-model adaptation failing down four layers — tokenization, long-context attention, fine-tuning, and quantization — where each fix you land exposes the next hidden fault.
+        </p>
+        <CaseChains domain="foundations" />
       </div>
 
       {/* Two labs */}
