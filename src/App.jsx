@@ -46,6 +46,7 @@ const ProgressPage           = lazy(() => import("./Progress"));
 const MyTracksPage           = lazy(() => import("./MyTracks"));
 const ReviewPage             = lazy(() => import("./Review"));
 const CompanyTracksPage      = lazy(() => import("./CompanyTracks"));
+const SystemDesignTrainerApp = lazy(() => import("./SystemDesignTrainer"));
 const AboutPage              = lazy(() => import("./About"));
 const MePage                 = lazy(() => import("./Me"));
 
@@ -319,6 +320,7 @@ const NAV_SECTIONS = [
   ]},
   { key: "prep", label: "INTERVIEW", icon: "clipboard", items: [
     { id: "preplab", label: "Question Bank" },
+    { id: "sysdesign", label: "System Design" },
     { id: "fluency", label: "Speaking & Mock" },
     { id: "company-tracks", label: "Company Tracks" },
   ]},
@@ -1000,7 +1002,7 @@ const SEARCH_GYMS = [
 ];
 const SEARCH_TABS = [
   ["Foundations", "concepts"], ["Ground Truth", "groundtruth"], ["Question Bank", "preplab"],
-  ["Speaking & Mock", "fluency"], ["Company Tracks", "company-tracks"], ["Coding Dojo", "codelabs"],
+  ["Speaking & Mock", "fluency"], ["System Design", "sysdesign"], ["Company Tracks", "company-tracks"], ["Coding Dojo", "codelabs"],
   ["Workshop", "career"], ["My Progress", "progress"], ["Review", "review"], ["My Tracks", "my-tracks"],
   ["Leaderboard", "leaderboard"], ["Resources", "resources"], ["Start Here", "starthere"], ["About", "about"],
 ];
@@ -1099,7 +1101,7 @@ function SearchModal({ onClose, onSelect }) {
 // 2026-07-03 MIGRATION: agents/agentlab/evallab/llmlab and retrieval/evaluation/agentshub/
 // production are NO LONGER standalone views (removed from VALID_VIEWS). Their old hashes are
 // caught by HASH_GYM_REDIRECTS and redirected into #concepts (opening the destination gym).
-const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","promptlab","foundationlab","systems","explore","fluency","aipm","career","codelabs","preplab","groundtruth","progress","profile","plans","qa","paths","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
+const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","promptlab","foundationlab","systems","explore","fluency","aipm","career","codelabs","preplab","sysdesign","groundtruth","progress","profile","plans","qa","paths","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -1981,6 +1983,11 @@ export default function App() {
           {topView === "company-tracks" && (
             <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
               <CompanyTracksPage onNavigate={navigate} onNavigateTo={navigateTo} />
+            </Suspense>
+          )}
+          {topView === "sysdesign" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
+              <SystemDesignTrainerApp onExit={() => navigate("preplab")} />
             </Suspense>
           )}
           {topView === "progress"    && <ProgressPage visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}
