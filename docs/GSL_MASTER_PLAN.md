@@ -792,3 +792,85 @@ Assessment finding: the existing 18 foundations modules (language-models + found
 **Plumbing:** `src/data/foundations/{quantization,dpo,speculative-decoding,moe,distillation}.js` each export a keyed RUNNER_DATA fragment; `foundationsRunnerData.js` imports + spreads them; `Concepts.jsx` got 5 MODULES entries + the ids added to the two gyms' `moduleIds`. Additive, no routes/localStorage touched. Data layer bundle-verified.
 
 **Wave 2 — DEFERRED (deepen existing STRONG modules):** ALiBi + NTK/PI in positional-encoding; RMSNorm-vs-LayerNorm in transformer; refocus `nextoken` onto its own mechanism (currently detours into forgetting/PEFT); beam search in sampling; vocab-size↔seq-length tradeoff in tokenizer; MLM/bidirectional objective in pretraining. Also: real interactives for the 5 new modules (currently teaching-only via StubModule).
+
+---
+
+## Readiness upgrade — capped-breadth + work-next (executed 2026-07-03)
+
+Brought GSL's readiness system to the MSL/PAL bar. **Additive** — every prior `readiness.js` export and every `gsl-*` localStorage key is preserved; nothing deleted.
+
+### Model reused (source)
+- **MSL** `src/utils/readiness.js` `computeReadiness()` + **PAL** `src/components/shared/ReadinessWidget.jsx` `computeReadiness()`. Both use: overall = **mean of per-area coverage, each area capped at 1 (100%)** so over-grinding one area can't mask a gap elsewhere; weakest = lowest-coverage area with headroom (`cov < 1`) → the "work next" pointer; **streak/activity excluded from the score** (cram-to-a-date, not a forever-streak app). MSL's `HomeTab.jsx` renders the score + "Work next: <area>" + "Work on it →" as the Home front door.
+
+### readiness.js changes (new exports, all additive)
+- `getOverallReadiness()` → `{ score, level, color, weakest, areas[], hasQuiz }`. Score = `round(mean(area.cov) * 100)` over the 5 domain areas (Retrieval/Evaluation/Agents/Production/Foundations) **plus an optional 6th "assessment" area** when the quiz has been taken. Each area's `cov = min(pct/100, 1)`. Per-area `pct` = `max(activity-inferred pct, quiz-reported pct)` so an explicit self-rating isn't dragged down by low tracked activity (and vice-versa). Levels: Just Starting/Building/Practitioner/Senior/Staff (same thresholds as `getAreaReadiness`).
+- `getWorkNext()` → `{ id, label, color, pct }` for the weakest domain area with headroom (assessment area excluded — it's not a place to navigate). `id` matches nav ids, so `onNavigate(id)` deep-links directly.
+- **Quiz hook (plumbing built, full quiz UI deferred):** `getQuizResult()`, `saveQuizResult(scores)`, and exported `QUIZ_AREAS`. New localStorage key **`gsl-assessment-quiz`** — shape `{ retrieval, evaluation, agentshub, production, foundations: pct(0-100), takenAt: ms }`. Any caller can write a self-rating and the capped-breadth score picks it up automatically (both as its own assessment area and as a per-area nudge). A dedicated quiz screen/entry-point is **DEFERRED** — the score plumbing + storage layer are live; the UI to collect the ratings is not yet built.
+- Untouched: `getAreaReadiness`, `getAllAreasReadiness`, `AREA_CONFIG` — all existing callers (5 hubs + Home) unaffected.
+
+### Home.jsx changes (additive)
+- Imported `getOverallReadiness`; added `const [overall] = useState(() => getOverallReadiness())`.
+- New **readiness hero** card (above the existing per-area "Your readiness" list, which is preserved): big `score%`, level, capped-breadth gap-max bar, an "incl. self-assessment" tag when a quiz exists, an explainer line, and a **"Work next: <weakest area>" + "Work on it →"** button that fires `track("readiness_work_next", …)` and `onNavigate(overall.weakest.id)` to deep-link into the weakest area. Renders only when any area has activity. GSL dark theme via existing `var(--surface-2)`/`var(--border)` + area colors.
+
+### Files touched
+- `src/readiness.js` — capped-breadth aggregation + `getWorkNext` + quiz plumbing.
+- `src/Home.jsx` — import + `overall` state + readiness hero/work-next front door.
+- `docs/GSL_MASTER_PLAN.md` — this entry.
+
+### Verify
+esbuild-parse (GSL verifies via esbuild, not acorn): `src/readiness.js`, `src/Home.jsx`, `src/App.jsx` → all **OK**. No runtime (Mac-only build) — verified by parse + review.
+
+### Deferrals
+- **Assessment quiz UI** — only the readiness.js plumbing + `gsl-assessment-quiz` storage + a `saveQuizResult` entry point exist. The screen that collects the per-area self-ratings is not built.
+
+---
+
+## Company Tracks — scaffold + 1 populated track (executed 2026-07-03)
+
+Curated, company-specific interview-prep paths for AI-engineering roles. Mirrors the MSL Company Tracks pattern (`ml-systems-lab/src/tabs/CompanyTracksTab.jsx` + `src/data/companyTracks.js`), adapted to GSL's dark theme, deep-link dispatcher, and real content ids. Additive — no existing route/hash/nav id/localStorage changed.
+
+### Data model
+`src/data/companyTracks.js` — grid is **company × role × level**.
+- `COMPANIES` — 24 firms (Google/Meta/Amazon/… + Indian unicorns Flipkart/Swiggy/CRED/… + Sarvam AI, Quantiphi).
+- `ROLES` (AIE roles) — Applied AI Engineer · ML Engineer (GenAI) · AI Researcher · Forward-Deployed Engineer.
+- `LEVELS` — Mid · Senior · Staff.
+- `CTRACKS` — sparse map keyed `` `${company}|${role}|${level}` ``. Each cell is an ordered list of `{ tabId, itemId, label, kind }`. Empty cells render a "coming soon" state. Helpers: `trackKey`, `getCompanyTrackItems`, `companyHasTrack` (green dot on companies with ≥1 populated cell).
+
+### Deep-link mechanism
+Each item's `tabId` maps to App.jsx's `navigateTo()` dispatcher in `CompanyTracks.jsx > openItem()`:
+- `concepts` → `navigateTo({ tab:'concepts', gymId:itemId })` (Foundations gym; Concepts deep-links by gym, not per-module — labels name the module set).
+- `groundtruth` → `navigateTo({ tab:'groundtruth', postId:itemId })`.
+- `preplab` → `navigateTo({ tab:'preplab', topic:itemId })` (topic routes to trainer mode).
+- everything else (`lab`, `agents`, `fluency`, …) → `navigateTo({ tab:tabId })`.
+
+### The populated track — Google · Applied AI Engineer · Senior (most accessible target)
+30-step prep arc, foundations → retrieval → agents → eval → production → prep. All itemIds are REAL, verified ids:
+1. **Foundations** — gyms `language-models`, `foundation-models`; GT `chinchilla-scaling-laws`.
+2. **Retrieval/RAG** — gym `retrieval`; GT `how-rag-works`, `chunking-strategies`, `hybrid-search`, `reranking-explained`, `rag-system-design`; RAG Lab (`lab`).
+3. **Agents** — gym `ai-agents`; GT `react-pattern`, `tool-use-design`, `agent-failure-modes`; Agent Lab (`agents`).
+4. **Evaluation** — gym `evaluation`; GT `llm-evaluation-guide`, `llm-as-judge-failure`, `eval-pipeline-design`.
+5. **Production** — gym `production`; GT `cost-latency-tradeoffs`, `deployment-patterns-ml`, `drift-detection-production`, `llm-observability`.
+6. **Prep** — GT `ambiguous-system-design-framework`, `high-tc-ai-company-interviews`; PrepLab drills topic `rag` / `agents` / `sysdesign`; Interview Room (`fluency`).
+
+### Logos
+Reuses existing GSL `src/CompanyLogo.jsx` + `src/companyDomains.js` (Google-favicon + initial-badge fallback). No image assets fabricated.
+
+### Nav id + hash
+- Nav id / hash: **`company-tracks`** → `#company-tracks`.
+- Added to `App.jsx` `NAV_SECTIONS` under the **PREP & ASSESS** frame (alongside PrepLab, Interview Room), `VALID_VIEWS`, a lazy `CompanyTracksPage` import + route branch. `TAB_FRAME` auto-derives (item is in a NAV_SECTIONS frame).
+- Registered in `src/config/nav.js` `ALL_TABS` (group `PRIMARY` — has a GROUP_COLORS entry).
+
+### Files
+- `src/CompanyTracks.jsx` — new (component, dark theme, company rail + role/level chips + ordered checklist + coming-soon state).
+- `src/data/companyTracks.js` — new (data model + populated track).
+- `src/App.jsx` — lazy import, VALID_VIEWS, NAV_SECTIONS item, route branch (edits only).
+- `src/config/nav.js` — ALL_TABS entry (edit only).
+- `docs/GSL_MASTER_PLAN.md` — this entry.
+
+### Verify
+esbuild-parse: `src/CompanyTracks.jsx`, `src/data/companyTracks.js`, `src/App.jsx`, `src/config/nav.js` → all **OK**. All referenced gym ids, GT post ids, PrepLab topics verified present via grep. No runtime (Mac-only build) — verified by parse + id-existence check.
+
+### Deferrals
+- **Only 1 of 288 cells populated** (24 companies × 4 roles × 3 levels). Scaffold + coming-soon state cover the rest; each unpopulated cell renders cleanly with a jump-to-example link.
+- **Concepts deep-link granularity** — opens the gym, not a specific module (Concepts only accepts `initialGym`). Labels name the exact module set so the user knows what to open inside.
+- **No progress tracking** — items don't yet reflect per-item completion from localStorage (optional per brief; deferred to keep additive footprint minimal).

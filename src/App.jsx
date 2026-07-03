@@ -44,6 +44,7 @@ const GlobalLeaderboard      = lazy(() => import("./Leaderboard"));
 const ProgressPage           = lazy(() => import("./Progress"));
 const MyTracksPage           = lazy(() => import("./MyTracks"));
 const ReviewPage             = lazy(() => import("./Review"));
+const CompanyTracksPage      = lazy(() => import("./CompanyTracks"));
 
 function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
@@ -304,6 +305,7 @@ const NAV_SECTIONS = [
   { key: "prep", label: "PREP & ASSESS", icon: "clipboard", items: [
     { id: "preplab", label: "PrepLab" },
     { id: "fluency", label: "Interview Room" },
+    { id: "company-tracks", label: "Company Tracks" },
   ]},
 ];
 
@@ -1088,7 +1090,7 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","starthere","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review"];
+const VALID_VIEWS = ["home","starthere","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review","company-tracks"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -2006,6 +2008,11 @@ export default function App() {
           {topView === "review" && (
             <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
               <ReviewPage onNavigate={navigate} />
+            </Suspense>
+          )}
+          {topView === "company-tracks" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
+              <CompanyTracksPage onNavigate={navigate} onNavigateTo={navigateTo} />
             </Suspense>
           )}
           {topView === "progress"    && <ProgressPage visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}

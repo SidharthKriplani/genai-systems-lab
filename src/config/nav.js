@@ -19,6 +19,7 @@ export const ALL_TABS = [
   { id: "production",  label: "Production",  group: "CHALLENGES", audience: "Serving · LLMOps · cost" },
   { id: "foundations", label: "Foundations", group: "CHALLENGES", audience: "Training · fine-tuning · prompting" },
   { id: "preplab",     label: "PrepLab",     group: "PRIMARY",    audience: "Test your judgment" },
+  { id: "company-tracks", label: "Company Tracks", group: "PRIMARY", audience: "Curated company × role prep paths" },
   { id: "groundtruth", label: "Ground Truth",group: "PRIMARY",    audience: "Practitioner knowledge" },
   { id: "progress",    label: "Progress",    group: "PRIMARY",    audience: "Your readiness + study plan" },
   // Legacy — hash-accessible, not in primary nav
