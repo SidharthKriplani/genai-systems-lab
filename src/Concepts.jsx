@@ -11900,7 +11900,7 @@ function GymPanel({ mastery, onOpen, onClose, onNavigate }) {
             <div className="flex-1 min-w-0">
               <div className="text-[10px] font-mono text-violet-400 uppercase tracking-widest mb-0.5">Next up</div>
               <div className="text-sm font-semibold text-white truncate">{nextModule.title}</div>
-              <div className="text-xs text-zinc-500 truncate">{nextModule.subtitle.split(".")[0]}</div>
+              <div className="text-xs text-zinc-500 truncate">{(nextModule.subtitle || "").split(".")[0]}</div>
             </div>
             <button onClick={() => onOpen(nextModule.id)}
               className="shrink-0 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors">
@@ -11952,7 +11952,7 @@ function GymPanel({ mastery, onOpen, onClose, onNavigate }) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className={`text-sm font-medium truncate ${done ? "text-zinc-500 line-through" : "text-zinc-200"}`}>{m.title}</div>
-                          <div className="text-xs text-zinc-600 truncate">{m.subtitle.split(".")[0]}</div>
+                          <div className="text-xs text-zinc-600 truncate">{(m.subtitle || "").split(".")[0]}</div>
                           {done && nextStep && (
                             <button onClick={() => onNavigate(nextStep.tab)}
                               className="text-xs text-indigo-400 hover:text-indigo-300 mt-0.5 block text-left">
@@ -12439,7 +12439,7 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
                     </span>
                   )}
                 </div>
-                {meta.insight && <p className="text-xs text-zinc-500 leading-relaxed">{meta.insight}</p>}
+                {(m.subtitle || meta.insight) && <p className="text-xs text-zinc-500 leading-relaxed">{m.subtitle || meta.insight}</p>}
               </div>
               <div className="shrink-0 flex flex-col items-end gap-1">
                 {estMins && <span className="text-[10px] text-zinc-600">~{estMins} min</span>}
