@@ -4,6 +4,19 @@ Read this first at the start of every session. Contains everything needed to wor
 
 ---
 
+## ✅ LATEST (2026-07-03) — Market-gap program; SOURCE OF TRUTH = `docs/GSL_PLAN.md` (read its Log)
+
+**Staged/approve-first push except where noted. Sandbox esbuild: `npx -y esbuild@0.21.5`.** This session's build (all detailed in `docs/GSL_PLAN.md` Log):
+- **NEW gym: NLP Foundations (12 modules)** — placed FIRST in `GYMS`; data `src/data/foundations/nlp-foundations-{1..4}.js`, 12 interactives in `src/components/nicheViz/`, wired in `Concepts.jsx` + `SEARCH_GYMS`.
+- **27 teaching-only modules → real interactives**: `component: StubModule` count in `Concepts.jsx` is now **0**.
+- **System Design Trainer** — top-level **System Design** tab (INTERVIEW). `src/SystemDesignTrainer.jsx` + 6 scenarios (`sdScenarios-gsl-{a,b}.js` → `systemDesignScenarios.js`); staged attempt→reveal + 7-dim rubric.
+- **Runnable Coding Dojo** — `CodeWalkthrough.jsx` toggle "Read & reason | Implement it"; `python.js` (Pyodide) + `CodeExercise.jsx` (Run/Check-graded) + 8 numpy exercises `codeExercisesList.js`.
+- **Company Tracks: 24/24 researched profiles** — `companyProfiles-{a,b,c,d}.js` → `COMPANY_PROFILES` in `companyTracks.js`; "How {company} interviews" panel in `CompanyTracks.jsx`. Thin-sourcing flagged: Nvidia, Sarvam AI, CRED, Meesho, Nutanix.
+- **Fixes (PUSHED):** uniform module-card summaries (render `subtitle`, not sparse `MODULE_META.insight`) + hardened `m.subtitle.split` crash.
+- **Parked (next week):** frontier-depth loop (RoPE extrapolation / GRPO vs PPO / quantization error); the CTRACKS content grid is still ~1/288 (separate from profiles).
+
+---
+
 ## Session architecture (decided sprint 79)
 
 **One unified chat for all labs + LinkedIn.** No more separate sessions per project. Mount all relevant folders at session start. Spine files (CLAUDE.md, NEXT.md per project) are the persistence layer — the chat compacts, the files don't.

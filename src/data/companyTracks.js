@@ -25,7 +25,9 @@
 // Researched, sourced company interview profiles (how each company actually interviews).
 import { CP_A } from './companyProfiles-a.js';
 import { CP_B } from './companyProfiles-b.js';
-export const COMPANY_PROFILES = { ...CP_A, ...CP_B };
+import { CP_C } from './companyProfiles-c.js';
+import { CP_D } from './companyProfiles-d.js';
+export const COMPANY_PROFILES = { ...CP_A, ...CP_B, ...CP_C, ...CP_D };
 
 export const COMPANIES = [
   'Google', 'Meta', 'Amazon', 'Microsoft', 'Nvidia', 'Netflix', 'Uber',
