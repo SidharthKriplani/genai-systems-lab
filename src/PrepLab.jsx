@@ -2543,7 +2543,7 @@ const COMPANY_ARCHETYPES = [
   },
 ];
 
-function CompanyPrepMode({ onExit, onNavigate }) {
+export function CompanyPrepMode({ onExit, onNavigate }) {
   const [gated, setGated] = useState(() => !isAccessGranted());
   const [archetype, setArchetype] = useState(null);
   const [view, setView] = useState("overview");
@@ -3597,7 +3597,7 @@ const INTEL_TOPIC_LABELS = { rag:"RAG & Retrieval", agents:"Agents & Systems", e
 const TIER_LABELS  = { FAANG:"FAANG", unicorn:"Unicorn", indiantech:"Indian Tech", enterprise:"Enterprise", startup:"Startup" };
 const ROLE_LABELS  = { "Senior AI Engineer":"Sr AI Engineer", "ML Engineer":"ML Engineer", "Staff AI Engineer":"Staff AI Eng", "AI Engineer":"AI Engineer", "AI PM":"AI PM", "Research Scientist":"Research Sci" };
 
-function InterviewIntelMode({ onExit }) {
+export function InterviewIntelMode({ onExit }) {
   const [tierFilter, setTierFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
 
@@ -4075,10 +4075,9 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
     { id: "sprint",      label: "Cheatsheet",         tag: "CHEATSHEET", desc: "2 hrs / 1 day / 3 days / 1 week — exactly what to do." },
     // R10 (Rev-2): "Interview Strategy" (jdprep) removed from the sidebar — thin JD-template; readiness "work next" covers it.
     //   Component InterviewPrepMode + its render branch are KEPT (still reachable via initialMode / stale hash). Data intact.
-    // R7 (Rev-2): "Questions by company" (companyprep) removed from the sidebar — Company Tracks is now the ONE company home
-    //   and links into this slice. Component CompanyPrepMode + its render branch are KEPT (reachable via
-    //   onNavigateTo({tab:"preplab", mode:"companyprep"}) from Company Tracks). Data intact.
-    { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "40 real loop patterns — what's actually tested, by company." },
+    // R1 + R8 (2026-07-03): "Interview Signal" (intexp) and "Questions by company" (companyprep) are
+    //   GONE as standalone PrepLab modes. CompanyPrepMode + InterviewIntelMode are now exported and
+    //   rendered INSIDE Company Tracks (in-page views). No sidebar rows, no render branches here.
     { id: "browse",      label: "Browse All",        tag: "REVIEW",    desc: "Scroll through every question. Expand to see answer + trap." },
   ];
 
@@ -4132,9 +4131,8 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
         {mode === "trainer"     && <TrainerMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} initialGroup={trainerInitGroup} />}
         {mode === "sprint"      && <InterviewSprintMode onExit={exitMode} onNavigateTo={onNavigateTo} />}
         {mode === "jdprep"      && <InterviewPrepMode onExit={exitMode} onNavigate={onNavigate} onNavigateTo={onNavigateTo} />}
-        {mode === "companyprep" && <CompanyPrepMode onExit={exitMode} onNavigate={onNavigate} />}
         {mode === "defense"     && <DefenseDocMode onExit={exitMode} />}
-        {mode === "intexp"      && <InterviewIntelMode onExit={exitMode} />}
+        {/* companyprep + intexp render branches removed (R1/R8) — now render inside Company Tracks. */}
         {mode === "browse"      && <BrowseMode onExit={exitMode} />}
         {mode === "heatmap"     && <WeaknessHeatmapMode onExit={exitMode} />}
         {!mode && (() => {
