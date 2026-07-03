@@ -1,0 +1,259 @@
+// NLP Foundations (part 1) — text preprocessing, bag-of-words/TF-IDF, n-gram LMs.
+// Spread into foundationsRunnerData.js.
+export const RUNNER_NLP_1 = {
+  "nlp-preprocessing": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "You're building a multilingual search feature, and your first tokenizer is dead simple: split on whitespace. It works in the demo. Then real traffic arrives. A user searches 'unhappiness' and gets nothing, because your index only ever saw 'happy' and 'happiness' — three related words, three unrelated tokens, no shared signal. A German user's query 'Rindfleischetikettierung' is a single monster token that appears exactly once in your entire corpus, so it's useless. Your vocabulary has ballooned past 2 million entries and every rare word is an out-of-vocabulary hole. Before you pick a fix, you need to understand the axis every tokenizer is really trading on.",
+    explanation: [
+      "Every NLP pipeline starts with the same unglamorous question: *how do you chop a string into the units your model actually operates on?* That chopping is **tokenization**, and the choice of unit sits on a spectrum from coarse to fine, with a hard tradeoff running down the middle.\n\nAt the **coarse** end is **word / whitespace tokenization** — split on spaces, one token per word. It's intuitive and gives short sequences, but it has two fatal problems. First, the **vocabulary is unbounded**: every distinct surface form ('run', 'runs', 'running', 'ran', 'runner') is its own token, plus every typo, name, and number, so the vocabulary grows without limit into the millions. Second, and worse, it has ==no way to represent a word it never saw in training — the out-of-vocabulary (OOV) problem — so a novel or rare word becomes a single useless `<unk>` token, and all its meaning is lost.==",
+      "At the **fine** end is **character tokenization** — one token per character. This *cannot* have an OOV problem (any word is just a sequence of known characters) and the vocabulary is tiny (a few hundred symbols). But it pays for that on the other axis: **sequences become enormous**. 'unhappiness' is 1 word token but 11 character tokens, and since every model has quadratic-ish cost in sequence length and a fixed context budget, character-level sequences are punishingly long and force the model to relearn spelling from scratch before it can learn meaning.",
+      { type: "illustration", label: "The core tradeoff: vocabulary size vs sequence length", content: `                COARSE  <───────────────────────────>  FINE
+                 word           subword            character
+
+vocab size      millions        ~30k-50k            ~few hundred
+                (unbounded)      (fixed, chosen)     (tiny)
+
+OOV problem     SEVERE           none (rare word     none (any word
+                (rare word →      splits into         is known chars)
+                 <unk>)           known pieces)
+
+seq length      short            medium              very long
+                "unhappiness"    un + happi + ness   u-n-h-a-p-p-i-...
+                = 1 token        = 3 tokens          = 11 tokens
+
+  Word: tiny sequences, exploding vocab, breaks on rare words.
+  Char: no OOV, tiny vocab, crushing sequence length.
+  SUBWORD sits in the sweet spot — fixed vocab AND no OOV.` },
+      "**Subword tokenization won because it takes the best of both ends.** The idea: keep a *fixed-size* vocabulary (say 32k) of the most useful *pieces* — frequent whole words stay whole ('the', 'happy'), but rare or complex words are split into known sub-pieces ('unhappiness' → 'un' + 'happi' + 'ness'). Now the vocabulary is bounded *and* there's no OOV: a word you've never seen is just decomposed into pieces you have. ==Subword tokenization dissolves the OOV problem and caps the vocabulary at the same time, and it captures morphology for free — 'happy', 'happiness', and 'unhappiness' now share the 'happi' piece, so their relatedness is visible to the model instead of hidden behind three unrelated integers.== The German compound 'Rindfleisch...' splits into meaningful chunks instead of being one unhelpful monolith.",
+      "How does an algorithm *choose* which pieces to keep? There are two philosophies. **BPE (Byte-Pair Encoding)** is *merge-frequency-based*: start from characters, then repeatedly find the most frequent adjacent pair and merge it into a new token, over and over, until you hit your target vocabulary size. It's greedy and bottom-up — the pieces that survive are the ones that co-occur most often. **WordPiece** (used by BERT) is similar but merges the pair that most increases the *likelihood* of the training corpus under a language model, not just raw frequency. **Unigram** goes top-down the other way: start with a huge candidate vocabulary and *prune* the pieces whose removal least hurts corpus likelihood, keeping a probabilistic model over segmentations. The through-line: ==BPE picks pieces by co-occurrence frequency; WordPiece and Unigram pick pieces by how much they improve a likelihood model of the text.==",
+      { type: "illustration", label: "BPE merges, worked on a tiny corpus", content: `Corpus (word : count):  low:5   lower:2   newest:6   widest:3
+Start as characters:    l o w   l o w e r   n e w e s t   w i d e s t
+
+Merge the most frequent adjacent PAIR each round:
+  round 1:  "e s" appears 6+3 = 9 times  → merge → "es"
+            ... n e w es t ...   w i d es t ...
+  round 2:  "es t" appears 9 times        → merge → "est"
+  round 3:  "l o" appears 5+2 = 7 times   → merge → "lo"
+  round 4:  "lo w" appears 7 times        → merge → "low"
+
+Learned pieces: es, est, lo, low, ...  (frequency-driven, bottom-up)
+A NEW word "widest" now tokenizes as: wid + est  (both known pieces)
+                                        → no OOV, morphology captured` },
+      "One more design choice matters enormously in practice: **how do you handle whitespace and language-independence?** Classic tokenizers pre-split on spaces, which quietly assumes languages *have* spaces (Chinese and Japanese don't) and makes detokenization lossy — you can't perfectly reconstruct the original spacing. **SentencePiece** fixes this by treating the raw input as a stream of Unicode characters and encoding the space itself as a visible meta-symbol (`▁`), so a space becomes just another token. ==Because whitespace is now *inside* the token stream, SentencePiece is fully reversible (decode gives back the exact original) and language-agnostic (it needs no notion of 'words' or spaces), which is why it's the default for most modern multilingual LLMs.== SentencePiece is a *framework* that can run BPE or Unigram underneath — it's orthogonal to the merge algorithm.",
+      "Now zoom out to the classical cleaning steps that dominated pre-neural NLP, because a strong answer knows which of these survived. **Stemming** crudely chops suffixes with hand-written rules ('running' → 'run', but also 'university' → 'univers') — fast, dumb, often produces non-words. **Lemmatization** is the principled version: use a dictionary and the word's part-of-speech to map to its true base form ('better' → 'good', 'ran' → 'run') — slower but correct. **Lowercasing** shrinks the vocabulary but can destroy meaning ('US' the country vs 'us' the pronoun; 'Apple' the company). **Unicode normalization** (NFC vs NFKC) canonicalizes characters so 'é' as one codepoint and 'e' + combining-accent become identical; NFKC additionally folds compatibility variants (a ligature 'ﬁ' → 'fi'), which helps matching but can lose information. **Stopword removal** deletes ubiquitous words ('the', 'is', 'a') — ==a win for sparse bag-of-words models where those words are pure noise, but actively harmful when the word carries meaning: strip 'not' from a sentiment task, or 'to be or not to be' from search, and you've deleted the point.==",
+      "Here's the modern punchline every interviewer wants. **LLMs skip almost all of that classical cleaning** — no stemming, no lemmatization, no stopword removal, often no lowercasing — because a large model *learns* morphology and the (ir)relevance of function words on its own, and aggressive cleaning throws away signal it could use. ==But tokenization did *not* become less important — it became MORE important, just for different reasons.== You pay *per token*, so tokenization directly sets your API cost and how much fits in the context window. Tokenizers split numbers inconsistently ('1234' might be one token or four), which is a real source of arithmetic errors. And a tokenizer trained mostly on English fragments other languages into far more tokens per sentence — so the same message can cost 2-3x more in Hindi or Thai than in English. The classical pipeline mostly retired; tokenization graduated from preprocessing footnote to a first-class cost, quality, and fairness lever.",
+    ],
+    keyPoints: [
+      "**Tokenization trades vocabulary size against sequence length.** Word-level = tiny sequences but unbounded vocab and severe OOV (rare word → `<unk>`); character-level = no OOV and tiny vocab but crushing sequence length. Every tokenizer lives on this axis.",
+      "**Subword tokenization won by taking both ends' strengths.** A fixed vocabulary of frequent pieces keeps whole words whole and splits rare ones ('unhappiness' → un+happi+ness), so the vocab is bounded, OOV disappears, and morphology is captured (related words share pieces).",
+      "**BPE picks pieces by co-occurrence frequency; WordPiece and Unigram pick by likelihood.** BPE greedily merges the most frequent adjacent pair bottom-up; WordPiece merges what most raises corpus likelihood; Unigram prunes a big vocab top-down by least likelihood loss.",
+      "**SentencePiece encodes whitespace as a token (`▁`), making it reversible and language-agnostic.** It needs no notion of 'words' or spaces (works on Chinese/Japanese), decodes back to the exact original, and can run BPE or Unigram underneath — which is why modern multilingual LLMs default to it.",
+      "**LLMs drop classical cleaning but tokenization matters MORE.** No stemming/lemmatization/stopword removal (the model learns those), but you pay per token — tokenization sets cost, context usage, number-splitting arithmetic bugs, and non-English token inflation (2-3x more tokens).",
+    ],
+    recap: [
+      "**Core axis:** vocab size vs sequence length. Word = OOV + exploding vocab; char = no OOV but huge sequences.",
+      "**Subword wins both ends:** fixed vocab + no OOV + free morphology (rare words split into known pieces: un+happi+ness).",
+      "**Algorithms:** BPE = merge most *frequent* adjacent pair (bottom-up); WordPiece/Unigram = *likelihood*-driven; SentencePiece = framework that treats *space as a token* → reversible + language-agnostic.",
+      "**Classical cleaning:** stemming (crude suffix chop) vs lemmatization (dict+POS lemma); lowercasing/NFKC shrink vocab but can lose meaning; stopword removal helps sparse BoW, hurts when the word matters ('not').",
+      "**Modern:** LLMs skip classical cleaning but tokenization matters MORE — cost per token, number splitting, non-English token inflation.",
+    ],
+    mcqs: [
+      {
+        question: "Your word-level tokenizer treats 'happy', 'happiness', and 'unhappiness' as three unrelated tokens, and any word unseen in training becomes `<unk>`. Why does switching to subword tokenization fix both problems at once?",
+        options: [
+          "Subword tokenization uses a larger vocabulary, so more words fit as whole tokens",
+          "Subword keeps a fixed vocabulary of frequent pieces and splits rare/complex words into known sub-pieces ('unhappiness' → un+happi+ness), so the vocab stays bounded, OOV disappears (any word decomposes into known pieces), and related words share pieces — exposing morphology the model can use",
+          "Subword tokenization lowercases and stems the text first, collapsing the three forms into one",
+          "Subword tokenization is character-level, so it can never have an OOV problem",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: subword tokenization keeps a fixed-size vocabulary of the most useful pieces — frequent whole words stay whole, rare or complex ones split into known sub-pieces. That simultaneously bounds the vocabulary, eliminates OOV (an unseen word is just decomposed into pieces you already have), and makes morphology visible because related words like 'happy'/'happiness'/'unhappiness' share the 'happi' piece. Option A is wrong and backwards — subword *shrinks* and *fixes* the vocabulary rather than enlarging it, and a bigger word vocab wouldn't solve OOV for truly unseen words. Option C conflates subword with stemming/lowercasing; subword doesn't require those and works by splitting into pieces, not collapsing forms. Option D is wrong — subword is coarser than character-level; it's a middle ground, and while it also avoids OOV, that's not because it's character-level.",
+      },
+      {
+        question: "A teammate says 'SentencePiece is just another name for BPE.' What is the correct distinction?",
+        options: [
+          "They're identical; SentencePiece is BPE with a different license",
+          "SentencePiece is a tokenization *framework* that treats the raw text (including whitespace, encoded as a `▁` meta-symbol) as the unit stream, making it reversible and language-agnostic; it can run BPE *or* Unigram as its underlying merge/segmentation algorithm — so BPE is a choice within SentencePiece, not a synonym for it",
+          "SentencePiece is likelihood-based while BPE is frequency-based, and they cannot be combined",
+          "SentencePiece is character-level and BPE is word-level",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: SentencePiece and BPE operate at different levels. SentencePiece is a framework whose defining move is treating the input as a raw Unicode stream and encoding whitespace itself as a visible token (`▁`), which makes detokenization lossless (fully reversible) and removes any dependence on language-specific word/space rules (works on Chinese/Japanese). Underneath, it can run BPE (frequency merges) or Unigram (likelihood pruning) — so BPE is one algorithm you can select within SentencePiece. Option A is wrong — they aren't the same thing. Option C wrongly implies SentencePiece is itself an algorithm opposed to BPE; in fact it can *use* BPE, and it can also use likelihood-based Unigram. Option D misstates both — SentencePiece isn't inherently character-level and BPE isn't word-level (BPE builds subword pieces up from characters).",
+      },
+      {
+        question: "An interviewer asks: 'Modern LLMs skip stemming, lemmatization, and stopword removal — so does text preprocessing still matter?' What is the strongest answer?",
+        options: [
+          "No — LLMs handle everything, so preprocessing is fully obsolete",
+          "Classical cleaning largely retired because the model learns morphology and function-word relevance itself and cleaning discards usable signal, but tokenization matters MORE than ever: you pay per token (cost + context budget), tokenizers split numbers inconsistently (an arithmetic-error source), and English-centric tokenizers fragment other languages into 2-3x more tokens (a cost/fairness issue)",
+          "Yes — you must still stem and remove stopwords before feeding text to an LLM, or it will fail",
+          "Preprocessing matters only for lowercasing, which every LLM still requires",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: it draws the right line. The classical pipeline (stemming, lemmatization, stopword removal, forced lowercasing) mostly retired for LLMs because a large model learns morphology and which function words matter, and aggressive cleaning throws away signal — but tokenization did not become less important, it became more central. It sets cost and context usage (you pay per token), causes number-splitting inconsistencies that drive arithmetic errors, and inflates token counts for non-English text (2-3x), which is both a cost and a fairness concern. Option A overstates the retirement and ignores tokenization's rising importance. Option C is wrong — you generally should NOT stem or strip stopwords before an LLM; that removes signal it would use. Option D is wrong — LLMs don't require lowercasing (casing carries meaning), and it isn't the only thing that matters.",
+      },
+    ],
+    takeaway: "Tokenization trades vocabulary size against sequence length: word-level explodes the vocab and breaks on out-of-vocabulary words, character-level avoids OOV but crushes sequence length, and subword tokenization wins the middle by keeping a fixed vocabulary that splits rare words into known pieces (no OOV, free morphology). BPE merges by frequency while WordPiece/Unigram optimize likelihood, and SentencePiece encodes whitespace as a token to be reversible and language-agnostic. LLMs drop classical cleaning (stemming, lemmatization, stopwords) but tokenization matters more than ever — it governs cost per token, number-splitting arithmetic bugs, and non-English token inflation.",
+  },
+
+  "nlp-bow-tfidf": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "You're building a first-pass document search over a few thousand help-center articles, no embeddings yet, just classical IR. Your naive approach counts word overlap between the query and each document, and it's oddly bad: the query 'how to reset password' keeps surfacing long articles that happen to say 'the' and 'to' and 'how' a hundred times, while the one crisp article titled 'Password reset' ranks low because it's short and uses those filler words less. The signal you care about — the rare, telling word 'password' — is being drowned out by ubiquitous words that appear everywhere and mean nothing. You need a weighting that punishes the common and rewards the discriminative.",
+    explanation: [
+      "Before any of this, you need a way to turn text into numbers a machine can compare. The most basic is the **one-hot vector**: assign every word in your vocabulary an index, and represent a single word as a vector that's all zeros except a 1 at its index. A vocabulary of 50,000 words means a 50,000-dimensional vector with a single 1. It's a pure identity label — ==one-hot vectors encode *which* word but carry zero information about meaning: 'king' and 'queen' are exactly as far apart as 'king' and 'banana'.==",
+      "To represent a whole *document*, you sum the one-hots of its words, which gives a **bag-of-words (BoW) count vector**: one dimension per vocabulary word, each entry holding how many times that word appears. 'the cat sat on the mat' becomes a vector with 2 in the 'the' slot, 1 in each of 'cat'/'sat'/'on'/'mat', and 0 everywhere else. The name is the warning label: it's a *bag*, so ==word order is completely discarded — 'dog bites man' and 'man bites dog' produce the identical vector.== BoW vectors are also brutally **sparse**: a short document touches a few dozen of your 50,000 dimensions, so nearly every entry is zero.",
+      "Raw counts have the exact bug in the scenario: they reward whatever appears *most*, and what appears most is filler ('the', 'to', 'how'). The fix is **TF-IDF**, which reweights each term by two multiplied factors. **Term frequency** `tf(t,d)` = how often term `t` appears in document `d` (a word matters more in a doc that uses it a lot). **Inverse document frequency** `idf(t) = log(N / df(t))`, where `N` is the total number of documents and `df(t)` is how many documents contain `t` at all. The full weight is ==`tf-idf(t,d) = tf(t,d) × log(N / df(t))`.==",
+      { type: "illustration", label: "Why IDF crushes 'the' and lifts 'password'", content: `Corpus of N = 1000 help articles.
+
+term        df (docs containing it)   idf = log(N/df)
+──────────────────────────────────────────────────────
+"the"       1000  (in every doc)      log(1000/1000) = 0     ← killed
+"to"         950                      log(1000/950)  ≈ 0.05   ← tiny
+"reset"       80                      log(1000/80)   ≈ 2.53
+"password"    30  (rare, telling)     log(1000/30)   ≈ 3.51   ← amplified
+
+  A word in EVERY document has idf = log(1) = 0, so its tf-idf is 0
+  no matter how often it appears — ubiquity means zero discriminative
+  power. A RARE word gets a large idf, so even a few occurrences give it
+  a high weight. TF-IDF = "how much this term is IN this doc" TIMES
+  "how much this term SETS this doc APART from the rest."` },
+      "Sit with *why* the `log(N/df)` form does the right thing. If a term appears in **every** document, `df = N`, so `idf = log(N/N) = log(1) = 0` — its weight is annihilated regardless of how often it occurs. That's exactly what you want for 'the': ubiquity means zero discriminating power. If a term appears in **one** document out of a million, `idf = log(1,000,000)` is large, so that rare term dominates the vector. ==IDF operationalizes a deep intuition: a word is informative about a document in proportion to how *rare* it is across the corpus — commonness is the enemy of signal.== The `log` damps the effect so a term in 10 docs isn't treated as 100x more important than one in 1000 docs, just meaningfully more.",
+      "Two documents of different lengths can't be compared on raw TF-IDF vectors — a long article has bigger numbers everywhere just for being long. So you **L2-normalize** each vector to unit length (divide by its magnitude), which cancels the length effect. Then you compare documents with **cosine similarity**: the dot product of the two unit vectors, which equals the cosine of the angle between them. ==Cosine similarity measures *direction*, not magnitude — do these two documents point the same way in term-space? — so it's naturally length-invariant, and after L2 normalization it's just a dot product.== A query is treated as a tiny document, TF-IDF-weighted the same way, and you rank corpus documents by cosine similarity to the query vector. The short 'Password reset' article now wins because its *direction* is dominated by the high-IDF term the query cares about.",
+      "Be honest about the ceiling, because interviewers push here. TF-IDF has **no notion of meaning**: it matches only on *shared literal terms*. A query 'reset password' and a document that says 'recover credentials' have near-zero cosine similarity despite being about the same thing — the **synonymy / vocabulary-mismatch problem**. It also lives in a **huge, sparse space** (one dimension per vocabulary word, most entries zero), which is memory-heavy and blind to any structure between dimensions. ==TF-IDF is powerful precisely because it's lexical, and limited for exactly the same reason: it sees words, never concepts.==",
+      "Two lines connect this to everything modern. First, **BM25** is TF-IDF grown up: it keeps the IDF idea but adds two refinements TF-IDF lacks — *TF saturation* (the 20th occurrence of a word adds far less than the 2nd, via a bounded curve rather than raw linear counts) and *document-length normalization* baked directly into the score (so long docs don't get an unfair edge). BM25 is the default sparse retriever in production search for exactly these fixes. Second, ==TF-IDF/BM25 is the *sparse* half of modern **hybrid retrieval**: you fuse a lexical retriever (great at exact/rare terms) with a dense embedding retriever (great at meaning) because their strengths are mirror images.== Understanding TF-IDF isn't historical trivia — it's one of the two legs today's retrieval stands on.",
+    ],
+    keyPoints: [
+      "**One-hot → bag-of-words builds document vectors but loses meaning and order.** One-hot encodes only word identity ('king' as far from 'queen' as from 'banana'); summing them gives a BoW count vector that discards word order ('dog bites man' = 'man bites dog') and is brutally sparse.",
+      "**TF-IDF = tf(t,d) × log(N/df(t)) down-weights the ubiquitous and up-weights the discriminative.** TF says a term matters more when frequent *in this doc*; IDF says it matters more when *rare across the corpus*. A term in every doc gets idf = log(1) = 0, so filler like 'the' is annihilated.",
+      "**IDF's log(N/df) form encodes 'rare = informative' with damping.** df = N → idf = 0 (killed); a term in 1 of a million docs → large idf (dominates). The log prevents rarity from being rewarded too extremely (10 docs isn't 100x a 1000-doc term).",
+      "**L2-normalize, then compare with cosine similarity for length-invariant matching.** Long docs have bigger raw numbers; unit-normalizing cancels length, and cosine (the dot product of unit vectors = angle between them) measures direction not magnitude. The query is a tiny TF-IDF doc; rank by cosine to it.",
+      "**Limits (no semantics, huge sparse space) motivate BM25 and hybrid retrieval.** TF-IDF matches only literal shared terms, so synonyms miss (vocabulary mismatch) and dimensionality is huge/sparse. BM25 adds TF saturation + length normalization; TF-IDF/BM25 is the sparse leg fused with dense embeddings in hybrid retrieval.",
+    ],
+    recap: [
+      "**One-hot** = word identity only (no meaning); **BoW** = summed one-hots = counts, but order-blind and sparse ('dog bites man' = 'man bites dog').",
+      "**TF-IDF = tf(t,d) × log(N/df(t)):** TF = frequency in the doc; IDF = rarity across the corpus. Term in every doc → idf = log(1) = 0 (filler killed); rare term → big idf.",
+      "**IDF intuition:** rare = informative; the log damps extremes.",
+      "**Compare docs:** L2-normalize (cancel length) then **cosine similarity** = dot of unit vectors = angle; measures direction, not magnitude. Query = a tiny TF-IDF doc.",
+      "**Limits → modern:** no semantics (synonymy miss), huge sparse space. **BM25** adds TF saturation + doc-length norm; TF-IDF/BM25 = the *sparse* leg of hybrid dense+sparse retrieval.",
+    ],
+    mcqs: [
+      {
+        question: "In a corpus of 1000 documents, the word 'the' appears in all 1000 and the word 'password' appears in 30. Under TF-IDF = tf × log(N/df), why does 'password' end up with a high weight in a document while 'the' contributes essentially nothing, even though 'the' occurs far more often?",
+        options: [
+          "TF-IDF uses only term frequency, so 'the' should actually dominate — the premise is wrong",
+          "The IDF factor is log(N/df): for 'the', df = N = 1000 so idf = log(1) = 0, zeroing its weight regardless of how often it appears; for 'password', df = 30 gives idf = log(1000/30) ≈ 3.5, so even a few occurrences yield a high weight — IDF rewards terms that are rare across the corpus",
+          "'password' is longer than 'the', and TF-IDF weights terms by character length",
+          "Cosine similarity removes common words before TF-IDF is computed",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the IDF factor log(N/df) is what separates them. 'the' appears in every document, so df equals N and idf = log(N/N) = log(1) = 0 — multiplying by zero annihilates its weight no matter how high its term frequency is. 'password' appears in only 30 of 1000 documents, so idf = log(1000/30) ≈ 3.5, and its weight is high even with modest frequency. IDF operationalizes 'a term is informative in proportion to its rarity across the corpus.' Option A is wrong — TF-IDF is TF *times* IDF, and the IDF term is precisely what suppresses ubiquitous words. Option C is wrong — weighting is by document frequency, not character length. Option D is wrong — cosine similarity is a comparison step applied after vectors are built; it doesn't strip words, and IDF (not cosine) is what discounts common terms.",
+      },
+      {
+        question: "You want to rank documents of very different lengths by relevance to a query using TF-IDF vectors. Why do you L2-normalize the vectors and use cosine similarity rather than comparing raw TF-IDF dot products?",
+        options: [
+          "Cosine similarity adds semantic understanding that raw dot products lack",
+          "Raw vectors let long documents score higher just for being long (bigger numbers everywhere); L2-normalizing to unit length cancels that magnitude effect, and cosine similarity — the dot product of unit vectors, equal to the angle between them — measures direction (which terms dominate) not magnitude, making the comparison length-invariant",
+          "L2 normalization converts the sparse vectors into dense embeddings",
+          "Cosine similarity is required because TF-IDF weights can be negative",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: a longer document accumulates larger raw TF-IDF values across more terms, so uncorrected dot products would favor length rather than relevance. L2-normalizing each vector to unit length removes the magnitude, and cosine similarity — which for unit vectors is exactly their dot product and equals the cosine of the angle between them — compares *direction* in term-space (which terms characterize the document) independent of length. That's why the short, on-topic 'Password reset' article can outrank a long filler-heavy one. Option A is wrong — cosine over TF-IDF adds no semantics; it's still purely lexical. Option C is wrong — normalization rescales but doesn't make the vectors dense or add learned structure. Option D is wrong — TF-IDF weights are non-negative; the reason for cosine is length-invariance, not sign.",
+      },
+      {
+        question: "An interviewer asks why teams moved from pure TF-IDF toward BM25 and hybrid dense+sparse retrieval. What is the most accurate account of TF-IDF's limits and how the successors address them?",
+        options: [
+          "TF-IDF is too slow to compute, so BM25 is just a faster implementation of the same formula",
+          "TF-IDF matches only literal shared terms (so synonyms/paraphrases miss — the vocabulary-mismatch problem) and lives in a huge sparse space; BM25 keeps IDF but adds TF saturation (diminishing returns per extra occurrence) and document-length normalization, and hybrid retrieval fuses this sparse lexical leg with a dense embedding retriever that captures meaning — because their strengths are mirror images",
+          "TF-IDF captures word meaning but not word frequency, which BM25 adds",
+          "Hybrid retrieval replaces TF-IDF entirely because embeddings are strictly better at everything",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: TF-IDF's core limits are that it matches only literal shared terms — so a query and a synonymous document have near-zero similarity (the vocabulary-mismatch problem) — and that it inhabits a very high-dimensional sparse space. BM25 retains the IDF insight but fixes two TF-IDF shortcomings: it saturates term frequency (the 20th occurrence adds far less than the 2nd) and normalizes for document length inside the score. Hybrid retrieval then pairs this sparse lexical retriever (strong on exact/rare terms) with a dense embedding retriever (strong on meaning), fusing them because their failure modes are opposite. Option A is wrong — the move is about ranking quality (saturation, length norm), not raw speed. Option C is backwards — TF-IDF captures frequency, not meaning. Option D is wrong — dense retrieval is not strictly better; it blurs exact/rare terms, which is exactly why the sparse leg is kept.",
+      },
+    ],
+    takeaway: "Bag-of-words turns documents into sparse count vectors that lose word order and meaning, and raw counts wrongly reward ubiquitous filler; TF-IDF fixes this with tf(t,d) × log(N/df(t)), where IDF annihilates terms appearing everywhere (idf = log(1) = 0) and amplifies rare, discriminative ones. Documents are L2-normalized and compared by cosine similarity so ranking is length-invariant and direction-based, with the query treated as a tiny TF-IDF document. TF-IDF's blindness to synonymy and its huge sparse space motivate BM25 (adds TF saturation and document-length normalization) and the sparse leg of modern hybrid dense+sparse retrieval.",
+  },
+
+  "nlp-ngram-lm": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "You're building an autocomplete feature the cheap way, before any neural network: count word sequences in a big text corpus and predict the next word from those counts. Your bigram model (condition on the previous 1 word) works shockingly well on common phrases — after 'thank' it confidently offers 'you'. Encouraged, you jump to a 5-gram model expecting it to get smarter with more context. Instead it collapses: most 5-word sequences your users type were never seen in training even once, so the model assigns them probability zero and refuses to predict anything. More context made it worse. You need to explain the wall you just hit, and why it's fundamental.",
+    explanation: [
+      "A **language model** does one deceptively simple thing: assign a probability to a sequence of words. `P(\"the cat sat on the mat\")` should be higher than `P(\"the cat sat on the the\")`. Master that and you can score fluency, and — by asking 'given the words so far, what's the most probable next word?' — you can *generate* text. Everything from n-grams to GPT is a different way of estimating this one quantity. ==The whole game is estimating the probability of the next word given the words before it.==",
+      "By the **chain rule of probability**, the probability of a whole sentence factors exactly into a product of next-word probabilities: `P(w1,w2,...,wn) = P(w1) · P(w2|w1) · P(w3|w1,w2) · ...`. This is exact but useless as written, because `P(w_n | w1...w_{n-1})` conditions on the *entire* preceding history — you'd need to have seen that exact full history to estimate it, and you never have. ==The chain rule is correct but uncomputable directly: no corpus contains every possible full history, so every long context has been seen zero times.==",
+      "The **Markov assumption** is the approximation that rescues it: pretend the next word depends only on the last **n-1** words, not the whole history. `P(w_n | w1...w_{n-1}) ≈ P(w_n | w_{n-(n-1)}...w_{n-1})`. Choose n and you get a family: **unigram** (n=1, no context, just word frequencies), **bigram** (n=2, condition on the last 1 word), **trigram** (n=3, last 2 words). ==An n-gram model is just the chain rule with a memory that forgets everything older than n-1 words — the whole model is a truncation of context.==",
+      "Estimating the probabilities is then embarrassingly direct — **maximum likelihood estimation (MLE) by counting**: `P(w_n | w_{n-1}) = count(w_{n-1}, w_n) / count(w_{n-1})`. To get P('you' | 'thank'), count how often 'thank you' appears and divide by how often 'thank' appears. No training loop, no gradients — just tally n-grams in the corpus and normalize. That simplicity is the whole appeal of n-grams.",
+      { type: "illustration", label: "The sparsity explosion — why big n collapses", content: `Vocabulary V = 50,000 words.  POSSIBLE n-grams = V^n:
+
+  n=1 unigram   50,000                        (all seen — easy)
+  n=2 bigram    2.5 billion                   (most never seen)
+  n=3 trigram   1.25 x 10^14                  (almost all unseen)
+  n=5 5-gram    3.1 x 10^23                   (essentially ALL unseen)
+
+Your corpus has maybe 10^9 words — it can contain at most ~10^9
+distinct n-grams. For n=5 that covers a vanishing fraction of 10^23.
+
+  MLE gives ANY unseen n-gram probability 0  (count = 0 / anything).
+  A single zero in the chain-rule PRODUCT makes the whole sentence
+  probability 0 — one unseen 5-gram and the model says "impossible."
+
+  This is the wall: more context (bigger n) = exponentially more
+  n-grams to observe = almost all unseen = zeros everywhere.` },
+      "Now the scenario's collapse is explainable, and it's *fundamental*, not a tuning mistake. The number of possible n-grams is `V^n` — exponential in n. With a 50k vocabulary, bigrams number 2.5 billion and 5-grams number ~10^23, but your corpus has maybe a billion words total, so it can *contain* at most a billion distinct n-grams. For large n, ==the overwhelming majority of n-grams the model needs were never observed, so MLE assigns them count 0 → probability 0, and because the sentence probability is a *product*, one zero zeros out the entire sentence.== This is the **data-sparsity explosion**: bigger n buys longer context but demands exponentially more data to observe, and you run out almost immediately. That's the wall.",
+      "The classical fix is **smoothing**: never let any probability be exactly zero — steal a little probability mass from what you *did* see and redistribute it to what you didn't. The simplest is **add-1 (Laplace) smoothing**: pretend every n-gram was seen one extra time, `P = (count + 1) / (count_context + V)`. **Add-k** generalizes with a fractional pseudo-count. Both are crude and over-smooth. **Backoff** is smarter: if you have no trigram count, *back off* to the bigram, and if not that, the unigram — use the longest context you actually have evidence for. The strongest classical method, **Kneser-Ney**, adds a subtle insight: ==when backing off, weight a word not by how *often* it appears but by how many *different contexts* it appears in — its 'continuation probability.'== 'Francisco' is frequent overall but almost only after 'San', so it's a poor thing to predict in a novel context; Kneser-Ney captures that where raw counts don't.",
+      "How do you measure whether one n-gram model is better than another, intrinsically, without a downstream task? **Perplexity**: `perplexity = 2^(cross-entropy)`, where cross-entropy is the average number of bits the model spends per word to encode the held-out test text. Intuitively, ==perplexity is the model's average 'branching factor' — how many equally-likely words it feels it's choosing among at each step.== A perplexity of 100 means the model is as confused as if it were guessing uniformly among 100 words at every position; a perplexity of 20 means far less confusion. **Lower is better**: a model that assigns high probability to the actual next words has low cross-entropy and low perplexity. It's the standard intrinsic yardstick for language models, neural ones included.",
+      "Finally, the ceiling that motivated everything after — and the point the whole module drives toward. n-grams have **two fatal, unfixable limits**. First, ==**no long-range dependency**: a fixed window of n-1 words can never connect 'The keys that the man near the cabinets ... *were*' — the subject 'keys' is more than n-1 words back, so no finite n can enforce the agreement.== Second, **no generalization across similar words**: to an n-gram, 'the cat sat' and 'the dog sat' are entirely unrelated events, learned separately, because words are opaque integer symbols with no shared representation — the model can't transfer what it learned about 'cat' to 'dog'. Smoothing patches the zeros but touches neither limit. Those two failures are *exactly* what distributed word embeddings (share representation across similar words) and then neural/transformer LMs (attend across long, variable-length context) were invented to fix — which is the bridge from this module to modern NLP.",
+    ],
+    keyPoints: [
+      "**A language model assigns probability to word sequences; the chain rule factors a sentence into next-word probabilities but is uncomputable directly** because it conditions on the entire history, which no corpus fully contains (every long context has count zero).",
+      "**The Markov assumption truncates context to the last n-1 words**, giving unigram/bigram/trigram models estimated by MLE counting: P(w_n | w_{n-1}) = count(w_{n-1}, w_n) / count(w_{n-1}) — no training, just tally and normalize.",
+      "**Data sparsity explodes as n grows: possible n-grams = V^n.** For V=50k, 5-grams number ~10^23 but a corpus holds ~10^9 words, so almost all needed n-grams are unseen → MLE gives them probability 0, and one zero zeros the whole sentence (a product). Bigger n collapses.",
+      "**Smoothing prevents zeros; perplexity evaluates.** Add-1/add-k redistribute mass crudely; backoff uses the longest context with evidence; Kneser-Ney weights a word by how many *distinct contexts* it appears in (continuation probability, e.g. 'Francisco'). Perplexity = 2^(cross-entropy) = average branching factor; lower is better.",
+      "**n-grams cap out for two unfixable reasons, motivating neural LMs.** No long-range dependency (a fixed n-1 window can't enforce agreement across many words) and no generalization across similar words ('cat'/'dog' are unrelated integer symbols). Embeddings and transformers were built to fix exactly these.",
+    ],
+    recap: [
+      "**LM = assign probability to a word sequence.** Chain rule factors a sentence into next-word probs but is uncomputable (conditions on the full history → all zeros).",
+      "**Markov assumption:** depend only on last n-1 words → unigram/bigram/trigram. **MLE:** P(w_n|w_{n-1}) = count(pair)/count(context) — just counting.",
+      "**Sparsity explosion:** possible n-grams = V^n; corpus is finite → most big-n grams unseen → MLE = 0 → one zero kills the whole (product) sentence. Bigger n collapses.",
+      "**Smoothing:** add-1/add-k (crude), backoff (use longest context with evidence), Kneser-Ney (weight by *number of distinct contexts* = continuation prob). **Perplexity = 2^(cross-entropy)** = branching factor; lower is better.",
+      "**Fatal limits → neural:** no long-range dependency (fixed window), no generalization across similar words (opaque symbols). Embeddings + transformers fix exactly these.",
+    ],
+    mcqs: [
+      {
+        question: "You upgrade a working bigram autocomplete to a 5-gram model and it collapses — most user inputs get probability zero and it predicts nothing. Why is this a fundamental problem with large n rather than a bug you can tune away?",
+        options: [
+          "The 5-gram model overfits and needs a higher learning rate to converge",
+          "The number of possible n-grams grows as V^n (for V=50k, 5-grams ≈ 10^23) while any corpus is finite (~10^9 words), so the vast majority of needed 5-grams were never observed; MLE assigns unseen n-grams probability 0, and since a sentence probability is a product, a single zero zeros the whole sentence — the data-sparsity explosion",
+          "5-gram models require GPUs and yours ran out of memory",
+          "The Markov assumption is violated only at n=5, so the model becomes invalid",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the count of possible n-grams is V^n, exponential in n, so at n=5 with a 50k vocabulary there are on the order of 10^23 possible 5-grams while a large corpus contains only ~10^9 words — it can hold at most ~10^9 distinct n-grams, a vanishing fraction. The overwhelming majority of 5-grams users type were never seen, MLE gives any unseen n-gram count 0 hence probability 0, and because sentence probability is a product of next-word probabilities, one zero makes the entire sentence probability zero. This is the data-sparsity explosion, inherent to counting-based models, not a tuning issue. Option A is wrong — n-gram MLE has no learning rate or gradient descent; it's pure counting. Option C misattributes the collapse to hardware; the failure is statistical (zeros), not memory. Option D is wrong — the Markov assumption is a modeling choice at any n, not something that 'breaks' at 5; the issue is sparsity.",
+      },
+      {
+        question: "Two n-gram language models are evaluated on the same held-out text; model A has perplexity 30 and model B has perplexity 180. What does this mean, and which is better?",
+        options: [
+          "Higher perplexity is better, so B is the stronger model because it considers more options",
+          "Perplexity = 2^(cross-entropy) is the model's average branching factor — how many equally-likely words it feels it's choosing among per step; lower means it assigned higher probability to the actual next words, so model A (perplexity 30) is better, being far less 'confused' than B (as if choosing among 180 words)",
+          "Perplexity only measures model size, so A is simply a smaller model",
+          "Perplexity measures training-set accuracy, so it says nothing about generalization",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: perplexity is 2 raised to the per-word cross-entropy (average bits to encode each word of the test text) and is interpreted as the model's average branching factor — the effective number of equally-likely next words it's choosing among at each position. A model that puts high probability on the words that actually occur has low cross-entropy and thus low perplexity, so lower is better; model A at 30 is markedly better than B at 180 (which is as confused as guessing uniformly among 180 words). Option A inverts the direction — lower, not higher, is better. Option C is wrong — perplexity reflects predictive quality, not model size. Option D is wrong — perplexity here is computed on held-out test text, making it an intrinsic *generalization* measure, not a training-set score.",
+      },
+      {
+        question: "An interviewer asks: 'Smoothing fixes the zero-probability problem, so why did the field abandon n-gram language models for neural ones?' What is the correct answer?",
+        options: [
+          "Neural models are just n-grams with add-k smoothing applied automatically",
+          "Smoothing only patches unseen-n-gram zeros; it doesn't touch n-grams' two fundamental limits — no long-range dependency (a fixed n-1 window can't enforce, e.g., subject-verb agreement across many words) and no generalization across similar words (words are opaque symbols, so 'the cat sat' and 'the dog sat' are learned as unrelated events) — which distributed embeddings and transformers were invented to solve",
+          "Smoothing makes n-grams too slow, and neural models are faster to run",
+          "n-grams can't be evaluated with perplexity, but neural models can",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: smoothing addresses only the symptom of sparsity (zero counts) by redistributing probability mass, but leaves untouched the two structural ceilings of n-gram models. First, a fixed window of n-1 words cannot capture long-range dependencies — agreement or reference spanning more than n-1 tokens is invisible to it. Second, n-grams treat words as opaque integer symbols with no shared representation, so they cannot generalize what they learn about one word to a similar word ('cat' vs 'dog' are entirely separate events). Distributed word embeddings gave words shared representations, and transformers added attention over long, variable-length context — precisely fixing these two limits. Option A is false — neural LMs are not smoothed n-grams; they learn continuous representations. Option C misstates the motivation — the move was about modeling power, not speed. Option D is wrong — perplexity applies to both n-gram and neural language models.",
+      },
+    ],
+    takeaway: "An n-gram language model estimates the probability of the next word by applying the chain rule under a Markov assumption (condition only on the last n-1 words) with MLE counting, which is trivially simple but hits a wall: possible n-grams grow as V^n while corpora are finite, so large-n models see mostly unseen n-grams, MLE assigns them probability zero, and one zero zeros the whole sentence. Smoothing (add-k, backoff, Kneser-Ney's continuation probability) patches the zeros and perplexity (2^cross-entropy, the branching factor, lower is better) evaluates the model, but n-grams remain fundamentally capped by no long-range dependency and no generalization across similar words — the exact failures that word embeddings and transformers were built to overcome.",
+  },
+};

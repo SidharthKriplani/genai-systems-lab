@@ -990,6 +990,7 @@ const TAB_COLORS = {
 // Cheatsheet. Each entry carries a `route` (a navigateTo() arg) so onSelect can
 // dispatch anywhere. `kind` drives the badge + grouping.
 const SEARCH_GYMS = [
+  ["nlp-foundations", "NLP Foundations"],
   ["language-models", "Language Models"], ["retrieval", "Retrieval"], ["ai-agents", "AI Agents"],
   ["evaluation", "Evaluation"], ["production", "Production Systems"], ["foundation-models", "Foundation Models"],
   ["prompt-engineering", "Prompt Engineering"], ["vector-infrastructure", "Vector Infrastructure"],

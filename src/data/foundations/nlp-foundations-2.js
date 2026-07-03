@@ -1,0 +1,299 @@
+// NLP Foundations (part 2) — Word2Vec/GloVe, RNN/LSTM/GRU, seq2seq + attention.
+// Spread into foundationsRunnerData.js.
+export const RUNNER_NLP_2 = {
+  "nlp-word2vec-glove": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "You're building the search layer for a legal-docs product, and before any transformer touches the problem you need word vectors — a way to turn 'termination' and 'cancellation' into numbers that land near each other. A junior engineer asks the obvious question: how does a model learn that two words *mean* similar things when all it ever sees is raw text with no dictionary, no synonyms file, no human labels? You reach for the two classics that answered exactly this — Word2Vec and GloVe — because their core idea still underlies every embedding model shipping today. And there's a subtle failure you need to warn the team about early: the word 'bank' in 'river bank' and 'bank account' is going to collapse to a *single* vector, and that limitation is precisely what pushed the field toward BERT.",
+    explanation: [
+      "Everything here rests on one deceptively simple idea, so state it first and let the rest follow. The **distributional hypothesis**: *a word is known by the company it keeps.* Words that appear in similar contexts tend to have similar meanings. 'Cat' and 'dog' both show up near 'pet', 'vet', 'feed', 'fur'; 'termination' and 'cancellation' both sit near 'contract', 'clause', 'notice', 'effective date'. ==No human ever labels the synonyms — the *statistics of co-occurrence* carry the meaning.== Word2Vec and GloVe are two different machines for squeezing that co-occurrence signal into a dense vector per word, and both work because meaning genuinely does live in context.",
+      "**Word2Vec** turns the hypothesis into a *prediction* task, and there are two mirror-image ways to frame it. In **Skip-gram**, you take a center word and try to *predict its context* — given 'termination', predict the surrounding words 'contract', 'notice', 'effective'. In **CBOW** (Continuous Bag of Words), you flip it: take the context words and predict the *center* word — given 'contract … notice … effective', predict 'termination'. In both, the *side effect* of learning to predict well is that the model must place words used in similar contexts near each other in vector space. The vectors are what you keep; the prediction task is just the pretext.\n\n==When does each win? Skip-gram is generally better for **rare words and small datasets**, because each rare center word generates several independent (center, context) training signals — one per context word — so a rare word gets multiple gradient updates from a single occurrence. CBOW *averages* its context into one prediction, which smooths over rare words and trains faster on large corpora, so it's the pick when data is plentiful and speed matters.==",
+      { type: "illustration", label: "Skip-gram vs CBOW — mirror directions", content: `Sentence:  the  quick  brown  [fox]  jumps  over
+                              ^center       (window = 2)
+
+SKIP-GRAM   (predict CONTEXT from center)
+   fox ─►  quick ,  brown ,  jumps ,  over
+   one center word  ──►  MANY (center, context) pairs
+   → rare word "fox" gets several updates per occurrence
+   → wins on RARE words / small data
+
+CBOW        (predict CENTER from context)
+   quick , brown , jumps , over  ─►  fox
+   context is AVERAGED into one prediction
+   → smooths over rare words, trains faster
+   → wins on LARGE data / speed` },
+      "Now the bottleneck that nearly sinks the naive version, because the fix is a favourite interview target. To predict a context word, Skip-gram wants a probability over *the entire vocabulary* — a softmax whose denominator sums over every word (often hundreds of thousands). ==Computing that normalizing sum for every training pair is brutally expensive: one forward/backward pass touches the whole vocabulary.== Two fixes make it tractable. **Negative sampling** reframes the problem entirely: instead of 'predict the right word out of 400,000', it asks a much cheaper *binary* question — 'is this (center, context) pair a *real* pair from the corpus, or a *fake* one I drew from noise?' For each true pair you sample a handful (say 5–20) of random 'negative' words and train a logistic classifier to score the real pair high and the noise pairs low. You update weights for only ~k+1 words per step, not the whole vocabulary. **Hierarchical softmax** is the other fix: arrange the vocabulary as a binary (Huffman) tree so predicting a word costs ~log(V) node decisions instead of V — roughly 17 steps for a 130k vocabulary instead of 130,000.",
+      { type: "illustration", label: "The softmax bottleneck and its two fixes", content: `FULL SOFTMAX (naive):  P(context | center) = exp(...) / Σ over ALL V words
+   V = 400,000  →  every update normalizes over 400,000 words.  Too slow.
+
+NEGATIVE SAMPLING (turn it into binary real-vs-noise):
+   real pair:  (fox, jumps)           → label 1  ("is this real?")
+   noise:      (fox, banana)          → label 0
+               (fox, democracy)       → label 0   (k≈5-20 sampled)
+   update ~ k+1 words per step, NOT V.  Logistic loss, hugely cheaper.
+
+HIERARCHICAL SOFTMAX (tree instead of flat list):
+   words = leaves of a binary tree;  predict = walk root→leaf
+   cost ~ log2(V) ≈ 17 node decisions for V=130k   (vs 130,000)` },
+      "Here's the result that made Word2Vec famous and revealed something deep about the space: **word analogies as vector arithmetic.** Take the vector for 'king', subtract 'man', add 'woman' — the nearest word to the result is *'queen'*. `king − man + woman ≈ queen`. Similarly `paris − france + italy ≈ rome`. ==This works because the embedding space has learned approximately *linear* structure: a consistent 'gender' direction, a 'capital-of' direction, a 'plural' direction. Meaning-differences become roughly constant vector offsets.== The model was never told about gender or capitals; those regularities *emerged* from co-occurrence statistics alone. That linear structure is a big part of why these embeddings were so useful as drop-in features.",
+      { type: "illustration", label: "Analogies as vector offsets (linear structure)", content: `        woman ● ─────────────► ● queen
+               ▲                  ▲
+     "gender"  │                  │  "gender"   (same offset vector)
+       offset  │                  │
+         man ● ─────────────► ● king
+                  "royalty"
+
+   king − man + woman ≈ queen
+   The (man→woman) offset ≈ the (king→queen) offset.
+   A single consistent DIRECTION encodes "gender". Emergent, unlabeled.` },
+      "**GloVe** (Global Vectors) reaches the same destination by a different road, and the contrast is a clean interview point. Word2Vec is *local*: it slides a window across the corpus and learns from each local (center, context) pair, never explicitly building a global picture. GloVe is *global*: it first builds the full **word-word co-occurrence matrix** X (how often word i appears near word j across the *entire* corpus), then learns vectors by *factorizing* that matrix — fitting vectors so that `wᵢ · wⱼ` approximates a function of `log(Xᵢⱼ)`. ==GloVe's insight is that the meaningful signal lives in **ratios of co-occurrence probabilities**: P(ice near 'solid') / P(steam near 'solid') is large, P(ice near 'gas') / P(steam near 'gas') is small — those *ratios* discriminate 'ice' from 'steam' far better than raw counts. GloVe designs its objective so vector differences capture exactly those ratios.== Practically, Word2Vec (esp. skip-gram + negative sampling) and GloVe land in very similar places; GloVe's global counts can be more efficient to reuse, Word2Vec's streaming is simpler online.",
+      "Now the limitation you must warn the team about, because it defines the entire next era. Both Word2Vec and GloVe produce **static embeddings**: *one fixed vector per word type*, computed once and frozen. But 'bank' means a riverbank in 'sat on the bank' and a financial institution in 'deposited at the bank' — and a static embedding is forced to represent both senses with the *same single point*, landing somewhere in the muddled average between them. ==A static embedding cannot depend on the sentence the word appears in; it collapses every sense of a polysemous word into one vector.== This is the hard ceiling. The fix is **contextual embeddings** — ELMo, then BERT — where the vector for 'bank' is *computed from the whole sentence at inference time*, so 'river bank' and 'bank account' get *different* vectors. That single limitation is the bridge from this module to the transformer era: static → contextual is *the* leap.",
+    ],
+    keyPoints: [
+      "**Distributional hypothesis: a word is known by the company it keeps.** Words in similar contexts get similar vectors — meaning emerges from co-occurrence statistics, with zero human labels. Word2Vec and GloVe are two machines for compressing that signal into dense per-word vectors.",
+      "**Word2Vec = prediction. Skip-gram predicts context from the center word; CBOW predicts the center from context.** Skip-gram wins on rare words / small data (each occurrence yields several training pairs); CBOW averages context, is faster, and wins on large corpora. The vectors are the side effect of learning to predict.",
+      "**The full softmax over the whole vocabulary is the bottleneck.** Two fixes: negative sampling reframes it as cheap binary 'real pair vs sampled noise' logistic discrimination (update ~k+1 words, not V); hierarchical softmax uses a binary tree so prediction costs ~log(V), not V.",
+      "**Analogies are vector arithmetic: king − man + woman ≈ queen.** The space learns approximately linear structure — a consistent 'gender' or 'capital-of' direction — so meaning-differences become constant offsets. These regularities emerge purely from co-occurrence, never labeled.",
+      "**GloVe factorizes the GLOBAL word-word co-occurrence matrix (via ratios of co-occurrence probabilities); Word2Vec learns from LOCAL sliding windows.** Both are STATIC embeddings — one frozen vector per word — so 'bank' (river vs money) collapses to one point. That ceiling motivates contextual embeddings (ELMo/BERT).",
+    ],
+    recap: [
+      "**Distributional hypothesis:** a word is known by the company it keeps — similar contexts ⇒ similar vectors, no labels needed.",
+      "**Word2Vec:** Skip-gram (center→context, better for rare words/small data) vs CBOW (context→center, faster, better on big data). Vectors are the by-product of prediction.",
+      "**Softmax over all V is too costly** → negative sampling (binary real-vs-noise logistic, ~k+1 updates) or hierarchical softmax (binary tree, ~log V).",
+      "**Analogies = vector math:** king − man + woman ≈ queen → the space has emergent linear structure (a 'gender' direction, a 'capital-of' direction).",
+      "**GloVe** = factorize the global co-occurrence matrix (ratios of probabilities); Word2Vec = local windows. Both STATIC — one vector per word, so 'bank' collapses → motivates contextual (ELMo/BERT).",
+    ],
+    mcqs: [
+      {
+        question: "You're training word vectors on a small, specialized legal corpus with many rare terms. A colleague asks whether to use Skip-gram or CBOW. What's the correct recommendation and why?",
+        options: [
+          "CBOW, because averaging context words gives rare words more training signal per occurrence",
+          "Skip-gram, because it generates several independent (center, context) training pairs from each occurrence of a word, giving rare words multiple gradient updates, whereas CBOW averages context into one prediction and smooths over rare words",
+          "Either is identical; the choice only affects training speed, not quality on rare words",
+          "Neither works on small data; you must use a pretrained transformer with no exceptions",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: Skip-gram predicts each context word from the center word, so a single occurrence of a rare word produces several (center, context) pairs and therefore several gradient updates — exactly what a rare word, seen few times, needs. CBOW averages the surrounding context into one prediction of the center word, which smooths over rare words and is why it's favored for large corpora and speed, not for rare-word fidelity. Option A inverts the mechanism — it's Skip-gram, not CBOW, that gives rare words more signal; CBOW's averaging is what dilutes it. Option C is wrong: the direction of prediction materially changes rare-word quality, not just speed. Option D overstates — Word2Vec trains fine on small data, and Skip-gram is specifically the better choice here.",
+      },
+      {
+        question: "Naive Skip-gram requires a softmax over the entire vocabulary for every training pair, which is prohibitively expensive. How does negative sampling make training tractable?",
+        options: [
+          "It shrinks the vocabulary by deleting rare words until the softmax is small enough",
+          "It reframes the task from 'predict the correct word out of V' into a cheap binary logistic problem — score real (center, context) pairs high and a handful of sampled random 'noise' pairs low — so each step updates only about k+1 words instead of the whole vocabulary",
+          "It caches the softmax denominator once at the start and reuses it unchanged for all pairs",
+          "It replaces the softmax with a larger softmax computed on a GPU, which is faster but exact",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: negative sampling abandons the full V-way softmax and instead asks a binary question — is this (center, context) pair real (from the corpus) or fake (a noise word sampled at random)? It trains a logistic classifier to push real pairs high and the ~5–20 sampled negatives low, so each update touches only about k+1 word vectors rather than all V. Option A is wrong — negative sampling doesn't delete vocabulary; it changes the objective. Option C is wrong — the softmax denominator depends on the current parameters and the target, so it can't be cached once and reused. Option D is wrong — negative sampling is an approximation that avoids the full softmax entirely; it isn't an exact softmax on a GPU. (Hierarchical softmax is the other standard fix, using a binary tree for ~log V cost.)",
+      },
+      {
+        question: "A teammate is surprised that 'bank' returns odd neighbors — it sits between 'river' and 'account'. You're using GloVe embeddings. What is the fundamental cause, and what class of model fixes it?",
+        options: [
+          "GloVe was undertrained; more epochs would separate the two senses of 'bank' into distinct vectors",
+          "Static embeddings assign one fixed vector per word type, so a polysemous word like 'bank' must represent all senses with a single point (a muddled average); contextual embeddings (ELMo/BERT) fix it by computing the vector from the whole sentence at inference, giving 'river bank' and 'bank account' different vectors",
+          "GloVe factorizes local windows rather than global counts, which is what merges the senses; switching to Word2Vec would separate them",
+          "The co-occurrence matrix should have used raw counts instead of ratios, which is what collapsed the senses",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: GloVe (like Word2Vec) is a static embedding — it computes exactly one vector per word type, once, and freezes it. A polysemous word such as 'bank' therefore has no way to differ by sentence and collapses its river and financial senses into a single averaged point. The fix is a different class of model: contextual embeddings (ELMo, then BERT) compute a word's vector from its entire surrounding sentence at inference time, so 'sat on the bank' and 'deposited at the bank' yield different vectors. Option A is wrong — no amount of training removes the one-vector-per-type constraint; it's structural, not an optimization issue. Option C misstates the methods — GloVe uses GLOBAL co-occurrence counts, and switching to Word2Vec (also static) wouldn't separate the senses. Option D is wrong — ratios of co-occurrence probabilities are GloVe's strength, not the cause of polysemy collapse.",
+      },
+    ],
+    takeaway: "Word2Vec and GloVe both operationalize the distributional hypothesis — a word is known by the company it keeps — but Word2Vec learns from local sliding windows (Skip-gram predicts context, better for rare words; CBOW predicts the center, faster) while GloVe factorizes the global co-occurrence matrix via ratios of probabilities; both sidestep the full-vocabulary softmax with negative sampling or hierarchical softmax, and both reveal emergent linear structure (king − man + woman ≈ queen). Their shared, defining limitation is that they are static — one frozen vector per word — so a polysemous word like 'bank' collapses to a single point, which is exactly the ceiling contextual embeddings (ELMo/BERT) were built to break.",
+  },
+
+  "nlp-rnn-lstm-gru": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "You're the on-call engineer for a sentiment model that reads product reviews, and it keeps botching a specific pattern: 'The camera, which despite the frankly exhausting marketing and a price that made me wince, is *terrible*.' It flags this as positive. The verdict word 'terrible' is 20 tokens away from where the sentiment should attach, and your recurrent model has effectively *forgotten* the beginning of the sentence by the time it reaches the end. Before you reach for a fancier architecture, you need to explain to the team the precise mechanical reason a plain RNN loses long-range memory — and why LSTMs and GRUs were invented to patch exactly that wound, and why even they were eventually dethroned.",
+    explanation: [
+      "Start with the core mechanism, because everything else is a reaction to it. A **recurrent neural network** processes a sequence one step at a time, carrying a **hidden state** `h` — a fixed-size vector that is a *running summary of everything seen so far.* At each step it takes the current input `xₜ` and the previous hidden state `hₜ₋₁`, mixes them, and produces the new hidden state `hₜ`. ==The same weights are reused at every timestep — that weight-sharing is what lets one small network handle a sequence of any length.== You can picture the loop **unrolled through time**: the same cell copied once per token, each copy feeding its hidden state into the next.",
+      { type: "illustration", label: "An RNN unrolled through time", content: `   x1        x2        x3        x4
+    │         │         │         │
+    ▼         ▼         ▼         ▼
+  [cell]──►[cell]──►[cell]──►[cell]──► hidden state hₜ
+    h1        h2        h3        h4     (running summary)
+    ▲         ▲         ▲         ▲
+   SAME weights W reused at EVERY step
+
+  hₜ = f( W · [hₜ₋₁, xₜ] )     one small net, any length` },
+      "To train this you need gradients, and here's where the trouble is born. **Backpropagation-through-time (BPTT)** unrolls the network and backpropagates the loss at the end all the way back to the early steps. But to reach step 1 from a loss at step 20, the gradient must flow *backward through every intermediate step*, and at each step it gets **multiplied by (roughly) the same recurrent weight and the activation's derivative.** ==Multiplying the same-ish factor ~20 times is a geometric process: if the factor is < 1, the gradient shrinks toward zero (**vanishing**); if > 1, it explodes toward infinity (**exploding**).== Think 0.9²⁰ ≈ 0.12 (already faint) versus 0.5²⁰ ≈ 0.000001 (effectively gone), and on the other side 1.5²⁰ ≈ 3325 (blows up).",
+      { type: "illustration", label: "Why gradients vanish or explode over distance", content: `Loss at step 20 → gradient flows BACK to step 1
+   ∂L/∂h₁  ∝  (W·σ')^(20)   ← same factor multiplied ~20 times
+
+   factor 0.5 :  0.5^20  ≈ 0.00000095   → VANISH (signal gone)
+   factor 0.9 :  0.9^20  ≈ 0.12         → faint, decays
+   factor 1.0 :  1.0^20  = 1            → the knife-edge
+   factor 1.5 :  1.5^20  ≈ 3325         → EXPLODE (blows up)
+
+   distance from loss →  0   5    10    15    20
+   gradient magnitude →  ██  ▆   ▃    ▁     ·   (decays with distance)` },
+      "This is not a minor numerical nuisance — it is *the* reason plain RNNs have short memory. ==A vanishing gradient means the early tokens receive almost no learning signal about the final loss, so the network literally *cannot learn* long-range dependencies: the weights that would connect 'camera … terrible' never get meaningfully updated.== Exploding gradients are the louder but easier twin — they cause NaNs and instability, and are largely tamed by *gradient clipping* (cap the norm). Vanishing is the insidious one: no error, no crash, just a model that silently forgets. This capped 'effective memory' at a handful of steps and is exactly why your 20-token sentence fails.",
+      "**The LSTM** (Long Short-Term Memory) was engineered to defeat vanishing gradients with one central idea: a separate **cell state** `C` — think of it as a *conveyor belt* running straight through the sequence with only minor, *additive* interactions. ==Because information moves along the cell state mostly by addition (not repeated multiplication by a weight), the gradient can flow across many steps *without* the geometric decay — the cell state is a gradient highway.== Around this belt sit three learned **gates**, each a small sigmoid network outputting values in [0,1] that act as soft valves: the **forget gate** decides what fraction of the old cell state to erase; the **input gate** decides what new information to write; the **output gate** decides what part of the cell state to expose as the hidden state. The gates *learn* when to remember and when to forget, so the LSTM can carry 'the subject is singular' or 'sentiment is negative' across long spans.",
+      { type: "illustration", label: "LSTM cell — the cell-state conveyor belt + gates", content: `        forget      input                     output
+         gate f      gate i                     gate o
+           │           │                           │
+   Cₜ₋₁ ──►(×)───────►(+)──────────────────────────────► Cₜ   ◄─ cell state
+           │           ▲                           │        (conveyor belt:
+        "erase        "write                     "expose      ADDITIVE path,
+         some"         new"                        as h"      gradient highway)
+                                                   ▼
+   hₜ₋₁ ─────────────────────────────────────────► hₜ   ◄─ hidden state
+
+   gates ∈ [0,1] : soft valves that LEARN what to keep / add / show.
+   Additive belt ⇒ gradient survives across many steps (no geom. decay).` },
+      "**The GRU** (Gated Recurrent Unit) is the lighter cousin — same goal, fewer moving parts. It **merges the cell state and hidden state into one**, and uses just **two gates** instead of three: a **reset gate** (how much past state to ignore when computing the candidate update) and an **update gate** (how much to blend old state vs new — it fuses the LSTM's forget and input roles into a single knob). ==Fewer gates and no separate cell state means **fewer parameters**, so a GRU trains faster and needs less data, often matching LSTM quality; the LSTM's extra expressiveness sometimes edges ahead on very long or complex dependencies.== In practice both were the workhorses of NLP for years — the choice was usually 'try both, pick what validates better.'",
+      "Now the limitation that no gate could fix, and it's the whole reason the field moved on. ==Recurrence is *inherently sequential*: computing `hₜ` **requires** `hₜ₋₁`, which requires `hₜ₋₂`, and so on — you cannot compute step 50 until you've computed step 49.== This means the forward pass over a length-N sequence is an unavoidable chain of N dependent steps that *cannot be parallelized across the sequence*, no matter how many GPUs you have. LSTMs and GRUs fixed the *memory* problem but were stuck with this *speed* problem — and on modern hardware built for massive parallelism, that serial bottleneck is fatal for training on huge datasets. ==This exact limitation is what the Transformer removed: by replacing recurrence with attention, every position is computed *in parallel*, and long-range dependencies are one attention hop away instead of many multiplicative steps away.== The RNN family taught the field what a sequence model must do; the Transformer found a parallelizable way to do it.",
+    ],
+    keyPoints: [
+      "**An RNN carries a hidden state — a fixed-size running summary of everything seen so far — reusing the same weights at every timestep (unrolled through time).** Trained by backpropagation-through-time (BPTT), which sends the final loss's gradient back through every step.",
+      "**Vanishing/exploding gradients come from repeated multiplication by ~the same factor down the chain (a geometric process): <1 shrinks to zero, >1 blows up.** Vanishing is why plain RNNs can't learn long-range dependencies — early tokens get almost no learning signal, capping effective memory at a few steps.",
+      "**The LSTM adds a cell-state 'conveyor belt' whose additive path is a gradient highway, plus forget/input/output gates (soft [0,1] valves) that learn what to erase, write, and expose.** Additive flow avoids the geometric decay, so information survives across long spans.",
+      "**The GRU is a lighter 2-gate variant (reset + update) that merges cell and hidden state — fewer parameters, faster training, often matching the LSTM.** The update gate fuses the LSTM's forget and input roles; LSTMs sometimes edge ahead on very long dependencies.",
+      "**The unavoidable limitation is that recurrence is inherently sequential: step t needs step t−1, so the sequence can't be parallelized.** Gating fixed memory but not this speed bottleneck — exactly what the Transformer removed by replacing recurrence with attention (all positions computed in parallel).",
+    ],
+    recap: [
+      "**RNN = hidden state carrying a running summary**, same weights every step (unroll through time); trained via BPTT.",
+      "**Vanishing/exploding gradient:** backprop multiplies ~the same factor ~N times → <1 vanishes (0.5²⁰≈1e-6), >1 explodes. Vanishing caps long-range memory — early tokens get no signal.",
+      "**LSTM:** cell-state conveyor belt (additive ⇒ gradient highway) + forget/input/output gates (learned [0,1] valves) → carries info across long spans.",
+      "**GRU:** lighter 2-gate (reset + update), merges cell+hidden, fewer params, faster, often as good; LSTM sometimes wins on very long deps.",
+      "**Hard limit:** recurrence is inherently SEQUENTIAL (step t needs t−1) → no parallelism across the sequence. The exact bottleneck the Transformer removed with attention.",
+    ],
+    mcqs: [
+      {
+        question: "Your plain RNN sentiment model consistently fails when the verdict word is ~20 tokens from where it should attach. What is the precise mechanical cause?",
+        options: [
+          "The hidden state vector runs out of memory slots after ~20 tokens and overflows",
+          "During backpropagation-through-time the gradient is multiplied by roughly the same recurrent factor at each step; over ~20 steps this geometric process drives the gradient toward zero (vanishing), so early tokens receive almost no learning signal and long-range dependencies are never learned",
+          "RNNs process tokens in random order, so distant tokens are often skipped entirely",
+          "The exploding-gradient problem caps memory at ~20 tokens by design",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: BPTT propagates the final loss's gradient back through every timestep, and at each step the gradient is multiplied by approximately the same recurrent weight times the activation derivative. Repeating that multiplication ~20 times is geometric — with a factor below 1 the gradient shrinks toward zero (vanishing), so the early tokens get essentially no learning signal about the final loss and the network cannot learn to connect distant words. Option A is a misconception — the hidden state is a fixed-size vector that is continually overwritten, not a fixed number of discrete 'slots' that overflow. Option C is wrong — RNNs process tokens strictly in order, not randomly. Option D confuses the twins — exploding gradients cause instability/NaNs (tamed by clipping); it's *vanishing* gradients that silently cap effective memory.",
+      },
+      {
+        question: "The LSTM was designed specifically to combat vanishing gradients. What is the core architectural feature that achieves this, and how?",
+        options: [
+          "A much larger hidden state that stores more tokens verbatim, so nothing is forgotten",
+          "A separate cell state that flows through the sequence via mostly additive interactions (a 'conveyor belt'), so gradients travel across many steps without the geometric decay of repeated multiplication; forget/input/output gates then learn what to erase, write, and expose",
+          "It removes backpropagation-through-time, training instead only on the final token",
+          "It multiplies the hidden state by a large constant at each step to counteract shrinkage",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the LSTM introduces a cell state that moves through time with primarily *additive* updates — the 'conveyor belt' — so gradients can flow across many timesteps without being repeatedly multiplied by a sub-1 weight, which is exactly what caused vanishing. Around this belt, three learned sigmoid gates (forget, input, output) act as soft [0,1] valves deciding what to erase, write, and expose. Option A is wrong — the LSTM doesn't store tokens verbatim in a bigger buffer; it's the additive gradient path plus gating, not raw capacity, that solves the problem. Option C is wrong — LSTMs are still trained with BPTT; they change the cell's structure, not the training algorithm. Option D is wrong — scaling by a constant would risk explosion and doesn't provide the learned, gated additive path that makes the LSTM work.",
+      },
+      {
+        question: "Even a well-tuned LSTM/GRU was ultimately replaced by the Transformer for large-scale training. What is the fundamental limitation of the recurrent family that gating did NOT fix?",
+        options: [
+          "Gated RNNs still suffer catastrophic vanishing gradients on any sequence longer than 100 tokens",
+          "Recurrence is inherently sequential — computing hₜ requires hₜ₋₁ — so the sequence cannot be parallelized; the forward pass is a chain of N dependent steps, which is fatal on hardware built for massive parallelism. The Transformer removes this by replacing recurrence with attention so all positions compute in parallel",
+          "LSTMs and GRUs cannot represent word order, which attention fixes",
+          "Gated RNNs require more parameters than Transformers of equal size, making them slower per step",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the defining, un-gate-able limitation is that recurrence is sequential by construction — step t's hidden state depends on step t−1's, so a length-N sequence is an unavoidable chain of N dependent computations that cannot be parallelized across positions, regardless of GPU count. On hardware built for massive parallelism this serial bottleneck is fatal for large-scale training, and it's exactly what the Transformer eliminates by using attention to compute every position in parallel with long-range dependencies one hop away. Option A is wrong — gating specifically *mitigates* vanishing gradients, which is why LSTMs handle long sequences far better than plain RNNs; memory wasn't the surviving problem. Option C is wrong — RNNs inherently encode order through their step-by-step processing; it's Transformers that must *add* positional encodings to recover order. Option D misstates the issue — the bottleneck is sequential dependency, not a per-step parameter count.",
+      },
+    ],
+    takeaway: "A plain RNN carries a hidden state as a running summary but is crippled by vanishing/exploding gradients — repeated multiplication down the unrolled chain during BPTT — which caps its effective memory to a few steps. The LSTM fixes this with a cell-state conveyor belt (an additive gradient highway) plus forget/input/output gates, and the GRU offers a lighter 2-gate version with fewer parameters; but neither can escape recurrence's inherently sequential nature (step t needs step t−1), the exact non-parallelizable bottleneck the Transformer removed by replacing recurrence with attention.",
+  },
+
+  "nlp-seq2seq-attention": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "You're on a machine-translation team in 2015, and your encoder-decoder model translates short French phrases into English beautifully. Then the sentences get longer, and quality falls off a cliff — a 30-word sentence comes back garbled, with the end of the translation drifting off-topic as if the model forgot how the source began. A colleague stares at the architecture and asks: 'We're squeezing the *entire* source sentence into one final hidden vector before the decoder ever starts. How is one fixed-size vector supposed to hold a 30-word sentence?' That question is the crack that attention was invented to fill — and, unknowingly, your team is one conceptual step away from the idea that will become 'Attention Is All You Need.'",
+    explanation: [
+      "Begin with the architecture the whole module is about. A **sequence-to-sequence (seq2seq)** model handles tasks where a variable-length input maps to a variable-length output — machine translation is the canonical case. It has two halves: an **encoder** (usually an RNN/LSTM) that *reads* the entire source sentence and compresses it into a representation, and a **decoder** (another RNN/LSTM) that *generates* the target sentence one word at a time, conditioned on that representation. ==In the original design, the encoder's *final hidden state* — a single fixed-size vector, sometimes called the 'thought vector' — is the *only* thing passed to the decoder. The decoder must reconstruct the entire translation from that one vector.==",
+      { type: "illustration", label: "Vanilla seq2seq — everything through one vector", content: `  ENCODER (reads French)                DECODER (writes English)
+  je   suis   étudiant                    I     am    a    student
+   │     │      │                          ▲     ▲     ▲      ▲
+   ▼     ▼      ▼                          │     │     │      │
+ [e]──►[e]──►[e]────►  ●  ────────────────►[d]──►[d]──►[d]──►[d]
+                       ▲
+             ONE fixed-size vector "c"
+             (the encoder's final hidden state)
+
+  The whole source must be crammed into c. Long sentence ⇒ c overflows,
+  early words get blurred, the decoder drifts. The BOTTLENECK.` },
+      "Name the failure precisely, because it's the crux. This is the **fixed-vector bottleneck** (or information bottleneck). ==A single fixed-size vector has *constant* capacity, but source sentences have *variable, unbounded* length — so as sentences get longer, you're cramming more and more information through the same narrow pipe, and the earliest words get blurred or overwritten.== A short phrase fits; a 30-word sentence does not. This is *exactly* the symptom in the scenario: the decoder does fine at the start (recent encoder memory) and drifts near the end (early source content already lost). Making the vector bigger only postpones the wall — the fundamental mismatch is *fixed capacity vs unbounded length.*",
+      "The fix is beautiful and simple in hindsight: **attention.** Instead of forcing the decoder to work from one summary vector, *keep all of the encoder's hidden states* — one per source word — and let the decoder **look back at all of them at every output step.** ==At each step of generating the target, the decoder computes a set of **alignment weights** — one weight per source word saying 'how relevant is this source word to the word I'm about to produce?' — and reads a **context vector** that is the *weighted sum* of the encoder states.== So when the decoder is about to emit 'student', it puts most weight on the source word 'étudiant' and reads mostly *that* word's representation. The decoder gets a *fresh, focused* view of the source at every step, instead of one stale summary.",
+      { type: "illustration", label: "Attention — a fresh weighted view every step", content: `  Encoder states (kept, one per source word):
+     h(je)   h(suis)   h(étudiant)
+       │        │           │
+       └────────┼───────────┘
+                ▼
+   Decoder emitting "student":
+     align weights:  je=0.05  suis=0.10  étudiant=0.85   ← focus!
+     context cₜ = 0.05·h(je) + 0.10·h(suis) + 0.85·h(étudiant)
+                  ▼
+                "student"
+
+  Different output step ⇒ different weights ⇒ different context.
+  No single bottleneck: the whole source stays available, re-focused
+  per step.` },
+      "Two classic formulations differ only in *how* they score the match between a decoder state and each encoder state, and interviewers love the contrast. **Bahdanau attention** (2014, 'additive') feeds the decoder's previous state and each encoder state through a small feed-forward network (a learned layer with a tanh) to produce each alignment score — it *learns* the scoring function. **Luong attention** (2015, 'multiplicative') scores with a simple **dot product** (or a bilinear `hᵈ·W·hᵉ`) between the decoder and encoder states — cheaper, no extra network. ==Both then softmax those scores into weights that sum to 1 and take the weighted sum of encoder states. Additive = a learned MLP scorer; multiplicative = a dot-product scorer. The dot-product form is the one that scales up.==",
+      { type: "illustration", label: "Bahdanau (additive) vs Luong (multiplicative)", content: `Both produce alignment weights, then softmax, then weighted sum.
+They differ only in the SCORE function:
+
+  BAHDANAU (additive):   score = vᵀ · tanh( W₁·hᵈ + W₂·hᵉ )
+     a small feed-forward net LEARNS the match.  More params.
+
+  LUONG (multiplicative): score = hᵈ · hᵉ    (dot)
+                     or   score = hᵈ · W · hᵉ (general)
+     just a dot product.  Cheaper, no extra net.
+
+  weights = softmax(scores) ,   context = Σ weightᵢ · hᵉᵢ
+  → dot-product scoring is what "Attention Is All You Need" scales up.` },
+      "There's a bonus that makes attention *interpretable*, and it's worth knowing for an interview. Stack the alignment weights for every (target word, source word) pair into a grid and you get an **alignment matrix** — a *soft word alignment* between the two languages. ==In translation this matrix lights up almost like a bilingual dictionary: 'student' aligns to 'étudiant', 'am' to 'suis', and it even captures reordering (adjectives and nouns swap order across languages).== Nobody labeled these alignments; they emerged from learning to translate well. It's one of the earliest cases of a deep model giving a genuinely readable window into *what it's attending to.*",
+      "Now the framing that turns this from a translation trick into the seed of a revolution. Attention here is still *bolted onto* recurrence: the encoder and decoder are still RNNs, and attention is an *extra* mechanism that lets the decoder peek at all encoder states. ==The radical leap of 'Attention Is All You Need' (2017) was to ask: if attention is doing the real work of relating positions to each other, do we even *need* the recurrence? Drop the RNN entirely, and let *every* position attend to *every* other position directly — 'self-attention'.== That move (a) kills the sequential bottleneck from the previous module (all positions computed in parallel) and (b) makes any two tokens one attention hop apart regardless of distance. The Bahdanau/Luong context vector is the direct conceptual ancestor of the transformer's attention — same 'compute relevance weights, take a weighted sum,' now generalized to attend *everywhere*, with no recurrence left.",
+    ],
+    keyPoints: [
+      "**Seq2seq = encoder reads the source into a representation, decoder generates the target one token at a time.** In vanilla seq2seq the *only* thing passed across is the encoder's single final hidden state (the 'thought vector'), from which the decoder must reconstruct the whole output.",
+      "**The fixed-vector bottleneck: one constant-size vector vs variable, unbounded source length.** Long sentences cram too much through the narrow pipe; early words blur and the decoder drifts near the end. Bigger vectors only postpone the wall — the mismatch is fixed capacity vs unbounded length.",
+      "**Attention keeps ALL encoder hidden states and, at every decoder step, computes alignment weights (relevance per source word) and reads a weighted-sum context vector.** The decoder gets a fresh, focused view of the source per step instead of one stale summary — no bottleneck.",
+      "**Bahdanau (additive) scores alignment with a small learned feed-forward net (tanh); Luong (multiplicative) scores with a dot product (or bilinear).** Both softmax the scores and take a weighted sum of encoder states. The dot-product form is what later scales up. The stacked weights form an alignment matrix = soft word alignment.",
+      "**This attention is the direct conceptual seed of self-attention.** 'Attention Is All You Need' dropped the recurrence entirely and let every position attend to every other ('self-attention'), killing the sequential bottleneck (parallel) and making any two tokens one hop apart. Same 'weights + weighted sum,' generalized to attend everywhere.",
+    ],
+    recap: [
+      "**Seq2seq:** encoder reads source → decoder generates target; vanilla version passes only the encoder's final hidden vector (the 'thought vector').",
+      "**Fixed-vector bottleneck:** constant-size vector vs unbounded sentence length → long inputs blur early words, decoder drifts. Bigger vector only delays the wall.",
+      "**Attention:** keep ALL encoder states; per decoder step compute alignment weights + a weighted-sum context vector → fresh focused view every step, no bottleneck.",
+      "**Bahdanau (additive, learned MLP + tanh) vs Luong (multiplicative, dot product).** Softmax scores → weighted sum. Stacked weights = alignment matrix = soft word alignment (emergent, interpretable).",
+      "**Seed of the Transformer:** 'Attention Is All You Need' dropped recurrence, let every position attend to every other (self-attention) → parallel + any two tokens one hop apart.",
+    ],
+    mcqs: [
+      {
+        question: "Your vanilla seq2seq translation model is excellent on short phrases but degrades badly on long sentences, with the end of the output drifting off-topic. What is the root cause?",
+        options: [
+          "The decoder RNN has too few layers to generate long sentences",
+          "The fixed-vector bottleneck: the entire variable-length source is compressed into one constant-size final hidden state, so as sentences grow, information is crammed through a narrow pipe and early source words get blurred/overwritten — the decoder loses the beginning by the time it reaches the end",
+          "The encoder and decoder use different vocabularies, so long sentences contain unknown words",
+          "Attention is over-focusing on the last source word, ignoring the rest",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: vanilla seq2seq passes only the encoder's single fixed-size final hidden state to the decoder, but source sentences have variable, unbounded length. A constant-capacity vector cannot hold ever-more information, so long sentences overflow the pipe and the earliest words get blurred — which is exactly why the decoder does fine at the start (recent memory) and drifts at the end (early content lost). Option A misattributes the failure to decoder depth; the problem is the single-vector interface, not layer count, and adding layers doesn't remove the bottleneck. Option C is unrelated — vocabulary mismatch isn't what causes graceful-then-catastrophic degradation with length. Option D describes an attention model, but vanilla seq2seq has no attention at all — that's the whole point; attention is the *fix*, not the cause.",
+      },
+      {
+        question: "Bahdanau (additive) and Luong (multiplicative) attention are the two classic formulations. What is the essential difference between them?",
+        options: [
+          "Bahdanau attends only to the final encoder state while Luong attends to all encoder states",
+          "They differ in how they score the match between a decoder state and each encoder state: Bahdanau uses a small learned feed-forward network (with tanh) to compute alignment scores, while Luong uses a dot product (or bilinear form); both then softmax the scores and take a weighted sum of encoder states",
+          "Bahdanau produces hard (one-hot) alignments while Luong produces soft alignments",
+          "Luong removes the decoder entirely and generates directly from encoder states",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: both mechanisms keep all encoder states, softmax the alignment scores into weights, and read a weighted-sum context vector — they differ only in the *scoring function*. Bahdanau ('additive') passes the decoder and encoder states through a small learned feed-forward net with a tanh to produce each score; Luong ('multiplicative') uses a cheaper dot product (or a bilinear hᵈ·W·hᵉ), and that dot-product form is what later scales up in the Transformer. Option A is wrong — both attend to all encoder states; attending to only the final state would be the vanilla bottleneck they were built to remove. Option C is wrong — both produce soft (softmax) alignments; neither is one-hot. Option D is wrong — both retain a decoder that generates the target step by step.",
+      },
+      {
+        question: "Why is the attention mechanism in a 2015 seq2seq translation model considered the direct conceptual seed of 'Attention Is All You Need'?",
+        options: [
+          "Because the Transformer reuses the same RNN encoder and decoder, just with a faster attention kernel",
+          "Because seq2seq attention already 'computes relevance weights over a set of states and takes a weighted sum'; the Transformer generalized this by dropping recurrence and letting every position attend to every other (self-attention), which both parallelizes computation and makes any two tokens one hop apart",
+          "Because both use the exact same fixed 'thought vector' as their core representation",
+          "Because attention was only a minor tweak and the real innovation was a larger training corpus",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: seq2seq attention introduced the core operation — score how relevant each state is, softmax into weights, and take a weighted sum (the context vector). 'Attention Is All You Need' generalized exactly that operation by removing the recurrence entirely and letting every position attend to every other position (self-attention), which kills the sequential bottleneck (all positions compute in parallel) and makes any two tokens one attention hop apart regardless of distance. Option A is wrong — the Transformer *removes* the RNN encoder/decoder; that removal is the whole point. Option C is wrong — the Transformer abandons the single fixed thought vector; attention exists precisely to escape it. Option D is wrong — attention was the central innovation, not a minor tweak, and the leap was architectural, not merely more data.",
+      },
+    ],
+    takeaway: "Vanilla seq2seq forces the entire variable-length source through the encoder's single fixed-size final hidden state — the fixed-vector bottleneck — which is why translation quality collapses on long sentences. Attention removes the bottleneck by keeping all encoder states and, at each decoder step, computing alignment weights (Bahdanau's learned additive scorer or Luong's cheaper dot-product) and reading a weighted-sum context vector, yielding a fresh, focused view of the source per step plus an interpretable soft-alignment matrix. That 'relevance weights plus weighted sum' operation is the direct conceptual seed of self-attention: 'Attention Is All You Need' dropped the recurrence and let every position attend to every other, parallelizing the model and putting any two tokens one hop apart.",
+  },
+};

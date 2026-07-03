@@ -39,6 +39,11 @@ import { RUNNER_PRODUCTION_TONE } from "./foundations/production-tone";
 // ── keyPoints + recap patch for the 30 older interactive modules that lacked them ──
 import { RECAP_PATCH_A } from "./foundations/recap-patch-a";
 import { RECAP_PATCH_B } from "./foundations/recap-patch-b";
+// NLP Foundations gym — 12 modules (classical NLP → GenAI bridge).
+import { RUNNER_NLP_1 } from "./foundations/nlp-foundations-1";
+import { RUNNER_NLP_2 } from "./foundations/nlp-foundations-2";
+import { RUNNER_NLP_3 } from "./foundations/nlp-foundations-3";
+import { RUNNER_NLP_4 } from "./foundations/nlp-foundations-4";
 
 export const RUNNER_DATA = {
 
@@ -3746,6 +3751,12 @@ itself).` },
   //    cost-latency-concepts / observability-concepts / latency-planner (incl. the
   //    D1 override of observability-concepts). ──────────────────────────────────
   ...RUNNER_PRODUCTION_TONE,
+
+  // ── NLP Foundations gym (12 modules, all-new ids — classical NLP → GenAI) ──────
+  ...RUNNER_NLP_1,
+  ...RUNNER_NLP_2,
+  ...RUNNER_NLP_3,
+  ...RUNNER_NLP_4,
 
 };
 

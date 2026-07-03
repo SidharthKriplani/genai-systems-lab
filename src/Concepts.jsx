@@ -60,6 +60,19 @@ import DataCurationViz from "./components/nicheViz/DataCurationViz.jsx";
 import MultiAdapterViz from "./components/nicheViz/MultiAdapterViz.jsx";
 import PreferenceAlignViz from "./components/nicheViz/PreferenceAlignViz.jsx";
 import EvalDrivenLoopViz from "./components/nicheViz/EvalDrivenLoopViz.jsx";
+// NLP Foundations gym — 12 interactives (classical NLP → GenAI bridge).
+import TextPreprocessViz from "./components/nicheViz/TextPreprocessViz.jsx";
+import TfidfViz from "./components/nicheViz/TfidfViz.jsx";
+import NgramLmViz from "./components/nicheViz/NgramLmViz.jsx";
+import Word2vecViz from "./components/nicheViz/Word2vecViz.jsx";
+import RnnLstmViz from "./components/nicheViz/RnnLstmViz.jsx";
+import Seq2seqAttentionViz from "./components/nicheViz/Seq2seqAttentionViz.jsx";
+import EncoderDecoderViz from "./components/nicheViz/EncoderDecoderViz.jsx";
+import ClassicalTasksViz from "./components/nicheViz/ClassicalTasksViz.jsx";
+import TextClassifyViz from "./components/nicheViz/TextClassifyViz.jsx";
+import NlpMetricsViz from "./components/nicheViz/NlpMetricsViz.jsx";
+import TransferLearningViz from "./components/nicheViz/TransferLearningViz.jsx";
+import SentenceEmbedViz from "./components/nicheViz/SentenceEmbedViz.jsx";
 const SystemsApp   = lazy(() => import("./Systems"));      // evaluation + production gyms → Lab tab
 const LaunchChecklist = lazy(() => import("./AIPM").then(m => ({ default: m.LaunchChecklist }))); // salvaged from deleted ProductionHub → production gym
 
@@ -10134,6 +10147,20 @@ export const MODULES = [
   { id: "streaming-lab",       label: "Streaming Tokens",       tag: "LATENCY",  level: "intermediate", title: "Token Streaming",                subtitle: "Prefill vs decode, TTFT, and why streaming cuts perceived latency.",           fidelity: { tier: "conceptual", note: "Interactive streaming lab — see explanation for precise details." }, component: StreamingLab },
   { id: "failure-sim-lab",     label: "Failure Simulator",      tag: "RESILIENCE", level: "advanced",   title: "Production Failure Modes",       subtitle: "Timeouts, rate limits, bad output, cascades — and the defenses.",              fidelity: { tier: "conceptual", note: "Interactive failure sandbox — see explanation for precise details." }, component: FailureSimulator },
 
+  // ── NLP Foundations gym — 12 modules (classical NLP → GenAI bridge; teaching via RUNNER_DATA) ──
+  { id: "nlp-preprocessing",             label: "Preprocessing",       tag: "NLP FOUNDATIONS", level: "beginner",     title: "Text Preprocessing & Normalization",           subtitle: "Tokenization schemes, subword algorithms, stemming vs lemmatization — the first transform.",           fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: TextPreprocessViz },
+  { id: "nlp-bow-tfidf",                 label: "BoW & TF-IDF",        tag: "NLP FOUNDATIONS", level: "beginner",     title: "Bag-of-Words & TF-IDF",                        subtitle: "Sparse text vectors, why IDF weights discriminative terms, and the line to BM25.",                     fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: TfidfViz },
+  { id: "nlp-ngram-lm",                  label: "n-gram LMs",          tag: "NLP FOUNDATIONS", level: "intermediate", title: "n-gram Language Models",                        subtitle: "Markov assumption, smoothing, perplexity — the statistical roots of next-token prediction.",           fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: NgramLmViz },
+  { id: "nlp-word2vec-glove",            label: "Word2Vec & GloVe",    tag: "NLP FOUNDATIONS", level: "intermediate", title: "Word2Vec & GloVe",                             subtitle: "Skip-gram vs CBOW, negative sampling, and word arithmetic — the training side of embeddings.",         fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: Word2vecViz },
+  { id: "nlp-rnn-lstm-gru",              label: "RNN / LSTM / GRU",    tag: "NLP FOUNDATIONS", level: "intermediate", title: "RNNs, LSTMs & GRUs",                           subtitle: "Recurrence, gating, and vanishing gradients — why sequence models gave way to attention.",             fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: RnnLstmViz },
+  { id: "nlp-seq2seq-attention",         label: "seq2seq + Attention", tag: "NLP FOUNDATIONS", level: "intermediate", title: "seq2seq & the Birth of Attention",             subtitle: "The encoder-decoder bottleneck and Bahdanau/Luong attention — the seed of self-attention.",            fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: Seq2seqAttentionViz },
+  { id: "nlp-encoder-decoder-objectives",label: "Encoder vs Decoder",  tag: "NLP FOUNDATIONS", level: "advanced",     title: "Encoder vs Decoder vs Encoder-Decoder",        subtitle: "BERT/MLM vs GPT/causal vs T5/span-corruption — which objective for which task.",                      fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: EncoderDecoderViz },
+  { id: "nlp-classical-tasks",           label: "Classical Tasks",     tag: "NLP FOUNDATIONS", level: "intermediate", title: "Classical NLP Tasks",                          subtitle: "POS, NER, parsing, coreference — sequence labeling and how LLMs subsumed them.",                       fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: ClassicalTasksViz },
+  { id: "nlp-text-classification",       label: "Text Classification", tag: "NLP FOUNDATIONS", level: "beginner",     title: "Text Classification & Sentiment",              subtitle: "Naive Bayes → logistic → fine-tuned BERT → zero-shot, and how to evaluate them.",                      fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: TextClassifyViz },
+  { id: "nlp-eval-metrics",              label: "NLP Metrics",         tag: "NLP FOUNDATIONS", level: "intermediate", title: "NLP Evaluation Metrics",                       subtitle: "BLEU, ROUGE, METEOR, perplexity, exact-match/F1 — and their paraphrase blind spot.",                   fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: NlpMetricsViz },
+  { id: "nlp-transfer-learning",         label: "Transfer Learning",   tag: "NLP FOUNDATIONS", level: "intermediate", title: "Transfer Learning in NLP",                     subtitle: "ELMo → ULMFiT → BERT: pretrain-then-finetune, NLP's ImageNet moment.",                                 fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: TransferLearningViz },
+  { id: "nlp-sentence-embeddings",       label: "Sentence Embeddings", tag: "NLP FOUNDATIONS", level: "advanced",     title: "Sentence Embeddings & Semantic Similarity",    subtitle: "SBERT, pooling strategies, and cosine similarity — the bridge to modern RAG.",                         fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: SentenceEmbedViz },
+
   // ── D3: market-gap Foundations modules (teaching via RUNNER_DATA; interactive TBD) ──
   { id: "rope",       label: "RoPE",             tag: "LANG MODELS", level: "advanced",     title: "Rotary Position Embeddings (RoPE)", subtitle: "Why rotation encodes position — and how context length extends.",          fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: RopeViz },
   { id: "gqa-mqa",    label: "GQA / MQA",        tag: "LANG MODELS", level: "advanced",     title: "Grouped-Query & Multi-Query Attention", subtitle: "Shrinking the KV cache — the memory bottleneck at inference.",           fidelity: { tier: "conceptual", note: "Interactive — see explanation for precise details." }, component: GQAMemoryViz },
@@ -11994,6 +12021,13 @@ const MODULE_META = {
 
 export const GYMS = [
   {
+    id: "nlp-foundations",
+    label: "NLP Foundations",
+    desc: "The classical NLP that GenAI is built on: preprocessing & tokenization, BoW/TF-IDF, n-gram LMs, word2vec/GloVe, RNN/LSTM/GRU, seq2seq → attention, encoder vs decoder objectives, classical tasks, text classification, eval metrics, transfer learning, and sentence embeddings.",
+    color: "#6366f1",
+    moduleIds: ["nlp-preprocessing", "nlp-bow-tfidf", "nlp-ngram-lm", "nlp-word2vec-glove", "nlp-rnn-lstm-gru", "nlp-seq2seq-attention", "nlp-encoder-decoder-objectives", "nlp-classical-tasks", "nlp-text-classification", "nlp-eval-metrics", "nlp-transfer-learning", "nlp-sentence-embeddings"],
+  },
+  {
     id: "language-models",
     label: "Language Models",
     desc: "Tokenization, attention, positional encoding, KV cache, sampling, and the training signal. The foundation before you touch any lab.",
@@ -12195,7 +12229,7 @@ function GymSelectorView({ mastery, onEnterGym }) {
               )}
               {!gym.comingSoon && (
                 <div className="flex items-center justify-between mt-auto pt-1">
-                  <span className="text-[10px] text-zinc-600">→ {gym.labLabel}</span>
+                  <span className="text-[10px] text-zinc-600">{gym.labLabel ? `→ ${gym.labLabel}` : ""}</span>
                   <span className="text-xs font-semibold" style={{ color: gym.color }}>
                     {completed === total && total > 0 ? "Revisit →" : "Enter →"}
                   </span>
@@ -12421,7 +12455,7 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
       {/* ai-agents no longer has a separate lab surface — its 16 Agent Lab components ARE the
           modules above — so the "Go to lab" footer (which would round-trip back to this gym via
           HASH_GYM_REDIRECTS) is suppressed for it. */}
-      {gym.id !== "ai-agents" && (
+      {gym.id !== "ai-agents" && gym.labId && (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-zinc-500 mb-0.5">Ready to apply these concepts?</p>
