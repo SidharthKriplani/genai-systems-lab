@@ -431,6 +431,292 @@ if __name__ == "__main__":
       { title: "3 · The decision: block, redact, or log-and-continue", note: "Per-stage severity and the fail-open-vs-fail-closed call — the trade-off that decides whether a bug becomes a breach or an outage." },
     ],
   },
+
+  // ─── NEW ROADMAP SKELETONS (2026-07-03) ──────────────────────────────────────
+  // Eight read-and-reason walkthroughs, published as outlines first. Each carries a
+  // full intro + an ordered outline of the planned steps + a recap of takeaways.
+  {
+    id: "tokenizer-from-scratch",
+    title: "Build a BPE Tokenizer From Scratch",
+    subtitle:
+      "Walk a byte-pair-encoding tokenizer end to end — train the merge table from a corpus, then encode text into token ids and decode them back. Reason about why subword tokenization sits between characters and words, where the vocabulary budget goes, and what breaks on unseen scripts, whitespace, and long digit runs.",
+    tag: "Tokenizer · Python",
+    difficulty: "core",
+    minutes: 24,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "Every prompt you send is first cut into tokens, and that boundary decision quietly drives cost, context limits, and how the model 'sees' rare words. Teams that treat the tokenizer as a black box get surprised: a JSON-heavy prompt costs 2x what they estimated, a non-English user hits the context wall twice as fast, and a model fumbles arithmetic because digits split unpredictably. This lab reads a real byte-pair-encoding tokenizer so you can explain *why* a word becomes N tokens and what a vocabulary size actually buys. _See the token-cost mental model in Domain Labs → Retrieval / Production; this is the code behind it._",
+      whatYouBuild:
+        "A single-file BPE tokenizer: a trainer that learns a merge table from raw bytes, and an encoder/decoder pair that round-trips arbitrary UTF-8 text through token ids using that learned vocabulary — the exact shape behind GPT-style tokenizers.",
+      prereqs: [
+        "Comfort reading Python (dicts, tuples, list comprehensions)",
+        "That text is bytes and a token is a subword unit, not a whole word",
+        "Why vocabulary size trades sequence length against embedding-table size",
+      ],
+    },
+    outline: [
+      { title: "1 · Start from bytes, not characters: the 256-symbol base vocabulary", note: "Why working over raw UTF-8 bytes guarantees every input is representable — no unknown-token holes for emoji or unseen scripts." },
+      { title: "2 · Count byte-pair frequencies and apply the highest-frequency merge", note: "The core training step: tally adjacent pairs across the corpus, merge the most frequent into one new symbol, repeat." },
+      { title: "3 · Grow the merge table to the target vocabulary size", note: "The training loop and its stop condition — how vocab size sets the number of merges and where diminishing returns kick in." },
+      { title: "4 · Encode: apply merges in learned order to turn text into token ids", note: "Why merges must be applied in the exact rank order they were learned, or encode/decode desync." },
+      { title: "5 · Decode: map ids back to bytes and reconstruct the string", note: "Lossless round-trip, and the subtlety of decoding a partial token stream mid-generation." },
+      { title: "6 · Failure tour: whitespace, digits, and out-of-distribution scripts", note: "Where fixed merges misbehave — leading-space handling, long digit runs, and languages absent from training." },
+    ],
+    recap: [
+      "Byte-level base vocabulary makes the tokenizer total: any UTF-8 input encodes, so there is no true unknown token — only inefficient splits.",
+      "Vocabulary size is a real system knob: bigger vocab means shorter sequences (cheaper context) but a larger embedding table and softmax.",
+      "Merges are order-dependent; encode and decode share the same ranked merge table, and a version mismatch silently corrupts ids.",
+      "Tokenization is not language-neutral — non-English text and code often cost more tokens per character, which is a cost and context-window issue, not a bug.",
+    ],
+  },
+  {
+    id: "attention-from-scratch",
+    title: "Implement Attention From Scratch",
+    subtitle:
+      "Walk scaled dot-product attention and then multi-head attention in NumPy/PyTorch — queries, keys, values, the scaling factor, the causal mask, and why splitting into heads buys you more than one big attention. Reason about the shapes at every step and what each design choice costs at inference time.",
+    tag: "Attention · Python",
+    difficulty: "advanced",
+    minutes: 28,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "Attention is the one mechanism every transformer question circles back to, and reciting 'softmax of QK^T' is not the same as being able to trace the tensor shapes or explain why the scaling factor exists. Engineers who have only used attention through a library freeze when asked why it is O(n^2), why there are multiple heads, or what the causal mask actually does. This lab reads a from-scratch implementation so the mechanism stops being a spell and becomes something you can debug. _See the transformer concept in Domain Labs; this is the arithmetic underneath it._",
+      whatYouBuild:
+        "A from-scratch attention module: scaled dot-product attention with an optional causal mask, wrapped into a multi-head attention layer that projects, splits into heads, attends, and recombines — the core block of every decoder-only model.",
+      prereqs: [
+        "Comfort reading Python and NumPy/PyTorch tensor code",
+        "Matrix multiplication and softmax",
+        "That a transformer processes a sequence of token embeddings in parallel",
+      ],
+    },
+    outline: [
+      { title: "1 · Project inputs into queries, keys, and values", note: "Three learned linear maps from the same embeddings — why Q, K, V are separate projections and not the raw input." },
+      { title: "2 · Score with QK^T and scale by 1/sqrt(d_k)", note: "Why the dot products are divided by sqrt(head dim) — unscaled scores saturate softmax and kill gradients." },
+      { title: "3 · Apply the causal mask before softmax", note: "Setting future positions to -inf so a token can only attend to itself and the past; why the mask goes before, not after, softmax." },
+      { title: "4 · Softmax to weights, then weight the values", note: "Turning scores into a distribution per query and mixing the value vectors — the actual 'attending'." },
+      { title: "5 · Split into heads and run attention per head", note: "Reshaping d_model into (heads x head_dim) so each head learns a different relation subspace in parallel." },
+      { title: "6 · Concatenate heads and project the output", note: "Recombining head outputs and the final output projection — restoring the model dimension for the next layer." },
+      { title: "7 · Shapes and cost: why attention is O(n^2) in sequence length", note: "The n-by-n score matrix as the memory and compute bottleneck, and what KV-cache buys at decode time." },
+    ],
+    recap: [
+      "Q, K, V are three independent projections of the same input; the asymmetry between query and key is what lets a token search for what it needs.",
+      "The 1/sqrt(d_k) scale is not cosmetic — without it, large dot products push softmax into saturation and gradients vanish.",
+      "The causal mask must be applied to the raw scores (as -inf) before softmax, so masked positions contribute exactly zero weight.",
+      "Multiple heads are cheaper and more expressive than one wide attention: each head attends in a lower-dimensional subspace, then outputs are concatenated.",
+      "The n-by-n attention matrix makes cost quadratic in sequence length — the reason long context is expensive and the KV-cache matters at inference.",
+    ],
+  },
+  {
+    id: "rag-pipeline",
+    title: "Build a RAG Pipeline End to End",
+    subtitle:
+      "Walk a retrieval-augmented-generation pipeline from raw documents to a grounded answer — chunk, embed, store in a vector index, retrieve, rerank, and ground the generation in the retrieved context. Reason about where recall is lost, why the reranker exists, and how grounding stops the model from answering off-context.",
+    tag: "RAG · Python",
+    difficulty: "core",
+    minutes: 26,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "A team wants the assistant to answer from their own knowledge base, not the model's memory. The demo version — embed everything, grab the top-3, stuff them in the prompt — works on a slide and collapses in production: the right passage is not retrieved, the prompt overflows, and the model answers confidently from the wrong chunk. This lab reads the full pipeline that fixes each stage and, more usefully, teaches you to locate which stage introduced a given failure. _See Retrieval in Domain Labs for the mental model; this is the code that implements it._",
+      whatYouBuild:
+        "A single-file RAG pipeline: a boundary-aware chunker, an embed-and-upsert step into a vector store, a retriever, a cross-encoder reranker over the top-k, and a grounded-generation call whose prompt forces citations back to the source chunks.",
+      prereqs: [
+        "Comfort reading Python (functions, list comprehensions, type hints)",
+        "That text is embedded into vectors compared by cosine similarity",
+        "Why a grounded answer hallucinates less than one answered from memory",
+      ],
+    },
+    outline: [
+      { title: "1 · Chunk documents at semantic boundaries", note: "Why boundary-aware chunking beats fixed-token windows — recall lost here can never be recovered downstream." },
+      { title: "2 · Embed each chunk and upsert into the vector store", note: "Turning chunks into vectors with stable ids and metadata; the index is a snapshot, not a live mirror of the corpus." },
+      { title: "3 · Retrieve the top-k candidates for a query", note: "Embedding the query the same way and pulling nearest neighbors — and why you retrieve more than you plan to use." },
+      { title: "4 · Rerank the candidates with a cross-encoder", note: "Turning an approximate top-20 into a trustworthy top-5 before anything reaches the model." },
+      { title: "5 · Assemble the grounded prompt within the context budget", note: "Packing the reranked chunks with source markers and staying under the token limit." },
+      { title: "6 · Generate with a citation contract and verify grounding", note: "Forcing every claim back to a chunk id and catching answers the retrieved context cannot support." },
+    ],
+    recap: [
+      "Retrieval quality is set at chunk time: a semantically-split corpus is the ceiling on everything downstream.",
+      "Retrieve wide, then rerank narrow — dense ANN recall is approximate, and the cross-encoder is what makes the final top-k trustworthy.",
+      "The index is a snapshot; stale documents in, stale answers out — reindexing cadence is a design decision, not an afterthought.",
+      "Grounding is enforced by the prompt contract plus a verification pass, not by hope — an ungrounded citation is a caught failure, not a shipped one.",
+    ],
+  },
+  {
+    id: "eval-harness",
+    title: "Build an LLM Eval Harness With a CI Gate",
+    subtitle:
+      "Walk an evaluation harness that scores model outputs with an LLM-as-judge against an explicit rubric, aggregates per-metric scores, compares them to a frozen baseline, and fails the build on regression. Reason about the decisions that make an eval trustworthy: cross-model judging, a versioned test set, and a threshold that blocks a deploy instead of a human's optimism.",
+    tag: "Eval · Python",
+    difficulty: "core",
+    minutes: 22,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "'The outputs look better' is not a number, and eyeballing a few responses does not survive a prompt tweak shipped at 2pm on a Thursday. The team needs an eval that runs in CI: every prompt or model change scores a fixed test set against a rubric, and the build fails if quality drops below the frozen baseline. This lab reads that harness and shows why the judge is itself a system with biases you have to design around. _See Evaluation in Domain Labs for the concept; this is the code that enforces it._",
+      whatYouBuild:
+        "An eval harness: a versioned test-set loader, an LLM-as-judge call that returns structured per-rubric scores, an aggregation step, a baseline comparison, and a CI gate that exits non-zero when a metric regresses past its threshold.",
+      prereqs: [
+        "Comfort reading Python (functions, JSON, simple stats)",
+        "What faithfulness and answer-relevance mean for an answer",
+        "Why a model judging its own family's outputs is biased toward them",
+      ],
+    },
+    outline: [
+      { title: "1 · Load a versioned test set of real production queries", note: "Why synthetic-only sets lie, and how the test set becomes a growing regression suite over time." },
+      { title: "2 · Score each case with an LLM-as-judge and a rubric", note: "Forcing the judge to return JSON scored per rubric dimension so results are machine-comparable, not prose." },
+      { title: "3 · Use a cross-family judge to dodge self-preference bias", note: "Why a model tends to rate its own family's style higher, and how picking a different judge model controls for it." },
+      { title: "4 · Aggregate per-case judgments into per-metric scores", note: "Turning individual verdicts into a small set of numbers you can track run over run." },
+      { title: "5 · Compare against a frozen baseline", note: "The floor you must not fall below, and why the baseline is pinned to a commit, not recomputed each run." },
+      { title: "6 · Fail the CI build on regression", note: "The few lines that turn an eval into a deploy blocker — threshold, delta-from-baseline, and a readable failure message." },
+    ],
+    recap: [
+      "An eval is only a signal if it runs automatically — the CI gate, not the dashboard, is what actually stops a regression from shipping.",
+      "The judge is a system with biases; cross-family judging and a fixed rubric are how you keep 'LLM scored it 8/10' from being noise.",
+      "A frozen, commit-pinned baseline is the whole game: without a floor, every run just reports numbers no one acts on.",
+      "Structured JSON scores per rubric dimension make the eval diffable — you can see which dimension regressed, not just that the average dropped.",
+    ],
+  },
+  {
+    id: "finetune-loop",
+    title: "Build a LoRA Fine-Tune Loop",
+    subtitle:
+      "Walk a parameter-efficient fine-tuning loop with LoRA — format the dataset, configure the PEFT adapters, run the training loop, then merge or serve the adapter. Reason about why you freeze the base weights, where the rank and target-module choices land on the quality-vs-cost curve, and what to check before you trust the result.",
+    tag: "Fine-tune · Python",
+    difficulty: "advanced",
+    minutes: 30,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "Prompting gets a team most of the way, but the model still misses a house style or a domain vocabulary that no amount of few-shot examples fixes. Full fine-tuning is out — too much GPU, too much risk of catastrophic forgetting. LoRA is the answer they reach for: freeze the base model, train small low-rank adapters, and ship a few megabytes instead of a few gigabytes. This lab reads that loop so you can explain what LoRA actually trains, what the rank knob does, and how the adapter gets served. _See Fine-tuning in Domain Labs for where this sits versus prompting and RAG._",
+      whatYouBuild:
+        "A LoRA fine-tune loop: a dataset formatter into the model's chat template, a PEFT/LoRA config over chosen target modules, a training loop with the base weights frozen, and a merge-or-serve step that turns the adapter into something you can deploy.",
+      prereqs: [
+        "Comfort reading Python and PyTorch training-loop code",
+        "That fine-tuning updates model weights, while RAG and prompting do not",
+        "Roughly what a low-rank matrix decomposition is",
+      ],
+    },
+    outline: [
+      { title: "1 · Format the dataset into the model's chat template", note: "Matching the exact prompt/response format the base model expects, and masking the prompt tokens out of the loss." },
+      { title: "2 · Configure LoRA: rank, alpha, and target modules", note: "Choosing which attention/MLP projections get adapters and how rank trades capacity against parameter count." },
+      { title: "3 · Freeze the base weights and attach the adapters", note: "Why only the low-rank matrices train, and how that avoids catastrophic forgetting and shrinks the optimizer state." },
+      { title: "4 · Run the training loop with the right hyperparameters", note: "Learning rate, batching, and gradient accumulation for adapter training — plus watching the loss for the usual failure signs." },
+      { title: "5 · Evaluate on a held-out set before trusting the adapter", note: "Checking the fine-tune actually helped on target behavior without regressing general capability." },
+      { title: "6 · Merge or serve: adapter-at-runtime vs merged weights", note: "The deploy fork — keep adapters swappable at load time, or bake them into the base for a single artifact." },
+    ],
+    recap: [
+      "LoRA trains small low-rank matrices while the base stays frozen — a few megabytes of adapter, not a full fine-tune, which is why it dodges catastrophic forgetting.",
+      "Rank and target modules are the capacity knob: too low underfits the new behavior, too high loses LoRA's efficiency advantage.",
+      "Loss masking matters — training on the prompt tokens as well as the response teaches the model the wrong objective.",
+      "The merge-vs-serve decision is a deployment trade: swappable adapters give flexibility, merged weights give a single simpler artifact.",
+    ],
+  },
+  {
+    id: "vector-search-hnsw",
+    title: "Build HNSW Vector Search With Hybrid Retrieval",
+    subtitle:
+      "Walk an HNSW-style approximate-nearest-neighbor index and then fuse it with BM25 keyword search into a hybrid retriever. Reason about the graph structure that makes ANN fast, the recall-vs-latency knobs, and why dense and sparse retrieval catch different failures — so exact terms and semantic matches both survive.",
+    tag: "Vectors · Python",
+    difficulty: "advanced",
+    minutes: 28,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "At a few thousand vectors you can brute-force every query; at a few million you cannot, and 'just use a vector DB' hides the one decision that dictates whether retrieval is fast and correct. Pure semantic search also has a blind spot: it fuzzes exact identifiers, product codes, and rare names that a keyword index would nail. This lab reads an HNSW index and a hybrid retriever so you can explain how approximate search stays fast and why you fuse dense and sparse instead of choosing one. _See Retrieval in Domain Labs for how this feeds a RAG pipeline._",
+      whatYouBuild:
+        "A vector-search module: an HNSW-style multi-layer proximity graph with insert and search, plus a hybrid retriever that runs dense ANN alongside a BM25 keyword search and fuses the two ranked lists.",
+      prereqs: [
+        "Comfort reading Python (classes, graphs as dicts, heaps)",
+        "That similarity search finds nearest vectors by cosine or dot product",
+        "Why exact brute-force search does not scale to millions of vectors",
+      ],
+    },
+    outline: [
+      { title: "1 · Why brute-force k-NN stops scaling", note: "The linear-scan cost per query and the motivation for an approximate index that trades a little recall for a lot of speed." },
+      { title: "2 · Build the HNSW multi-layer proximity graph", note: "Sparse long-range links up top, dense links at the bottom — how the layered graph gives logarithmic-ish search." },
+      { title: "3 · Insert a vector: connect it across layers", note: "Assigning a random top layer and greedily linking to nearby neighbors on the way down, capped by the M parameter." },
+      { title: "4 · Search: greedy descent then ef-controlled beam", note: "Falling through layers to a good entry point, then widening the search with efSearch — the recall-vs-latency knob." },
+      { title: "5 · Add BM25 keyword scoring alongside dense retrieval", note: "Why exact terms, IDs, and rare names need a sparse index that vectors alone will fuzz away." },
+      { title: "6 · Fuse dense and sparse with reciprocal rank fusion", note: "Combining two ranked lists into one without needing their scores to share a scale." },
+    ],
+    recap: [
+      "ANN is an accuracy-for-speed trade: HNSW gives near-brute-force recall at a fraction of the cost, and efSearch is the dial between the two.",
+      "The layered graph is the trick — sparse upper layers route a query near its neighborhood fast, dense lower layers refine it.",
+      "Dense and sparse retrieval fail differently: vectors catch paraphrase and meaning, BM25 catches exact tokens and rare identifiers.",
+      "Reciprocal rank fusion combines the two by rank, not raw score, so you never have to reconcile incompatible score scales.",
+    ],
+  },
+  {
+    id: "prompt-injection-detector",
+    title: "Build a Prompt-Injection Guardrail",
+    subtitle:
+      "Walk an input classifier plus an output validator that together defend an LLM app from prompt injection — screening the request before it reaches the model and screening the response before it reaches the user. Reason about defense-in-depth, the fail-open-vs-fail-closed call, and why no single classifier is enough.",
+    tag: "Safety · Python",
+    difficulty: "core",
+    minutes: 20,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "A customer-facing assistant gets probed on day one: users try to override the system prompt, exfiltrate hidden instructions, or steer the model off-policy, and a compromised model can then leak context or do something it shouldn't. One classifier is not a guardrail. The team builds an input stage that screens the request before it costs a model call and an output stage that screens the response before the user sees it. This lab reads that pipeline and the judgment calls inside it — especially fail-open vs fail-closed, a real production trade-off. _See Production in Domain Labs for where guardrails sit in the stack._",
+      whatYouBuild:
+        "A guardrail pipeline: an input classifier (heuristic injection patterns plus a small model check) that scores and routes the request, and an output validator that checks the response for leaked instructions, policy violations, and off-topic drift before it returns.",
+      prereqs: [
+        "Comfort reading Python (functions, regex basics, early returns)",
+        "What prompt injection is and why user input cannot be trusted",
+        "The difference between failing open (allow on error) and failing closed (block on error)",
+      ],
+    },
+    outline: [
+      { title: "1 · Classify the input: cheap heuristics before a model call", note: "Pattern-matching known injection shapes first, so an obvious attack never costs a classifier model call." },
+      { title: "2 · Score borderline inputs with a small classifier model", note: "Escalating ambiguous requests to a model that returns a structured risk verdict, not a free-text opinion." },
+      { title: "3 · Route on the verdict: allow, sanitize, or block", note: "Turning a risk score into an action, and why sanitizing (stripping the injected instruction) beats a hard block for usability." },
+      { title: "4 · Validate the output before it reaches the user", note: "Re-scanning the model's response for leaked system instructions, policy violations, and off-topic drift — never trust the response either." },
+      { title: "5 · Decide fail-open vs fail-closed per stage", note: "What happens when a guard itself errors or times out — the trade-off between an outage and a breach, made explicitly." },
+      { title: "6 · Log every decision for tuning and audit", note: "Why you record trips and near-misses — the guardrail is only as good as the feedback loop that retunes it." },
+    ],
+    recap: [
+      "Guardrails are defense-in-depth: an input classifier and an output validator catch different failures, and neither alone is sufficient.",
+      "Order checks by cost — cheap heuristics screen the obvious attacks before you spend a model call on the ambiguous ones.",
+      "Fail-open vs fail-closed is a deliberate per-stage decision, not a default; it is the choice between a possible outage and a possible breach.",
+      "Never trust the model's own output — a successful injection shows up in the response, so the output stage is as important as the input stage.",
+    ],
+  },
+  {
+    id: "streaming-server",
+    title: "Build an SSE Token-Streaming Server",
+    subtitle:
+      "Walk a server-sent-events inference server that streams tokens as they are generated — the prefill/decode split, the SSE event contract, and backpressure when a slow client can't keep up. Reason about why streaming changes the latency the user feels, and where a naive implementation drops tokens or leaks resources.",
+    tag: "Serving · Python",
+    difficulty: "advanced",
+    minutes: 24,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "A user staring at a spinner for eight seconds churns; the same eight-second answer feels instant when the first words appear in 300ms. Streaming is what buys that, but the naive version bites back: a slow or disconnected client stalls the generator, tokens pile up in a buffer, and a dropped connection leaks a GPU-bound task that keeps decoding into the void. This lab reads a real SSE streaming server so you can explain the prefill/decode split, the event contract, and how backpressure and cancellation keep it honest under load. _See Production in Domain Labs for where serving fits._",
+      whatYouBuild:
+        "An SSE token-streaming inference server: an endpoint that runs prefill then streams decode-step tokens as server-sent events, with backpressure to a slow client and cancellation that stops generation when the client disconnects.",
+      prereqs: [
+        "Comfort reading Python (async/await, generators, async iterators)",
+        "That an LLM generates one token per decode step, autoregressively",
+        "Roughly what server-sent events are versus a single JSON response",
+      ],
+    },
+    outline: [
+      { title: "1 · Split prefill from decode: where time-to-first-token comes from", note: "Prefill processes the whole prompt once; decode emits one token per step — and the split is why streaming feels fast." },
+      { title: "2 · Define the SSE event contract", note: "The event/data framing for token deltas, a done sentinel, and an error event — the wire format the client parses incrementally." },
+      { title: "3 · Stream decode steps as an async generator", note: "Yielding each token as it is produced so the transport can flush it, instead of buffering the whole completion." },
+      { title: "4 · Apply backpressure when the client is slow", note: "Bounding the send queue so a slow reader throttles generation instead of ballooning memory." },
+      { title: "5 · Cancel generation on client disconnect", note: "Detecting a dropped connection and tearing down the decode task — the fix for GPU work that outlives its request." },
+      { title: "6 · Handle errors and timeouts mid-stream", note: "Emitting a clean error event and closing the stream when generation fails partway, so the client is never left hanging." },
+    ],
+    recap: [
+      "Streaming trades total latency for perceived latency: time-to-first-token, set by prefill, is what the user actually feels.",
+      "The prefill/decode split is the mental model — one heavy pass over the prompt, then a token-per-step loop that the server flushes as it goes.",
+      "Backpressure is mandatory, not optional: without a bounded queue a slow client turns into unbounded server memory growth.",
+      "Cancellation on disconnect is what stops orphaned decode tasks from burning GPU on responses no one will read.",
+    ],
+  },
 ];
 
 // Convenience lookup by id (parity with other GSL data modules).

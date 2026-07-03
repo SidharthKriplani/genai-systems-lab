@@ -29,6 +29,10 @@ import { RUNNER_AGENT_ECO } from "./agents/agent-eco";
 // ── Playground labs → distributed into Foundations modules (./playground/*.js) ──
 import { RUNNER_PLAYGROUND } from "./playground/playground-labs";
 
+// ── D3: market-gap modules (RoPE, GQA/MQA, GRPO/RLVR) + D1: deepened thin modules ──
+import { RUNNER_MARKET_GAP } from "./foundations/market-gap";
+import { RUNNER_DEEPEN_THIN } from "./foundations/deepen-thin";
+
 export const RUNNER_DATA = {
 
   // ── New foundations modules (authored in ./foundations/*.js) ─────────────────
@@ -3715,5 +3719,13 @@ itself).` },
     ],
     takeaway: "OCR is the silent failure point of document AI — bad parses produce confident LLM hallucinations with no error signal. The diagnostic first step: is this a scan (needs OCR) or a programmatic PDF (extract text directly, 100% accurate, free)? For scanned documents, use hybrid: traditional OCR for simple pages (cheap, fast), vision LLM only for pages below the confidence threshold (complex layouts, handwriting, degraded scans). Budget for vision LLM fallback at roughly 5-15x traditional cost depending on document complexity mix.",
   },
+
+  // ── D3: market-gap modules (RoPE, GQA/MQA, GRPO/RLVR) ─────────────────────────
+  ...RUNNER_MARKET_GAP,
+
+  // ── D1: deepened thin modules — spread LAST so these override the inline thin
+  //    definitions above for reranking / rag-eval / llm-as-judge / chunking /
+  //    observability-concepts / safety-measurement. ─────────────────────────────
+  ...RUNNER_DEEPEN_THIN,
 
 };
