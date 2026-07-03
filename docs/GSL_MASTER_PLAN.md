@@ -777,3 +777,18 @@ MSL's Review room (`src/tabs/ReviewTab.jsx`, spaced-rep over completed foundatio
 **Simplification (documented):** the recall "answer" is the module's authored one-line `subtitle` (its key teaching point) / the chain's `diagnosis` — NOT the deep per-module RUNNER_DATA takeaway. Wiring into each module's runner payload was out of scope for an additive port; the subtitle is a faithful recall target and "Open the full module →" deep-links to the full depth. Review currently pulls from Concepts mastery + case chains; PrepLab/lab-visit signals (`genai_visited_modules`, `gsl-preplab-history`) are not yet review sources — additive to add later via the same `buildItem` path.
 
 **Verified:** esbuild-parse OK on `Review.jsx`, `App.jsx`, `Concepts.jsx`, `nav.js`; named exports `MODULES`/`GYMS`/`ALL_CASE_CHAINS` confirmed present. No runtime (Mac-only build).
+
+## Foundations content — exhaustiveness pass, wave 1 (executed 2026-07-03)
+
+Assessment finding: the existing 18 foundations modules (language-models + foundation-models gyms) are genuinely STRONG (first-principles, numerical) — the gap was BREADTH, not depth. Five staff-critical topics had no learning home. Added them.
+
+**5 NEW modules** (teaching content in `src/data/foundations/*.js`, spread into RUNNER_DATA; MODULES entries use `component: StubModule` so the runner renders the rich RUNNER_DATA teaching with no interactive yet):
+- **quantization** (foundation-models) — VRAM math (70B fp16 140GB→int4 35GB), PTQ vs QAT, GPTQ/AWQ/NF4, int8-vs-int4 quality cliff (outlier activations), KV-cache quant, calibration-set representativeness.
+- **dpo** (foundation-models) — derives DPO from the RLHF objective's closed-form optimum → implicit reward as log-ratio → Bradley-Terry → BCE loss `−log σ(β·(s_chosen−s_rejected))`; β/reference-KL role; off-policy limits vs PPO; IPO/KTO/ORPO.
+- **speculative-decoding** (language-models, after sampling) — memory-bound decode → draft proposes k / target verifies in one pass → lossless accept/reject (min(1,p/q)) → α-driven speedup math → helps at batch-1, not compute-saturated; Medusa/EAGLE.
+- **moe** (foundation-models) — router + top-k gating; ACTIVE vs TOTAL params (Mixtral 8x7B ~47B total/~13B active); compute∝active, memory∝total; load-balancing loss/collapse.
+- **distillation** (foundation-models) — soft labels/dark knowledge; KL objective + temperature (T² gradient); response/feature/relation/sequence variants; synthetic-data distillation (Orca/Phi); distill-vs-quantize-vs-prune.
+
+**Plumbing:** `src/data/foundations/{quantization,dpo,speculative-decoding,moe,distillation}.js` each export a keyed RUNNER_DATA fragment; `foundationsRunnerData.js` imports + spreads them; `Concepts.jsx` got 5 MODULES entries + the ids added to the two gyms' `moduleIds`. Additive, no routes/localStorage touched. Data layer bundle-verified.
+
+**Wave 2 — DEFERRED (deepen existing STRONG modules):** ALiBi + NTK/PI in positional-encoding; RMSNorm-vs-LayerNorm in transformer; refocus `nextoken` onto its own mechanism (currently detours into forgetting/PEFT); beam search in sampling; vocab-size↔seq-length tradeoff in tokenizer; MLM/bidirectional objective in pretraining. Also: real interactives for the 5 new modules (currently teaching-only via StubModule).

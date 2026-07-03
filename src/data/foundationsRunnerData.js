@@ -8,7 +8,20 @@
 // Pilot: Language Models track (10 modules)
 // Expand to other tracks in subsequent sprints.
 
+import { RUNNER_QUANTIZATION } from "./foundations/quantization";
+import { RUNNER_DPO } from "./foundations/dpo";
+import { RUNNER_SPECDECODE } from "./foundations/speculative-decoding";
+import { RUNNER_MOE } from "./foundations/moe";
+import { RUNNER_DISTILLATION } from "./foundations/distillation";
+
 export const RUNNER_DATA = {
+
+  // ── New foundations modules (authored in ./foundations/*.js) ─────────────────
+  ...RUNNER_QUANTIZATION,
+  ...RUNNER_DPO,
+  ...RUNNER_SPECDECODE,
+  ...RUNNER_MOE,
+  ...RUNNER_DISTILLATION,
 
   // ── Language Models track ────────────────────────────────────────────────────
 
