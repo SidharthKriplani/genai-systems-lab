@@ -12,7 +12,7 @@ const SIBLINGS = [
 const FRAMES = [
   { k: 'KNOW', c: '#6366f1', d: 'Foundations gyms + Ground Truth — the recall and depth you need on training, fine-tuning, prompting, retrieval, evaluation, and serving.' },
   { k: 'DO',   c: '#22c55e', d: 'Playground — hands-on with prompts, retrieval, and agent loops so the fluency is real, not just read.' },
-  { k: 'BUILD', c: 'var(--gal-build)', d: 'Project Labs — own a GenAI system end to end, the way a real applied-AI role expects.' },
+  { k: 'BUILD', c: 'var(--gal-build)', d: 'Workshop — own a GenAI system end to end, the way a real applied-AI role expects.' },
   { k: 'JUDGE', c: '#f59e0b', d: 'Agent Lab, Systems, and AI Product — the tradeoff calls and judgment that separate senior from staff.' },
   { k: 'PREP & ASSESS', c: '#8b5cf6', d: 'PrepLab, Interview Room, and Company Tracks — rehearse interview questions and follow curated company × role prep paths.' },
 ];

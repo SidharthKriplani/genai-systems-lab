@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
-import { initAnalytics, track, FEEDBACK_URL, isFeedbackReady, checkPreviewUnlock } from "./analytics";
+import { initAnalytics, track, checkPreviewUnlock } from "./analytics";
 import { ALL_TABS, GROUP_COLORS } from "./config/nav";
 import { FidelityBadge } from "./shared";
 import { BrandMark } from "./BrandMark";
@@ -299,23 +299,19 @@ const NAV_SECTIONS = [
   { key: "know", label: "Learn", icon: "book-open", items: [
     { id: "concepts", label: "Foundations" },  // was "Concepts" — renamed sprint 92; gyms = tracks
     { id: "groundtruth", label: "Ground Truth" },
-    // 2026-07-03 MIGRATION (enforced contract): the "Domain Labs" group (Retrieval / Agent Lab /
-    // Evaluation / Production) and the standalone "Prompt Engineering" row were DELETED. Every one
-    // of those domains is now reached ONLY through Foundations (the Concepts gyms). The rich Agent
-    // Lab / Eval Lab / LLM Lab content is rendered INSIDE its gym via the gym's "Lab" tab; the 4
-    // Domain Hubs are deleted (routes + render). Prompt Engineering is the `prompt-engineering` gym.
-    // Playground retired 2026-07-03: its 7 unique labs are now individual Foundations
-    // modules (prompt-engineering / evaluation / ai-safety / production gyms); the 7
-    // duplicate sandboxes were dropped (each had a richer canonical module already).
-    { id: "__code", label: "Code", header: true },  // 2026-07-03: was "Sister labs" — renamed to "Code" group.
-    { id: "__pl", label: "Python · DSA", href: SIBLING_LABS.pl },
-    { id: "__pal", label: "SQL", href: SIBLING_LABS.pal },
-    // Rev-2 R4: `aipm` (AI Product Judgment) removed from nav. Route/render/hash (#aipm) kept
-    // alive below (Wave 4 salvages the Launch Checklist). de-listed: flows/explore (hash-reachable).
+    // 2026-07-03 MIGRATION (enforced contract): the "Domain Labs" group + standalone "Prompt
+    // Engineering" row were DELETED; those domains live only through Foundations gyms. Playground
+    // retired: its 7 unique labs are now Foundations modules. R3 (2026-07-03): Code is no longer
+    // nested under Learn — it's its own top-level frame below.
   ]},
   { key: "build", label: "BUILD", icon: "hammer", items: [
-    { id: "career", label: "Project Labs" },  // promoted above Code Labs (2026-07-03, GSL fix #6)
-    { id: "codelabs", label: "Code Labs" },
+    { id: "career", label: "Workshop" },  // renamed from "Project Labs" (R4, 2026-07-03)
+  ]},
+  // R3 (2026-07-03): Code promoted OUT of Learn into its own top-level frame (Coding Dojo + sister labs).
+  { key: "code", label: "CODE", icon: "terminal", items: [
+    { id: "codelabs", label: "Coding Dojo" },  // renamed from "Code Labs" (R5, 2026-07-03)
+    { id: "__pl", label: "Python · DSA", href: SIBLING_LABS.pl },
+    { id: "__pal", label: "SQL", href: SIBLING_LABS.pal },
   ]},
   { key: "prep", label: "INTERVIEW", icon: "clipboard", items: [
     { id: "preplab", label: "Question Bank" },
@@ -342,7 +338,7 @@ const TAB_FRAME = (() => {
   // sprint 92: dissolved tabs still map to know frame for graceful redirect.
   m.paths = "know"; m.systems = "know";
   // starthere / resources are personal-strip (NAV_TRACK) rows — no frame to expand; omitted intentionally.
-  m.codelabs = "build"; // BUILD-frame code-walkthrough surface (Code Labs)
+  m.codelabs = "code"; // CODE-frame code-walkthrough surface (Coding Dojo) — R3 2026-07-03
   return m;
 })();
 
@@ -1059,43 +1055,7 @@ function SearchModal({ onClose, onSelect }) {
   );
 }
 
-// ─── FEEDBACK MODAL (shown when form URL not yet configured) ─────────────────
-function FeedbackFallbackModal({ onClose }) {
-  return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose} role="presentation">
-      <div className="rounded-2xl p-6 max-w-sm w-full space-y-4" role="dialog" aria-modal="true" aria-label="Give Feedback" style={{ background: "var(--surface)", border: "1px solid var(--border)" }} onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-bold text-white"><Icon name="message-circle" size={14} /> Give Feedback</span>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all" aria-label="Close feedback"><Icon name="x" size={14} /></button>
-        </div>
-        <p className="text-sm text-zinc-400 leading-relaxed">
-          Found a bug, have a suggestion, or want to say what's useful? Reach the builder directly:
-        </p>
-        <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-3 space-y-2.5">
-          <a href="https://github.com/SidharthKriplani/genai-systems-lab/issues"
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-violet-400 hover:text-violet-300 transition-colors font-mono">
-            <span>→</span> Open a GitHub issue (bugs, feature requests)
-          </a>
-          <a href="https://www.linkedin.com/in/sidharth-kriplani"
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-300 transition-colors font-mono">
-            <span>→</span> LinkedIn — Sidharth Kriplani
-          </a>
-          <a href="https://github.com/SidharthKriplani"
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-300 transition-colors font-mono">
-            <span>→</span> GitHub — @SidharthKriplani
-          </a>
-        </div>
-        <p className="text-[10px] text-zinc-500 font-mono">
-          No login required. No personal data collected.
-        </p>
-      </div>
-    </div>
-  );
-}
-
+// Feedback surface removed (R6, 2026-07-03) — modal + openFeedback + nav buttons deleted.
 
 // ─── LAB MODULE FILTERS ──────────────────────────────────────────────────────
 // 2026-07-03 MIGRATION: EVAL_LAB_MODULES + LLM_LAB_MODULES moved into Concepts.jsx
@@ -1324,15 +1284,6 @@ export default function App() {
   const [labHintDismissed, setLabHintDismissed] = useState(() => {
     try { return localStorage.getItem("genai_lab_hint_dismissed") === "1"; } catch { return false; }
   });
-  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
-  function openFeedback(location = "unknown") {
-    track("feedback_clicked", { location });
-    if (isFeedbackReady()) {
-      window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
-    } else {
-      setFeedbackModalOpen(true);
-    }
-  }
   const [toasts, setToasts] = useState([]);
   function showToast(message, type = "info") {
     const id = Date.now();
@@ -1426,7 +1377,6 @@ export default function App() {
         if (searchOpen) { setSearchOpen(false); return; }
         if (leaderboardOpen) { setLeaderboardOpen(false); return; }
         if (whatsNewOpen) { dismissWhatsNew(); return; }
-        if (feedbackModalOpen) { setFeedbackModalOpen(false); return; }
         setShowShortcuts(false);
         setMobileMenuOpen(false);
         return;
@@ -1442,7 +1392,7 @@ export default function App() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [searchOpen, leaderboardOpen, whatsNewOpen, feedbackModalOpen]);
+  }, [searchOpen, leaderboardOpen, whatsNewOpen]);
 
   useEffect(() => {
     checkPreviewUnlock(); // handle ?preview=CODE URL unlock
@@ -1626,9 +1576,6 @@ export default function App() {
       {/* Welcome modal — first visit only */}
       {showWelcome && <WelcomeModal onSelect={dismissWelcome} />}
 
-      {/* Feedback fallback modal */}
-      {feedbackModalOpen && <FeedbackFallbackModal onClose={() => setFeedbackModalOpen(false)} />}
-
       {/* Keyboard shortcuts overlay */}
       {searchOpen && (
         <SearchModal
@@ -1752,10 +1699,6 @@ export default function App() {
               <button onClick={() => { setLeaderboardOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-white transition-all">
                 <Icon name="clipboard" size={14} /> Challenge Log
               </button>
-              <button onClick={() => { openFeedback("mobile_drawer"); setMobileMenuOpen(false); }}
-                className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-violet-400 hover:border-violet-800 transition-all flex items-center justify-center gap-1.5">
-                <Icon name="message-circle" size={14} /> Give Feedback
-              </button>
             </div>
           </div>
         </div>
@@ -1811,11 +1754,7 @@ export default function App() {
             <span className="text-[11px] text-zinc-500 flex-1">Search…</span>
             <kbd className="text-[9px] border border-zinc-700/60 rounded px-1 text-zinc-500 font-mono">⌘K</kbd>
           </button>
-          <button onClick={() => openFeedback("sidebar")}
-            className="w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-150">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="shrink-0"><path d="M5.5 1C3.015 1 1 2.791 1 5c0 .98.38 1.878 1.01 2.58L1.5 9.5l2.04-.98A4.8 4.8 0 005.5 9C7.985 9 10 7.209 10 5s-2.015-4-4.5-4z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/></svg>
-            <span>Feedback</span>
-          </button>
+          {/* Feedback surface removed (R6, 2026-07-03). */}
           {/* About now lives in the personal strip (NAV_TRACK, Rev-2 R3) — footer row removed to
               avoid a duplicate. Route (#about) unchanged. */}
           {/* Footer — part of BreakLabs (slot 6) */}
@@ -2377,13 +2316,6 @@ export default function App() {
                     );
                   })()}
 
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 flex items-center justify-between gap-3">
-                    <p className="text-xs text-zinc-500">Was this scenario useful? Tell us what to improve.</p>
-                    <button onClick={() => openFeedback("rag_lab_post_evaluate")}
-                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 hover:border-violet-700 text-zinc-400 hover:text-violet-400 transition-all">
-                      Give Feedback →
-                    </button>
-                  </div>
                 </>
               )}
             </div>

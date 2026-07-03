@@ -252,120 +252,6 @@ const SYSTEM_DESIGN_PROMPTS = [
   },
 ];
 
-const TAKEHOME_CHALLENGES = [
-  {
-    id: "rank_outputs",
-    title: "Rank These Outputs",
-    brief: "A customer service bot received this query: 'I ordered 3 items but only 2 arrived. What should I do?'\n\nRank the three responses below from best (1) to worst (3).",
-    outputs: [
-      { id: "r1", text: "I'm sorry to hear that! Please contact our support team at support@store.com or call 1-800-XXX-XXXX and we'll resolve this right away.", label: "A" },
-      { id: "r2", text: "Missing items from your order can happen due to shipping issues or warehouse errors. To resolve this, I'd recommend filing a missing item claim through your account under Orders > Report Issue. Include your order number and a photo of the shipping label. We'll investigate and either ship the missing item or issue a refund within 3-5 business days.", label: "B" },
-      { id: "r3", text: "Based on your order history and typical resolution patterns for missing item cases at our fulfillment centers, the probability that this was a warehouse split-shipment is approximately 67%, while carrier loss accounts for roughly 28% of cases, with the remaining 5% attributable to customer receipt errors. I recommend you contact support.", label: "C" },
-    ],
-    idealRank: ["r2", "r1", "r3"],
-    explanations: {
-      r2: "Best: Actionable, specific, explains next steps clearly, sets expectations (3-5 days). Treats the customer as capable of self-service.",
-      r1: "Acceptable: Provides real contact options. Not as good as self-service path, but gets the job done.",
-      r3: "Worst: Fabricated statistics, unnecessary complexity, undermines trust. Classic hallucination pattern dressed up as helpfulness.",
-    },
-  },
-  {
-    id: "fix_prompt",
-    title: "Find the Prompt Bug",
-    brief: "This prompt is producing inconsistent, overly verbose responses. Identify the 3 main issues.",
-    badPrompt: `You are a helpful AI assistant. When users ask you questions, please provide them with detailed, comprehensive, and thorough responses that cover all aspects of the topic. Be friendly and conversational. Make sure to include examples where helpful. You can also ask clarifying questions if needed. Always be honest and accurate. Try to be concise but also make sure you give enough information. Format your response however feels natural.`,
-    issues: [
-      { id: "i1", label: "Contradictory length instructions", correct: true, explanation: "'Detailed and comprehensive' vs 'concise' — the model will pick one randomly each time, causing inconsistency." },
-      { id: "i2", label: "No output format specified", correct: true, explanation: "'Format however feels natural' means you'll get bullets, paragraphs, headers mixed unpredictably." },
-      { id: "i3", label: "Too many competing objectives", correct: true, explanation: "8+ separate instructions create ambiguity. The model can't satisfy all simultaneously, so it improvises." },
-      { id: "i4", label: "Missing a temperature setting", correct: false, explanation: "Temperature is an API parameter, not part of the system prompt. This isn't a prompt bug." },
-      { id: "i5", label: "Should use XML tags for structure", correct: false, explanation: "XML tags can help but aren't required. The core issues are contradictions and vagueness, not format syntax." },
-    ],
-  },
-  {
-    id: "design_eval",
-    title: "Design an Eval",
-    brief: "You're shipping an AI feature that summarizes legal contracts. Design a minimum viable eval suite.",
-    tasks: [
-      { id: "e1", label: "Define pass/fail criteria", placeholder: "What makes a good summary? What's an automatic fail?", hint: "Think: accuracy, completeness, length, hallucinations, identifying key clauses" },
-      { id: "e2", label: "Choose test case types", options: ["Short standard NDA (happy path)", "100-page M&A agreement (scale test)", "Non-English contract (edge case)", "Contract with unusual clauses (quality test)", "Adversarial: conflicting clauses (stress test)"], correctOnes: [0,1,2,3,4] },
-      { id: "e3", label: "Pick your scoring method", options: ["Human review by legal expert", "LLM-as-judge against a rubric", "ROUGE score vs reference summary", "User acceptance rate in production"], correctOnes: [0,1] },
-    ],
-    insight: "For legal contracts, automated metrics (ROUGE) miss semantic accuracy — a summary can have high word overlap but still get a key clause wrong. LLM-as-judge + human spot-check is the minimum viable approach. Never rely on only one method.",
-  },
-  {
-    id: "rag_system_design",
-    type: "scenario",
-    title: "RAG System Design",
-    brief: "A legal firm (500 lawyers, 10M+ documents) wants to build an internal Q&A system over case files and contracts. Design the complete RAG pipeline. You have 3 months and a 2-person ML team. The firm cannot use any cloud AI APIs — everything must run on-premise.",
-    rubric: [
-      "Chunking strategy for legal docs (clause-boundary aware, not fixed-token)",
-      "Embedding model choice (self-hosted: BGE-M3 or E5-large-v2)",
-      "Vector DB selection (self-hosted: Qdrant or Weaviate, not Pinecone)",
-      "Hybrid search (BM25 + dense, legal docs need exact term matching)",
-      "Reranker (cross-encoder on top-20 → top-5)",
-      "Access control (per-document ACL passed as metadata filter)",
-      "Hallucination guardrail (citation grounding check on output)",
-      "Eval harness (RAGAS recall@5, precision@5, faithfulness)",
-      "Latency budget (p99 < 3s for retrieval + generation)",
-    ],
-    expertAnswer: "For 10M+ legal documents on-prem: use BGE-M3 or E5-large-v2 as the embedding model (strong multilingual legal performance, self-hostable). Qdrant or Weaviate for vector storage — both support on-prem deployment and metadata filtering for ACL. Chunking: clause-boundary aware, targeting 256-384 tokens, splitting at section headers and paragraph breaks to keep legal clauses intact. Retrieval: hybrid search with RRF fusion — BM25 catches exact legal terms ('force majeure', 'indemnification') that dense search misses. Top-20 → cross-encoder reranker → top-5 to LLM. Access control: filter by `permitted_users` metadata at query time — never post-filter. Output: groundedness check (every claim must cite a retrieved chunk). Eval: RAGAS faithfulness + answer recall on 200 manually verified QA pairs. Latency: retrieval <800ms (ANN search + reranker), generation <2s on an A10G. Ship v1 with 100 docs, expand corpus incrementally.",
-  },
-  {
-    id: "eval_harness",
-    type: "scenario",
-    title: "Eval Harness from Scratch",
-    brief: "You're the first AI engineer at a 40-person B2B startup. The product is an AI assistant that answers questions about customers' HR policies (PDFs). The founder says accuracy is great — but you've noticed 3 wrong answers in a week of using it yourself. You have no eval infrastructure. Build it.",
-    rubric: [
-      "Admit you can't trust founder's subjective 'accuracy is great' assessment",
-      "Start with real production queries (not synthetic)",
-      "Define failure taxonomy (hallucination, wrong doc retrieved, answer refusal, format issue)",
-      "Choose eval metrics: faithfulness, answer relevance, context recall (RAGAS)",
-      "LLM-as-judge for faithfulness (cross-model judge: Claude judging GPT-4o outputs)",
-      "Human eval sample (5-10 cases/week, subject matter expert)",
-      "Regression baseline (eval score before any change = the floor)",
-      "Shadow eval (new model/prompt runs alongside live, outputs compared offline)",
-      "Alert threshold (if faithfulness drops >5pp from baseline, flag for review)",
-    ],
-    expertAnswer: "First: I don't trust verbal accuracy assessments. I pull 50 real production queries from logs (they exist — check the API logs). I label each: correct, wrong but plausible, hallucinated, refused. This gives my first failure taxonomy. I set up RAGAS: faithfulness (is every claim in the answer grounded in retrieved context?) and answer relevance (does the answer address the query?). I use Claude as judge for GPT-4o outputs — same model family as judge creates bias. I score my 50 queries as the v0 baseline. From now on, any prompt or model change must run against this baseline before shipping. I add 5 new queries per week from real failures, growing the eval set. I set a Slack alert: if faithfulness drops below 0.75 for 3 consecutive days, I block deployment until fixed. Cost: ~$2/run on Claude-3-Haiku as judge. Running time: 8 minutes. This is the minimum viable eval harness.",
-  },
-  {
-    id: "incident_response",
-    type: "scenario",
-    title: "Production Incident Response",
-    brief: "It's 2pm Thursday. You get a Slack message: 'The AI answer quality seems off.' You check the dashboard — no errors, p99 latency looks normal. But user CSAT on AI answers dropped from 4.2 to 2.9 over the past 6 hours. You shipped a prompt change at 8am. What do you do, step by step?",
-    rubric: [
-      "Immediately check if the prompt change correlates with the drop (timestamps)",
-      "Do NOT roll back blindly — first understand what changed",
-      "Sample 20-30 recent AI answers manually from both before and after 8am",
-      "Check retrieval quality (did top-k change? did the vector DB have a migration?)",
-      "Hypothesis formation before any action (what specifically is worse?)",
-      "Communicate to stakeholders with data, not 'we think'",
-      "Rollback decision: if root cause identified and confirmed, roll back; if not, don't",
-      "Write incident timeline before end of day",
-      "Post-mortem: what eval would have caught this before shipping?",
-    ],
-    expertAnswer: "Step 1: Pull the last 6 hours of AI answers from logs. Sample 30 at random — 15 from before 8am, 15 after. Read them. This takes 15 minutes and tells me what's actually wrong (too short? hallucinating? wrong topic?). Step 2: Timeline — CSAT drop started at ~8:30am, prompt change shipped at 8:05am. 25-minute lag = plausible causal link. Step 3: I form a hypothesis. After reading the samples, I see the new prompt produces answers with more caveats and less specificity — engineers find it less useful. Step 4: I don't blindly roll back. I check if there's a simpler fix (remove the caveat instruction). Step 5: I message the team: 'CSAT dropped 1.3 points starting 8:30am. Correlated with our 8am prompt change. Root cause: new \"add caveats\" instruction makes answers feel hedged. Rolling back the caveat instruction now, will re-test against eval set first.' Step 6: I ship the revert at 3pm. Step 7: I add a rubric check for 'answer specificity' to our eval so this gets caught before shipping next time.",
-  },
-  {
-    id: "agent_cost_blowout",
-    type: "scenario",
-    title: "Agent Cost Blowout",
-    brief: "Your company's AI coding assistant (powered by a GPT-4o agent with 5 tools: code search, file read, web search, code execution, GitHub API) is costing $4.20 per user session on average. With 800 DAU, that's $3,360/day — way over budget. The PM wants to cut costs by 60% without degrading user CSAT. What's your plan?",
-    rubric: [
-      "Profile cost per tool call (which tools are most expensive?)",
-      "Analyze average turns per session (is 5-turn sessions normal or is it 20+?)",
-      "Identify unnecessary tool calls (agent calling web search when code search would do)",
-      "Model routing: route simple queries to a cheaper model",
-      "Prompt optimization: reduce system prompt token count (adds up at scale)",
-      "Caching: semantic cache for common coding questions",
-      "Step budget: cap max agent turns (e.g. 10 turns max)",
-      "Measure CSAT impact of each change independently",
-      "Don't cut everything at once — A/B test each change",
-    ],
-    expertAnswer: "First, I profile cost attribution. $4.20/session breaks down: which part is LLM tokens, which is tool call overhead? I pull session logs and count: average turns per session (usually 12-18 for coding agents), tokens per turn, which tools get called most. I typically find: web search is called unnecessarily (agent uses it when code search would work), and the system prompt is 3000 tokens on every call. Quick wins: (1) Add tool selection instructions to the system prompt — 'prefer code search over web search for code questions.' This alone reduces web search calls ~40%. (2) Compress system prompt from 3000 to 800 tokens using a distilled version — saves ~$0.60/session. (3) Route simple intent classification (is this a code question?) to GPT-4o-mini at $0.03 vs $0.30. (4) Semantic cache on common queries (environment setup, syntax questions) — ~20% of sessions. (5) Step budget of 12 turns max — prevents runaway sessions. I A/B test each change independently at 10% traffic before rolling out. Target: $1.80/session (57% reduction) with <5% CSAT impact.",
-  },
-];
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 
@@ -651,193 +537,6 @@ function DesignStudio() {
   );
 }
 
-function TakeHomeChallenge() {
-  const [cIdx, setCIdx] = useState(0);
-  const [rank, setRank] = useState([0, 1, 2]);
-  const [promptIssues, setPromptIssues] = useState(new Set());
-  const [evalChoices, setEvalChoices] = useState({ cases: new Set(), scoring: new Set() });
-  const [revealed, setRevealed] = useState(false);
-  const [scenarioText, setScenarioText] = useState("");
-  const [rubricHits, setRubricHits] = useState(new Set());
-  const ch = TAKEHOME_CHALLENGES[cIdx];
-
-  function reset(i) { setCIdx(i); setRank([0,1,2]); setPromptIssues(new Set()); setEvalChoices({ cases: new Set(), scoring: new Set() }); setRevealed(false); setScenarioText(""); setRubricHits(new Set()); }
-  function toggleRubric(i) { setRubricHits(prev => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; }); }
-
-  function moveRankUp(i) { if (i === 0) return; setRank(r => { const n=[...r]; [n[i-1],n[i]]=[n[i],n[i-1]]; return n; }); }
-  function moveRankDown(i) { if (i === rank.length-1) return; setRank(r => { const n=[...r]; [n[i],n[i+1]]=[n[i+1],n[i]]; return n; }); }
-  function toggleIssue(id) { setPromptIssues(s => { const n=new Set(s); n.has(id)?n.delete(id):n.add(id); return n; }); }
-  function toggleEval(type, id) {
-    setEvalChoices(s => { const n=new Set(s[type]); n.has(id)?n.delete(id):n.add(id); return { ...s, [type]: n }; });
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap">
-        {TAKEHOME_CHALLENGES.map((c, i) => (
-          <button key={c.id} onClick={() => reset(i)}
-            className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${i === cIdx ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-            {c.title}
-          </button>
-        ))}
-      </div>
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">{ch.title}</p>
-        <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-line">{ch.brief}</p>
-      </div>
-
-      {/* Rank Outputs */}
-      {cIdx === 0 && (
-        <div className="space-y-2">
-          <p className="text-xs text-zinc-500">Use ↑↓ to rank best → worst</p>
-          {rank.map((oIdx, pos) => {
-            const o = ch.outputs[oIdx];
-            const idealPos = ch.idealRank.indexOf(o.id);
-            const correct = revealed && pos === idealPos;
-            const wrong = revealed && pos !== idealPos;
-            return (
-              <div key={o.id} className={`border rounded-xl p-3 transition-all ${correct ? "border-green-600 bg-green-900/10" : wrong ? "border-red-700 bg-red-900/10" : "border-zinc-700 bg-zinc-900"}`}>
-                <div className="flex items-start gap-3">
-                  <div className="flex flex-col gap-0.5">
-                    <button onClick={() => moveRankUp(pos)} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-600 hover:text-white text-sm rounded hover:bg-zinc-700/50 transition-colors">↑</button>
-                    <button onClick={() => moveRankDown(pos)} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-600 hover:text-white text-sm rounded hover:bg-zinc-700/50 transition-colors">↓</button>
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-xs font-mono text-zinc-500 mr-2">Option {o.label}</span>
-                    <span className="text-sm text-zinc-300">{o.text}</span>
-                    {revealed && <p className="text-xs text-indigo-300 mt-2">{ch.explanations[o.id]}</p>}
-                  </div>
-                  <span className="text-xs font-mono text-zinc-600 shrink-0">#{pos+1}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Fix Prompt */}
-      {cIdx === 1 && (
-        <div className="space-y-3">
-          <div className="bg-zinc-900 border border-amber-800/40 rounded-xl p-4">
-            <p className="text-xs text-amber-400 mb-2">Problematic Prompt</p>
-            <p className="text-xs text-zinc-300 font-mono leading-relaxed">{ch.badPrompt}</p>
-          </div>
-          <p className="text-xs text-zinc-500">Select the 3 main issues:</p>
-          {ch.issues.map(issue => {
-            const picked = promptIssues.has(issue.id);
-            let cls = "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500 cursor-pointer";
-            if (revealed) {
-              if (issue.correct && picked) cls = "border-green-600 bg-green-900/20 text-green-300 cursor-default";
-              else if (!issue.correct && picked) cls = "border-red-600 bg-red-900/20 text-red-300 cursor-default";
-              else if (issue.correct && !picked) cls = "border-amber-600 bg-amber-900/20 text-amber-300 cursor-default";
-              else cls = "border-zinc-800 bg-zinc-900 text-zinc-600 cursor-default";
-            } else if (picked) cls = "border-indigo-500 bg-indigo-900/20 text-white cursor-pointer";
-            return (
-              <div key={issue.id} onClick={() => !revealed && toggleIssue(issue.id)}
-                className={`px-4 py-2.5 rounded-xl border text-sm transition-all ${cls}`}>
-                {issue.label}
-                {revealed && issue.correct && <p className="text-xs mt-1 text-zinc-400">{issue.explanation}</p>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Design Eval */}
-      {cIdx === 2 && (
-        <div className="space-y-4">
-          <div>
-            <p className="text-xs text-zinc-400 mb-2">Which test case types would you include? (select all that apply)</p>
-            {ch.tasks[1].options.map((opt, i) => {
-              const picked = evalChoices.cases.has(i);
-              const isIdeal = ch.tasks[1].correctOnes.includes(i);
-              let cls = picked ? "border-indigo-500 bg-indigo-900/20 text-white" : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500";
-              if (revealed) cls = isIdeal ? "border-green-600 bg-green-900/20 text-green-300" : "border-zinc-800 bg-zinc-900 text-zinc-600";
-              return (
-                <button key={i} onClick={() => !revealed && toggleEval("cases", i)}
-                  className={`w-full text-left px-4 py-2.5 rounded-xl border text-sm mb-1.5 transition-all ${cls}`}>{opt}</button>
-              );
-            })}
-          </div>
-          <div>
-            <p className="text-xs text-zinc-400 mb-2">Which scoring method would you use? (select all that apply)</p>
-            {ch.tasks[2].options.map((opt, i) => {
-              const picked = evalChoices.scoring.has(i);
-              const isIdeal = ch.tasks[2].correctOnes.includes(i);
-              let cls = picked ? "border-indigo-500 bg-indigo-900/20 text-white" : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500";
-              if (revealed) cls = isIdeal ? "border-green-600 bg-green-900/20 text-green-300" : "border-zinc-800 bg-zinc-900 text-zinc-600";
-              return (
-                <button key={i} onClick={() => !revealed && toggleEval("scoring", i)}
-                  className={`w-full text-left px-4 py-2.5 rounded-xl border text-sm mb-1.5 transition-all ${cls}`}>{opt}</button>
-              );
-            })}
-          </div>
-          {revealed && (
-            <div className="bg-indigo-900/10 border border-indigo-800/40 rounded-xl p-4">
-              <p className="text-xs text-indigo-400 mb-1">Key Insight</p>
-              <p className="text-sm text-zinc-300">{ch.insight}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Scenario (free-text) */}
-      {ch.type === "scenario" && (
-        <div className="space-y-3">
-          <p className="text-xs text-zinc-500">Write your answer below, then reveal the expert response:</p>
-          <textarea
-            value={scenarioText}
-            onChange={e => setScenarioText(e.target.value)}
-            placeholder="Type your answer here..."
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 resize-y focus:outline-none focus:border-indigo-500 transition-colors"
-            style={{ minHeight: "150px" }}
-          />
-          {revealed && (
-            <div className="space-y-3">
-              <div className="bg-violet-950/40 border border-violet-700/50 rounded-xl p-4">
-                <p className="text-xs text-violet-400 uppercase tracking-widest mb-2">Expert Answer</p>
-                <p className="text-sm text-zinc-200 leading-relaxed">{ch.expertAnswer}</p>
-              </div>
-              <div className="bg-zinc-900 border border-violet-800/40 rounded-xl p-4">
-                <p className="text-xs text-violet-400 uppercase tracking-widest mb-1">Score yourself against the rubric</p>
-                <p className="text-[11px] text-zinc-500 mb-3">Tick each point your answer genuinely covered. Be honest — this is your self-grade.</p>
-                <ul className="space-y-1.5">
-                  {ch.rubric.map((point, i) => {
-                    const hit = rubricHits.has(i);
-                    return (
-                      <li key={i}>
-                        <button onClick={() => toggleRubric(i)}
-                          className={`w-full text-left flex items-start gap-2 px-2 py-1.5 rounded-lg border transition-all ${hit ? "border-emerald-700/60 bg-emerald-950/25" : "border-zinc-800 hover:border-zinc-700"}`}>
-                          <span className={`shrink-0 mt-0.5 font-mono text-xs ${hit ? "text-emerald-400" : "text-zinc-600"}`}>{hit ? "✓" : "○"}</span>
-                          <span className="text-xs text-zinc-300 leading-relaxed">{point}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-                {(() => {
-                  const pct = Math.round((rubricHits.size / ch.rubric.length) * 100);
-                  const tier = pct >= 85 ? ["Staff-level", "#22c55e"] : pct >= 60 ? ["Senior-ready", "var(--gal-build)"] : pct >= 35 ? ["Analyst-ready", "#f59e0b"] : ["Junior — keep going", "#fb7185"];
-                  return (
-                    <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between">
-                      <span className="text-xs text-zinc-400">{rubricHits.size}/{ch.rubric.length} covered · <span className="font-mono">{pct}%</span></span>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: tier[1], border: `1px solid ${tier[1]}55` }}>{tier[0]}</span>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <button onClick={() => setRevealed(!revealed)}
-        className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-lg text-sm">
-        {revealed ? "Hide Answer" : "Reveal Answer →"}
-      </button>
-    </div>
-  );
-}
 
 // ─── CAREER APP ───────────────────────────────────────────────────────────────
 
@@ -845,9 +544,7 @@ const CAREER_MODULES = [
   { id: "sysdesign",   label: "Design Studio",      tag: "SIMULATOR", component: DesignStudio,
     objective: "Run a full AI system-design round the way top companies actually conduct it — clarify, design, deep-dive, scale, and defend a tradeoff — then self-grade against a staff-level rubric.",
     howTo: ["Work the 5 stages in order — each mirrors a real design round (Clarify → High-level → Deep-dive → Scale → Defend)", "In each stage, think/select FIRST, then reveal the expert take — the reveal is worthless if you peek early", "Clarify is scored on judgment: the best candidates ask the 2-3 questions that change the architecture, not every question", "Scale & Deep-dive teach the reasoning, not a checklist — read them even when you 'knew the components'", "Defend: take a real side and justify with expected-cost reasoning; the model answer shows the staff framing", "End on the rubric — an honest self-grade across all five stages is the point"] },
-  { id: "takehome",    label: "Take-home Mode",      tag: "CHALLENGE", component: TakeHomeChallenge,
-    objective: "The take-home format the same AI-forward companies send: rank model outputs, debug a prompt, design an eval, and work full open-ended scenarios against a staff rubric.",
-    howTo: ["These are the exact take-home formats used by AI-forward companies", "Rank Outputs: don't just pick 'most helpful' — think about hallucination, specificity, trust", "Fix Prompt: look for contradictions, vagueness, and missing constraints", "Design Eval: good evals need edge cases and the right scoring method, not just happy path tests", "Scenario challenges: write a real answer first, then self-grade against the rubric honestly"] },
+  // Take-home Mode cut (R4, 2026-07-03) — no merit; removed from nav + render.
 ];
 
 export default function CareerApp() {
@@ -875,7 +572,6 @@ export default function CareerApp() {
           <p className="text-[10px] font-mono font-black text-zinc-500 uppercase tracking-widest">What you'll do</p>
           {[
             ["The Design Studio (5-stage round)", "Clarify → propose a high-level design → deep-dive one component → reason about what breaks at 10x → defend a tradeoff. Think first, then reveal the staff-level take at each stage, and self-grade on a rubric."],
-            ["Take-Home Mode", "Rank LLM outputs, fix broken prompts, design an eval pipeline, and work open-ended scenarios — the exact take-home formats AI-forward companies send."],
           ].map(([title, desc]) => (
             <div key={title} className="flex items-start gap-3">
               <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "#f59e0b" }} />
@@ -892,7 +588,7 @@ export default function CareerApp() {
   );
 
   const CAREER_GROUPS = [
-    { label: "DESIGN STUDIO",  ids: ["sysdesign", "takehome"] },
+    { label: "DESIGN STUDIO",  ids: ["sysdesign"] },
   ];
 
   return (
