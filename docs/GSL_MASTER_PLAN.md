@@ -874,3 +874,17 @@ esbuild-parse: `src/CompanyTracks.jsx`, `src/data/companyTracks.js`, `src/App.js
 - **Only 1 of 288 cells populated** (24 companies × 4 roles × 3 levels). Scaffold + coming-soon state cover the rest; each unpopulated cell renders cleanly with a jump-to-example link.
 - **Concepts deep-link granularity** — opens the gym, not a specific module (Concepts only accepts `initialGym`). Labels name the exact module set so the user knows what to open inside.
 - **No progress tracking** — items don't yet reflect per-item completion from localStorage (optional per brief; deferred to keep additive footprint minimal).
+
+---
+
+## Foundations interactives — 5 new module widgets, executed 2026-07-03
+
+Replaced `StubModule` with real, computed interactive components for the 5 new Foundations modules in `src/Concepts.jsx` (defined just above the `MODULES` array; only this file changed). Runner now renders both the RUNNER_DATA teaching AND a Hands-On widget for each, matching the 18 existing modules.
+
+- **QuantizationModule** — fp16/int8/int4 selector + params slider → live weight VRAM (params×bytes), which-GPU-fits, and a quality bar; int4 exposes the RTN-vs-GPTQ/AWQ/NF4 cliff. Mirrors 70B 140GB→35GB.
+- **DPOModule** — β + margin (s_chosen−s_rejected) sliders → live `−log σ(β·Δ)` with an SVG loss curve and gradient/push readout. Mirrors the β=0.1 worked example (Δ=+5 → loss≈0.48; Δ=−5 → ≈0.97).
+- **SpeculativeDecodingModule** — α, k, draft-cost sliders → expected tokens/target-pass `(1−α^(k+1))/(1−α)+1`, round cost, and speedup with a break-even bar. Mirrors k=4/α=0.75 → ~2.5–3×; α=0.40 → net-neutral.
+- **MoEModule** — #experts, top-k, expert size, shared size → ACTIVE vs TOTAL params, memory:compute ratio, and an active/idle expert grid. Reproduces Mixtral 8x7B ~47B total / ~13B active and the 2×A100-40GB OOM.
+- **DistillationModule** — temperature T slider over teacher logits [4,3,−1,−3] → live softmax(z/T) bar chart exposing dark knowledge, plus the 1/T² gradient shrink and T² rescale. Mirrors T=1 vs T=3 distributions.
+
+Wiring: the 5 `MODULES` entries changed `component: StubModule` → the matching component. RUNNER_DATA, ids, gym wiring untouched. esbuild JSX parse: **OK**. No other file required changes (`FoundationsRunner` already gates the Hands-On section on a non-stub Component).

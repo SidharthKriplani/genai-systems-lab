@@ -9260,6 +9260,433 @@ function OcrPipelineModule() {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// New foundations interactives — quantization / dpo / speculative-decoding /
+// moe / distillation. Each is a real computed widget wired into MODULES below;
+// the runner renders the RUNNER_DATA teaching AND this interactive.
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── QuantizationModule ──────────────────────────────────────────────────────
+function QuantizationModule() {
+  const [bits, setBits] = useState("int4");        // fp16 | int8 | int4
+  const [method, setMethod] = useState("smart");    // rtn | smart  (only meaningful at int4)
+  const [paramsB, setParamsB] = useState(70);        // billions of params
+
+  const PRECISIONS = {
+    fp16: { label: "fp16", bytes: 2, levels: null, note: "training precision — 2 bytes/param" },
+    int8: { label: "int8", bytes: 1, levels: 256, note: "1 byte/param — 256 grid levels" },
+    int4: { label: "int4", bytes: 0.5, levels: 16, note: "0.5 byte/param — only 16 grid levels" },
+  };
+  const p = PRECISIONS[bits];
+  const vramGB = paramsB * p.bytes;                 // params×bytes → GB (params in B, bytes → GB directly)
+
+  // relative quality vs fp16 baseline, mirroring the module's cliff table
+  let quality, qNote, qColor;
+  if (bits === "fp16") { quality = 100; qNote = "baseline"; qColor = "emerald"; }
+  else if (bits === "int8") { quality = 99.5; qNote = "int8 RTN — near-lossless, ship it"; qColor = "emerald"; }
+  else { // int4
+    if (method === "rtn") { quality = 72; qNote = "int4 RTN (naive) — reasoning/arithmetic COLLAPSES"; qColor = "red"; }
+    else { quality = 98; qNote = "int4 GPTQ/AWQ/NF4 — error-compensated, near-lossless"; qColor = "emerald"; }
+  }
+
+  // which single GPU does it fit?
+  let fits;
+  if (vramGB > 160) fits = "needs a multi-GPU node";
+  else if (vramGB > 80) fits = "needs 2× A100 80GB";
+  else if (vramGB > 40) fits = "fits 1× A100 80GB";
+  else if (vramGB > 24) fits = "fits 1× A100 40GB";
+  else fits = "fits a 24GB consumer 4090";
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-zinc-400">Weight memory = <span className="font-mono text-zinc-300">num_params × bytes_per_param</span>. Pick a bit-width and model size; watch VRAM and quality move. At int4, the method choice is the whole game.</p>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="col-span-2 space-y-1">
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Precision</p>
+          <div className="flex gap-1">
+            {Object.keys(PRECISIONS).map(k => (
+              <button key={k} onClick={() => setBits(k)}
+                className={`px-3 py-1 rounded text-xs font-mono border transition-all ${bits === k ? "border-violet-600 text-violet-300 bg-violet-900/20" : "border-zinc-700 text-zinc-500 hover:border-zinc-600"}`}>
+                {PRECISIONS[k].label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-zinc-600 pt-0.5">{p.note}</p>
+        </div>
+        <div className="col-span-1 space-y-1">
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Params: {paramsB}B</p>
+          <input type="range" min={7} max={180} step={1} value={paramsB} onChange={e => setParamsB(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+      </div>
+
+      {bits === "int4" && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">int4 method — the quality cliff</p>
+          <div className="flex gap-2">
+            {[
+              { id: "rtn", label: "RTN (naive one-liner)" },
+              { id: "smart", label: "GPTQ / AWQ / NF4" },
+            ].map(m => (
+              <button key={m.id} onClick={() => setMethod(m.id)}
+                className={`flex-1 px-3 py-2 rounded text-xs transition-all ${method === m.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Weight VRAM", val: `${vramGB % 1 === 0 ? vramGB : vramGB.toFixed(1)} GB`, color: "text-violet-300" },
+          { label: "Fits on", val: fits, color: vramGB > 80 ? "text-amber-400" : "text-emerald-400", small: true },
+          { label: "Quality vs fp16", val: `~${quality}%`, color: `text-${qColor}-400` },
+        ].map(({ label, val, color, small }) => (
+          <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center flex flex-col justify-center">
+            <div className={`${small ? "text-xs" : "text-lg"} font-mono font-bold ${color}`}>{val}</div>
+            <div className="text-[10px] text-zinc-600 mt-1">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* quality bar */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-[10px] font-mono text-zinc-500">
+          <span>Relative quality on domain evals</span>
+          <span className={`text-${qColor}-400`}>{qNote}</span>
+        </div>
+        <div className="h-4 rounded-full bg-zinc-800 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${quality}%`, background: qColor === "red" ? "#ef4444" : "#10b981" }} />
+        </div>
+        {bits === "int4" && (
+          <p className="text-[10px] text-zinc-600 pt-0.5">
+            {p.levels} grid levels. Outlier activations mean a few channels carry most of the signal —
+            {method === "rtn" ? " crude rounding of those channels is brutal at 16 levels, so multi-step reasoning collapses even when smoke tests pass." : " GPTQ compensates rounding error second-order; AWQ protects salient channels; NF4 uses a weight-matched non-uniform grid."}
+          </p>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300">
+          <span className="font-bold text-amber-400">Mirror the scenario: </span>
+          70B at fp16 = <span className="font-mono">140 GB</span> (won't load on one A100). int4 = <span className="font-mono">35 GB</span> (fits 1× A100 40GB) — a 4× cut. But int4 <span className="font-mono">RTN</span> is where the demo passes and production reasoning collapses; int4 <span className="font-mono">GPTQ/AWQ</span> keeps quality near-lossless. Same bytes, very different quality.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── DPOModule ───────────────────────────────────────────────────────────────
+function DPOModule() {
+  const [beta, setBeta] = useState(0.1);
+  const [delta, setDelta] = useState(5.0);   // s_chosen − s_rejected (log-prob-ratio margin)
+
+  const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+  const margin = beta * delta;
+  const sig = sigmoid(margin);
+  const loss = -Math.log(sig);
+  // gradient magnitude wrt the margin ∝ (1 − σ(βΔ))·β — how hard this pair pushes
+  const pushScale = (1 - sig) * beta;
+
+  // plot L(Δ) across a range for the current β
+  const DMIN = -15, DMAX = 15;
+  const pts = [];
+  for (let d = DMIN; d <= DMAX; d += 0.5) {
+    const l = -Math.log(sigmoid(beta * d));
+    pts.push({ d, l });
+  }
+  const LMAX = -Math.log(sigmoid(beta * DMIN)); // largest loss on the plotted range
+  const W = 300, H = 130, PAD = 4;
+  const x = (d) => PAD + ((d - DMIN) / (DMAX - DMIN)) * (W - 2 * PAD);
+  const y = (l) => PAD + (1 - l / LMAX) * (H - 2 * PAD);
+  const path = pts.map((pt, i) => `${i === 0 ? "M" : "L"}${x(pt.d).toFixed(1)},${y(pt.l).toFixed(1)}`).join(" ");
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-zinc-400">
+        DPO loss for one preference pair: <span className="font-mono text-zinc-300">L = −log σ( β·(s<sub>chosen</sub> − s<sub>rejected</sub>) )</span>.
+        The score margin is how much more the policy favors the good answer over the bad one, both relative to the frozen reference. β sets how hard each pair pushes.
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">β (KL strength)</span><span className="text-violet-400 font-mono font-bold">{beta.toFixed(2)}</span></div>
+          <input type="range" min={0.01} max={0.6} step={0.01} value={beta} onChange={e => setBeta(+e.target.value)} className="w-full accent-violet-500" />
+          <div className="flex justify-between text-[10px] text-zinc-600 font-mono"><span>0.01 loose</span><span>0.6 tight</span></div>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">margin s<sub>ch</sub> − s<sub>rej</sub></span><span className={`font-mono font-bold ${delta >= 0 ? "text-emerald-400" : "text-red-400"}`}>{delta > 0 ? "+" : ""}{delta.toFixed(1)}</span></div>
+          <input type="range" min={-10} max={10} step={0.5} value={delta} onChange={e => setDelta(+e.target.value)} className="w-full accent-violet-500" />
+          <div className="flex justify-between text-[10px] text-zinc-600 font-mono"><span>−10 backwards</span><span>+10 correct</span></div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { label: "β·Δ", val: margin.toFixed(2), color: "text-zinc-300" },
+          { label: "σ(β·Δ)", val: sig.toFixed(3), color: "text-violet-300" },
+          { label: "loss", val: loss.toFixed(2), color: loss > 0.7 ? "text-red-400" : "text-emerald-400" },
+          { label: "push (grad·β)", val: pushScale.toFixed(3), color: "text-amber-400" },
+        ].map(({ label, val, color }) => (
+          <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-2 text-center">
+            <div className={`text-sm font-mono font-bold ${color}`}>{val}</div>
+            <div className="text-[10px] text-zinc-600 mt-0.5">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* loss curve */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">L(margin) at β = {beta.toFixed(2)}</div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 150 }}>
+          <line x1={x(0)} y1={PAD} x2={x(0)} y2={H - PAD} stroke="#3f3f46" strokeWidth="1" strokeDasharray="3 3" />
+          <path d={path} fill="none" stroke="#8b5cf6" strokeWidth="2" />
+          <circle cx={x(delta)} cy={y(loss)} r="4" fill="#f59e0b" />
+        </svg>
+        <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
+          <span>← policy has it backwards (high loss, strong gradient)</span>
+          <span>policy already correct (low loss) →</span>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300">
+          <span className="font-bold text-amber-400">Worked example (β=0.1): </span>
+          At margin <span className="font-mono">+5.0</span>, σ(0.1·5)=σ(0.5)≈<span className="font-mono">0.62</span>, loss ≈ <span className="font-mono">0.48</span> — small, little gradient. Flip the margin to <span className="font-mono">−5.0</span> and loss jumps to ≈<span className="font-mono">0.97</span> — a strong corrective push. Raising β scales βΔ, sharpening the curve so every pair pushes harder toward the reference-anchored preference; too-large β overfits the preference data.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── SpeculativeDecodingModule ───────────────────────────────────────────────
+function SpeculativeDecodingModule() {
+  const [alpha, setAlpha] = useState(0.75);   // per-token acceptance rate
+  const [k, setK] = useState(4);               // proposal length
+  const [draftCost, setDraftCost] = useState(0.1); // draft pass cost as fraction of one target pass
+
+  // expected accepted-run length before first rejection + 1 guaranteed resampled token
+  const expTokens = (1 - Math.pow(alpha, k + 1)) / (1 - alpha) + 1;
+  // one target forward pass per round; draft does k cheap passes
+  const roundCost = 1 + k * draftCost;         // in units of target-pass-equivalents
+  const speedup = expTokens / roundCost;       // naive decode = 1 token / 1 target pass
+  const regime = speedup >= 1.8 ? "big win" : speedup >= 1.1 ? "modest win" : "net-neutral or slower";
+  const regimeColor = speedup >= 1.8 ? "emerald" : speedup >= 1.1 ? "amber" : "red";
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-zinc-400">
+        Each round = <span className="font-mono text-zinc-300">1</span> target forward pass that verifies k drafted tokens. Expected tokens emitted per target pass ≈ <span className="font-mono text-zinc-300">(1−α<sup>k+1</sup>)/(1−α) + 1</span>. Divide by the round's cost to get wall-clock speedup. α (draft–target alignment) is everything.
+      </p>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">α accept</span><span className="text-violet-400 font-mono font-bold">{alpha.toFixed(2)}</span></div>
+          <input type="range" min={0.2} max={0.95} step={0.05} value={alpha} onChange={e => setAlpha(+e.target.value)} className="w-full accent-violet-500" />
+          <div className="flex justify-between text-[10px] text-zinc-600 font-mono"><span>0.2 poor</span><span>0.95 aligned</span></div>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">k proposal</span><span className="text-violet-400 font-mono font-bold">{k}</span></div>
+          <input type="range" min={1} max={10} step={1} value={k} onChange={e => setK(+e.target.value)} className="w-full accent-violet-500" />
+          <div className="flex justify-between text-[10px] text-zinc-600 font-mono"><span>1</span><span>10</span></div>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">draft cost</span><span className="text-violet-400 font-mono font-bold">{draftCost.toFixed(2)}×</span></div>
+          <input type="range" min={0.02} max={0.4} step={0.02} value={draftCost} onChange={e => setDraftCost(+e.target.value)} className="w-full accent-violet-500" />
+          <div className="flex justify-between text-[10px] text-zinc-600 font-mono"><span>tiny draft</span><span>heavy draft</span></div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "tokens / target pass", val: expTokens.toFixed(2), color: "text-violet-300" },
+          { label: "round cost (target-eq)", val: `${roundCost.toFixed(2)}×`, color: "text-zinc-400" },
+          { label: "wall-clock speedup", val: `${speedup.toFixed(2)}×`, color: `text-${regimeColor}-400` },
+        ].map(({ label, val, color }) => (
+          <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
+            <div className={`text-lg font-mono font-bold ${color}`}>{val}</div>
+            <div className="text-[10px] text-zinc-600 mt-1">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex justify-between text-[10px] font-mono text-zinc-500">
+          <span>Speedup vs plain decode (1.0× = break-even)</span>
+          <span className={`text-${regimeColor}-400`}>{regime}</span>
+        </div>
+        <div className="h-4 rounded-full bg-zinc-800 overflow-hidden relative">
+          <div className="absolute top-0 bottom-0 border-l border-zinc-600" style={{ left: `${(1 / 3) * 100}%` }} />
+          <div className="h-full rounded-full transition-all duration-300"
+            style={{ width: `${Math.min(100, (speedup / 3) * 100)}%`, background: regimeColor === "red" ? "#ef4444" : regimeColor === "amber" ? "#f59e0b" : "#10b981" }} />
+        </div>
+        <p className="text-[10px] text-zinc-600 pt-0.5">Dashed mark = 1.0× break-even. Scale tops out at 3×.</p>
+      </div>
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300">
+          <span className="font-bold text-amber-400">Mirror the numbers: </span>
+          k=4, α≈<span className="font-mono">0.75</span> → accept ~2.5 tokens, emit ~3.5 per target pass → a <span className="font-mono">2.5–3×</span> win. Drop α to <span className="font-mono">0.40</span> and you accept well under one token per round — the draft passes become pure overhead and you go <span className="font-mono">net-neutral or slower</span>. That's why the best drafts are small models distilled from / same-family-as the target. Losslessness (min(1, p/q) accept + resample) holds regardless of α — it only changes speed.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── MoEModule ───────────────────────────────────────────────────────────────
+function MoEModule() {
+  const [experts, setExperts] = useState(8);
+  const [topK, setTopK] = useState(2);
+  const [expertB, setExpertB] = useState(5.2);   // per-expert FFN params (B) — Mixtral ≈ 5.2B each
+  const [sharedB, setSharedB] = useState(5.4);   // shared attn+embed params (B) — Mixtral ≈ 5.4B
+
+  const kUsed = Math.min(topK, experts);
+  const totalB = sharedB + experts * expertB;      // all experts resident
+  const activeB = sharedB + kUsed * expertB;       // shared + top-k experts
+  const memRatio = totalB / activeB;
+  const idle = experts - kUsed;
+
+  const A100_40 = 40, box2 = 80; // 2×A100-40GB
+  const totalVRAM = totalB * 2;  // fp16 weights
+  const activeVRAM = activeB * 2;
+  const oom = totalVRAM > box2;
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-zinc-400">
+        MoE replaces the dense FFN with N expert FFNs + a router that sends each token to top-k experts. <span className="font-mono text-zinc-300">Compute scales with ACTIVE</span> params (latency); <span className="font-mono text-zinc-300">memory scales with TOTAL</span> (every expert stays resident). That split is the whole trap.
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono"># experts</span><span className="text-violet-400 font-mono font-bold">{experts}</span></div>
+          <input type="range" min={2} max={16} step={1} value={experts} onChange={e => setExperts(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">top-k routed</span><span className="text-violet-400 font-mono font-bold">{kUsed}</span></div>
+          <input type="range" min={1} max={Math.min(4, experts)} step={1} value={topK} onChange={e => setTopK(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">expert FFN size</span><span className="text-violet-400 font-mono font-bold">{expertB.toFixed(1)}B</span></div>
+          <input type="range" min={1} max={12} step={0.1} value={expertB} onChange={e => setExpertB(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+          <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">shared (attn/embed)</span><span className="text-violet-400 font-mono font-bold">{sharedB.toFixed(1)}B</span></div>
+          <input type="range" min={1} max={12} step={0.1} value={sharedB} onChange={e => setSharedB(+e.target.value)} className="w-full accent-violet-500" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "ACTIVE / token", val: `${activeB.toFixed(1)}B`, sub: "→ FLOPs / latency", color: "text-emerald-400" },
+          { label: "TOTAL resident", val: `${totalB.toFixed(1)}B`, sub: "→ VRAM footprint", color: "text-violet-300" },
+          { label: "memory : compute", val: `${memRatio.toFixed(1)}×`, sub: `${idle} experts idle but resident`, color: "text-amber-400" },
+        ].map(({ label, val, sub, color }) => (
+          <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
+            <div className={`text-lg font-mono font-bold ${color}`}>{val}</div>
+            <div className="text-[10px] text-zinc-500 mt-1">{label}</div>
+            <div className="text-[10px] text-zinc-600">{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* expert grid: active vs idle */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 space-y-2">
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Per-token routing — {kUsed} of {experts} experts run, the rest sit resident</div>
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: experts }).map((_, i) => (
+            <div key={i} className={`w-8 h-8 rounded flex items-center justify-center text-[10px] font-mono border ${i < kUsed ? "bg-emerald-900/40 border-emerald-600 text-emerald-300" : "bg-zinc-900 border-zinc-800 text-zinc-600"}`}>
+              E{i + 1}
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-4 text-[10px] font-mono text-zinc-500">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />active (does arithmetic)</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-zinc-600" />idle but resident in VRAM</span>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300">
+          <span className="font-bold text-amber-400">Mixtral 8x7B (defaults): </span>
+          8 experts, top-2, ~5.2B/expert, ~5.4B shared → <span className="font-mono">~47B TOTAL</span> (not 56B — attention/embeddings are shared once) and <span className="font-mono">~13B ACTIVE</span> per token. It benchmarks like a 13B on latency but OOMs like a 47B ({totalVRAM.toFixed(0)}GB fp16 weights {oom ? "won't fit" : "fits"} the 2×A100-40GB box that ran the dense 13B). The recurring interview trap: pricing an MoE by active params, then getting the total-param memory bill.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── DistillationModule ──────────────────────────────────────────────────────
+function DistillationModule() {
+  const [T, setT] = useState(1);
+  const LOGITS = [4.0, 3.0, -1.0, -3.0];
+  const CLASSES = ["billing", "account", "technical", "spam"];
+  const COLORS = ["#8b5cf6", "#22d3ee", "#f59e0b", "#ef4444"];
+
+  const softmax = (logits, temp) => {
+    const scaled = logits.map(z => z / temp);
+    const m = Math.max(...scaled);
+    const exps = scaled.map(z => Math.exp(z - m));
+    const sum = exps.reduce((a, b) => a + b, 0);
+    return exps.map(e => e / sum);
+  };
+  const probs = softmax(LOGITS, T);
+  const gradFactor = 1 / (T * T);   // soft-target gradient shrinks ~1/T²; recipe multiplies loss by T²
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-zinc-400">
+        Distillation trains the student to match the teacher's full softmax, not the one-hot label. Raising temperature T flattens the distribution, exposing the <span className="text-zinc-300">dark knowledge</span> — the graded similarity in the non-top classes. Same teacher logits <span className="font-mono text-zinc-300">[4, 3, −1, −3]</span>; slide T and watch the small classes light up.
+      </p>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 space-y-2">
+        <div className="flex justify-between text-xs"><span className="text-zinc-300 font-mono">temperature T</span><span className="text-violet-400 font-mono font-bold">{T.toFixed(1)}</span></div>
+        <input type="range" min={1} max={10} step={0.5} value={T} onChange={e => setT(+e.target.value)} className="w-full accent-violet-500" />
+        <div className="flex justify-between text-[10px] text-zinc-600 font-mono"><span>1 peaked (inference)</span><span>10 flat (dark knowledge)</span></div>
+      </div>
+
+      {/* bar chart of softmax(z/T) */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-3">
+        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">softmax(z / {T.toFixed(1)})</div>
+        <div className="space-y-2">
+          {probs.map((pr, i) => (
+            <div key={CLASSES[i]} className="space-y-0.5">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-300">{CLASSES[i]} <span className="text-zinc-600">(z={LOGITS[i]})</span></span>
+                <span className="text-zinc-400">{(pr * 100).toFixed(2)}%</span>
+              </div>
+              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pr * 100}%`, background: COLORS[i] }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: "soft-target grad factor", val: `~${gradFactor.toFixed(3)}× (1/T²)`, color: "text-red-400" },
+          { label: "T² rescale to restore it", val: `×${(T * T).toFixed(1)}`, color: "text-emerald-400" },
+        ].map(({ label, val, color }) => (
+          <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
+            <div className={`text-sm font-mono font-bold ${color}`}>{val}</div>
+            <div className="text-[10px] text-zinc-600 mt-1">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
+        <p className="text-xs text-zinc-300">
+          <span className="font-bold text-amber-400">Mirror the module: </span>
+          At <span className="font-mono">T=1</span> the teacher says billing 0.708 / account 0.260 / technical 0.005 / spam 0.0006 — the neighbor signal is faint. At <span className="font-mono">T=3</span> it becomes 0.452 / 0.324 / 0.121 / 0.062, exposing "spam is far, technical is closer, account is a real neighbor." But softening shrinks the soft-term gradient by ~<span className="font-mono">1/T²</span>, so the recipe multiplies the distillation loss by <span className="font-mono">T²</span> — drop it and the soft signal is silently down-weighted ~9× at T=3, and you've thrown away the thing you turned temperature up to capture.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export const MODULES = [
   // ── Vector / Observability / Multimodal / Safety gyms (populated) ──
   { id: "vector-db-index-mechanics", label: "HNSW vs IVF", tag: "VECTOR", level: "advanced", title: "ANN Index Mechanics: HNSW vs IVF", subtitle: "Graph vs buckets — the recall/latency/memory dial.", fidelity: MODULE_SPECS["vector-db-index-mechanics"].fidelity, spec: MODULE_SPECS["vector-db-index-mechanics"], component: VectorIndexModule },
@@ -9281,12 +9708,12 @@ export const MODULES = [
   { id: "safety-measurement", label: "Safety Measurement", tag: "DECISION", level: "intermediate", title: "Measuring Safety", subtitle: "Both directions — or you over-refuse.", fidelity: MODULE_SPECS["safety-measurement"].fidelity, spec: MODULE_SPECS["safety-measurement"], component: SafetyMeasurementModule },
   { id: "managed-vs-selfhosted", label: "Managed vs Self-Hosted", tag: "DECISION", level: "intermediate", title: "Managed vs Self-Hosted Inference", subtitle: "The five-axis fork: cost, control, data, capability, team.", fidelity: MODULE_SPECS["managed-vs-selfhosted"].fidelity, spec: MODULE_SPECS["managed-vs-selfhosted"], component: ManagedVsSelfHostedModule },
   { id: "enterprise-ai-cost-model", label: "Enterprise AI Cost Model", tag: "DECISION", level: "intermediate", title: "Enterprise AI TCO Modeling", subtitle: "Build the cost bottom-up; find the leaks.", fidelity: MODULE_SPECS["enterprise-ai-cost-model"].fidelity, spec: MODULE_SPECS["enterprise-ai-cost-model"], component: EnterpriseAICostModule },
-  // ── New foundations modules (teaching content in data/foundations/*.js; StubModule → runner renders RUNNER_DATA teaching, no interactive yet) ──
-  { id: "quantization", label: "Quantization", tag: "FOUNDATIONS", level: "advanced", title: "Quantization: int8/int4 Without Wrecking Quality", subtitle: "PTQ vs QAT, GPTQ/AWQ, KV-cache quant, and the memory-vs-accuracy dial.", fidelity: { tier: "conceptual", note: "Teaching module — worked memory/accuracy examples." }, component: StubModule },
-  { id: "dpo", label: "DPO", tag: "FOUNDATIONS", level: "advanced", title: "DPO: Preference Alignment Without a Reward Model", subtitle: "Implicit reward, reference KL, pairwise loss — RLHF without a separate RM or PPO.", fidelity: { tier: "conceptual", note: "Teaching module — derivation + worked example." }, component: StubModule },
-  { id: "moe", label: "Mixture-of-Experts", tag: "FOUNDATIONS", level: "advanced", title: "Mixture-of-Experts: Sparse Scaling", subtitle: "Router + top-k gating; active vs total params; the load-balancing loss.", fidelity: { tier: "conceptual", note: "Teaching module — worked active/total-param math." }, component: StubModule },
-  { id: "distillation", label: "Distillation", tag: "FOUNDATIONS", level: "advanced", title: "Knowledge Distillation", subtitle: "Teacher → student, soft-label KL objective, and when to distill vs quantize.", fidelity: { tier: "conceptual", note: "Teaching module — worked objective + tradeoffs." }, component: StubModule },
-  { id: "speculative-decoding", label: "Speculative Decoding", tag: "LAYER 3", level: "advanced", title: "Speculative Decoding: Draft-and-Verify", subtitle: "A draft model proposes k tokens; the target verifies in one pass — lossless speedup.", fidelity: { tier: "conceptual", note: "Teaching module — accept/reject + speedup math." }, component: StubModule },
+  // ── New foundations modules (teaching content in data/foundations/*.js; each now has a real interactive component — runner renders RUNNER_DATA teaching + Hands-On widget) ──
+  { id: "quantization", label: "Quantization", tag: "FOUNDATIONS", level: "advanced", title: "Quantization: int8/int4 Without Wrecking Quality", subtitle: "PTQ vs QAT, GPTQ/AWQ, KV-cache quant, and the memory-vs-accuracy dial.", fidelity: { tier: "conceptual", note: "Teaching module — worked memory/accuracy examples." }, component: QuantizationModule },
+  { id: "dpo", label: "DPO", tag: "FOUNDATIONS", level: "advanced", title: "DPO: Preference Alignment Without a Reward Model", subtitle: "Implicit reward, reference KL, pairwise loss — RLHF without a separate RM or PPO.", fidelity: { tier: "conceptual", note: "Teaching module — derivation + worked example." }, component: DPOModule },
+  { id: "moe", label: "Mixture-of-Experts", tag: "FOUNDATIONS", level: "advanced", title: "Mixture-of-Experts: Sparse Scaling", subtitle: "Router + top-k gating; active vs total params; the load-balancing loss.", fidelity: { tier: "conceptual", note: "Teaching module — worked active/total-param math." }, component: MoEModule },
+  { id: "distillation", label: "Distillation", tag: "FOUNDATIONS", level: "advanced", title: "Knowledge Distillation", subtitle: "Teacher → student, soft-label KL objective, and when to distill vs quantize.", fidelity: { tier: "conceptual", note: "Teaching module — worked objective + tradeoffs." }, component: DistillationModule },
+  { id: "speculative-decoding", label: "Speculative Decoding", tag: "LAYER 3", level: "advanced", title: "Speculative Decoding: Draft-and-Verify", subtitle: "A draft model proposes k tokens; the target verifies in one pass — lossless speedup.", fidelity: { tier: "conceptual", note: "Teaching module — accept/reject + speedup math." }, component: SpeculativeDecodingModule },
   {
     id: "tokenizer",
     label: "Tokenizer",
