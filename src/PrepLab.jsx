@@ -3152,6 +3152,17 @@ function DefenseDocMode({ onExit }) {
 
 
 // ─── BROWSE MODE ─────────────────────────────────────────────────────────────
+// R11 (Rev-2): shared dark-theme <select> style for the Browse All filters.
+const BROWSE_SELECT_STYLE = {
+  background: "var(--surface-2)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  color: "var(--text, #e4e4e7)",
+  fontSize: 12,
+  padding: "6px 10px",
+  outline: "none",
+  cursor: "pointer",
+};
 function BrowseMode({ onExit }) {
   const [topic, setTopic] = useState("all");
   const [diff, setDiff] = useState("all");
@@ -3193,27 +3204,26 @@ function BrowseMode({ onExit }) {
         )}
       </div>
 
-      {/* Filters */}
-      <div className="shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
-        {/* Topic filter — horizontal scroll on mobile */}
-        <div className="overflow-x-auto px-4 sm:px-6 py-2.5 flex gap-1.5 scrollbar-none" style={{ scrollbarWidth: "none" }}>
-          {["all", ...allTopics].map(t => (
-            <button key={t} onClick={() => setTopic(t)}
-              className={`shrink-0 px-2.5 py-1 rounded text-[11px] font-mono transition-all ${topic === t ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"}`}>
-              {t === "all" ? "All topics" : (TOPIC_LABELS[t] || t)}
-            </button>
-          ))}
-        </div>
-        {/* Difficulty filter — always its own row */}
-        <div className="px-4 sm:px-6 pb-2.5 flex gap-1.5 items-center">
-          <span className="text-[10px] font-mono text-zinc-600 mr-1">Difficulty:</span>
-          {["all", "beginner", "beginner-intermediate", "intermediate", "easy", "medium", "hard", "staff", "daunting"].map(d => (
-            <button key={d} onClick={() => setDiff(d)}
-              className={`shrink-0 px-2.5 py-1 rounded text-[11px] font-mono transition-all capitalize ${diff === d ? "bg-zinc-600 text-white" : "bg-zinc-800/60 text-zinc-500 hover:text-zinc-300"}`}>
-              {d === "beginner-intermediate" ? "B-I" : d}
-            </button>
-          ))}
-        </div>
+      {/* Filters — R11 (Rev-2): topic + difficulty as dark-theme dropdowns (was pill rows) */}
+      <div className="shrink-0 px-4 sm:px-6 py-3 flex flex-wrap gap-4 items-center" style={{ borderBottom: "1px solid var(--border)" }}>
+        <label className="flex items-center gap-2">
+          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Topic</span>
+          <select value={topic} onChange={e => setTopic(e.target.value)} style={BROWSE_SELECT_STYLE}>
+            <option value="all">All topics</option>
+            {allTopics.map(t => (
+              <option key={t} value={t}>{TOPIC_LABELS[t] || t}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Difficulty</span>
+          <select value={diff} onChange={e => setDiff(e.target.value)} style={BROWSE_SELECT_STYLE}>
+            <option value="all">All difficulties</option>
+            {["beginner", "beginner-intermediate", "intermediate", "easy", "medium", "hard", "staff", "daunting"].map(d => (
+              <option key={d} value={d}>{d.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {/* Question list */}
@@ -3995,9 +4005,12 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
   const PREPLAB_SIDEBAR = [
     ...(dueQuestions.length > 0 ? [{ id: "review", label: "Review Due", tag: "SPACED", desc: `${dueQuestions.length} question${dueQuestions.length > 1 ? "s" : ""} scheduled for review today.` }] : []),
     { id: "exam",        label: "Judgment Exam",      tag: "EXAM",      desc: "Test yourself cold. Leave knowing where your reasoning breaks." },
-    { id: "sprint",      label: "Interview Sprint",   tag: "CHEATSHEET", desc: "2 hrs / 1 day / 3 days / 1 week — exactly what to do." },
-    { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
-    { id: "companyprep", label: "Questions by company", tag: "ARCHETYPE", desc: "Question-bank slice by archetype (full prep → Company Tracks)" },
+    { id: "sprint",      label: "Cheatsheet",         tag: "CHEATSHEET", desc: "2 hrs / 1 day / 3 days / 1 week — exactly what to do." },
+    // R10 (Rev-2): "Interview Strategy" (jdprep) removed from the sidebar — thin JD-template; readiness "work next" covers it.
+    //   Component InterviewPrepMode + its render branch are KEPT (still reachable via initialMode / stale hash). Data intact.
+    // R7 (Rev-2): "Questions by company" (companyprep) removed from the sidebar — Company Tracks is now the ONE company home
+    //   and links into this slice. Component CompanyPrepMode + its render branch are KEPT (reachable via
+    //   onNavigateTo({tab:"preplab", mode:"companyprep"}) from Company Tracks). Data intact.
     { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "40 real loop patterns — what's actually tested, by company." },
     { id: "browse",      label: "Browse All",        tag: "REVIEW",    desc: "Scroll through every question. Expand to see answer + trap." },
   ];
@@ -4088,6 +4101,23 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
                 <div>
                   <div className="text-xl font-black text-white tracking-tight mb-1">PrepLab</div>
                   <div className="text-sm text-zinc-400">Production-level questions from real AI engineering interview loops.</div>
+                  {/* R8 (Rev-2): company logos signal these are real interview questions. Links to Company Tracks. */}
+                  <button
+                    onClick={() => onNavigate && onNavigate("company-tracks")}
+                    title="Prep by company → Company Tracks"
+                    className="mt-2.5 inline-flex items-center gap-2 group"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {["OpenAI", "Anthropic", "Google"].map(c => (
+                        <span key={c} className="inline-flex items-center justify-center w-6 h-6 rounded-md" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                          <CompanyLogo company={c} size={14} />
+                        </span>
+                      ))}
+                    </span>
+                    <span className="text-[11px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                      +12 more · prep by company →
+                    </span>
+                  </button>
                 </div>
                 {isReturning && accuracy !== null && (
                   <div className="text-right shrink-0">

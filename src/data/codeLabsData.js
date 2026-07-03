@@ -46,6 +46,23 @@
 // SCALE PLAN: additional labs drop straight into CODE_LABS with the same schema —
 // RAG pipeline (chunk→embed→retrieve→rerank→ground), multi-agent orchestrator
 // (planner/worker/critic loop), eval harness (LLM-as-judge with rubric + CI gate).
+//
+// ─── SKELETON / "COMING SOON" LABS ────────────────────────────────────────────
+// A lab can be an authored, fully-walkable lab (like mcp-server-min) OR a
+// published ROADMAP SKELETON: same schema shape, but `status: "upcoming"` and
+// `steps` carries only outlined step *titles* (no code/checkpoints yet). The
+// renderer keys off `status`: an "upcoming" lab shows its intro + the outline of
+// planned steps as a roadmap, and is NOT completable (no checkpoints to answer).
+// Skeleton shape (only the fields that differ from a full lab):
+//   {
+//     id, title, subtitle, tag, difficulty, minutes,
+//     status: "upcoming",           // <-- marks it in-development; renderer shows a chip
+//     intro: { scenario, whatYouBuild, prereqs },
+//     outline: [ { title: string, note?: string } ],   // planned steps, not yet authored
+//   }
+// A skeleton omits `steps` and `recap` (or leaves them empty). If a renderer that
+// predates `status`/`outline` reads it, it still finds valid `id/title/intro` and
+// an empty/absent `steps` array — so it degrades to "intro only", never crashes.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export const CODE_LABS = [
@@ -300,6 +317,118 @@ if __name__ == "__main__":
       "**A raised error is a message to the model, not a crash.** The SDK turns exceptions into tool-error observations. Write clean, model-readable error text so the agent can recover; never leak stack traces or fabricate data on failure.",
       "**stdout is the JSON-RPC channel — never print to it.** All logging goes to stderr. A stray `print` (yours or a library's) corrupts the stream and disconnects the client. This is the #1 stdio-server bug.",
       "**MCP servers are launched, not deployed (in the stdio model).** The host runs your script as a subprocess and owns its lifecycle; there's no port, no framework, no server loop of your own — `app.run` is the loop.",
+    ],
+  },
+
+  // ─── ROADMAP SKELETONS (in development) ─────────────────────────────────────
+  // Published so the Code Labs browser shows a real roadmap, not one lonely lab.
+  // Each carries a real intro + an outline of the steps being authored.
+  {
+    id: "rag-pipeline-min",
+    title: "Read a Production RAG Pipeline",
+    subtitle:
+      "Walk a real retrieval-augmented-generation pipeline end to end — chunk → embed → retrieve → rerank → ground — and reason about the design decision behind every stage: where recall is lost, why the reranker exists, and how the grounding step stops the model from answering off-context.",
+    tag: "RAG · Python",
+    difficulty: "core",
+    minutes: 22,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "A support team wants the assistant to answer from *their* 40k-document knowledge base, not from the model's memory. Naive 'stuff the top-3 chunks into the prompt' works in a demo and falls apart in production: the right chunk isn't retrieved, the prompt blows the context budget, and the model answers confidently from the wrong passage. This lab reads the pipeline that fixes each of those — and, more importantly, teaches you to *locate* where a given failure was actually introduced. _New to the concept? See Retrieval (Domain Labs → Retrieval) for the mental model; this lab is the real code behind it._",
+      whatYouBuild:
+        "A single-file RAG pipeline: a boundary-aware chunker, an embedding + upsert step, a hybrid retriever (dense + BM25), a cross-encoder reranker over the top-k, and a grounded-generation call whose prompt forces citations — the exact shape you'll be asked to defend in a system-design round.",
+      prereqs: [
+        "Comfort reading Python (functions, list comprehensions, type hints)",
+        "The idea that text is embedded into vectors and compared by cosine similarity",
+        "Why an LLM 'grounded' on retrieved context hallucinates less than one answering from memory",
+      ],
+    },
+    outline: [
+      { title: "1 · Chunking: why boundary-aware beats fixed-token", note: "The recall you lose here can never be recovered downstream — split at semantic boundaries, not every N tokens." },
+      { title: "2 · Embed + upsert: the index is a snapshot, not a mirror", note: "What breaks when the corpus changes and the index doesn't." },
+      { title: "3 · Hybrid retrieve: dense recall + BM25 for exact terms", note: "Why pure vector search misses IDs, names, and rare legal terms — and how RRF fuses the two." },
+      { title: "4 · Rerank: a cross-encoder over the top-k", note: "ANN is approximate; the reranker turns top-20-ish into a trustworthy top-5 before it ever hits the model." },
+      { title: "5 · Ground + cite: forcing every claim back to a chunk", note: "The prompt contract + a citation-grounding check that catches answers the retrieved context can't support." },
+    ],
+  },
+  {
+    id: "multi-agent-orchestrator-min",
+    title: "Read a Multi-Agent Orchestrator",
+    subtitle:
+      "Walk a planner → worker → critic loop line by line — how the planner decomposes a task, how workers execute sub-steps with tools, how the critic gates the result, and the control-flow decisions (max iterations, when to stop, how state passes between agents) that separate a robust loop from an infinite-loop token bonfire.",
+    tag: "Agents · Python",
+    difficulty: "advanced",
+    minutes: 26,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "A single agent with ten tools becomes unsteerable: it forgets the plan, loops, and burns tokens. The team splits the work into roles — a **planner** that decomposes the task, **workers** that each own a narrow sub-step, and a **critic** that judges whether the result is good enough or the loop must continue. The wins are real, but so are the new failure modes: loops that never terminate, state that doesn't propagate, a critic that rubber-stamps. This lab reads the orchestrator that gets the control flow right. _See Agents (Domain Labs → Agents / Agent Lab) for the concept; this is the code behind the loop._",
+      whatYouBuild:
+        "A planner/worker/critic orchestrator: a planner that emits a structured task list, a worker dispatch that runs each sub-task with tools, a critic that scores the output against the goal, and the loop controller (max-iterations, stop condition, state hand-off) that ties them together safely.",
+      prereqs: [
+        "Comfort reading Python (async/await, dataclasses, dict-based state)",
+        "The single-agent tool-calling loop (see the MCP lab for how one tool call works)",
+        "Why an unbounded agent loop is a cost and reliability risk",
+      ],
+    },
+    outline: [
+      { title: "1 · The planner: decompose into a structured task list", note: "Why a typed plan (not free-text) is what makes the rest of the loop inspectable and resumable." },
+      { title: "2 · Worker dispatch: one narrow role per sub-task", note: "How scoping tools per worker cuts mis-selection — and how results flow back into shared state." },
+      { title: "3 · The critic: gate on the goal, not on vibes", note: "LLM-as-critic against an explicit rubric; why a rubber-stamp critic is worse than none." },
+      { title: "4 · The loop controller: max-iters, stop condition, state", note: "The three lines that stop an infinite loop — and how state passes between planner, worker, and critic without leaking the whole history into every call." },
+    ],
+  },
+  {
+    id: "eval-harness-min",
+    title: "Read an LLM Eval Harness",
+    subtitle:
+      "Walk a real evaluation harness — an LLM-as-judge scored against an explicit rubric, wired into a CI gate that blocks a deploy on regression. Reason about the decisions that make an eval *trustworthy*: cross-model judging to avoid self-preference bias, a frozen baseline as the floor, and a threshold that fails the build instead of a human's optimism.",
+    tag: "Evals · Python",
+    difficulty: "core",
+    minutes: 20,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "'Accuracy looks great' is not a number, and 'we'll eyeball a few outputs' does not survive contact with a prompt change at 2pm on a Thursday. The team needs an eval that runs in CI: every prompt or model change scores a fixed test set against a rubric, and the build fails if faithfulness drops below the frozen baseline. This lab reads that harness — and shows why the *judge* is itself a system with biases you have to design around. _See Evaluation (Domain Labs → Evaluation) for the concept; this is the code that enforces it._",
+      whatYouBuild:
+        "An eval harness: a test-set loader, an LLM-as-judge call scored against a rubric (with structured JSON output), an aggregation step that produces per-metric scores, a baseline comparison, and a CI gate that exits non-zero when a metric regresses past its threshold.",
+      prereqs: [
+        "Comfort reading Python (functions, JSON, simple stats)",
+        "What faithfulness / answer-relevance mean for a RAG answer",
+        "Why a model judging its own family's outputs is biased toward them",
+      ],
+    },
+    outline: [
+      { title: "1 · The test set: real production queries, versioned", note: "Why synthetic-only eval sets lie, and how the set becomes a growing regression suite." },
+      { title: "2 · LLM-as-judge: rubric in, structured score out", note: "Forcing the judge to return JSON scored per rubric dimension — and cross-model judging to dodge self-preference bias." },
+      { title: "3 · Aggregate + baseline: the floor you must not fall below", note: "Turning per-case judgments into per-metric numbers and comparing against a frozen baseline." },
+      { title: "4 · The CI gate: exit non-zero on regression", note: "The few lines that turn an eval into a deploy blocker — threshold, delta-from-baseline, and a readable failure message." },
+    ],
+  },
+  {
+    id: "guardrails-moderation-min",
+    title: "Read a Guardrails / Moderation Pipeline",
+    subtitle:
+      "Walk an input/output filtering pipeline — how a request is screened before it reaches the model (prompt-injection, PII, policy) and how the response is screened before it reaches the user (PII leakage, off-topic, harmful content). Reason about the ordering, the fail-open-vs-fail-closed decision, and why guardrails are defense-in-depth, not a single magic classifier.",
+    tag: "Safety · Python",
+    difficulty: "core",
+    minutes: 19,
+    status: "upcoming",
+    intro: {
+      scenario:
+        "A customer-facing assistant will be probed on day one: users try prompt injection, paste in PII, and steer it off-topic; the model in turn can leak context or emit something it shouldn't. A single classifier isn't enough. The team builds a pipeline with an **input stage** (screen the request before it costs a model call) and an **output stage** (screen the response before the user sees it), each a layered set of cheap-to-expensive checks. This lab reads that pipeline and the judgment calls inside it — especially *fail-open vs fail-closed*, which is a real production trade-off, not a checkbox. _See Production (Domain Labs → Production) for where this sits in the stack._",
+      whatYouBuild:
+        "A guardrails pipeline: an input filter (regex/PII scrub → injection heuristic → a moderation-model call), an output filter (PII re-scan → policy/topic check → a moderation-model call), and the orchestration that decides — per stage — whether a tripped guard blocks, redacts, or logs-and-continues.",
+      prereqs: [
+        "Comfort reading Python (functions, regex basics, early returns)",
+        "What prompt injection is and why user input can't be trusted",
+        "The difference between failing open (allow on error) and failing closed (block on error)",
+      ],
+    },
+    outline: [
+      { title: "1 · Input stage: cheap checks first, model call last", note: "Ordering guards by cost — regex/PII scrub and an injection heuristic run before you spend a moderation-model call." },
+      { title: "2 · Output stage: never trust the model's response either", note: "Re-scanning the generated answer for PII leakage, off-topic drift, and policy violations before it reaches the user." },
+      { title: "3 · The decision: block, redact, or log-and-continue", note: "Per-stage severity and the fail-open-vs-fail-closed call — the trade-off that decides whether a bug becomes a breach or an outage." },
     ],
   },
 ];

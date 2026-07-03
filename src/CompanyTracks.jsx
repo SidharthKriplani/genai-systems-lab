@@ -102,10 +102,62 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
           <CompanyLogo company={company} size={30} />
           <h1 className="text-2xl font-extrabold" style={{ color: "var(--text, #f4f4f5)" }}>{company}</h1>
         </div>
-        <p className="text-[13px] mb-5" style={{ color: "var(--text-muted, #a1a1aa)", lineHeight: 1.5, maxWidth: 640 }}>
+        <p className="text-[13px] mb-4" style={{ color: "var(--text-muted, #a1a1aa)", lineHeight: 1.5, maxWidth: 640 }}>
           Curated prep for {company} — pick a role and seniority. Each item opens the exact
           Foundations track, Ground Truth post, lab, or PrepLab drill you need, in order.
         </p>
+
+        {/* R7 (Rev-2): Company Tracks is the ONE company home. These three tiles surface everything
+            company-specific: the Question-Bank slice, the Interview-Signal intel, and the spoken
+            Company Scenarios — the standalone modes those used to live in have been retired from
+            PrepLab / Fluency and now route through here. */}
+        <div className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--text-muted, #71717a)" }}>
+          Everything for this company
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-6">
+          {[
+            {
+              key: "questions",
+              title: "Questions",
+              desc: "Archetype-weighted slice of the Question Bank.",
+              accent: "#22c55e",
+              onClick: () => onNavigateTo && onNavigateTo({ tab: "preplab", mode: "companyprep" }),
+            },
+            {
+              key: "intel",
+              title: "Interview intel",
+              desc: "Real loop patterns — what's actually tested.",
+              accent: "#818cf8",
+              onClick: () => onNavigateTo && onNavigateTo({ tab: "preplab", mode: "intexp" }),
+            },
+            {
+              key: "spoken",
+              title: "Spoken scenarios",
+              desc: "Bespoke company cases to reason out loud.",
+              accent: "#f59e0b",
+              onClick: () => {
+                try { localStorage.setItem("gsl-fluency-initial", "cases"); } catch {}
+                if (onNavigate) onNavigate("fluency"); else window.location.hash = "fluency";
+              },
+            },
+          ].map(t => (
+            <button key={t.key} onClick={t.onClick}
+              className="text-left group"
+              style={{
+                padding: "12px 14px", borderRadius: 10, cursor: "pointer",
+                background: "var(--surface)", border: "1px solid var(--border)",
+                transition: "border-color 0.12s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent + "88"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[13px] font-bold" style={{ color: "var(--text, #e4e4e7)" }}>{t.title}</span>
+                <span style={{ color: t.accent }}>→</span>
+              </div>
+              <div className="text-[11.5px] leading-snug" style={{ color: "var(--text-muted, #a1a1aa)" }}>{t.desc}</div>
+            </button>
+          ))}
+        </div>
 
         <div className="text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-muted, #71717a)" }}>Role</div>
         <div className="flex gap-2 flex-wrap mb-4">

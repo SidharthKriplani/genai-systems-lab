@@ -3,6 +3,10 @@ import { track } from "./analytics";
 import { getAreaReadiness } from "./readiness";
 import { TradeoffCard } from "./shared";
 import CaseChains from "./CaseChains";
+// Salvaged from AIPM (archived surface): the pre-ship rigor checklist is the one
+// genuinely-valuable AIE module worth surfacing in Production. Reuse-by-import so
+// AIPM stays the single source (GSL Rev-2 R4-salvage).
+import { LaunchChecklist } from "./AIPM";
 
 const TRADEOFF = {
   title: "How do you cut latency and cost in production?",
@@ -164,6 +168,15 @@ export default function ProductionHub({ onNavigate, onNavigateTo }) {
       <div>
         <SectionLabel>When to use what</SectionLabel>
         <TradeoffCard data={TRADEOFF} />
+      </div>
+
+      {/* Pre-Ship Readiness (salvaged from AIPM Launch Checklist) */}
+      <div>
+        <SectionLabel>Pre-Ship Readiness — the checklist before you ship an LLM feature</SectionLabel>
+        <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-4">
+          Everything that must be true before an LLM feature goes to production: eval baselines and regression thresholds, live dashboards and P95 alerts, fallback and human-escalation paths, guardrail and PII review, provider ToS and disclosure, cost ceilings. Work through it as if you're shipping tomorrow — the risk gauge only goes green once the must-haves are covered.
+        </p>
+        <LaunchChecklist />
       </div>
 
       {/* Concepts */}

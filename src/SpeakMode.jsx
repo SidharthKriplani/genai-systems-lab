@@ -23,6 +23,18 @@ const topicLabel = (t) => TOPIC_LABELS[t] || (t ? t[0].toUpperCase() + t.slice(1
 
 const DIFF_COLOR = { easy: "#22c55e", medium: "#f59e0b", hard: "#ef4444" };
 
+// R15 (Rev-2): dark-theme <select> style for the Speak filters.
+const SPEAK_SELECT_STYLE = {
+  background: "#27272a",
+  border: "1px solid #3f3f46",
+  borderRadius: 8,
+  color: "#e4e4e7",
+  fontSize: 12,
+  padding: "6px 10px",
+  outline: "none",
+  cursor: "pointer",
+};
+
 // The 4-tier structured spoken drill. Ported 1:1 from MSL. Tiers 3 and 4 reframe
 // the base prompt. Pushback is generated generically since PrepLab questions have
 // no per-question pushback field.
@@ -62,6 +74,59 @@ const TIERS = [
     reasonPrompt: true,
   },
 ];
+
+// R13 (Rev-2): Phrase Bank (weak→strong phrasing) absorbed into Speak as a reference tab.
+//   These high-impact upgrades train the same skill Speak drills — saying it like a senior
+//   engineer — so they live alongside the spoken drill instead of as a separate Fluency mode.
+const SPEAK_PHRASES = [
+  { weak: "The model made stuff up.", strong: "The model hallucinated — it produced a confident, plausible response that wasn't grounded in the retrieved context. That's a groundedness failure, not a knowledge gap.", why: "Names the failure mode and the eval dimension instead of a toy description." },
+  { weak: "It's slow.", strong: "P95 latency is ~4.2s end-to-end, dominated by the LLM inference call (~2.8s). We can cut it by routing the classification step to a smaller model and reserving the full model for synthesis.", why: "Quantifies the tail, localizes the bottleneck, and proposes a concrete fix." },
+  { weak: "We trained it on our data.", strong: "We fine-tuned the base model on 12k labeled examples for behavioral alignment — teaching our format conventions and domain terminology — not to inject factual knowledge.", why: "Distinguishes behavioral fine-tuning from knowledge injection." },
+  { weak: "It uses tools.", strong: "It's a ReAct-style agent that reasons over tool outputs before acting, with instrumented failure modes for tool-call errors and infinite reasoning loops.", why: "Shows architecture awareness and that you've designed for failure." },
+  { weak: "We added guardrails.", strong: "Two-layer guardrails: input classifiers catch prompt injection and out-of-scope queries pre-model; output validators check format compliance and groundedness. Input-layer false-positive rate is ~3%, tuned against a labeled adversarial set.", why: "Concrete architecture, a measured metric, and how it's calibrated." },
+  { weak: "We picked the best model.", strong: "We ran a model-selection pass on the dimensions that matter — accuracy on our eval set, p95 latency, and cost at projected volume — and landed on tiered routing: a fine-tuned 7B for the common case, frontier for the hard tail.", why: "Frames selection as a measured tradeoff, not a vibe." },
+];
+
+function StrongerPhrasingTab() {
+  const [open, setOpen] = useState(false);
+  const [revealed, setRevealed] = useState({});
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+      <button onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left">
+        <span className="flex items-center gap-2">
+          <span className="text-sm">✍️</span>
+          <span className="text-sm font-semibold text-zinc-100">Stronger phrasing — say it like a senior engineer</span>
+        </span>
+        <span className="text-xs font-mono text-zinc-500">{open ? "Hide" : `${SPEAK_PHRASES.length} upgrades`}</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-2.5 border-t border-zinc-800/60 pt-3">
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            The phrases you use in a review or interview signal your level. Reveal the strong version, then use it in your next spoken rep above.
+          </p>
+          {SPEAK_PHRASES.map((p, i) => (
+            <div key={i} className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 space-y-2">
+              <div className="text-xs text-zinc-400"><span className="text-red-400 font-semibold">Weak: </span>"{p.weak}"</div>
+              {revealed[i] ? (
+                <div className="space-y-1.5">
+                  <div className="text-xs text-zinc-200 leading-relaxed"><span className="text-emerald-400 font-semibold">Strong: </span>"{p.strong}"</div>
+                  <div className="text-[11px] text-zinc-500"><span className="text-indigo-400 font-semibold">Why: </span>{p.why}</div>
+                </div>
+              ) : (
+                <button onClick={() => setRevealed(r => ({ ...r, [i]: true }))}
+                  className="text-xs font-semibold px-2.5 py-1 rounded-md transition-all"
+                  style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  Reveal strong version →
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function fmt(sec) {
   const m = Math.floor(sec / 60);
@@ -277,27 +342,29 @@ export default function SpeakMode() {
           )}
         </div>
 
-        {/* Topic filter */}
-        <div className="flex flex-wrap gap-2">
-          {topics.map(t => (
-            <button key={t} onClick={() => setFilterTopic(t)}
-              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${filterTopic === t ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-              {t === "All" ? "All Topics" : topicLabel(t)}
-            </button>
-          ))}
-        </div>
+        {/* R13 (Rev-2): Phrase Bank absorbed here — stronger-phrasing reference for spoken reps */}
+        <StrongerPhrasingTab />
 
-        {/* Difficulty filter */}
-        <div className="flex flex-wrap gap-2">
-          {diffs.map(d => (
-            <button key={d} onClick={() => setFilterDiff(d)}
-              className={`px-3 py-1 rounded text-xs font-semibold uppercase tracking-wide transition-all ${filterDiff === d ? "bg-zinc-200 text-zinc-900" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
-              {d === "All" ? "All" : d}
-            </button>
-          ))}
+        {/* R15 (Rev-2): topic + difficulty filters as dark-theme dropdowns (was pill rows) */}
+        <div className="flex flex-wrap gap-4 items-center">
+          <label className="flex items-center gap-2">
+            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Topic</span>
+            <select value={filterTopic} onChange={e => setFilterTopic(e.target.value)} style={SPEAK_SELECT_STYLE}>
+              {topics.map(t => (
+                <option key={t} value={t}>{t === "All" ? "All topics" : topicLabel(t)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2">
+            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Difficulty</span>
+            <select value={filterDiff} onChange={e => setFilterDiff(e.target.value)} style={SPEAK_SELECT_STYLE}>
+              {diffs.map(d => (
+                <option key={d} value={d}>{d === "All" ? "All difficulties" : d.charAt(0).toUpperCase() + d.slice(1)}</option>
+              ))}
+            </select>
+          </label>
+          <span className="text-xs font-mono text-zinc-600">{filtered.length} questions</span>
         </div>
-
-        <div className="text-xs font-mono text-zinc-600">{filtered.length} questions</div>
 
         <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1">
           {filtered.map(q => (

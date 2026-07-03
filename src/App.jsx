@@ -20,6 +20,7 @@ const GroundTruth    = lazy(() => import("./GroundTruth"));
 const QADashboard    = lazy(() => import("./QADashboard"));
 const ConceptsApp    = lazy(() => import("./Concepts"));
 const StartHereApp   = lazy(() => import("./StartHere"));
+const ResourcesApp   = lazy(() => import("./Resources"));
 const SystemsApp     = lazy(() => import("./Systems"));
 const FluencyApp     = lazy(() => import("./Fluency"));
 const FlowsApp       = lazy(() => import("./Flows"));
@@ -219,7 +220,7 @@ function SidebarRow({ item, active, onNavigate, onAfter }) {
     );
   }
   return (
-    <button onClick={() => { onNavigate(item.id); if (onAfter) onAfter(); }} aria-current={active ? "page" : undefined}
+    <button onClick={() => { onNavigate(item.route || item.id); if (onAfter) onAfter(); }} aria-current={active ? "page" : undefined}
       className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all duration-150 ${active ? "" : "text-zinc-300 hover:bg-zinc-800/60 hover:text-white"}`}
       style={active ? { background: "var(--surface-2)", boxShadow: "inset 0 0 0 1px var(--border)", color: "#f3f4f6", fontWeight: 600 } : {}}>
       <span>{item.label}</span>
@@ -273,51 +274,54 @@ function MobileFrameNav({ topView, onNavigate, onClose }) {
 }
 
 // TRACK cluster (flat, always visible).
-// 2026-07-03 (fix #4): collapsed from 7 rows → Home + a single "Me" hub. Profile / Progress /
-// Plans / My Tracks / Review now live inside the Me landing page (src/Me.jsx) — their routes,
-// hashes, and components are unchanged. About moved to the sidebar footer (still routable).
+// 2026-07-03 (Rev-2 R3): reverted the "Me" hub → flat personal strip mirroring MSL exactly.
+// Order: Home · Profile · My Progress · Review · My Tracks · Leaderboard · Start Here ·
+// Plans & Access · Resources · About. The `me` hub (src/Me.jsx) is dropped from nav but its
+// route/hash (#me) stay alive. About is ALSO surfaced here (the footer About stays too, harmless).
 const NAV_TRACK = [
   { id: "home", label: "Home" },
-  { id: "me", label: "Me" },
+  { id: "profile", label: "Profile" },
+  { id: "progress", label: "My Progress" },
+  { id: "review", label: "Review" },
+  { id: "my-tracks", label: "My Tracks" },
+  { id: "leaderboard", label: "Leaderboard" },
+  { id: "starthere", label: "Start Here" },
+  { id: "plans", label: "Plans & Access" },
+  { id: "resources", label: "Resources" },
+  { id: "about", label: "About" },
 ];
 
-// The four frames + PREP & ASSESS (accordion). Domains nest under the frame, never as peers.
+// Three content frames (accordion): Learn · Build · Interview. (Rev-2 R1: Practice frame
+// dissolved INTO Learn; Rev-2 R2: single "Agent Lab" entry; Rev-2 R4: aipm row cut.)
 const NAV_SECTIONS = [
-  // key stays "know" (routing/frame-map depends on it); label only → "Learn" (2026-07-03, GSL fix #3).
+  // key stays "know" (routing/frame-map depends on it); label → "Learn".
+  // Rev-2 R1: the old Practice ("do") items now live here — Domain Labs group, Playground,
+  // Prompt Engineering, plus the sister-lab links moved down under a small group.
   { key: "know", label: "Learn", icon: "book-open", items: [
     { id: "concepts", label: "Foundations" },  // was "Concepts" — renamed sprint 92; gyms = tracks
     { id: "groundtruth", label: "Ground Truth" },
-    // de-listed sprint 92 (KNOW cleanup): starthere → absorbed into LM Foundations track; paths → dissolved (goal flows deferred)
-    // { id: "starthere", label: "Start Here" },
-    // { id: "paths", label: "Learning Paths" },
-    // de-listed 2026-06-24 (overlap pass, Wave 1) — reachable by hash. Re-add to restore.
-    // { id: "flows", label: "Flows" },
-    // { id: "explore", label: "Explore" },
-  ]},
-  // key stays "do" (routing/frame-map depends on it); label only → "Practice" (2026-07-03, GSL fix #3).
-  // BY DOMAIN dissolved into here: the 4 domain hubs + Agent Lab (moved from JUDGE) now live under a "Domain Labs" group.
-  { key: "do", label: "Practice", icon: "terminal", items: [
-    { id: "playground", label: "Playground" },
     { id: "__domain_labs", label: "Domain Labs", header: true },
     { id: "retrieval", label: "Retrieval" },
+    { id: "agents", label: "Agent Lab" },  // Rev-2 R2: single agents entry (the rich Agent Lab). agentshub route kept, row dropped.
     { id: "evaluation", label: "Evaluation" },
-    { id: "agentshub", label: "Agents" },
     { id: "production", label: "Production" },
-    { id: "agents", label: "Agent Lab" },  // moved in from JUDGE (2026-07-03, GSL fix #3)
-    { id: "aipm", label: "AI Product Judgment" },  // re-homed from JUDGE (2026-07-03, GSL fix #5); surface trimmed to 3 salvage modes
+    { id: "__learn_more", label: "Sandboxes & drills", header: true },
+    { id: "playground", label: "Playground" },
+    // Rev-2 R1: Prompt Engineering entry → routes to the Foundations (concepts) gym set, which
+    // holds the prompt-engineering track. No dedicated route id, so `route` points at `concepts`
+    // while `id` stays unique (avoids a duplicate React key / double active-highlight vs Foundations).
+    { id: "prompt-eng", route: "concepts", label: "Prompt Engineering" },
     { id: "__soon_code", label: "Code Drills", soon: true },
+    { id: "__sister_labs", label: "Sister labs", header: true },
     { id: "__pl", label: "Python · DSA", href: SIBLING_LABS.pl },
     { id: "__pal", label: "SQL", href: SIBLING_LABS.pal },
+    // Rev-2 R4: `aipm` (AI Product Judgment) removed from nav. Route/render/hash (#aipm) kept
+    // alive below (Wave 4 salvages the Launch Checklist). de-listed: flows/explore (hash-reachable).
   ]},
   { key: "build", label: "BUILD", icon: "hammer", items: [
     { id: "career", label: "Project Labs" },  // promoted above Code Labs (2026-07-03, GSL fix #6)
     { id: "codelabs", label: "Code Labs" },
   ]},
-  // JUDGE frame dissolved (2026-07-03, GSL fix #5): Agent Lab already moved to Practice (fix #3),
-  // and AI Product (now "AI Product Judgment", trimmed to 3 salvage modes) re-homed to Practice above.
-  // The `judge` frame had no live rows left, so it's removed here. Routes/hashes for aipm and all
-  // former JUDGE tabs (evallab/llmlab/foundationlab/systems) remain intact and hash-reachable; their
-  // frame-map fallback below points de-listed ones at the nearest surviving frame.
   { key: "prep", label: "INTERVIEW", icon: "clipboard", items: [
     { id: "preplab", label: "Question Bank" },
     { id: "fluency", label: "Speaking & Mock" },
@@ -334,16 +338,15 @@ const NAV_DOMAINS = [];
 // tab id → frame key (active-tab auto-expand). Includes routable aliases not shown as rows.
 const TAB_FRAME = (() => {
   const m = {};
-  for (const s of NAV_SECTIONS) for (const it of s.items) if (!it.href && !it.soon && !it.header) m[it.id] = s.key;
-  // 2026-07-03 (fix #3): domain hubs + Agent Lab now live under Practice ("do"). The NAV_SECTIONS
-  // loop above already maps retrieval/evaluation/agentshub/production/agents → "do"; agentlab alias
-  // + foundations hub map explicitly.
-  m.agentlab = "do"; m.foundations = "know";
+  for (const s of NAV_SECTIONS) for (const it of s.items) if (!it.href && !it.soon && !it.header) { m[it.id] = s.key; if (it.route) m[it.route] = s.key; }
+  // Rev-2 (R1): Practice dissolved into Learn ("know"). The NAV_SECTIONS loop above already maps
+  // retrieval/evaluation/production/agents/playground → "know". Hash-reachable-only tabs mapped explicitly:
+  m.agentlab = "know"; m.agentshub = "know"; m.foundations = "know"; m.aipm = "know"; // Rev-2 R2/R4: agentshub + aipm hash-reachable, auto-expand Learn.
   // de-listed-but-routable (Wave 1): keep frame mapping so hash-reached tabs still auto-expand the right frame.
-  // JUDGE frame dissolved (fix #5) → former judge tabs repoint to the nearest surviving frame ("do"/Practice).
-  m.lab = "do"; m.evallab = "do"; m.llmlab = "do"; m.foundationlab = "do"; m.flows = "know"; m.explore = "know";
+  m.lab = "know"; m.evallab = "know"; m.llmlab = "know"; m.foundationlab = "know"; m.flows = "know"; m.explore = "know";
   // sprint 92: dissolved tabs still map to know frame for graceful redirect.
-  m.starthere = "know"; m.paths = "know"; m.systems = "do";
+  m.paths = "know"; m.systems = "know";
+  // starthere / resources are personal-strip (NAV_TRACK) rows — no frame to expand; omitted intentionally.
   m.codelabs = "build"; // BUILD-frame code-walkthrough surface (Code Labs)
   return m;
 })();
@@ -1109,12 +1112,14 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","starthere","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","codelabs","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
+const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","codelabs","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
 const GUEST_ALLOWED_TABS = new Set([
   "home", "plans", "profile", "progress", "about", "me", // "me" = personal landing hub (links only)
+  "starthere", "resources", // Rev-2 R3: informational landing pages — always free/public
+
   "foundations", "foundationlab", "promptlab", // Foundations always free
   "codelabs",    // Code Labs (BUILD read-and-reason walkthroughs) — free
   "groundtruth", // free but limited to 3 pinned posts (enforced in GroundTruth.jsx)
@@ -1515,6 +1520,11 @@ export default function App() {
       agentshub:   "Agents — GenAI Systems Lab",
       production:  "Production — GenAI Systems Lab",
       foundations: "Foundations — GenAI Systems Lab",
+      starthere:   "Start Here — GenAI Systems Lab",
+      resources:   "Resources — GenAI Systems Lab",
+      leaderboard: "Leaderboard — GenAI Systems Lab",
+      profile:     "Profile — GenAI Systems Lab",
+      plans:       "Plans & Access — GenAI Systems Lab",
     };
     document.title = TAB_TITLES[topView] || "GenAI Systems Lab";
     // Push progress to Supabase on every nav change (sync checkpoint)
@@ -1850,12 +1860,8 @@ export default function App() {
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="shrink-0"><path d="M5.5 1C3.015 1 1 2.791 1 5c0 .98.38 1.878 1.01 2.58L1.5 9.5l2.04-.98A4.8 4.8 0 005.5 9C7.985 9 10 7.209 10 5s-2.015-4-4.5-4z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/></svg>
             <span>Feedback</span>
           </button>
-          {/* About — moved out of primary strip to footer (2026-07-03, GSL fix #4). Still routable (#about). */}
-          <button onClick={() => navigate("about")} aria-current={topView === "about" ? "page" : undefined}
-            className="w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-150">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="shrink-0"><circle cx="5.5" cy="5.5" r="4.4" stroke="currentColor" strokeWidth="1.1"/><path d="M5.5 5v2.6M5.5 3.4h.01" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-            <span>About</span>
-          </button>
+          {/* About now lives in the personal strip (NAV_TRACK, Rev-2 R3) — footer row removed to
+              avoid a duplicate. Route (#about) unchanged. */}
           {/* Footer — part of BreakLabs (slot 6) */}
           <div className="flex items-center gap-1.5 px-3 pt-1.5 text-[10px] font-mono text-zinc-600">
             <BrandMark variant="monogram" size={13} />
@@ -2060,6 +2066,11 @@ export default function App() {
           {topView === "foundations"&& <FoundationsHub onNavigate={navigate} onNavigateTo={navigateTo} />}
           {topView === "study"      && <StudyRoom user={user} onNavigate={navigate} />}
           {topView === "starthere"  && <StartHereApp onNavigate={navigate} />}
+          {topView === "resources"  && (
+            <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
+              <ResourcesApp onNavigate={navigate} />
+            </Suspense>
+          )}
         </Suspense>
       </TabErrorBoundary>
       </main>

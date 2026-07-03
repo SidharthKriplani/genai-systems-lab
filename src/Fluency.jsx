@@ -1370,6 +1370,19 @@ const TOPIC_REVIEWS = {
   "Architecture": "Review Concepts tab — embeddings, attention, transformer block diagrams.",
 };
 
+// R12 (Rev-2): fold the old "Timed Drills" bank (DRILLS) into the Mock Interview bank.
+//   DRILLS shape { id, level, question, keyPoints, hint } → INTERVIEW_QUESTIONS shape
+//   { id, q, keyPoints, topic, difficulty }. level → difficulty; topic inferred as "Drill".
+const DRILL_LEVEL_TO_DIFF = { FOUNDATIONAL: "easy", INTERMEDIATE: "medium", ADVANCED: "hard" };
+const DRILLS_AS_INTERVIEW = DRILLS.map(d => ({
+  id: `mi-${d.id}`,
+  q: d.question,
+  keyPoints: d.keyPoints,
+  topic: "Drill",
+  difficulty: DRILL_LEVEL_TO_DIFF[d.level] || "medium",
+}));
+const MERGED_INTERVIEW_QUESTIONS = [...INTERVIEW_QUESTIONS, ...DRILLS_AS_INTERVIEW];
+
 function MockInterview() {
   const SESSION_SIZE = 5;
   const TIME_LIMIT = 90;
@@ -1384,11 +1397,11 @@ function MockInterview() {
   const [showPoints, setShowPoints] = useState(false);
   const [scores, setScores] = useState([]); // array of {qId, selfScore (1-3), topic}
 
-  const allTopics = [...new Set(INTERVIEW_QUESTIONS.map(q => q.topic))];
+  const allTopics = [...new Set(MERGED_INTERVIEW_QUESTIONS.map(q => q.topic))];
 
   // Filter + shuffle + pick SESSION_SIZE
   function startSession() {
-    let pool = INTERVIEW_QUESTIONS;
+    let pool = MERGED_INTERVIEW_QUESTIONS;
     if (difficulty !== "all") pool = pool.filter(q => q.difficulty === difficulty);
     if (topic !== "all") pool = pool.filter(q => q.topic === topic);
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, Math.min(SESSION_SIZE, pool.length));
@@ -1442,7 +1455,7 @@ function MockInterview() {
         <div>
           <p className="text-xs text-zinc-400 uppercase tracking-widest mb-1">Session Setup</p>
           <h2 className="text-white font-bold text-lg">Mock Interview</h2>
-          <p className="text-zinc-400 text-sm mt-1">5 questions · 90 seconds each · self-score your answers</p>
+          <p className="text-zinc-400 text-sm mt-1">5 questions · 90 seconds each · self-score your answers — timed drills folded in.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:gap-4">
@@ -2015,6 +2028,28 @@ function getLevel(score) {
 }
 
 // Map topics to modules for the "Study" deeplink hint
+// R16 (Rev-2): map each Readiness topic to the app route that best addresses it, so the
+//   results screen can deep-link "work on your weakest area →". Routes are GSL hash views
+//   (see App.jsx VALID_VIEWS). We navigate via window.location.hash since FluencyApp isn't
+//   handed an onNavigate prop.
+const TOPIC_WEAK_ROUTE = {
+  "Tokenization":   { hash: "concepts",   label: "Concepts → Tokenization" },
+  "RAG":            { hash: "lab",         label: "RAG Lab" },
+  "Evaluation":     { hash: "evallab",     label: "Eval Lab" },
+  "Agents":         { hash: "agents",      label: "Agent Lab" },
+  "Cost":           { hash: "systems",     label: "Systems → Model Strategy" },
+  "Fine-tuning":    { hash: "llmlab",      label: "LLM Lab → Fine-Tuning" },
+  "Context Window": { hash: "concepts",   label: "Concepts → Context Window" },
+  "Context":        { hash: "concepts",   label: "Concepts → Context Window" },
+  "Guardrails":     { hash: "systems",     label: "Systems → Guardrails" },
+  "Embeddings":     { hash: "concepts",   label: "Concepts → Embeddings" },
+  "LLMOps":         { hash: "systems",     label: "Systems → Observability" },
+  "Prompting":      { hash: "concepts",   label: "Learn → Prompt Engineering" },
+  "Multimodal":     { hash: "concepts",   label: "Concepts → Architecture" },
+  "System Design":  { hash: "systems",     label: "Systems → A/B Testing" },
+  "Safety":         { hash: "systems",     label: "Systems → Guardrails" },
+};
+
 const TOPIC_MODULE_HINTS = {
   "Tokenization":    "Concepts tab → Tokenization",
   "RAG":             "Flows tab → RAG Pipeline",
@@ -2255,11 +2290,29 @@ function ReadinessAssessment() {
         </div>
       </div>
 
-      {/* Weakest topic study hint */}
+      {/* Weakest topic study hint + R16 deep-link to work on it */}
       {weakestTopic && (
-        <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4 space-y-1">
-          <p className="text-xs font-bold text-amber-400 uppercase tracking-wide">Weakest Topic: {weakestTopic}</p>
-          <p className="text-sm text-zinc-300">Study: {TOPIC_MODULE_HINTS[weakestTopic] || weakestTopic}</p>
+        <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4 space-y-2.5">
+          <div className="space-y-1">
+            <p className="text-xs font-bold text-amber-400 uppercase tracking-wide">Weakest area: {weakestTopic}</p>
+            <p className="text-sm text-zinc-300">
+              {topicMap[weakestTopic] ? `You scored ${topicMap[weakestTopic].correct}/${topicMap[weakestTopic].total} here — start here.` : "Start here."}{" "}
+              Study: {TOPIC_MODULE_HINTS[weakestTopic] || weakestTopic}
+            </p>
+          </div>
+          {(() => {
+            const route = TOPIC_WEAK_ROUTE[weakestTopic];
+            if (!route) return null;
+            return (
+              <button
+                onClick={() => { window.location.hash = route.hash; }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all"
+                style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24", border: "1px solid rgba(245,158,11,0.4)" }}
+              >
+                Work on your weakest area: {route.label} →
+              </button>
+            );
+          })()}
         </div>
       )}
 
@@ -2287,19 +2340,33 @@ function ReadinessAssessment() {
 // ─── FLUENCY APP ──────────────────────────────────────────────────────────────
 
 const FLUENCY_MODULES = [
-  { id: "phrases", label: "Phrase Bank", tag: "UPGRADE" },
-  { id: "flashcards", label: "Flashcards", tag: "CARDS" },
-  { id: "drills", label: "Timed Drills", tag: "PRACTICE" },
-  { id: "cases", label: "Company scenarios", tag: "SPOKEN" },
-  { id: "prompts", label: "Prompts", tag: "PROMPTS" },  // GSL fix #8: merged Prompt Engineering + Prompt Challenges into one mode (sub-tabs)
-  { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
   { id: "speak", label: "Speak", tag: "SPOKEN" },
-  // { id: "challenges", ... } — merged into "prompts" (PromptModeMerged) 2026-07-03, GSL fix #8. Dataset PROMPT_CHALLENGES + component PromptChallengeMode kept.
+  // R12 (Rev-2): "Timed Drills" merged INTO "Mock Interview" — both were timed answer-under-pressure with
+  //   self-scored key points. DRILLS content is folded into INTERVIEW_QUESTIONS (see MERGED_INTERVIEW_QUESTIONS).
+  //   The old { id:"drills", label:"Timed Drills" } registry row is dropped; component TimedDrills kept in-file
+  //   (unused, archived). Stale hash/state → falls back to the merged "interview" mode.
+  { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
   { id: "assessment", label: "Readiness Check", tag: "QUICK DIAGNOSTIC" },  // GSL fix #8: label vs full Question Bank exam
+  // ── R7 (Rev-2): "Company scenarios" (cases) dropped as a top-level mode — Company Tracks is now the ONE
+  //   company home and links into it. Component CompanyCaseArena kept in-file; reachable via the
+  //   `gsl-fluency-initial` localStorage handoff set by Company Tracks (see FluencyApp mount effect).
+  // ── R13 (Rev-2): "Flashcards" removed (component FlashcardMode archived in-file, data FLASHCARDS kept).
+  //   "Phrase Bank" removed as a standalone mode — its weak→strong value is absorbed into Speak
+  //   (SpeakMode surfaces a "stronger phrasing" reference tab). Component PhraseBank + data PHRASES kept in-file.
+  // ── R14 (Rev-2): "Prompts" removed from Fluency — the Prompt Engineering gym under Learn is its home.
+  //   Component PromptModeMerged + datasets kept in-file; reachable only if a stale hash lands (falls back).
 ];
 
 export default function FluencyApp() {
-  const [activeModule, setActiveModule] = useState("phrases");
+  // R7 (Rev-2): Company Tracks deep-links into the archived "Company scenarios" arena by writing
+  //   localStorage `gsl-fluency-initial="cases"` then navigating to #fluency. Read + clear it on mount.
+  const [activeModule, setActiveModule] = useState(() => {
+    try {
+      const initial = localStorage.getItem("gsl-fluency-initial");
+      if (initial) { localStorage.removeItem("gsl-fluency-initial"); return initial; }
+    } catch {}
+    return "speak";
+  });
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return localStorage.getItem("genai_visited_fluency") !== "1"; } catch { return false; }
   });
@@ -2338,10 +2405,9 @@ export default function FluencyApp() {
     </div>
   );
 
+  // R7/R12/R13/R14 (Rev-2): flattened to the three surviving spoken-interview modes.
   const FLUENCY_GROUPS = [
-    { label: "VOCAB",    ids: ["phrases", "flashcards"] },
-    { label: "PRACTICE", ids: ["drills", "cases"] },  // "challenges" merged into "prompts" (fix #8)
-    { label: "SKILL",    ids: ["prompts", "interview", "speak", "assessment"] },
+    { label: "PRACTICE", ids: ["speak", "interview", "assessment"] },
   ];
 
   return (
@@ -2367,16 +2433,18 @@ export default function FluencyApp() {
         ))}
       </div>
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-        {activeModule === "phrases" && <PhraseBank />}
-        {activeModule === "drills" && <TimedDrills />}
-        {activeModule === "cases" && <CompanyCaseArena />}
-        {activeModule === "prompts" && <PromptModeMerged />}
-        {activeModule === "interview" && <MockInterview />}
+        {/* Live modes (Rev-2): Speak · Mock Interview · Readiness Check */}
         {activeModule === "speak" && <SpeakMode />}
-        {activeModule === "flashcards" && <FlashcardMode />}
-        {/* "challenges" merged into "prompts" (PromptModeMerged), GSL fix #8 — if a stale hash/state lands here, fall back to the merged prompts mode */}
-        {activeModule === "challenges" && <PromptModeMerged />}
+        {activeModule === "interview" && <MockInterview />}
         {activeModule === "assessment" && <ReadinessAssessment />}
+        {/* R7: Company Scenarios reachable only via Company Tracks handoff (archived from the sidebar) */}
+        {activeModule === "cases" && <CompanyCaseArena />}
+        {/* Archived modes (Rev-2) — components kept in-file; a stale hash/state falls back to a live mode:
+             R12 drills → merged Mock Interview · R13 phrases/flashcards → Speak · R14 prompts/challenges → Learn's Prompt Eng gym */}
+        {activeModule === "drills" && <MockInterview />}
+        {activeModule === "phrases" && <SpeakMode />}
+        {activeModule === "flashcards" && <SpeakMode />}
+        {(activeModule === "prompts" || activeModule === "challenges") && <MockInterview />}
       </div>
     </div>
   );

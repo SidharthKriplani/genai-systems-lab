@@ -116,8 +116,13 @@ function LabBrowser({ labs, doneSet, onOpen }) {
                   {lab.tag}
                 </span>
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${d.cls}`}>{d.label}</span>
-                <span className="text-[10px] font-mono text-zinc-600">· {lab.minutes} min · {lab.steps.length} steps</span>
-                {isDone && (
+                <span className="text-[10px] font-mono text-zinc-600">· {lab.minutes} min · {lab.status === "upcoming" ? `${lab.outline?.length ?? 0}-step outline` : `${lab.steps?.length ?? 0} steps`}</span>
+                {lab.status === "upcoming" && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-amber-800/50 bg-amber-950/20 text-amber-400">
+                    In development
+                  </span>
+                )}
+                {isDone && lab.status !== "upcoming" && (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-800/50 bg-emerald-950/20 text-emerald-400">
                     ✓ Complete
                   </span>
@@ -139,8 +144,9 @@ function LabBrowser({ labs, doneSet, onOpen }) {
 // ─── LAB VIEW (single walkthrough) ────────────────────────────────────────────
 
 function LabView({ lab, done, onComplete, onBack, onNavigate }) {
+  const isUpcoming = lab.status === "upcoming" || !lab.steps;
   // one answer slot per step that HAS a checkpoint
-  const checkpointSteps = lab.steps.filter((s) => s.checkpoint);
+  const checkpointSteps = (lab.steps || []).filter((s) => s.checkpoint);
   const [answers, setAnswers] = useState(() => ({})); // stepIndex -> selected idx
   const [submitted, setSubmitted] = useState(() => ({})); // stepIndex -> bool
 
@@ -159,7 +165,7 @@ function LabView({ lab, done, onComplete, onBack, onNavigate }) {
     setSubmitted((prev) => ({ ...prev, [si]: true }));
   };
 
-  const answeredCount = lab.steps.filter((s, si) => s.checkpoint && submitted[si]).length;
+  const answeredCount = (lab.steps || []).filter((s, si) => s.checkpoint && submitted[si]).length;
   const allAnswered = checkpointSteps.length === 0 || answeredCount === checkpointSteps.length;
 
   const d = DIFF_STYLE[lab.difficulty] || DIFF_STYLE.core;
@@ -221,8 +227,26 @@ function LabView({ lab, done, onComplete, onBack, onNavigate }) {
           </div>
         </section>
 
+        {/* Upcoming: show the planned outline instead of steps */}
+        {isUpcoming && (
+          <section>
+            <SectionRule label="Planned outline" />
+            <div className="mt-4 rounded-xl p-4 border border-amber-900/30 bg-amber-950/10 mb-4">
+              <p className="text-sm text-amber-300/90 leading-relaxed">🚧 This walkthrough is in development — the full annotated code + checkpoints are coming. Here's what it will cover:</p>
+            </div>
+            <ol className="space-y-2.5">
+              {(lab.outline || []).map((step, i) => (
+                <li key={i} className="flex gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+                  <span className="text-xs font-mono text-zinc-600 shrink-0 mt-0.5">{i + 1}.</span>
+                  <span className="text-sm text-zinc-300 leading-relaxed"><InlineMd text={typeof step === "string" ? step : (step.title || step.label || "")} /></span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
         {/* Steps */}
-        {lab.steps.map((step, si) => (
+        {!isUpcoming && (lab.steps || []).map((step, si) => (
           <section key={si}>
             <SectionRule label={step.title} />
             <div className="mt-4 space-y-4">
@@ -252,11 +276,12 @@ function LabView({ lab, done, onComplete, onBack, onNavigate }) {
           </section>
         ))}
 
-        {/* Recap */}
+        {/* Recap (authored labs only) */}
+        {!isUpcoming && (
         <section>
           <SectionRule label="Key Decisions Recap" />
           <ul className="mt-4 space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            {lab.recap.map((pt, i) => (
+            {(lab.recap || []).map((pt, i) => (
               <li key={i} className="flex gap-3 text-sm text-zinc-200 leading-relaxed">
                 <span className="text-violet-400 shrink-0 mt-0.5">▸</span>
                 <span><InlineMd text={pt} /></span>
@@ -283,6 +308,7 @@ function LabView({ lab, done, onComplete, onBack, onNavigate }) {
             )}
           </div>
         </section>
+        )}
       </div>
     </div>
   );

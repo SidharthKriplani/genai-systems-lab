@@ -511,7 +511,11 @@ function StakeholderQuiz({ incident, onBack }) {
   );
 }
 
-function LaunchChecklist() {
+// NOTE: LaunchChecklist is exported (named) so it can be reused as the
+// "Pre-Ship Readiness Checklist" section in ProductionHub. AIPM itself is
+// archived-but-routable; this is the one genuinely-valuable AIE module salvaged
+// into the Production hub (GSL Rev-2 R4-salvage). Keep this the single source.
+export function LaunchChecklist() {
   const [checked, setChecked] = useState(new Set());
   const [expanded, setExpanded] = useState(null);
   const categories = [...new Set(LAUNCH_CHECKLIST.map(i => i.category))];

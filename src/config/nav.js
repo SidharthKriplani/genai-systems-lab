@@ -7,13 +7,17 @@
 // Labs, Systems, Concepts, Career, AI Product remain hash-accessible (not deleted).
 
 export const ALL_TABS = [
-  // TRACK — identity + progress layer (top of nav, PAL-style)
-  { id: "me",          label: "Me",          group: "TRACK",      audience: "Personal hub — Progress · Tracks · Review · Plans · Profile" },
+  // TRACK — identity + progress layer (flat personal strip, mirrors MSL — Rev-2 R3)
+  { id: "me",          label: "Me",          group: "TRACK",      audience: "Personal hub (route kept; dropped from nav in Rev-2 R3)" },
   { id: "profile",     label: "Profile",     group: "TRACK",      audience: "Your identity + saved items" },
-  { id: "plans",       label: "Plans",       group: "TRACK",      audience: "Structured learning tracks" },
+  { id: "progress",    label: "My Progress", group: "TRACK",      audience: "Your readiness + study plan" },
   { id: "review",      label: "Review",      group: "TRACK",      audience: "Spaced-rep over what you've mastered" },
+  { id: "my-tracks",   label: "My Tracks",   group: "TRACK",      audience: "Saved items grouped into study tracks" },
+  { id: "leaderboard", label: "Leaderboard", group: "TRACK",      audience: "Global rankings by score" },
+  { id: "starthere",   label: "Start Here",  group: "TRACK",      audience: "How to use GSL + a suggested path" },
+  { id: "plans",       label: "Plans & Access", group: "TRACK",   audience: "Structured learning tracks + access tiers" },
+  { id: "resources",   label: "Resources",   group: "TRACK",      audience: "Curated references + in-lab jump-offs" },
   { id: "about",       label: "About",       group: "TRACK",      audience: "What GSL is + community" },
-  { id: "leaderboard", label: "Leaderboard", group: "EXTRAS",     audience: "Global rankings by score" },
   // Primary nav — challenge areas
   { id: "retrieval",   label: "Retrieval",   group: "CHALLENGES", audience: "RAG · context · hallucination" },
   { id: "evaluation",  label: "Evaluation",  group: "CHALLENGES", audience: "Testing · monitoring · evals" },
@@ -23,7 +27,7 @@ export const ALL_TABS = [
   { id: "preplab",     label: "PrepLab",     group: "PRIMARY",    audience: "Test your judgment" },
   { id: "company-tracks", label: "Company Tracks", group: "PRIMARY", audience: "Curated company × role prep paths" },
   { id: "groundtruth", label: "Ground Truth",group: "PRIMARY",    audience: "Practitioner knowledge" },
-  { id: "progress",    label: "Progress",    group: "PRIMARY",    audience: "Your readiness + study plan" },
+  // (progress moved to the TRACK personal strip — Rev-2 R3; single entry now, id stays unique)
   // Legacy — hash-accessible, not in primary nav
   { id: "lab",         label: "RAG Lab",        group: "LEGACY", audience: "Engineers" },
   { id: "agentlab",    label: "Agent Lab",      group: "LEGACY", audience: "Engineers" },
