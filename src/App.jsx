@@ -128,7 +128,7 @@ const INTERVIEW_STORIES = {
 // sidebar gives them new identities each render → React remounts → motion snaps).
 const GAL_ACCENT = "var(--gal-build)"; // cyan #22D3EE
 const SIBLING_LABS = {
-  pl:  "https://programming-lab.vercel.app", // Programming Lab (live)
+  pl:  "https://programming-lab.vercel.app/#/pylab", // Programming Lab — PyLab bank (deep link)
   pal: "https://product-analytics-lab.vercel.app/#/sql-lab", // PAL SQL Lab
 };
 
