@@ -2768,10 +2768,12 @@ const PLAYGROUND_MODULES = [
     howTo: ["Pick a bot (customer service or medical)", "Click each attack type to simulate it", "Watch the animated pipeline — where does it get blocked?", "Key insight: indirect injection via uploaded documents is the hardest to catch"] },
   { id: "chunking",    label: "Chunking Strategy Lab",  tag: "RAG",     component: ChunkingLab,
     objective: "Understand why chunking strategy is one of the highest-leverage decisions in any RAG system.",
-    howTo: ["Switch between strategies and watch the retrieval score change", "Read the pros/cons for each — there's no universally best strategy", "Paragraph-based scores highest here — but that's not always true in practice", "Ask: what would happen with code or legal documents?"] },
+    howTo: ["Switch between strategies and watch the retrieval score change", "Read the pros/cons for each — there's no universally best strategy", "Paragraph-based scores highest here — but that's not always true in practice", "Ask: what would happen with code or legal documents?"],
+    canonical: { label: "Chunking (RAG gym)", note: "Canonical lesson: the Concepts Retrieval gym's Chunking module (live sliding-window rebuild + retrieval hits). This Playground lab is the hands-on sandbox version." } },
   { id: "reranker",    label: "Reranker Simulator",     tag: "RANK",    component: RerankerSim,
     objective: "Build intuition for why ANN vector retrieval order ≠ true relevance order, and what a reranker fixes.",
-    howTo: ["Read all 5 chunks for the given query", "Use ↑↓ to reorder them by your judgment of relevance", "Reveal true scores and compare your NDCG to vector score NDCG", "Key insight: vector similarity ≠ semantic relevance — reranker closes this gap"] },
+    howTo: ["Read all 5 chunks for the given query", "Use ↑↓ to reorder them by your judgment of relevance", "Reveal true scores and compare your NDCG to vector score NDCG", "Key insight: vector similarity ≠ semantic relevance — reranker closes this gap"],
+    canonical: { label: "Reranking (RAG gym)", note: "Canonical lesson: the Concepts Retrieval gym's Reranking module (bi-encoder vs cross-encoder). This Playground sim is the hands-on NDCG-reordering sandbox." } },
   { id: "hallucinate", label: "Spot the Hallucination", tag: "DETECT",  component: SpotHallucination,
     objective: "Train your eye to detect hallucinated facts in model outputs — a critical skill for evals and production monitoring.",
     howTo: ["Read all 3 outputs carefully — they'll sound equally confident", "Look for specific claims: names, dates, numbers, acronyms — these are where hallucinations hide", "Click the one you think is fabricated before revealing", "After: learn the pattern of what made it hallucinate"] },
@@ -2795,13 +2797,16 @@ const PLAYGROUND_MODULES = [
     howTo: ["Toggle No Cache / With Cache mode", "Hit Generate to step through token-by-token autoregressive generation", "Watch the red recompute flashes (no cache) vs green single-token compute (with cache)", "Compare the FLOP counters — the gap grows quadratically"] },
   { id: "temp-lab",       label: "Temperature Lab",      tag: "SAMPLE", component: TemperatureLab,
     objective: "Build intuition for how temperature reshapes the output distribution — from near-deterministic to near-uniform.",
-    howTo: ["Drag the temperature slider from 0.1 to 2.0", "Watch the probability bars animate in real time", "At <0.5 you're in greedy zone — 'model' dominates", "At >1.2 the distribution flattens — more creative, more risk"] },
+    howTo: ["Drag the temperature slider from 0.1 to 2.0", "Watch the probability bars animate in real time", "At <0.5 you're in greedy zone — 'model' dominates", "At >1.2 the distribution flattens — more creative, more risk"],
+    canonical: { label: "Sampling & Decoding (Concepts)", note: "Canonical lesson: the Concepts Sampling module (temperature + top-k + top-p across 4 strategies, with stochastic re-sampling). This Playground lab is the quick temperature-only sandbox." } },
   { id: "embeddings-sim", label: "Embeddings Space",     tag: "EMBED",  component: EmbeddingsSim,
     objective: "See how semantic similarity maps to geometric proximity — and how vector arithmetic unlocks analogical reasoning.",
-    howTo: ["Click any word to highlight its 3 nearest neighbors", "Notice how clusters form by semantic category", "Click 'king' to unlock the vector math demo", "Hit 'Highlight queen' to see king − man + woman on the plot"] },
+    howTo: ["Click any word to highlight its 3 nearest neighbors", "Notice how clusters form by semantic category", "Click 'king' to unlock the vector math demo", "Hit 'Highlight queen' to see king − man + woman on the plot"],
+    canonical: { label: "Embeddings (Concepts)", note: "Canonical lesson: the Concepts Embeddings module (semantic map + similarity search with a top-k slider and live cosine ranking). This Playground sim is the vector-arithmetic sandbox; Explore's 3D Embedding Space is the spatial-intuition angle." } },
   { id: "attn-viz",       label: "Attention Visualizer", tag: "ATTN",   component: AttentionViz,
     objective: "See how different attention heads specialize — syntactic, coreference, positional, and semantic patterns all emerge.",
-    howTo: ["Switch between the 4 head presets (tabs)", "Click any query token (row) to highlight that row's attention weights", "Coreference: watch 'it' attend strongly to 'cat'", "Positional: the diagonal pattern shows neighbor-focusing"] },
+    howTo: ["Switch between the 4 head presets (tabs)", "Click any query token (row) to highlight that row's attention weights", "Coreference: watch 'it' attend strongly to 'cat'", "Positional: the diagonal pattern shows neighbor-focusing"],
+    canonical: { label: "Attention (Concepts)", note: "Canonical lesson: the Concepts Attention module (3 tabs — Q·K·softmax·V walkthrough, heatmap explorer, and the O(n²) scale slider). This Playground lab is the head-specialization sandbox; Explore's 3D Attention Heads is the spatial angle." } },
   { id: "agent-loop",     label: "Agent Loop Sim",       tag: "AGENT",  component: AgentLoopSim,
     objective: "Step through a full ReAct agent loop — Reason, Act, Observe — including tool calls, error handling, and retry.",
     howTo: ["Hit 'Next Step →' to advance through the loop", "At step 3, hit 'Inject Failure' to simulate an API error", "Watch the agent reason about the failure and add a retry step", "Notice how the loop self-corrects — this is the core of agentic reliability"] },
@@ -2858,6 +2863,16 @@ export default function PlaygroundApp() {
       </div>
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
         {mod?.objective && <HowTo objective={mod.objective} steps={mod.howTo} />}
+        {/* Phase 0.3 widget dedupe (2026-07-03): several Playground labs share a concept with a
+            richer Concepts module. Concepts is the canonical teaching home; the Playground lab stays
+            as the complementary hands-on sandbox. This is a plain non-routing pointer only — no nav,
+            hash, or localStorage change. See docs/GSL_MASTER_PLAN.md "Interactive widget dedupe". */}
+        {mod?.canonical && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-800/40 bg-amber-950/15 px-3 py-2">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-amber-700 bg-amber-900/20 text-amber-400 shrink-0 uppercase tracking-wide">Canonical lesson</span>
+            <span className="text-[11px] text-zinc-400 leading-relaxed">{mod.canonical.note}</span>
+          </div>
+        )}
         <ActiveComponent />
       </div>
     </div>

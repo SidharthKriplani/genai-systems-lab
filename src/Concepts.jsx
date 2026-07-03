@@ -535,6 +535,11 @@ const BPE_STEPS = [
 
 const TOK_COLORS = ["bg-violet-900/60 border-violet-700 text-violet-200", "bg-blue-900/60 border-blue-700 text-blue-200", "bg-emerald-900/60 border-emerald-700 text-emerald-200", "bg-amber-900/60 border-amber-700 text-amber-200", "bg-rose-900/60 border-rose-700 text-rose-200", "bg-cyan-900/60 border-cyan-700 text-cyan-200", "bg-orange-900/60 border-orange-700 text-orange-200"];
 
+// Phase 0.3 widget dedupe (2026-07-03): Concepts is the CANONICAL interactive teaching home for the
+// core widgets — TokenizerModule, EmbeddingModule, AttentionModule, ChunkingModule, RerankingModule,
+// SamplingModule. Thinner copies of these concepts live in Playground (hands-on sandbox) and Explore
+// (3D / exact-math / comparison angles); those surfaces point here rather than the reverse. Do not
+// forward these Concepts modules away or delete them. See docs/GSL_MASTER_PLAN.md "Interactive widget dedupe".
 function TokenizerModule({ onNavigate }) {
   const [tokTab, setTokTab] = useState("tokenize");
   const [text, setText] = useState(TOKENIZER_EXAMPLES[0]);

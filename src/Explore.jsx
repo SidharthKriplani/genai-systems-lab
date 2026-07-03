@@ -5426,6 +5426,13 @@ function MultimodalGuide() {
   );
 }
 
+// Phase 0.3 widget dedupe (2026-07-03): a few Explore modules share a concept with a Concepts
+// module (embeddings, attention, tokenizer). These are kept as COMPLEMENTARY teaching angles, not
+// forwarded away: `embeddings`/`attention3d` are the 3D-spatial visualization angle (Concepts is the
+// 2D interactive-teaching canonical); `cosine` is the exact-math angle (not in Concepts); the
+// tokenizer entries are the multi-model-comparison angle (Concepts' Tokenizer module is the canonical
+// tokenize/BPE lesson). No forward banner, no route/hash/localStorage change — the existing per-module
+// `fidelity` notes already flag scope. See docs/GSL_MASTER_PLAN.md "Interactive widget dedupe".
 const EXPLORE_MODULES = [
   // DESIGN
   { id: "embeddings",  label: "3D Embedding Space",  tag: "3D SPACE", group: "DESIGN", component: EmbeddingExplorer, fidelity: { tier: "conceptual",  note: "3D projection of precomputed coordinates — not live model embeddings" } },

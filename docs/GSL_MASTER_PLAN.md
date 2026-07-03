@@ -493,3 +493,80 @@ intentionally **not** touched.
 
 **Phase 0.3 complete — 5 domains consolidated (Agents/Eval/Production → their Labs (forward banner);
 Retrieval/Foundations → Concepts canonical (complementary Lab, no banner), per per-domain merit audit).**
+
+---
+
+## Phase 0.3 — Interactive widget dedupe (executed 2026-07-03)
+
+The final piece of Phase 0.3: the triplicated **interactive teaching widgets** flagged as "deferred
+(separate lighter pass)" under Retrieval / Evaluation / Production / Foundation Models. Same 0.3 rule,
+applied to the widget layer: **richer surface wins; thin/adjacent copies point at the canonical home;
+delete nothing; preserve every route/hash + localStorage key.** Where a second copy is a genuinely
+different teaching angle (not a redundant duplicate), both stay and the reason is noted.
+
+### Audit (read-first, evidence)
+
+Surfaces that host these widgets: `Concepts.jsx` (the deep 60+-module curriculum), `Playground.jsx`
+(a standalone sandbox — `PLAYGROUND_MODULES` registry, each with a `HowTo` objective), `Explore.jsx`
+(a reference/visualization surface — `EXPLORE_MODULES`, each with a `fidelity` note). `FoundationModelsLab.jsx`
+and `TransformerWalkthrough.jsx` were checked and host **none** of these interactive widgets (FM Lab is a
+config→outcome scenario picker; Transformer Walkthrough is SVG-diagram stepping — attention is explained
+via static diagrams, not an interactive widget).
+
+Per-concept map (richest instance = canonical):
+
+| Concept | Concepts.jsx (canonical) | Playground.jsx | Explore.jsx | Decision |
+|---|---|---|---|---|
+| **Embeddings** | `EmbeddingModule` (~350 LOC): 2 tabs — semantic map w/ hover + vector arithmetic, similarity search w/ query picker + **top-k slider** + live cosine ranking | `EmbeddingsSim` (~115 LOC): click-to-highlight neighbors + king−man+woman demo | `EmbeddingExplorer` (3D projection, `fidelity: conceptual`) | **Concepts canonical.** Playground = vector-arithmetic sandbox → pointer. Explore = 3D spatial angle → keep (complementary). |
+| **Chunking** | `ChunkingModule` (~245 LOC): strategy selector + **live sliding-window rebuild** (`buildSlidingChunks`, overlap slider) + retrieval-hit highlighting + query picker | `ChunkingLab` (~65 LOC): 4-strategy selector + simulated retrieval score bars | — | **Concepts canonical.** Playground = hands-on sandbox → pointer. |
+| **Reranking** | `RerankingModule` (curriculum, bi-encoder vs cross-encoder) | `RerankerSim` (~100 LOC): drag/↑↓ reorder + **live NDCG** vs vector-order vs ideal + reveal scores | — | **Concepts canonical (teaching).** Playground = hands-on NDCG sandbox → pointer (richer *interaction* but narrower scope; complementary). |
+| **Attention** | `AttentionModule` (~500+ LOC): 3 tabs — Q·K·softmax·V step walkthrough, heatmap explorer w/ hover, **O(n²) scale slider** (64–4096, memory MB) | `AttentionViz` (~115 LOC): 4 head presets + row-click highlight | `AttentionViz3D` (3D heads, `fidelity: conceptual`) | **Concepts canonical.** Playground = head-specialization sandbox → pointer. Explore = 3D angle → keep (complementary). |
+| **Temperature / sampling** | `SamplingModule` (~220 LOC): 4 strategies + **temp / top-k / top-p sliders** + stochastic "sample again" + pool filtering | `TemperatureLab` (~65 LOC): temp-only slider + softmax bars | — | **Concepts canonical.** Playground = quick temp sandbox → pointer. |
+| **Tokenization** | `TokenizerModule` (~250 LOC): 2 tabs — live textarea tokenize w/ cost metrics + **BPE merge-step slider** | — | `TokenizerExplorer` + `TokenizerComparison` (`fidelity: approximate`) | **Concepts canonical.** Explore = multi-model comparison / heuristic-BPE angle → keep (complementary). |
+
+**Why Concepts is canonical (not Playground/Explore):** it consistently has the deepest interactivity
+per concept — real derived math driven by sliders/inputs (top-k, overlap window, O(n²) sequence length,
+temp/top-k/top-p, BPE steps), multi-tab teaching arcs, and the largest LOC. This matches the rule already
+recorded under the Retrieval section: *"concept module owns the canonical viz; Playground hosts the
+experiment/lab version."*
+
+### Executed (low-risk, nothing deleted, no route/hash/localStorage/nav change)
+
+- **`Playground.jsx`** — added an optional `canonical: { label, note }` field to the 5 overlapping
+  `PLAYGROUND_MODULES` entries (`chunking`, `reranker`, `temp-lab`, `embeddings-sim`, `attn-viz`) and
+  rendered it as a small muted **"Canonical lesson"** pointer line directly under the existing `HowTo`
+  block (mirrors Explore's `fidelity`-note style). It names the richer Concepts module and frames the
+  Playground lab as the complementary hands-on sandbox. **Plain non-routing text only** — `PlaygroundApp`
+  takes no `onNavigate`/nav props, so a clickable deep-link would have required a nav change (out of
+  scope); a text pointer keeps every route/hash/key untouched. Also added a block comment above the
+  render explaining the pattern.
+- **`Explore.jsx`** — added a doc-comment block above `EXPLORE_MODULES` marking the overlapping entries
+  (`embeddings`/`attention3d` 3D angle, `cosine` exact-math angle, tokenizer comparison angle) as
+  **complementary, intentionally kept** — Concepts is canonical for the interactive teaching version.
+  No render change: Explore's copies are genuinely different teaching angles (3D spatial / exact cosine
+  math / multi-model comparison), not thin duplicates, and the per-module `fidelity` notes already flag
+  their scope. Forwarding them away would lose real teaching value.
+- **`Concepts.jsx`** — added a single doc-comment block above the widget cluster (`TokenizerModule`
+  onward) marking Concepts as the CANONICAL interactive home for the six core widgets, so future passes
+  don't forward these away. No behavior change.
+
+### Deferred (documented, not edited)
+
+- **A clickable cross-surface deep-link** from a Playground lab into the exact Concepts module. This
+  would need `PlaygroundApp` to receive `onNavigate` + a Concepts module-deep-link route, i.e. a nav
+  wiring change — out of scope for this conservative pass. The text pointer captures the intent without
+  the risk. If wired later, reuse the existing `onNavigateTo({ tab: "concepts", gymId, moduleId })`
+  shape used elsewhere.
+- **Explore's `TokenizerExplorer` vs `TokenizerComparison`** (two tokenizer widgets on the *same*
+  surface) — a possible intra-Explore merge, but they serve different jobs (single-string explorer vs
+  side-by-side model comparison). Left as-is; not a Concepts-vs-Explore duplication.
+- **No merge/deletion of any widget.** Every widget block, route, hash (`#concepts`, `#playground`,
+  `#explore`), and localStorage key (`gsl-concepts-mastery`, `gsl-explore-done`) is preserved. All
+  deep-links still resolve.
+
+**Verification:** all three edited files esbuild-parse clean (`OK Playground.jsx`, `OK Explore.jsx`,
+`OK Concepts.jsx`).
+
+**Phase 0.3 fully complete** — 5 knowledge domains consolidated (above) + the interactive widget layer
+deduped by canonical-home pointers (this section). Concepts is the canonical interactive teaching home;
+Playground and Explore keep their copies as complementary sandbox / spatial-math angles, now signposted.
