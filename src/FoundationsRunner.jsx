@@ -26,8 +26,9 @@ export default function FoundationsRunner({
 
   const [answers, setAnswers]     = useState(() => Array(mcqList.length).fill(null));
   const [submitted, setSubmitted] = useState(() => Array(mcqList.length).fill(false));
+  const [recapMode, setRecapMode] = useState(false);
 
-  const { scenario, explanation, takeaway } = runnerData;
+  const { scenario, explanation, takeaway, keyPoints, recap } = runnerData;
 
   function selectAnswer(qi, i) {
     if (submitted[qi]) return;
@@ -72,8 +73,50 @@ export default function FoundationsRunner({
         {module?.subtitle && (
           <p className="text-sm text-zinc-400 mt-1 leading-relaxed">{module.subtitle}</p>
         )}
+
+        {recap && (
+          <div className="mt-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
+            <button
+              onClick={() => setRecapMode(false)}
+              className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
+                !recapMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Full
+            </button>
+            <button
+              onClick={() => setRecapMode(true)}
+              className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
+                recapMode ? "bg-violet-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              ⚡ Quick recap
+            </button>
+          </div>
+        )}
       </div>
 
+      {recapMode && recap ? (
+        <div className="space-y-6">
+          <section>
+            <SectionRule label="Quick Recap" />
+            <ul className="mt-4 space-y-3">
+              {recap.map((pt, i) => (
+                <li key={i} className="flex gap-3 text-sm text-zinc-200 leading-relaxed">
+                  <span className="text-violet-400 shrink-0 mt-0.5">▸</span>
+                  <span><InlineMd text={pt} /></span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section>
+            <SectionRule label="Takeaway" />
+            <div className="mt-4 rounded-xl p-5 border border-emerald-900/30 bg-emerald-950/10">
+              <p className="text-sm text-zinc-200 leading-relaxed font-medium"><InlineMd text={takeaway} /></p>
+            </div>
+          </section>
+        </div>
+      ) : (
       <div className="space-y-14">
 
         {/* ── Scenario ─────────────────────────────────────────────────────── */}
@@ -90,7 +133,7 @@ export default function FoundationsRunner({
           <div className="mt-4 space-y-4">
             {explanation.map((item, i) => {
               if (typeof item === "string") {
-                return <p key={i} className="text-sm text-zinc-200 leading-relaxed">{item}</p>;
+                return <p key={i} className="text-sm text-zinc-200 leading-relaxed"><InlineMd text={item} /></p>;
               }
               if (item?.type === "illustration") {
                 return (
@@ -106,6 +149,21 @@ export default function FoundationsRunner({
             })}
           </div>
         </section>
+
+        {/* ── Key points ───────────────────────────────────────────────────── */}
+        {keyPoints?.length > 0 && (
+          <section>
+            <SectionRule label="Key Points" />
+            <ul className="mt-4 space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+              {keyPoints.map((pt, i) => (
+                <li key={i} className="flex gap-3 text-sm text-zinc-200 leading-relaxed">
+                  <span className="text-violet-400 shrink-0 mt-0.5">▸</span>
+                  <span><InlineMd text={pt} /></span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* ── Hands-On (only if a real interactive component exists) ────────── */}
         {hasInteractive && (
@@ -142,7 +200,7 @@ export default function FoundationsRunner({
         <section>
           <SectionRule label="Takeaway" />
           <div className="mt-4 rounded-xl p-5 border border-emerald-900/30 bg-emerald-950/10">
-            <p className="text-sm text-zinc-200 leading-relaxed font-medium">{takeaway}</p>
+            <p className="text-sm text-zinc-200 leading-relaxed font-medium"><InlineMd text={takeaway} /></p>
           </div>
           <div className="mt-5">
             {alreadyDone ? (
@@ -164,8 +222,98 @@ export default function FoundationsRunner({
         </section>
 
       </div>
+      )}
     </div>
   );
+}
+
+// ── InlineMd ────────────────────────────────────────────────────────────────────
+// Lightweight, safe inline-markdown renderer for explanation/keyPoints/recap
+// strings. No dangerouslySetInnerHTML — everything is parsed to React nodes and
+// all non-markup text renders verbatim. Supports:
+//   **bold**            → semibold near-white
+//   *italic* / _em_     → italic muted
+//   `code`              → mono chip
+//   ==highlight==       → subtle violet highlight for the one-line insight
+//   \n\n                → paragraph break, single \n → line break
+// Plain strings with none of these render exactly as before.
+
+function InlineMd({ text }) {
+  if (typeof text !== "string") return text ?? null;
+
+  // Split on blank lines into paragraphs.
+  const paras = text.split(/\n\n+/);
+  return (
+    <>
+      {paras.map((para, pi) => (
+        <span key={pi} className={pi > 0 ? "block mt-3" : undefined}>
+          {renderLines(para)}
+        </span>
+      ))}
+    </>
+  );
+}
+
+function renderLines(para) {
+  const lines = para.split("\n");
+  return lines.map((line, li) => (
+    <span key={li}>
+      {li > 0 && <br />}
+      {tokenizeInline(line)}
+    </span>
+  ));
+}
+
+// Ordered token matchers. Each captures group 1 = inner content.
+const INLINE_RULES = [
+  { re: /\*\*([^*]+)\*\*/,       kind: "bold" },
+  { re: /==([^=]+)==/,           kind: "highlight" },
+  { re: /`([^`]+)`/,             kind: "code" },
+  { re: /\*([^*\n]+)\*/,         kind: "em" },
+  { re: /_([^_\n]+)_/,           kind: "em" },
+];
+
+function tokenizeInline(str) {
+  const out = [];
+  let rest = str;
+  let guard = 0;
+  while (rest.length && guard++ < 5000) {
+    // Find the earliest matching rule.
+    let best = null;
+    for (const rule of INLINE_RULES) {
+      const m = rule.re.exec(rest);
+      if (m && (best === null || m.index < best.m.index)) {
+        best = { m, kind: rule.kind };
+      }
+    }
+    if (!best) {
+      out.push(rest);
+      break;
+    }
+    const { m, kind } = best;
+    if (m.index > 0) out.push(rest.slice(0, m.index));
+    const inner = m[1];
+    const key = out.length;
+    if (kind === "bold") {
+      out.push(<strong key={key} className="font-semibold text-zinc-50">{inner}</strong>);
+    } else if (kind === "highlight") {
+      out.push(
+        <mark key={key} className="rounded px-1 py-0.5 bg-violet-500/15 text-violet-200 font-medium">
+          {inner}
+        </mark>
+      );
+    } else if (kind === "code") {
+      out.push(
+        <code key={key} className="font-mono text-[0.82em] px-1.5 py-0.5 rounded bg-zinc-800 text-amber-300 border border-zinc-700/60">
+          {inner}
+        </code>
+      );
+    } else {
+      out.push(<em key={key} className="italic text-zinc-300">{inner}</em>);
+    }
+    rest = rest.slice(m.index + m[0].length);
+  }
+  return out;
 }
 
 // ── QuestionBlock ──────────────────────────────────────────────────────────────

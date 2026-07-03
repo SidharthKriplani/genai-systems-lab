@@ -888,3 +888,108 @@ Replaced `StubModule` with real, computed interactive components for the 5 new F
 - **DistillationModule** — temperature T slider over teacher logits [4,3,−1,−3] → live softmax(z/T) bar chart exposing dark knowledge, plus the 1/T² gradient shrink and T² rescale. Mirrors T=1 vs T=3 distributions.
 
 Wiring: the 5 `MODULES` entries changed `component: StubModule` → the matching component. RUNNER_DATA, ids, gym wiring untouched. esbuild JSX parse: **OK**. No other file required changes (`FoundationsRunner` already gates the Hands-On section on a non-stub Component).
+
+---
+
+## Foundations readability + MSL-standard — renderer upgrade + 2 pilot modules (executed 2026-07-03)
+
+**Problem.** `FoundationsRunner.jsx` rendered every `explanation[]` string as flat `<p>{item}</p>` — no bold, no emphasis, no crafted breaks. Modules read as walls of prose. MSL's `RecSysFoundationTab` renders markdown via `renderMd`, shows `keyPoints`, and offers a **Quick recap** toggle. This closes that gap.
+
+### 1. Renderer upgrade (`src/FoundationsRunner.jsx`) — additive, GSL dark theme
+
+Added a small, safe **inline-markdown tokenizer** (`InlineMd` / `tokenizeInline`) — **no `dangerouslySetInnerHTML`**; everything parses to React nodes and all non-markup text renders verbatim. Supported syntax:
+
+| Syntax | Renders as |
+|--------|-----------|
+| `**bold**` | semibold near-white (`text-zinc-50`) |
+| `*italic*` / `_em_` | italic muted (`text-zinc-300`) |
+| `` `code` `` | mono chip (amber-on-zinc, bordered) |
+| `==highlight==` | subtle violet highlight (`bg-violet-500/15`) — the one-line insight per section |
+| `\n\n` | paragraph break (block + top margin) |
+| single `\n` | line break (`<br/>`) |
+
+The existing `{ type: "illustration" }` `<pre>` ASCII block rendering is **untouched**. Applied `InlineMd` to explanation strings and the takeaway. Plain strings with no markup render exactly as before — **zero regression** for the other 21 modules.
+
+**`keyPoints` contract** — optional `keyPoints: string[]` on any RUNNER_DATA module renders a styled "Key Points" list (violet ▸ bullets, boxed) after the Explanation section. Each point runs through `InlineMd`, so markdown works inside points.
+
+**`recap` contract** — optional `recap: string[]` adds a **Full / ⚡ Quick recap** toggle under the header. Quick-recap mode swaps the whole body for a terse violet-bulleted recap plus the takeaway; Full mode is the normal single-scroll page. Modules without `recap` show no toggle.
+
+Both fields are fully additive: a module with neither `keyPoints` nor `recap` and no markdown renders identically to before.
+
+### 2. Two pilot modules reformatted to the new standard
+
+- **Pilot A — `attention`** (in `src/data/foundationsRunnerData.js`): all 13 explanation strings rewritten for rhythm — key terms and payoffs bolded, asides in em-dashes, one `==highlight==` insight per section, long paragraphs broken with `\n\n`. Added 6-item `keyPoints` + 6-item `recap`. Technical content and numbers unchanged; illustration block and 3 MCQs intact. Before: dense unbroken prose. After: skimmable, with the derivation's turning points visually marked.
+- **Pilot B — `quantization`** (in `src/data/foundations/quantization.js`): all 8 explanation strings reformatted the same way (fp16/int8/int4 byte math, GPTQ/AWQ/NF4, KV-cache lever, calibration failure mode all preserved verbatim). Added 6-item `keyPoints` + 6-item `recap`. Both illustration blocks and 4 MCQs intact.
+
+### 3. Verification
+
+- esbuild transform parse: `FoundationsRunner.jsx`, `foundationsRunnerData.js`, `quantization.js` → all **OK**.
+- esbuild bundle of `foundationsRunnerData.js` (pulls in the quantization import + spread) → **BUNDLE OK**.
+
+### Follow-up
+
+The remaining **21 foundations modules** are a mass pass to this same standard: reformat `explanation[]` strings (bold/em/`==highlight==`/`\n\n`) and add `keyPoints` + `recap` arrays. The renderer already supports all of them — it's purely a content pass.
+
+---
+
+## GSL premium-niche tracks — Voice AI + Code-Gen + Inference Optimization + Model Customization skeletons (executed 2026-07-03)
+
+Built 4 durable, well-paid GenAI specialization tracks as KNOW-side **skeletons** (structure + specced modules + honest "🚧 In development" state), so GSL gets the same durable-specialization scaffold MSL is getting. Additive only — no existing gym/module/route/localStorage touched.
+
+### Niches chosen (light research: WebSearch, 2025–2026 salary/demand signals)
+
+1. **Voice & Speech AI** — NLP/speech engineers ~$170K–$231K; real-time voice agents are a fast-growing premium surface (ASR/TTS + turn-taking is a distinct, durable skill). Not covered by any existing GSL gym.
+2. **Code Generation & AI Coding Assistants** — SWE-bench Verified crossed 80% in mid-2026; agentic coding (repo-level retrieval + test-feedback loops) is one of the hottest applied surfaces and durable. Not covered.
+3. **Inference Optimization & Serving** — vLLM/TensorRT/quantization/CUDA is repeatedly cited as the highest-paid niche after frontier research ($300K–$500K+ for kernel-level work). Deliberately scoped to **serving internals** (prefill/decode, continuous batching, PagedAttention, serving stacks, edge/on-device) to NOT overlap the existing "production" gym (cost/latency/observability) or the conceptual quantization Foundations module.
+4. **Model Customization & Fine-Tuning-as-a-Service** — LLM fine-tuning/customization is "the bread-and-butter of applied AI" at $220K–$350K TC. Scoped to the **applied/productization** angle (the fine-tune decision, data curation, multi-adapter serving, eval-driven loop) so it does NOT duplicate the conceptual LoRA/RLHF/DPO teaching in the existing "foundation-models" gym.
+
+None duplicate GSL's existing gyms (language-models, retrieval, ai-agents, evaluation, production, foundation-models, prompt-engineering, vector-infrastructure, multimodal, ai-safety-alignment).
+
+### Architecture (matches the existing Foundations pattern exactly)
+
+- Each track's module RUNNER_DATA lives in its **own new file** under `src/data/tracks/*.js` and is spread into `src/data/foundationsRunnerData.js` via added imports (`RUNNER_VOICE_AI`, `RUNNER_CODE_GEN`, `RUNNER_INFERENCE_OPT`, `RUNNER_MODEL_CUSTOM`). No existing RUNNER_DATA entry was edited.
+- Each module is a `MODULES` entry with `component: StubModule`. The `FoundationsRunner` renders the RUNNER_DATA (scenario + explanation outline + takeaway) and shows no Hands-On section because `Component === StubModule` passes `null`. No fake MCQs authored — the runner renders cleanly without them.
+- Each track is an enterable `GYMS` entry (dark theme, distinct accent color) so users can read the specced outlines now.
+- SKELETON HONESTY: every module's `scenario` and first `explanation` line carry a "🚧 In development — outline below" marker; `fidelity.tier: "skeleton"`. Each outline is a genuinely useful numbered spec of the niche's interview canon + a planned illustration.
+
+### Module outlines (5 per track = 20 modules)
+
+**Voice & Speech AI** (`voice-ai`, accent #a855f7):
+- `voice-asr-architectures` — CTC vs RNN-T vs Whisper/AED; audio front-end; streaming-vs-accuracy fork; decoding + domain LM.
+- `voice-streaming-latency` — the real-time loop (VAD→ASR→endpointing→LLM→TTS); TTFA latency budget; barge-in.
+- `voice-tts-cloning` — acoustic model + vocoder; codec/LLM-style TTS; zero-shot cloning; consent/deepfake governance.
+- `voice-realtime-agents` — turn-taking, barge-in, cascaded vs speech-to-speech, tool-calling over voice, ASR-error robustness.
+- `voice-eval-wer-mos` — WER (and what it misses), MOS/neural-MOS, end-to-end task-success eval, component-vs-system trap.
+
+**Code Generation & AI Coding** (`code-generation`, accent #14b8a6):
+- `codegen-model-training-fim` — why code differs; fill-in-the-middle (PSM/SPM); code data quality; code tokenization.
+- `codegen-repo-context-retrieval` — lexical+dense+structural (call-graph) hybrid retrieval; AST-aware chunking; API grounding.
+- `codegen-agentic-loops` — localize→edit→test→observe→retry loop; planning; autonomy guardrails; where agents plateau.
+- `codegen-eval-passk-swebench` — pass@k estimator; HumanEval vs SWE-bench (real repos); contamination/Goodhart.
+- `codegen-security-sandboxing` — repo prompt injection; sandboxing/least-privilege; insecure/hallucinated deps; diff review.
+
+**Inference Optimization & Serving** (`inference-optimization`, accent #f97316):
+- `infra-prefill-decode` — compute-bound prefill (TTFT) vs memory-bound decode; KV cache as central object.
+- `infra-batching-throughput` — static vs continuous/in-flight batching; throughput-vs-latency dial; chunked prefill.
+- `infra-paged-attention-kv` — KV fragmentation; OS-style paging; prefix sharing; KV quantization.
+- `infra-serving-stacks` — vLLM vs TensorRT-LLM vs Triton; tensor/pipeline/expert parallelism; precision; build-vs-buy.
+- `infra-edge-ondevice` — int4 edge quantization; llama.cpp/GGUF/MLX/ONNX runtimes; small-model selection; hybrid cloud escalation.
+
+**Model Customization & Fine-Tuning** (`model-customization`, accent #eab308):
+- `custom-when-to-finetune` — customization ladder (prompt→RAG→fine-tune→pretrain); behavior-not-facts trap; hidden costs.
+- `custom-data-curation` — quality>quantity (LIMA); build eval first; synthetic data/distillation risks; leakage.
+- `custom-peft-lora-serving` — LoRA/QLoRA recap; multi-adapter serving (one base + N adapters, S-LoRA-style); adapter lifecycle.
+- `custom-preference-alignment` — RLHF (RM+PPO) vs DPO (direct, modern default); preference data; alignment tax/over-refusal.
+- `custom-eval-driven-loop` — eval-first; catastrophic forgetting + regression suite; the fine-tune flywheel; governance/rollback.
+
+### Files touched
+
+- **New:** `src/data/tracks/voice-ai.js`, `src/data/tracks/code-generation.js`, `src/data/tracks/inference-optimization.js`, `src/data/tracks/model-customization.js`.
+- **Edited (additive):** `src/data/foundationsRunnerData.js` (+4 imports, +4 spreads); `src/Concepts.jsx` (+20 `MODULES` StubModule entries after the foundations block, +4 `GYMS` entries before the array close).
+
+### Verify
+
+- esbuild parse of all 4 new `src/data/tracks/*.js` → **OK**.
+- esbuild parse of `src/Concepts.jsx` (jsx loader) → **OK**.
+- esbuild **bundle** of `foundationsRunnerData.js` (must resolve the 4 new `./tracks/*` imports) → **BUNDLE OK** (673kb).
+- Runtime check on the bundled RUNNER_DATA: all 20 new keys present, each with `scenario`+`explanation[]`+`takeaway`, all carrying the "In development" marker; total RUNNER_DATA keys 89. All 20 MODULES ids present exactly once; all 4 gyms present; brace diff 0 on every new file.
