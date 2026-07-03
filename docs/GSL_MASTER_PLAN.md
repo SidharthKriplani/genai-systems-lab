@@ -749,3 +749,31 @@ Pilot contract (see P0.2 pilot section) held; scaling was content, not plumbing.
 **Preserved:** additive only, nothing deleted; no routes/hashes/nav ids changed; single localStorage key `gsl-casechain-history` shared across domains.
 
 **Deferred (documented):** wire case-chain completion into `readiness.js` + Progress tile + My Tracks (additive, later); optional 2nd chain per domain for depth.
+
+## P1 — Review room ported (executed 2026-07-03)
+
+MSL's Review room (`src/tabs/ReviewTab.jsx`, spaced-rep over completed foundation modules) ported into GSL as an additive personal-layer room. Same spaced-rep model, GSL's own completion signals, GSL dark theme.
+
+**Spaced-rep model reused (SM-2-lite, verbatim from MSL):** intervals grow with review count — `[3, 7, 21, 45, 90]` days, capped at 90. The next-due clock runs from `lastReviewed`, or from the item's learned/first-seen anchor if never reviewed. `intervalForReviews(n)` + `DAY_MS` copied directly. Added grade granularity on top: self-grade Again / Good / Easy → advance 0 / +1 / +2 review-steps (MSL had a single "Mark reviewed" = +1). "Again" holds the current short interval so the item resurfaces soon.
+
+**Completion signals it reads (existing keys, read-only, never written):**
+- `gsl-concepts-mastery` — JSON array of mastered Concepts module ids. Resolved to title (prompt) + subtitle (recall answer) + gym label/color via **newly-exported** `MODULES` + `GYMS` from `Concepts.jsx`.
+- `gsl-casechain-history` — `{ [chainId]: { completed, at } }`. Completed chains resolved to title (prompt) + `diagnosis` (recall answer) via `ALL_CASE_CHAINS` from `data/caseChains.js`. The chain's `at` seeds the learned anchor.
+
+**New localStorage key:** `gsl-review-schedule` — `{ [itemKey]: { reviews, lastReviewed, firstSeen } }`, itemKey = `concept:<id>` / `chain:<id>`. No collision with any existing `gsl-*` key. Writes dispatch a `gsl_review` CustomEvent so the room re-renders after a grade. First surface of any item writes a stable `firstSeen` anchor so due-dates don't drift across sessions.
+
+**Card flow:** prompt (module title / incident headline) → user self-recalls out loud → "Reveal the key point" → shows the module subtitle / chain diagnosis (existing authored content, nothing invented) + a deep-link back to the full module/chain → self-grade → reschedule. One due card at a time, with an "Also due" peek + "Scheduled later" list. Empty state routes to Foundations when nothing is mastered/eligible.
+
+**Files touched:**
+- `src/Review.jsx` — NEW. The room.
+- `src/Concepts.jsx` — `MODULES` and `GYMS` consts made `export const` (additive; no behavior change).
+- `src/App.jsx` — lazy import `ReviewPage`; `NAV_TRACK` gets `{ id: "review", label: "Review" }` (renders in both desktop sidebar TRACK cluster + `MobileFrameNav`); `VALID_VIEWS` += `"review"`; route branch `topView === "review"` renders `<ReviewPage onNavigate={navigate}/>` inside a Suspense boundary; `TAB_TITLES.review` added.
+- `src/config/nav.js` — `ALL_TABS` += `{ id: "review", label: "Review", group: "TRACK", ... }`.
+
+**Nav id added:** `review` (hash `#review` — GSL is hash-routed via `VALID_VIEWS`, so `#review` works; no separate hash table needed, matches how `progress`/`profile`/`my-tracks` are registered).
+
+**Preserved:** additive only, nothing deleted; no existing routes/hashes/nav ids/localStorage keys changed. Dark theme matched via CSS vars (`--surface`, `--surface-2`, `--border`, `--gal-build*`) + zinc utility classes.
+
+**Simplification (documented):** the recall "answer" is the module's authored one-line `subtitle` (its key teaching point) / the chain's `diagnosis` — NOT the deep per-module RUNNER_DATA takeaway. Wiring into each module's runner payload was out of scope for an additive port; the subtitle is a faithful recall target and "Open the full module →" deep-links to the full depth. Review currently pulls from Concepts mastery + case chains; PrepLab/lab-visit signals (`genai_visited_modules`, `gsl-preplab-history`) are not yet review sources — additive to add later via the same `buildItem` path.
+
+**Verified:** esbuild-parse OK on `Review.jsx`, `App.jsx`, `Concepts.jsx`, `nav.js`; named exports `MODULES`/`GYMS`/`ALL_CASE_CHAINS` confirmed present. No runtime (Mac-only build).

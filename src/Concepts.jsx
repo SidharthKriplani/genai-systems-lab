@@ -9260,7 +9260,7 @@ function OcrPipelineModule() {
   );
 }
 
-const MODULES = [
+export const MODULES = [
   // ── Vector / Observability / Multimodal / Safety gyms (populated) ──
   { id: "vector-db-index-mechanics", label: "HNSW vs IVF", tag: "VECTOR", level: "advanced", title: "ANN Index Mechanics: HNSW vs IVF", subtitle: "Graph vs buckets — the recall/latency/memory dial.", fidelity: MODULE_SPECS["vector-db-index-mechanics"].fidelity, spec: MODULE_SPECS["vector-db-index-mechanics"], component: VectorIndexModule },
   { id: "pgvector-vs-managed", label: "pgvector vs Managed", tag: "DECISION", level: "intermediate", title: "pgvector vs a Dedicated Vector DB", subtitle: "Build-vs-buy for vector search.", fidelity: MODULE_SPECS["pgvector-vs-managed"].fidelity, spec: MODULE_SPECS["pgvector-vs-managed"], component: PgvectorVsManagedModule },
@@ -11422,7 +11422,7 @@ const MODULE_META = {
   "chain-of-thought":      { insight: "'Think step by step' helps on multi-step reasoning. It costs tokens on simple factual queries with no benefit.", mins: 5 },
 };
 
-const GYMS = [
+export const GYMS = [
   {
     id: "language-models",
     label: "Language Models",
