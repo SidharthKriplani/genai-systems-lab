@@ -16,6 +16,13 @@
 //   source: string | undefined    — Sprint C: interview attribution e.g. "Google DeepMind Round 1, May 2026"
 //   cluster: string | undefined   — Sprint C: weakness map grouping key
 
+// Concept-level L0/L1/L2 ladders (authored 2026-07-03) — appended to PREP_QUESTIONS below.
+import { Q_FOUNDATIONS } from "./questions/q-foundations";
+import { Q_PEFT_RLHF } from "./questions/q-peft-rlhf";
+import { Q_DPO_DISTILL } from "./questions/q-dpo-distill";
+import { Q_MOE_PROMPT } from "./questions/q-moe-prompt";
+import { Q_CORE_DEEPEN } from "./questions/q-core-deepen";
+
 export const PREP_QUESTIONS = [
   // ── RAG (12) ──────────────────────────────────────────────────────────────
   {
@@ -6705,3 +6712,47 @@ export const PREP_QUESTIONS = [
   { id: "agtest-8", topic: "agents", difficulty: "intermediate", gated: false, type: "mcq", question: "An agent passes all golden test cases but fails on a new customer's queries. What testing gap does this reveal?", options: ["The golden test cases are too easy", "The agent was evaluated only on known distributions — it lacks coverage of edge cases, ambiguous inputs, and novel query patterns from real users", "The customer is using the agent incorrectly", "The model version needs updating"], correct: 1, explanation: "Golden test cases cover known distributions. Real users introduce query patterns, entity types, and edge cases not in the test set — distribution shift in agent evaluation. The fix: add adversarial tests (ambiguous instructions, contradictory context, novel entities), red team with real-world-like inputs, and continuously add new golden cases from production failures.", trap: "Blaming the customer or model version. The evaluation gap is the issue. A robust test suite must cover not just representative cases but edge cases, adversarial inputs, and boundary conditions.", readMore: { label: "Testing Agentic Systems", tab: "groundtruth", postId: "agent-testing-strategies" } },
 
 ];
+
+// Append the concept-level L0/L1/L2 ladders (tokenizer, embeddings, LoRA, RLHF,
+// DPO, distillation, MoE, prompt-engineering) — 104 questions across 8 concepts.
+PREP_QUESTIONS.push(...Q_FOUNDATIONS, ...Q_PEFT_RLHF, ...Q_DPO_DISTILL, ...Q_MOE_PROMPT, ...Q_CORE_DEEPEN);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// L0 / L1 / L2 ladder (the product moat) — 2026-07-03
+//   L0 = Define the concept        ("what is gradient boosting?")
+//   L1 = Deep single-concept       (everything about that one concept)
+//   L2 = Cross-concept / tradeoffs (GB vs RF, GB vs XGBoost — compare, when/why)
+// A question's tier is its explicit `tier` field if present, else derived from
+// `difficulty`. Authoring new questions should set `tier` directly; the derivation
+// keeps the legacy questions tiered until they're re-authored.
+// ─────────────────────────────────────────────────────────────────────────────
+const DIFFICULTY_TO_TIER = {
+  beginner: "L0", easy: "L0",
+  "beginner-intermediate": "L1", intermediate: "L1", medium: "L1",
+  hard: "L2", staff: "L2", daunting: "L2",
+};
+
+export function questionTier(q) {
+  if (q && (q.tier === "L0" || q.tier === "L1" || q.tier === "L2")) return q.tier;
+  return DIFFICULTY_TO_TIER[q && q.difficulty] || "L1";
+}
+
+export const TIER_ORDER = ["L0", "L1", "L2"];
+
+export const TIER_META = {
+  L0: {
+    label: "L0", name: "Define", blurb: "Define the concept",
+    chip: "bg-sky-950/50 text-sky-300 border border-sky-800/40",
+    color: "#38bdf8",
+  },
+  L1: {
+    label: "L1", name: "Deep", blurb: "Deep single-concept follow-ups",
+    chip: "bg-violet-950/50 text-violet-300 border border-violet-800/40",
+    color: "#a78bfa",
+  },
+  L2: {
+    label: "L2", name: "Cross-concept", blurb: "Comparisons & tradeoffs across concepts",
+    chip: "bg-amber-950/50 text-amber-300 border border-amber-800/40",
+    color: "#f59e0b",
+  },
+};

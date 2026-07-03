@@ -27,7 +27,7 @@ const IconLandmark = ({ size = 24 }) => (
 );
 import { isAccessGranted, grantAccess, validateCode, FREE_QUESTION_LIMIT } from "./utils/accessCode";
 import { RESULTS_FREE_LIMIT } from "./config/gating";
-import { PREP_QUESTIONS } from "./data/preplabQuestions";
+import { PREP_QUESTIONS, questionTier, TIER_ORDER, TIER_META } from "./data/preplabQuestions";
 import { CommonTrapCallout, FeedbackBar } from "./shared";
 import { Icon } from "./Icon.jsx";
 import { CompanyLogo } from "./CompanyLogo.jsx";
@@ -143,6 +143,11 @@ const TOPIC_LABELS = {
   multimodal: "Multimodal", reasoning: "Reasoning Models",
   serving: "Serving & Inference",
   foundations: "Foundations",
+  // Concept-level topics (L0/L1/L2 authoring push, 2026-07-03)
+  tokenizer: "Tokenization", embeddings: "Embeddings",
+  lora: "LoRA / PEFT", rlhf: "RLHF", dpo: "DPO",
+  moe: "Mixture-of-Experts", distillation: "Distillation",
+  "prompt-engineering": "Prompt Engineering",
 };
 
 // Topic group tiles — aligned to challenge area names (R8 redesign)
@@ -168,8 +173,9 @@ const TOPIC_GROUPS = [
   {
     id: "llm",
     label: "Foundations",
-    desc: "Transformers, attention, fine-tuning, LoRA, DPO, reasoning, multimodal",
-    topics: ["finetuning", "reasoning", "multimodal"],
+    desc: "Transformers, attention, tokenization, embeddings, fine-tuning, LoRA, RLHF, DPO, MoE, distillation, prompt engineering, reasoning, multimodal",
+    topics: ["finetuning", "reasoning", "multimodal", "foundations", "transformers", "attention", "quantization",
+             "tokenizer", "embeddings", "lora", "rlhf", "dpo", "moe", "distillation", "prompt-engineering"],
   },
   {
     id: "prod",
@@ -1426,6 +1432,7 @@ const TRAINER_TOPICS = ["all", ...Array.from(new Set(PREP_QUESTIONS.map(q => q.t
 function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
   const [groupFilter, setGroupFilter] = useState(initialGroup || "all");
   const [diffFilter, setDiffFilter] = useState("all");
+  const [tierFilter, setTierFilter] = useState("all"); // "all" | "L0" | "L1" | "L2"
   const [questions, setQuestions] = useState(() => shuffle(PREP_QUESTIONS));
   const [current, setCurrent] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -1442,6 +1449,9 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
   const [weakOnly, setWeakOnly] = useState(false);
   const [viewMode, setViewMode] = useState("drill"); // "drill" | "browse"
   const [expandedId, setExpandedId] = useState(null);
+  // Browse mode: per-question attempt state so the correct answer is NOT pre-revealed on open.
+  const [browsePick, setBrowsePick] = useState({});   // id -> chosen option index
+  const [browseReveal, setBrowseReveal] = useState({}); // id -> true (text questions: show key concepts)
 
   function recordAnswer(questionId, correct) {
     recordHistory(questionId, correct);
@@ -1460,8 +1470,9 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
     const filtered = PREP_QUESTIONS.filter(q => {
       const topicOk = !groupTopics || groupTopics.includes(q.topic);
       const diffOk = diffFilter === "all" || q.difficulty === diffFilter;
+      const tierOk = tierFilter === "all" || questionTier(q) === tierFilter;
       const weakOk = !weakOnly || (history[q.id]?.wrong > 0);
-      return topicOk && diffOk && weakOk;
+      return topicOk && diffOk && tierOk && weakOk;
     });
     setQuestions(shuffle(filtered));
     setCurrent(0);
@@ -1469,7 +1480,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
     setSubmitted(false);
     setIsCorrect(false);
     setExpandedId(null);
-  }, [groupFilter, diffFilter, weakOnly]);
+  }, [groupFilter, diffFilter, tierFilter, weakOnly]);
 
   // Keyboard shortcuts: 1-4 selects MCQ option; Enter submits or advances
   useEffect(() => {
@@ -1641,6 +1652,30 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
             })}
             <span className="text-xs text-zinc-500 ml-auto">{questions.length} questions</span>
           </div>
+          {/* L0 / L1 / L2 tier filter — the ladder (define → deep → cross-concept) */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wide text-zinc-500 font-semibold mr-0.5">Depth</span>
+            {["all", ...TIER_ORDER].map(t => {
+              const active = tierFilter === t;
+              const meta = TIER_META[t];
+              return (
+                <button key={t} onClick={() => setTierFilter(t)}
+                  title={meta ? meta.blurb : "All depths"}
+                  style={active ? {
+                    background: t === "all" ? "rgba(244,244,245,0.95)" : (meta.color + "22"),
+                    border: `1px solid ${t === "all" ? "transparent" : meta.color}`,
+                  } : {
+                    background: "rgba(39,39,42,0.8)",
+                    border: "1px solid rgba(63,63,70,0.8)",
+                  }}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
+                    active ? (t === "all" ? "text-zinc-900" : "") : "text-zinc-400 hover:text-white"
+                  }`}>
+                  {t === "all" ? "All depth" : `${meta.label} · ${meta.name}`}
+                </button>
+              );
+            })}
+          </div>
           {/* Weak spots toggle */}
           {Object.values(history).some(h => h.wrong > 0) && (
             <div className="flex items-center gap-2">
@@ -1687,6 +1722,8 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                       <TopicChip topic={bq.topic} />
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${TIER_META[questionTier(bq)].chip}`}
+                        title={TIER_META[questionTier(bq)].blurb}>{TIER_META[questionTier(bq)].label}</span>
                       <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
                         bq.difficulty === "hard" ? "bg-red-950/50 text-red-400 border border-red-800/40"
                         : bq.difficulty === "medium" ? "bg-amber-950/50 text-amber-400 border border-amber-800/40"
@@ -1698,34 +1735,63 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                       </svg>
                     </div>
                   </button>
-                  {/* Expanded answer */}
-                  {isExp && (
+                  {/* Expanded — attempt first, reveal after (answer is NOT pre-selected) */}
+                  {isExp && (() => {
+                    const picked = browsePick[bq.id];           // undefined until the user chooses
+                    const answered = picked !== undefined;
+                    const textRevealed = !!browseReveal[bq.id];
+                    return (
                     <div className="px-4 pb-4 space-y-3 border-t border-zinc-800/50">
                       {bq.type === "mcq" ? (
                         <div className="space-y-1.5 pt-3">
-                          {bq.options.map((opt, i) => (
-                            <div key={i} style={i === bq.correct
-                              ? { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.35)" }
-                              : { background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)" }}
-                              className="flex items-start gap-2.5 px-3 py-2 rounded-lg">
-                              <span className={`text-[10px] font-mono font-bold shrink-0 mt-0.5 ${i === bq.correct ? "text-emerald-400" : "text-zinc-500"}`}>{String.fromCharCode(65 + i)}</span>
-                              <span className={`text-sm flex-1 ${i === bq.correct ? "text-emerald-300 font-medium" : "text-zinc-400"}`}>{opt}</span>
-                              {i === bq.correct && <Icon name="check" size={12} />}
-                            </div>
-                          ))}
+                          {bq.options.map((opt, i) => {
+                            const isCorrect = i === bq.correct;
+                            const isPicked = i === picked;
+                            let style;
+                            if (!answered) style = { background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)" };
+                            else if (isCorrect) style = { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.35)" };
+                            else if (isPicked) style = { background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.35)" };
+                            else style = { background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)" };
+                            return (
+                              <button key={i} disabled={answered}
+                                onClick={() => setBrowsePick(p => ({ ...p, [bq.id]: i }))}
+                                style={style}
+                                className={`w-full text-left flex items-start gap-2.5 px-3 py-2 rounded-lg transition-all ${!answered ? "hover:border-zinc-500 cursor-pointer" : "cursor-default"}`}>
+                                <span className={`text-[10px] font-mono font-bold shrink-0 mt-0.5 ${answered && isCorrect ? "text-emerald-400" : answered && isPicked ? "text-red-400" : "text-zinc-500"}`}>{String.fromCharCode(65 + i)}</span>
+                                <span className={`text-sm flex-1 ${answered && isCorrect ? "text-emerald-300 font-medium" : answered && isPicked ? "text-red-300" : "text-zinc-300"}`}>{opt}</span>
+                                {answered && isCorrect && <Icon name="check" size={12} />}
+                              </button>
+                            );
+                          })}
+                          {!answered && <p className="text-[11px] text-zinc-500 pt-0.5">Pick an answer to check yourself — the explanation reveals after you choose.</p>}
                         </div>
                       ) : bq.keywords && bq.keywords.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5 items-center pt-3">
-                          <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mr-1">Key concepts:</span>
-                          {bq.keywords.map(k => (
-                            <span key={k} style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}
-                              className="text-xs text-indigo-300 px-2 py-0.5 rounded-full">{k}</span>
-                          ))}
-                        </div>
+                        !textRevealed ? (
+                          <div className="pt-3">
+                            <button onClick={() => setBrowseReveal(r => ({ ...r, [bq.id]: true }))}
+                              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:brightness-125"
+                              style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
+                              Think it through, then reveal key concepts →
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5 items-center pt-3">
+                            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mr-1">Key concepts:</span>
+                            {bq.keywords.map(k => (
+                              <span key={k} style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}
+                                className="text-xs text-indigo-300 px-2 py-0.5 rounded-full">{k}</span>
+                            ))}
+                          </div>
+                        )
                       ) : null}
-                      <p className="text-sm text-zinc-400 leading-relaxed">{bq.explanation}</p>
-                      {bq.trap && <CommonTrapCallout trap={bq.trap} />}
-                      {bq.source && <p className="text-[10px] text-zinc-500 font-mono">Source: {bq.source}</p>}
+                      {/* Explanation only after an attempt (mcq) or reveal (text) */}
+                      {(bq.type === "mcq" ? answered : textRevealed) && (
+                        <>
+                          <p className="text-sm text-zinc-400 leading-relaxed">{bq.explanation}</p>
+                          {bq.trap && <CommonTrapCallout trap={bq.trap} />}
+                          {bq.source && <p className="text-[10px] text-zinc-500 font-mono">Source: {bq.source}</p>}
+                        </>
+                      )}
                       <button
                         onClick={() => { setGroupFilter(bqGroup); setViewMode("drill"); setExpandedId(null); setCurrent(0); }}
                         className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:brightness-125"
@@ -1733,7 +1799,8 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                         Drill this topic →
                       </button>
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               );
             })}
