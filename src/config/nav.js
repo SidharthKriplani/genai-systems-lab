@@ -32,6 +32,7 @@ export const ALL_TABS = [
   { id: "foundationlab", label: "Foundation Models Lab", group: "LEGACY", audience: "Engineers" },
   { id: "concepts",    label: "Foundations",    group: "KNOW",   audience: "All levels — 7 tracks (was Concepts tab)" },
   { id: "career",      label: "Career",         group: "LEGACY", audience: "Job seekers" },
+  { id: "codelabs",    label: "Code Labs",      group: "BUILD",  audience: "Read & reason about real GenAI systems code" },
   { id: "aipm",        label: "AI Product",     group: "LEGACY", audience: "Product managers" },
   { id: "flows",       label: "Diagrams",       group: "LEGACY", audience: "All levels" },
   { id: "agents",      label: "Agents (legacy)",group: "LEGACY", audience: "Engineers" },

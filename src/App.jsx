@@ -26,6 +26,7 @@ const FlowsApp       = lazy(() => import("./Flows"));
 const AIPMApp        = lazy(() => import("./AIPM"));
 const PlaygroundApp  = lazy(() => import("./Playground"));
 const CareerApp      = lazy(() => import("./Career"));
+const CodeWalkthroughApp = lazy(() => import("./CodeWalkthrough"));
 const ExploreApp     = lazy(() => import("./Explore"));
 const AgentsApp      = lazy(() => import("./Agents"));
 const PrepLabApp      = lazy(() => import("./PrepLab"));
@@ -291,6 +292,7 @@ const NAV_SECTIONS = [
     { id: "__pal", label: "SQL", href: SIBLING_LABS.pal },
   ]},
   { key: "build", label: "BUILD", icon: "hammer", items: [
+    { id: "codelabs", label: "Code Labs" },
     { id: "career", label: "Project Labs" },
   ]},
   { key: "judge", label: "JUDGE", icon: "scale", items: [
@@ -328,6 +330,7 @@ const TAB_FRAME = (() => {
   m.lab = "judge"; m.evallab = "judge"; m.llmlab = "judge"; m.foundationlab = "judge"; m.flows = "know"; m.explore = "know";
   // sprint 92: dissolved tabs still map to know frame for graceful redirect.
   m.starthere = "know"; m.paths = "know"; m.systems = "judge";
+  m.codelabs = "build"; // BUILD-frame code-walkthrough surface (Code Labs)
   return m;
 })();
 
@@ -1092,13 +1095,14 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","starthere","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review","company-tracks","about"];
+const VALID_VIEWS = ["home","starthere","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","codelabs","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review","company-tracks","about"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
 const GUEST_ALLOWED_TABS = new Set([
   "home", "plans", "profile", "progress", "about",
   "foundations", "foundationlab", "promptlab", // Foundations always free
+  "codelabs",    // Code Labs (BUILD read-and-reason walkthroughs) — free
   "groundtruth", // free but limited to 3 pinned posts (enforced in GroundTruth.jsx)
   "preplab",     // free but limited to 1 demo question (enforced in PrepLab.jsx)
   "lab",         // RAG Lab Scenario 1 free for guests — per-scenario gate in RAG Lab render (DECISIONS.md §12)
@@ -1997,6 +2001,7 @@ export default function App() {
           {topView === "playground" && <PlaygroundApp onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
+          {topView === "codelabs"   && <CodeWalkthroughApp onNavigate={navigate} />}
           {topView === "preplab"    && <PrepLabApp onNavigate={navigate} onNavigateTo={navigateTo} initialMode={preplabInitialMode} onClearInitialMode={() => setPreplabInitialMode(null)} user={user} />}
           {topView === "paths"      && <LearningPathsApp onNavigateTo={navigateTo} user={user} />}
 

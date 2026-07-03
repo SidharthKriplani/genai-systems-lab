@@ -995,3 +995,42 @@ None duplicate GSL's existing gyms (language-models, retrieval, ai-agents, evalu
 - Runtime check on the bundled RUNNER_DATA: all 20 new keys present, each with `scenario`+`explanation[]`+`takeaway`, all carrying the "In development" marker; total RUNNER_DATA keys 89. All 20 MODULES ids present exactly once; all 4 gyms present; brace diff 0 on every new file.
 
 - 2026-07-03: Added About page (`src/About.jsx`, dark theme) — what GSL is, who it's for, the KNOW/DO/BUILD/JUDGE + PREP frames, challenge domains, how to start, WhatsApp community link, and BreakLabs siblings. Wired additively into `NAV_TRACK`, `VALID_VIEWS`, `GUEST_ALLOWED_TABS`, `TAB_TITLES`, the `about` route branch, and `nav.js` ALL_TABS (id `about`, hash `#about`).
+
+---
+
+## BUILD as real coding — pilot (guided code walkthrough, executed 2026-07-03)
+
+**Concept.** GSL's BUILD today = simulators + Project Labs (career). The real differentiator for an Applied AI Engineer is *reading and reasoning* about real, idiomatic GenAI systems code — MCP servers, RAG pipelines, multi-agent orchestrators — not writing another toy app. "Code Labs" is a guided read-and-reason surface: annotated real code shown in steps, each with what/why/tradeoff and a judgment checkpoint (MCQ / "what breaks if…"). **No runtime execution, no Pyodide** — verification is by parse + review.
+
+### Files touched (additive only)
+- **NEW** `src/data/codeLabsData.js` — data schema (documented in file header) + `CODE_LABS` array + `CODE_LAB_BY_ID` lookup. Holds the pilot lab.
+- **NEW** `src/CodeWalkthrough.jsx` — the renderer (GSL dark theme; reuses FoundationsRunner primitives: `SectionRule`, `InlineMd`, `QuestionBlock`). Lab browser → single lab view (intro → annotated steps → key-decisions recap). Completion gated on answering all checkpoints.
+- `src/App.jsx` — lazy import `CodeWalkthroughApp`; BUILD-frame nav row `{ id: "codelabs", label: "Code Labs" }` (above Project Labs); `VALID_VIEWS` += `codelabs`; `GUEST_ALLOWED_TABS` += `codelabs` (free); `TAB_FRAME.codelabs = "build"`; render branch `topView === "codelabs"`.
+- `src/config/nav.js` — `ALL_TABS` += `{ id: "codelabs", label: "Code Labs", group: "BUILD" }`.
+
+### Schema (CODE_LABS entry)
+```
+{ id, title, subtitle, tag, difficulty("intro"|"core"|"advanced"), minutes,
+  intro: { scenario, whatYouBuild, prereqs[] },
+  steps: [ { title, language, code(string, real code in a <pre>),
+             explanation[](what + why + tradeoff, InlineMd markdown),
+             checkpoint?: { question, options[], correct(idx), explanation } } ],
+  recap[](key decisions recap) }
+```
+InlineMd supports `**bold**`, `*em*`, `` `code` ``, `==highlight==`, `\n\n` paragraph — same convention as FoundationsRunner. A lab is completable once every checkpoint has been answered.
+
+### Nav id / hash / localStorage
+- nav id: **`codelabs`** · hash: **`#codelabs`** · frame: **BUILD** · guest-free.
+- NEW localStorage key: **`gsl-codelabs`** (JSON array of completed lab ids). No collision with existing keys.
+
+### Pilot lab (1, fully authored)
+- **`mcp-server-min` — "Read a Minimal MCP Server"** (MCP · Python, core, ~18 min, 6 steps, 6 checkpoints). Real, idiomatic Python using the official MCP SDK. Steps: (1) `Server` object + name/identity → capabilities-vs-transport split; (2) `list_tools` + JSON `inputSchema` as the model's contract (`required` as input validation); (3) `call_tool` handler dispatch + async work + list-of-content-blocks return; (4) error handling — a raised error is a model-readable observation, not a crash; (5) stdio transport loop — **stdout is the JSON-RPC channel, never print to it**; (6) whole-file recap + client launch config (host launches server as subprocess, no port/deploy). Sample checkpoint: "developer adds `print()` inside `call_tool`, client disconnects mid-session — why?" → the print corrupts the JSON-RPC stream on stdout.
+
+### Verification
+esbuild-parse (jsx/js loaders) of all four files → **OK OK OK OK** (`src/CodeWalkthrough.jsx`, `src/data/codeLabsData.js`, `src/App.jsx`, `src/config/nav.js`). No runtime — read-and-reason surface, reviewed by parse.
+
+### Scale plan (next labs, same schema — drop straight into CODE_LABS)
+- **RAG pipeline** — chunk → embed → retrieve → rerank → ground; checkpoints on chunk-size tradeoff, top-k vs. reranker, groundedness/citation policy.
+- **Multi-agent orchestrator** — planner / worker / critic loop; checkpoints on loop termination, tool-poisoning, context handoff.
+- **Eval harness** — LLM-as-judge with rubric + CI gate; checkpoints on judge calibration, distribution mismatch, pass/fail thresholds.
+Each is authored the same way (real code, 6–10 steps, judgment checkpoints) and needs zero renderer/nav changes — only a new `CODE_LABS` entry.
