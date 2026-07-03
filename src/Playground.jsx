@@ -2794,7 +2794,8 @@ const PLAYGROUND_MODULES = [
     howTo: ["Pick one of the 6 failure scenarios", "Read the production context — understand the stakes", "Select a configuration (A, B, or C)", "Evaluate it and read the root cause + system design lesson"] },
   { id: "kv-cache-viz",   label: "KV Cache",             tag: "MEMORY", component: KVCacheViz,
     objective: "Understand why KV cache cuts transformer inference cost from O(n²) to O(n) — watch flop counts diverge in real time.",
-    howTo: ["Toggle No Cache / With Cache mode", "Hit Generate to step through token-by-token autoregressive generation", "Watch the red recompute flashes (no cache) vs green single-token compute (with cache)", "Compare the FLOP counters — the gap grows quadratically"] },
+    howTo: ["Toggle No Cache / With Cache mode", "Hit Generate to step through token-by-token autoregressive generation", "Watch the red recompute flashes (no cache) vs green single-token compute (with cache)", "Compare the FLOP counters — the gap grows quadratically"],
+    canonical: { label: "KV Cache (LLM Lab / Concepts)", note: "Canonical lesson: the LLM Lab / Concepts kv-cache module (the full serving-side treatment — prefill vs decode, cache eviction, and cost math). This Playground lab is the hands-on O(n²)→O(n) FLOP sandbox." } },
   { id: "temp-lab",       label: "Temperature Lab",      tag: "SAMPLE", component: TemperatureLab,
     objective: "Build intuition for how temperature reshapes the output distribution — from near-deterministic to near-uniform.",
     howTo: ["Drag the temperature slider from 0.1 to 2.0", "Watch the probability bars animate in real time", "At <0.5 you're in greedy zone — 'model' dominates", "At >1.2 the distribution flattens — more creative, more risk"],
@@ -2809,7 +2810,8 @@ const PLAYGROUND_MODULES = [
     canonical: { label: "Attention (Concepts)", note: "Canonical lesson: the Concepts Attention module (3 tabs — Q·K·softmax·V walkthrough, heatmap explorer, and the O(n²) scale slider). This Playground lab is the head-specialization sandbox; Explore's 3D Attention Heads is the spatial angle." } },
   { id: "agent-loop",     label: "Agent Loop Sim",       tag: "AGENT",  component: AgentLoopSim,
     objective: "Step through a full ReAct agent loop — Reason, Act, Observe — including tool calls, error handling, and retry.",
-    howTo: ["Hit 'Next Step →' to advance through the loop", "At step 3, hit 'Inject Failure' to simulate an API error", "Watch the agent reason about the failure and add a retry step", "Notice how the loop self-corrects — this is the core of agentic reliability"] },
+    howTo: ["Hit 'Next Step →' to advance through the loop", "At step 3, hit 'Inject Failure' to simulate an API error", "Watch the agent reason about the failure and add a retry step", "Notice how the loop self-corrects — this is the core of agentic reliability"],
+    canonical: { label: "Loop Simulator (Agent Lab)", note: "Canonical lesson: the Agent Lab's Loop Simulator module (the full ReAct treatment — configurable steps, tool schemas, guardrails, and failure injection). This Playground sim is the quick step-through sandbox." } },
 ];
 
 const PLAYGROUND_GROUPS = [

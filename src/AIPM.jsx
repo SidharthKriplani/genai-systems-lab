@@ -705,13 +705,13 @@ function AIOrNot() {
 
 // ─── AIPM APP ─────────────────────────────────────────────────────────────────
 
+// GSL fix #5 (2026-07-03): retired the 2 pure-PM modes from the surface.
+// `PRDSimulator` + `RoadmapPrioritizer` components are KEPT below (not deleted) but
+// dropped from this registry so they no longer render. To restore, re-add their rows:
+//   { id: "prd",     label: "PRD Simulator",       tag: "WRITE", component: PRDSimulator, objective: "...", howTo: [...] },
+//   { id: "roadmap", label: "Roadmap Prioritizer", tag: "PLAN",  component: RoadmapPrioritizer, objective: "...", howTo: [...] },
+// The 3 salvage modes (Stakeholder Explainer, Launch Checklist, AI or Not?) remain live.
 const AIPM_MODULES = [
-  { id: "prd",        label: "PRD Simulator",         tag: "WRITE",       component: PRDSimulator,
-    objective: "Spot the PM decisions most teams get wrong when writing AI feature requirements.",
-    howTo: ["Read the scenario brief — this is your product context", "Answer each question before revealing the answer", "Pay attention to the 'Why' explanation — it's the PM intuition you're building", "Try all 3 scenarios — each covers a different failure mode"] },
-  { id: "roadmap",    label: "Roadmap Prioritizer",    tag: "PLAN",        component: RoadmapPrioritizer,
-    objective: "Build intuition for how constraints (speed vs safety vs ROI) change which AI features to build first.",
-    howTo: ["Start with Balanced mode — see the default priority order", "Switch constraint modes and watch how the rankings shift", "Adjust individual sliders to model your real situation", "The insight: the 'right' roadmap is always relative to your constraints"] },
   { id: "stakeholder",label: "Stakeholder Explainer",  tag: "COMMUNICATE", component: StakeholderExplainer,
     objective: "Learn to translate the same technical incident into the right language for each audience.",
     howTo: ["Pick an incident (hallucination, latency spike, injection attack)", "Read how the same event is framed for engineer, exec, legal, and customer", "Notice what details are included/excluded for each audience", "Take the quiz — pick the right message for a given audience"] },
@@ -724,9 +724,9 @@ const AIPM_MODULES = [
 ];
 
 export default function AIPMApp() {
-  const [activeModule, setActiveModule] = useState("prd");
+  const [activeModule, setActiveModule] = useState("stakeholder");
   const mod = AIPM_MODULES.find(m => m.id === activeModule);
-  const ActiveComponent = mod?.component || PRDSimulator;
+  const ActiveComponent = mod?.component || StakeholderExplainer;
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return localStorage.getItem("genai_visited_aipm") !== "1"; } catch { return false; }
   });
@@ -741,15 +741,15 @@ export default function AIPMApp() {
       <div className="max-w-lg w-full flex flex-col items-center text-center gap-6 fade-up">
         <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(16,185,129,0.08) 100%)", border: "1px solid rgba(34,197,94,0.3)", boxShadow: "0 0 24px rgba(34,197,94,0.15)" }} className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"><Icon name="clipboard" size={32} /></div>
         <div className="space-y-2">
-          <h1 className="text-3xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>AI Product Track</h1>
-          <p className="text-sm text-zinc-400 max-w-sm leading-relaxed">Make better AI product decisions — the way senior PMs think about LLM features, PRDs, and tradeoffs.</p>
+          <h1 className="text-3xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>AI Product Judgment</h1>
+          <p className="text-sm text-zinc-400 max-w-sm leading-relaxed">Sharpen the product-decision calls AI engineers get asked in interviews: when AI is the right tool, how to explain a failure to each stakeholder, and what must be true before you ship.</p>
         </div>
         <div className="w-full rounded-xl p-5 text-left space-y-3" style={{ background: "linear-gradient(160deg, rgba(34,197,94,0.07) 0%, rgba(15,15,17,0.9) 100%)", border: "1px solid rgba(34,197,94,0.18)", borderTop: "2px solid rgba(34,197,94,0.35)" }}>
           <p className="text-[10px] font-mono font-black text-zinc-500 uppercase tracking-widest">What you'll do</p>
           {[
-            ["PRD Scenarios", "Write success criteria, failure handling, and non-determinism specs for real AI feature briefs."],
-            ["Roadmap Prioritization", "Weigh impact, effort, and risk across an AI feature backlog under real constraints."],
+            ["AI or Not?", "Decide when an LLM, classic ML, or plain rules is the right tool — and when AI is overkill or wrong."],
             ["Stakeholder Comms", "Craft the right message for engineering, legal, and executives when your AI system fails."],
+            ["Launch Checklist", "Know exactly what must be true before shipping an AI feature to production, and why each item matters."],
           ].map(([title, desc]) => (
             <div key={title} className="flex items-start gap-3">
               <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "#22c55e" }} />
@@ -765,9 +765,11 @@ export default function AIPMApp() {
     </div>
   );
 
+  // GSL fix #5: trimmed to the 3 salvage modes (prd/roadmap retired from registry above).
   const AIPM_GROUPS = [
-    { label: "STRATEGY",  ids: ["prd", "roadmap", "aiornot"] },
-    { label: "EXECUTION", ids: ["stakeholder", "checklist"] },
+    { label: "DECIDE",     ids: ["aiornot"] },
+    { label: "COMMUNICATE", ids: ["stakeholder"] },
+    { label: "SHIP",       ids: ["checklist"] },
   ];
 
   return (

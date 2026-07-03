@@ -59,7 +59,7 @@ export const CODE_LABS = [
     minutes: 18,
     intro: {
       scenario:
-        "An agent product needs to let the LLM call a real internal tool — a weather lookup — instead of hallucinating the answer. The team chose the **Model Context Protocol (MCP)**: a standard, transport-agnostic way to expose tools, resources, and prompts to any MCP-compatible client (Claude Desktop, an IDE, a custom orchestrator). Your job in the interview isn't to invent MCP — it's to read this server and explain *why* each piece exists and *what breaks* if it's wrong.",
+        "An agent product needs to let the LLM call a real internal tool — a weather lookup — instead of hallucinating the answer. The team chose the **Model Context Protocol (MCP)**: a standard, transport-agnostic way to expose tools, resources, and prompts to any MCP-compatible client (Claude Desktop, an IDE, a custom orchestrator). Your job in the interview isn't to invent MCP — it's to read this server and explain *why* each piece exists and *what breaks* if it's wrong. _New to the protocol? See the concept first in Agent Lab → MCP Deep Dive (the 4 primitives + MCP-vs-function-calling). This lab is the real code behind that concept._",
       whatYouBuild:
         "A complete, single-file MCP server that exposes one tool (`get_weather`) over stdio using the official Python SDK — the exact shape you'd ship and the exact shape you'll be asked to reason about.",
       prereqs: [

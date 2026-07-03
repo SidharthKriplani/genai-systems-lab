@@ -8,6 +8,7 @@
 
 export const ALL_TABS = [
   // TRACK — identity + progress layer (top of nav, PAL-style)
+  { id: "me",          label: "Me",          group: "TRACK",      audience: "Personal hub — Progress · Tracks · Review · Plans · Profile" },
   { id: "profile",     label: "Profile",     group: "TRACK",      audience: "Your identity + saved items" },
   { id: "plans",       label: "Plans",       group: "TRACK",      audience: "Structured learning tracks" },
   { id: "review",      label: "Review",      group: "TRACK",      audience: "Spaced-rep over what you've mastered" },
@@ -33,7 +34,7 @@ export const ALL_TABS = [
   { id: "concepts",    label: "Foundations",    group: "KNOW",   audience: "All levels — 7 tracks (was Concepts tab)" },
   { id: "career",      label: "Career",         group: "LEGACY", audience: "Job seekers" },
   { id: "codelabs",    label: "Code Labs",      group: "BUILD",  audience: "Read & reason about real GenAI systems code" },
-  { id: "aipm",        label: "AI Product",     group: "LEGACY", audience: "Product managers" },
+  { id: "aipm",        label: "AI Product Judgment", group: "LEGACY", audience: "AI PMs + engineers moving into product — 3 judgment modes (re-homed to Practice, GSL fix #5)" },
   { id: "flows",       label: "Diagrams",       group: "LEGACY", audience: "All levels" },
   { id: "agents",      label: "Agents (legacy)",group: "LEGACY", audience: "Engineers" },
   { id: "playground",  label: "Playground",     group: "LEGACY", audience: "All levels" },

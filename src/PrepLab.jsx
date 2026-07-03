@@ -2520,9 +2520,16 @@ function CompanyPrepMode({ onExit, onNavigate }) {
           <div className="flex items-center gap-3 pt-4">
             <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Back</button>
             <div>
-              <h1 className="text-2xl font-bold">Company Prep Tracks</h1>
-              <p className="text-zinc-500 text-sm">Questions + system design prompts weighted to each archetype</p>
+              <h1 className="text-2xl font-bold">Questions by company</h1>
+              <p className="text-zinc-500 text-sm">A focused slice of the Question Bank, weighted to each company archetype.</p>
             </div>
+          </div>
+          {/* GSL fix #2: signpost Company Tracks as the canonical company-prep home */}
+          <div className="rounded-xl px-4 py-3 text-sm flex flex-wrap items-center gap-x-2 gap-y-1" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+            <span className="text-zinc-400">This is the <span className="text-zinc-200 font-semibold">questions</span> slice of company prep.</span>
+            <button onClick={() => onNavigate && onNavigate({ tab: "company-tracks" })} className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-2">
+              Full company prep → Company Tracks
+            </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {COMPANY_ARCHETYPES.map(arc => (
@@ -3349,8 +3356,8 @@ const MODE_CARDS = [
     border: "border-violet-500/40 hover:border-violet-400", badge: "bg-violet-500/20 text-violet-300 border-violet-500/30"
   },
   {
-    id: "companyprep", icon: "building-2", title: "Company Prep Tracks", subtitle: "Archetype Targeting",
-    description: "4 company archetypes: Big Tech AI, AI-native startups, Indian tech, Enterprise AI. Weighted question sets + company-specific system design challenges.",
+    id: "companyprep", icon: "building-2", title: "Questions by company", subtitle: "Archetype-weighted slice",
+    description: "A focused slice of the Question Bank: weighted question sets per company archetype (Big Tech AI, AI-native startups, Indian tech, Enterprise AI). For full company × role prep, see Company Tracks.",
     border: "border-amber-500/40 hover:border-amber-400", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30"
   },
   {
@@ -3990,7 +3997,7 @@ export default function PrepLab({ onNavigate, onNavigateTo, initialMode, onClear
     { id: "exam",        label: "Judgment Exam",      tag: "EXAM",      desc: "Test yourself cold. Leave knowing where your reasoning breaks." },
     { id: "sprint",      label: "Interview Sprint",   tag: "CHEATSHEET", desc: "2 hrs / 1 day / 3 days / 1 week — exactly what to do." },
     { id: "jdprep",      label: "Interview Strategy", tag: "STRATEGY",  desc: "JD → gap score → day-by-day plan." },
-    { id: "companyprep", label: "Company Tracks",     tag: "ARCHETYPE", desc: "By company archetype" },
+    { id: "companyprep", label: "Questions by company", tag: "ARCHETYPE", desc: "Question-bank slice by archetype (full prep → Company Tracks)" },
     { id: "intexp",      label: "Interview Signal",  tag: "INTEL",     desc: "40 real loop patterns — what's actually tested, by company." },
     { id: "browse",      label: "Browse All",        tag: "REVIEW",    desc: "Scroll through every question. Expand to see answer + trap." },
   ];

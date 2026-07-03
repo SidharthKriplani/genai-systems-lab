@@ -782,8 +782,15 @@ function CompanyCaseArena() {
           <span className="text-xs font-mono px-2 py-0.5 bg-amber-900/60 text-amber-300 rounded border border-amber-700">COMPANY CASES</span>
           <span className="text-xs text-zinc-500">Google · Stripe · Uber · Meta · Anthropic</span>
         </div>
-        <h2 className="text-xl font-bold text-white">Company Case Arena</h2>
-        <p className="text-sm text-zinc-400 mt-1">5 real problem statements from top AI companies. Apply everything you've learned in context.</p>
+        <h2 className="text-xl font-bold text-white">Company scenarios (spoken)</h2>
+        <p className="text-sm text-zinc-400 mt-1">5 real problem statements from top AI companies — bespoke scenarios to practice reasoning out loud, in context. Apply everything you've learned.</p>
+        {/* GSL fix #2: signpost Company Tracks as the canonical company-prep home */}
+        <p className="text-xs text-zinc-500 mt-2">
+          This is the <span className="text-zinc-300 font-semibold">spoken-scenario</span> slice of company prep.{" "}
+          <button onClick={() => { window.location.hash = "company-tracks"; }} className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-2">
+            Full company prep → Company Tracks
+          </button>
+        </p>
         {answeredCount > 0 && (
           <div className="mt-2 text-xs font-mono text-amber-400">{correctCount}/{answeredCount} correct</div>
         )}
@@ -1941,6 +1948,34 @@ function PromptChallengeMode() {
   );
 }
 
+// ─── PROMPTS (merged) ─────────────────────────────────────────────────────────
+// GSL fix #8 (2026-07-03): the two prompt modes are merged into ONE Fluency entry.
+// Both underlying components + datasets are kept intact (PromptEngLab uses PROMPT_EXAMPLES,
+// PromptChallengeMode uses PROMPT_CHALLENGES) — this wrapper just adds a sub-tab toggle so
+// they live under a single "Prompts" mode instead of two near-identical sidebar rows.
+function PromptModeMerged() {
+  const [sub, setSub] = useState("patterns");
+  const TABS = [
+    { id: "patterns",  label: "Failure patterns", hint: "See broken prompts → reveal the fix and why it works." },
+    { id: "challenges", label: "Design challenges", hint: "Pick the best fix from options → check your reasoning." },
+  ];
+  const active = TABS.find(t => t.id === sub) || TABS[0];
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setSub(t.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${sub === t.id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-zinc-500">{active.hint}</p>
+      {sub === "patterns" ? <PromptEngLab /> : <PromptChallengeMode />}
+    </div>
+  );
+}
+
 
 // ─── READINESS ASSESSMENT DATA ────────────────────────────────────────────────
 
@@ -2093,8 +2128,10 @@ function ReadinessAssessment() {
           <Icon name="target" size={24} />
         </div>
         <div className="space-y-1">
-          <h2 className="text-2xl font-black text-white tracking-tight">AI Systems Readiness Assessment</h2>
+          <h2 className="text-2xl font-black text-white tracking-tight">Readiness Check <span className="text-zinc-500 font-semibold text-base">· quick diagnostic</span></h2>
           <p className="text-sm text-zinc-400">20 questions · Timed · All topics</p>
+          {/* GSL fix #8: clarify this is the fast diagnostic, not the full Question Bank exam */}
+          <p className="text-xs text-zinc-500 mt-1">A fast 20-question temperature check across all topics. For the full exam, use the <span className="text-zinc-300 font-semibold">Question Bank</span> (PrepLab).</p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center">
           {[["20", "Questions"], ["~15 min", "Time limit"], ["5 Levels", "Junior → Principal"]].map(([val, label]) => (
@@ -2253,12 +2290,12 @@ const FLUENCY_MODULES = [
   { id: "phrases", label: "Phrase Bank", tag: "UPGRADE" },
   { id: "flashcards", label: "Flashcards", tag: "CARDS" },
   { id: "drills", label: "Timed Drills", tag: "PRACTICE" },
-  { id: "cases", label: "Company Cases", tag: "ARENA" },
-  { id: "prompts", label: "Prompt Engineering", tag: "PROMPTS" },
+  { id: "cases", label: "Company scenarios", tag: "SPOKEN" },
+  { id: "prompts", label: "Prompts", tag: "PROMPTS" },  // GSL fix #8: merged Prompt Engineering + Prompt Challenges into one mode (sub-tabs)
   { id: "interview", label: "Mock Interview", tag: "INTERVIEW" },
   { id: "speak", label: "Speak", tag: "SPOKEN" },
-  { id: "challenges", label: "Prompt Challenges", tag: "CHALLENGE" },
-  { id: "assessment", label: "Readiness Check", tag: "TEST" },
+  // { id: "challenges", ... } — merged into "prompts" (PromptModeMerged) 2026-07-03, GSL fix #8. Dataset PROMPT_CHALLENGES + component PromptChallengeMode kept.
+  { id: "assessment", label: "Readiness Check", tag: "QUICK DIAGNOSTIC" },  // GSL fix #8: label vs full Question Bank exam
 ];
 
 export default function FluencyApp() {
@@ -2303,7 +2340,7 @@ export default function FluencyApp() {
 
   const FLUENCY_GROUPS = [
     { label: "VOCAB",    ids: ["phrases", "flashcards"] },
-    { label: "PRACTICE", ids: ["drills", "challenges", "cases"] },
+    { label: "PRACTICE", ids: ["drills", "cases"] },  // "challenges" merged into "prompts" (fix #8)
     { label: "SKILL",    ids: ["prompts", "interview", "speak", "assessment"] },
   ];
 
@@ -2333,11 +2370,12 @@ export default function FluencyApp() {
         {activeModule === "phrases" && <PhraseBank />}
         {activeModule === "drills" && <TimedDrills />}
         {activeModule === "cases" && <CompanyCaseArena />}
-        {activeModule === "prompts" && <PromptEngLab />}
+        {activeModule === "prompts" && <PromptModeMerged />}
         {activeModule === "interview" && <MockInterview />}
         {activeModule === "speak" && <SpeakMode />}
         {activeModule === "flashcards" && <FlashcardMode />}
-        {activeModule === "challenges" && <PromptChallengeMode />}
+        {/* "challenges" merged into "prompts" (PromptModeMerged), GSL fix #8 — if a stale hash/state lands here, fall back to the merged prompts mode */}
+        {activeModule === "challenges" && <PromptModeMerged />}
         {activeModule === "assessment" && <ReadinessAssessment />}
       </div>
     </div>

@@ -2596,6 +2596,10 @@ function MCPDeepDive() {
         <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
         <p className="text-xs text-zinc-400 leading-relaxed">Model Context Protocol (MCP) solves the N×M integration problem in agent tool development: instead of writing a custom tool integration for every LLM client × every tool service = N×M bespoke implementations, you write one MCP server that works with any MCP-compatible client. It's the USB-C of agent tools — a standardised interface that decouples producers from consumers.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Understanding the 4 primitives (resources, tools, prompts, sampling) determines whether you build MCP servers correctly or make architectural mistakes that are expensive to fix. The Build a Server tab gives you the pattern you'd actually use, not pseudocode. The MCP vs. Function Calling comparison answers the question that comes up in every architecture discussion about this protocol.</p>
+        {/* GSL fix #7: cross-link the 3 MCP homes — this is the concept; Code Labs has the real code */}
+        <p className="text-[11px] text-zinc-500 leading-relaxed pt-1">This is the <span className="text-zinc-300 font-semibold">concept</span> walkthrough. To read a real, runnable MCP server line by line,{" "}
+          <button onClick={() => { window.location.hash = "codelabs"; }} className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-2">see the real code in Code Labs (mcp-server-min) →</button>
+        </p>
       </div>
       <div className="flex gap-2 flex-wrap">
         {[{id:"arch",label:"Architecture"},{id:"primitives",label:"4 Primitives"},{id:"build",label:"Build a Server"},{id:"vs",label:"MCP vs. Function Calling"}].map(t => (
@@ -3739,8 +3743,12 @@ function AgentConfigLab() {
 const AGENTS_MODULES = [
   { id: "react",      label: "ReAct Pattern",       tag: "LOOP",   group: "CORE",      component: ReActPattern        },
   { id: "tools",      label: "Tool Use Design",     tag: "TOOLS",  group: "CORE",      component: ToolUseDesign       },
-  { id: "memory",     label: "Agent Memory",        tag: "MEMORY", group: "CORE",      component: AgentMemory         },
-  { id: "memarch",    label: "Memory Architecture", tag: "ARCH",   group: "CORE",      component: LLMMemoryArchitecture },
+  // GSL fix #8 (2026-07-03): the 2 memory modules are relabeled as an explicit "Memory · Part 1/2" pair
+  // (Foundations = the 4 memory types; Libraries = the 6 storage libraries + decision wizard). A full
+  // single-component merge is DEFERRED (both are large tabbed components; nesting tabs-in-tabs risks breakage).
+  // The Libraries module's intro already cross-references the Foundations one, so the relationship is clear.
+  { id: "memory",     label: "Memory · Foundations", tag: "MEMORY", group: "CORE",      component: AgentMemory         },
+  { id: "memarch",    label: "Memory · Libraries",   tag: "MEMORY", group: "CORE",      component: LLMMemoryArchitecture },
   { id: "multiagent", label: "Multi-Agent",         tag: "SCALE",  group: "SCALE",     component: MultiAgentPatterns  },
   { id: "failures",   label: "Failure Modes",       tag: "DEBUG",  group: "SCALE",     component: AgentFailureModes   },
   { id: "planning",   label: "Planning Patterns",   tag: "PLAN",   group: "SCALE",     component: PlanningPatterns    },
