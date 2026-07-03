@@ -1,0 +1,259 @@
+// keyPoints + recap patch (group A) — merged into RUNNER_DATA after it is built.
+export const RECAP_PATCH_A = {
+  "embeddings": {
+    keyPoints: [
+      "**Meaning becomes geometry.** Integer token IDs carry no semantic signal; embeddings map tokens to dense vectors where semantic proximity is geometric proximity.",
+      "**One-hot vectors have no structure.** They remove the false ordinal relationship of integer IDs but make every token equidistant — no similarity, no meaning.",
+      "**The distributional hypothesis is the training objective.** Phrases in similar contexts (co-occurring with the same neighbors) are forced into similar regions of vector space.",
+      "**Cosine similarity measures the angle, not magnitude.** It scores meaning overlap between two vectors — near 1 for semantically similar text regardless of norm.",
+      "**Contextual encoders handle polysemy.** ada-002 gives 'bank' different vectors in 'river bank' vs 'bank account'; static models assign one fixed vector.",
+      "**Geometry reflects the training distribution.** ada-002 trained on general web text never learned clinical synonyms co-occur, so 'myocardial infarction' and 'heart attack' land far apart.",
+    ],
+    recap: [
+      "**Embeddings turn semantic similarity into geometric proximity** — cosine similarity measures the angle between vectors, not token-ID distance.",
+      "**The geometry a model learns is bounded by its training distribution** — general-web ada-002 never saw clinical synonyms co-occur, so it can't place them as neighbors.",
+      "**Exact-heading queries succeeding while natural-language ones fail proves the info is in the index** — the embedding model just lacks the synonym relationship.",
+      "**Fix is domain-specific:** medical embedding model (BiomedBERT, MedCPT), fine-tune on domain query-doc pairs, or add a reranker. Re-embed the whole index when you switch models.",
+    ],
+  },
+
+  "rag-pipeline": {
+    keyPoints: [
+      "**RAG failures are stage-specific.** Retrieval and generation break independently and cannot be fixed with the same intervention — mixing them up wastes weeks.",
+      "**The attribution test comes before any code.** Ask: would this failure still occur if I fed perfect context directly, bypassing the retriever? Yes → generation; No → retrieval.",
+      "**Missing conceptual retrievals are a retrieval failure.** Everyday query language never matches domain terminology in a general embedding model, so the right chunk is never produced.",
+      "**Retrieval fixes are retrieval-stage.** Hybrid search (dense + BM25) plus query expansion with domain synonyms — a better generation model can't recover a chunk it never received.",
+      "**Hallucinated citations are a generation failure.** The model pattern-completes citation-formatted strings from pre-training memory when the retrieved context lacks a match.",
+      "**Generation fixes are generation-stage.** Constrain output to verbatim identifiers from retrieved chunks, or force 'no citation found' rather than inferring one.",
+    ],
+    recap: [
+      "**Two RAG failures, two different fixes** — treating both as one 'quality problem' and tuning generation leaves retrieval broken.",
+      "**Attribution test:** would it still fail with perfect context injected directly? Yes → generation; No → retrieval.",
+      "**Missing conceptual recall = retrieval failure** — the embedding model lacks the synonym link; fix with hybrid search + query expansion.",
+      "**Fabricated citations = generation failure** — the model completes patterns from training memory; fix with verbatim-only citation constraints.",
+      "**Measure retrieval recall@k and answer faithfulness separately** — stage-isolated evals are what make attribution rigorous.",
+    ],
+  },
+
+  "context": {
+    keyPoints: [
+      "**Retrieval into context ≠ extraction from context.** A 32K window that contains the relevant section still fails if the model doesn't attend to it — more context is not better answers.",
+      "**'Lost in the middle' is a documented empirical effect.** Information in the middle 60% of a long context receives measurably lower attention weight, regardless of relevance.",
+      "**Irrelevance density compounds the effect.** 3 relevant sections among 47 noisy ones makes signal a smaller fraction of context; a curated 8K window often beats a stuffed 32K one.",
+      "**Map-reduce avoids positional bias entirely.** Summarize each section in a separate inference call, then synthesize — the model never reasons across 32K at once, so bias never applies.",
+      "**Exploit the bias when long context is unavoidable.** Rerank chunks and place highest-relevance content at the beginning or end of the window.",
+      "**Standard accuracy metrics hide this.** A model at 90% overall may score 60% on content in the middle 40–60% positions — you need position-stratified evals to see it.",
+    ],
+    recap: [
+      "**Long context ≠ good context** — position in the window materially affects extraction quality.",
+      "**Lost in the middle:** the middle 60% of a long context gets lower attention weight regardless of semantic relevance.",
+      "**Irrelevance density compounds it** — a curated high-signal 8K context often beats a noisy 32K one.",
+      "**Map-reduce removes the bias entirely** (per-section inference then synthesize); reranking to the ends exploits it constructively.",
+      "**Test extraction at middle positions specifically** — aggregate accuracy won't surface the failure.",
+    ],
+  },
+
+  "eval-loop": {
+    keyPoints: [
+      "**A useful eval loop needs four properties.** Fixed dataset, automated scorer, a baseline to compare against, and a pre-committed pass/fail threshold — missing any one and it only confirms the system produces output.",
+      "**Same-family judges have a thumb on the scale.** GPT-4 grading GPT-4 shares training distribution and stylistic preferences, systematically inflating scores for its own output style.",
+      "**Human annotation is the gold standard.** LLM judges are acceptable at scale only when calibrated against human labels and drawn from a different model family than the system under test.",
+      "**Static, accessible eval sets get contaminated.** When people who modify the system can see the 12 test inputs, they optimize for those inputs, not general quality — the eval equivalent of test-set overfitting.",
+      "**Version-control the eval set separately.** Manage it independently from the system and augment with adversarial cases and real production failure queries.",
+      "**No baseline means an uninterpretable number.** Without the previous version or a known reference, a passing score cannot tell you whether quality improved or degraded.",
+    ],
+    recap: [
+      "**Minimum viable eval loop = fixed dataset + independent judge + explicit baseline + pre-committed threshold.**",
+      "**Same-model judge = biased score** — the judge favors text resembling its own output distribution; use a different model family or human labels.",
+      "**12 static, accessible questions = an overfitted regression test** for exactly those inputs; version-control and augment the set independently.",
+      "**No baseline = uninterpretable number** — you can't tell if quality improved or degraded.",
+    ],
+  },
+
+  "eval-design": {
+    keyPoints: [
+      "**Start with two lists, not data collection.** What the system must do and what it must never do define the test structure before a single annotation hour is spent.",
+      "**The must-never list carries more weight for high-stakes tools.** For contract analysis, omitting a high-risk clause or misattributing a party is worse than any must-do miss.",
+      "**Annotate real customer documents, not synthetic ones.** Real contracts have formatting irregularities and non-standard clause ordering — exactly where systems fail and where coverage matters.",
+      "**Allocate the annotation budget by failure cost.** Must-never cases deserve 60–70% of the budget; the goal is worst-case coverage, not balance across all clause types.",
+      "**Precision and recall, not accuracy, for extraction.** For must-never items recall is load-bearing — accept lower precision (false alarms) to keep recall high on the clauses that matter.",
+      "**Pre-commit the threshold before building the eval.** 'Ship if high-risk recall ≥95%' is defensible; 'ship if overall accuracy is 85%' can hide 50% recall where it counts.",
+    ],
+    recap: [
+      "**Design evals around your worst-case failure mode, not the average case** — build the must-do and must-never lists first.",
+      "**Recall on the must-never categories is the load-bearing metric** for high-stakes extraction; overall accuracy hides per-category failures.",
+      "**Annotate 50–100 real customer documents**, spending 60–70% of the budget on must-never cases for worst-case coverage.",
+      "**Pre-commit the minimum acceptable threshold** — the eval answers a specific question, not a number you interpret afterward.",
+    ],
+  },
+
+  "debug": {
+    keyPoints: [
+      "**Stage isolation, not parameter tuning.** Two weeks of undifferentiated prompt changes fails because every variable moves at once — you can't attribute quality movement to any intervention.",
+      "**The oracle test separates retrieval from generation in one experiment.** Feed a manually confirmed perfect chunk and ask the question — success means the failure is in what chunks reach the model; failure means generation.",
+      "**These two failure modes need entirely different repairs.** Fixing retrieval does nothing for a generation failure, and vice versa.",
+      "**Fix retrieval first if recall@k is low.** Everything downstream depends on the right chunk arriving; improving generation is useless if the chunk never reaches the model.",
+      "**Verify the actual prompt sent to the LLM.** Log all retrieved content to confirm the relevant chunk is present and not silently truncated before blaming generation.",
+      "**Ground-before-abstraction prompts fix loose paraphrasing.** 'Reproduce numbers and measurements exactly as they appear' forces literal extraction of clinical values.",
+    ],
+    recap: [
+      "**Debug RAG by stage isolation, not parameter tuning** — change one variable at a time against a fixed test set.",
+      "**The oracle test (inject a perfect chunk) splits retrieval from generation** in a single experiment.",
+      "**Recall@k first:** if the right chunk rarely arrives, no augmentation or generation fix can succeed.",
+      "**Confirmed generation failure → grounding prompts** like 'reproduce numbers exactly as they appear' to stop loose paraphrasing.",
+    ],
+  },
+
+  "flashattn": {
+    keyPoints: [
+      "**Standard attention is memory-bandwidth-bound at long sequences.** The N×N score matrix (~512MB for 16K tokens) makes four HBM round trips per layer; CUDA cores compute faster than HBM can supply data.",
+      "**SRAM is the lever.** On-chip SRAM (~20MB on an A100) is ~10× faster than HBM but too small to hold the full N×N matrix — so you must tile.",
+      "**Online softmax lets you tile.** Maintaining a running max and running sum as each tile arrives computes the exact softmax without ever storing all N scores at once.",
+      "**The output is bit-identical, not approximate.** No scores are dropped, thresholded, or quantized — it's the same weighted sum computed in a memory-efficient order.",
+      "**Memory saving is geometric.** The N×N matrix is never materialized in HBM; memory goes from O(N²) to O(N) — the 5–10× reduction is a fact about the algorithm, not an estimate.",
+      "**Speed follows from fewer HBM accesses.** Round trips drop from ~2GB to ~0.1GB per layer; the speedup is from bandwidth, not faster math.",
+    ],
+    recap: [
+      "**Standard attention is memory-bandwidth-bound** — four HBM round trips per layer over an O(N²) score matrix.",
+      "**Flash Attention tiles the work in fast on-chip SRAM** and uses online softmax (running max + sum) to compute the exact result incrementally.",
+      "**Output is bit-identical, not an approximation** — nothing is dropped, thresholded, or quantized.",
+      "**Memory drops from O(N²) to O(N)** because the N×N matrix is never written to HBM; speed follows from fewer HBM accesses.",
+    ],
+  },
+
+  "prompt-regression-signals": {
+    keyPoints: [
+      "**Passive monitoring lags 24–48 hours.** Trend-based signals let a prompt change accumulate days of support tickets before an alert fires.",
+      "**Regression signals fire on the first bad response.** Output format compliance and downstream parse error rate surface a broken prompt on request #1, before any trend forms.",
+      "**Length and refusal rate are fast secondary signals.** Over-constrained prompts truncate answers; few-shot over-reliance causes verbose mirroring; task confusion raises refusals.",
+      "**A/B test every prompt change.** Route a slice of traffic to the new prompt and compare in real time; even 5% for 1 hour gives statistical signal on format and downstream errors.",
+      "**Without A/B testing you deploy blind.** You'll know when a regression started but not which change caused it if several moved at once.",
+      "**Rollback is the fastest causal test.** Reverting takes seconds and costs nothing; if the regression disappears, the prompt caused it. Cluster tickets by failure type to confirm.",
+    ],
+    recap: [
+      "**Detect prompt regressions before users do** — passive monitoring lags 24–48h; regression signals fire on the first bad response.",
+      "**Output format compliance + downstream parse error rate** are the earliest automated signals.",
+      "**A/B test every change** — 5% traffic for 1 hour catches format failures before full rollout.",
+      "**Prompt rollback is the fastest causal test** — seconds to revert, costs nothing; if the regression resolves, the prompt caused it.",
+    ],
+  },
+
+  "quality-drift": {
+    keyPoints: [
+      "**'Nothing changed' means nothing you control changed.** LLM systems have external dependencies that shift independently of your code and config.",
+      "**Silent model version updates are the most common cause.** Providers update weights behind a stable endpoint name for safety, capability, and efficiency without notice.",
+      "**Knowledge-base staleness produces wrong answers.** Indexed documents go out of date; queries about changed policies or products get stale retrievals.",
+      "**User distribution shift degrades quality for new cohorts.** A model strong on the original query distribution performs worse on new patterns.",
+      "**Diagnose by segmenting.** If the same established users on established query types also rate lower, it's not distribution shift — the cause is systemic (model, index, or dependency).",
+      "**Prevent with three instruments.** Pin model versions when supported, alert when source docs are newer than the last index rebuild, and run weekly regression evals on a fixed golden set.",
+    ],
+    recap: [
+      "**'Nothing changed' never means nothing changed** — external dependencies shift independently of your code.",
+      "**Four drift sources:** silent model update, stale knowledge base, user distribution shift, third-party dependency change.",
+      "**Silent model updates are the most common** unexplained cause — providers swap weights behind stable endpoint names.",
+      "**A fixed golden set holds inputs constant**, so weekly regression evals surface silent model changes within one run; pin versions to prevent them.",
+    ],
+  },
+
+  "cost-attribution": {
+    keyPoints: [
+      "**Token-cost math tells you why; attribution tells you which team.** A single-key $180K bill is a flat number until you can trace it to the team, product, or feature that drove it.",
+      "**Tag every request at call time.** Most providers expose user/metadata fields in billing exports — instrument team, use_case, environment, and user_tier.",
+      "**Track the model name per request.** Different models on the same account have different per-token rates, so token counts alone can't be converted to cost.",
+      "**Large bills follow a heavy tail.** Roughly 20% of requests drive 60–80% of cost; identifying them beats broadly optimizing everything.",
+      "**Attribution turns one number into optimization paths.** '$180K on AI' becomes '$72K summarization, $45K search, $63K evals' — each with a distinct fix.",
+      "**Instrumentation is cheap and fast.** It takes hours to add and produces full attribution within one billing cycle; without it you optimize blind.",
+    ],
+    recap: [
+      "**Cost attribution requires instrumentation before the bill** — tag every request with team and use_case at call time.",
+      "**Track the model name too** — different models have different per-token rates, so tokens alone don't give cost.",
+      "**Bills are heavy-tailed:** ~20% of requests drive ~60–80% of cost, so target the tail first.",
+      "**Attribution splits '$180K on AI' into per-use-case paths**, each with its own optimization — hours to instrument, one cycle to full data.",
+    ],
+  },
+
+  "managed-vs-selfhosted": {
+    keyPoints: [
+      "**The self-hosting savings intuition depends entirely on utilization.** You pay for the provider's markup, but the markup is only worth cutting when GPUs are busy.",
+      "**Managed API is cheap at low volume.** ~$400/month at 50M tokens buys high availability, zero ops, and automatic model updates — a premium for operational simplicity.",
+      "**At 50M tokens/month, self-hosted GPU utilization is ~2.6%.** 2×A100 can produce ~1.9B tokens/month; you use 50M and pay for 97.4% idle compute.",
+      "**TCO is the piece the intuition misses.** Compute (~$4.3–5.8K) plus 0.25–0.5 FTE ops (~$12.5K) plus security, compliance, and model-upgrade overhead — not just raw compute.",
+      "**The crossover is ~300–500M tokens/month for a lean team.** Below it, self-hosting is a cost increase; the scenario is $400 managed vs $16.8–18.3K self-hosted TCO.",
+      "**The sunk-cost path is a real trap.** Teams keep self-hosting because the ops FTE is already allocated, even when a TCO recalculation says switch back.",
+    ],
+    recap: [
+      "**Self-hosting isn't cheaper until utilization is high** — the whole comparison turns on GPU utilization.",
+      "**At 50M tokens/month utilization is ~2.6%** — you pay for ~97% idle compute.",
+      "**Compare TCO, not raw compute:** add 0.25–0.5 FTE ops plus security and model-upgrade overhead — $400 managed vs ~$17K self-hosted here.",
+      "**Crossover is ~300–500M tokens/month;** below it self-hosting is a cost increase, and the sunk-cost FTE keeps teams stuck past it.",
+    ],
+  },
+
+  "enterprise-ai-cost-model": {
+    keyPoints: [
+      "**Multiplying pilot cost by the user ratio fails.** Enterprise user populations are heterogeneous, so a 100× multiplier on the pilot average misses the concentration effect.",
+      "**The heavy-user tail drives overruns.** ~15% heavy users (3–4× average), 65% average, 20% light (0.2×) — the tail a 100-person pilot may never surface.",
+      "**Measure the right pilot inputs.** Input/output tokens per session, sessions per active user per day, and daily-active-user rate — then apply the usage distribution.",
+      "**Model DAU, not registered users.** At 10K users and 30% DAU, only 3K are active per day; apply usage tiers within that active pool.",
+      "**Finance needs a range with a ceiling.** Produce p25/p50/p75, not a single point estimate.",
+      "**A forecast without control levers is incomplete.** Per-user daily token budgets, automatic model downgrade past a threshold, and caching (15–20% near-duplicate queries) enforce the ceiling.",
+    ],
+    recap: [
+      "**Multiplying pilot cost by the user ratio underestimates** — enterprise populations are heterogeneous, not uniform.",
+      "**The heavy-user tail (~15% at 3–4× average) drives budget overruns** and may not appear in a small pilot.",
+      "**Model DAU × usage tiers to produce a p25/p50/p75 range**, not a point estimate — Finance needs a ceiling.",
+      "**Pair the forecast with control levers:** per-user token budgets, automatic model downgrade, and caching of near-duplicate queries.",
+    ],
+  },
+
+  "vector-db-index-mechanics": {
+    keyPoints: [
+      "**Exact search is O(N·d) and doesn't scale.** Comparing a query to all 10M vectors at d=1,536 is ~15B operations per query — fast at 100K, seconds at 10M.",
+      "**ANN indexes trade a little accuracy for orders-of-magnitude speed** by restricting search to a relevant subspace rather than all N.",
+      "**HNSW navigates a multi-layer graph.** M (connections per node, build time) and ef_search (candidates explored, query time) must scale with N — a fixed ef_search explores a subgraph 100× too small at 10M.",
+      "**IVF searches only the nearest clusters.** With nlist≈sqrt(N), keeping nlist=316 at 10M leaves ~31,600 vectors per cluster — each cluster search is 100× more expensive.",
+      "**Parameters set for one scale degrade at another.** A 100× dataset growth with no reconfiguration almost always explains 100× latency degradation.",
+      "**The fix is index reconfiguration, not migration.** Rebuild HNSW with scaled M/ef_search, or IVF with nlist≈3,162 then tune nprobe for acceptable recall.",
+    ],
+    recap: [
+      "**Vector index performance is parameter-dependent, not just database-dependent.**",
+      "**HNSW M and ef_search, IVF nlist and nprobe** must all be calibrated to dataset scale.",
+      "**A fixed ef_search or nlist at 10M explores/covers a fraction 100× too small** — recall collapses and latency spikes.",
+      "**100× growth with no reconfiguration explains 100× latency degradation** — rebuild the index before considering a migration.",
+    ],
+  },
+
+  "hybrid-search-design": {
+    keyPoints: [
+      "**Dense search generalizes across paraphrases by design.** It can't distinguish 'semantically similar' from 'literally identical', so an exact error string matches general docs, not the specific page.",
+      "**Exact technical tokens aren't synonyms.** Error messages, function names, version numbers, API endpoints — a token that doesn't literally match is wrong, not a paraphrase.",
+      "**BM25 is built for literal matching.** It scores by exact term frequency and finds the document containing those exact characters, regardless of semantic similarity.",
+      "**Neither method alone covers the full query distribution.** Dense handles conceptual queries, sparse handles exact-match — a technical doc tool needs both.",
+      "**RRF fuses in rank space to avoid score incompatibility.** BM25 scores are unbounded and length-dependent; cosine is bounded [-1,1]. RRF = 1/(rank+k), k=60, so position 1 from either contributes equally.",
+      "**Adaptive weighting improves on static hybrid.** A fast heuristic classifier ('exact' vs 'conceptual' via identifier density and punctuation) weights sparse higher for exact queries, dense higher for conceptual.",
+    ],
+    recap: [
+      "**Semantic search fails on exact-match queries; keyword search fails on conceptual ones** — you need both.",
+      "**Dense search can't tell 'semantically similar' from 'literally identical'** — an exact error string matches general docs.",
+      "**RRF fuses in rank space (1/(rank+60))**, sidestepping the incompatible BM25-vs-cosine score scales.",
+      "**Adaptive weighting** classifies each query exact vs conceptual and weights sparse or dense accordingly to lift precision.",
+    ],
+  },
+
+  "metadata-filtering": {
+    keyPoints: [
+      "**A shared ANN index has no concept of ownership.** It returns the globally nearest vectors, including other tenants' documents — cross-tenant leakage is the default, not an edge case.",
+      "**Metadata is a prerequisite, not an afterthought.** Every vector must carry structured metadata (e.g. client_id) assigned at index time to filter on it at search time.",
+      "**Pre-filtering gives strong isolation but risks connectivity.** Filtering first means the ANN graph never touches other tenants — but a tiny filtered subset can degrade HNSW graph connectivity.",
+      "**Post-filtering preserves ANN quality but risks leakage.** Running full search then discarding non-matches means a single filter bug lets other tenants' results pass through.",
+      "**Filtering is isolation when it works, not a guarantee.** Any application-layer approach can be defeated by a code bug, missing parameter, or race condition.",
+      "**Physical partitioning is the gold standard.** Separate namespaces per tenant mean no shared index to leak from; the tradeoff is that authorized cross-client queries must query and merge multiple namespaces.",
+    ],
+    recap: [
+      "**A shared ANN index returns globally nearest vectors** — cross-tenant leakage is the default behavior.",
+      "**Metadata filtering provides isolation only when it works correctly** — an application-layer bug can silently leak across tenants.",
+      "**Pre-filtering risks HNSW connectivity on small subsets; post-filtering risks leakage on a filter bug.**",
+      "**Physical index partitioning per tenant is the only infrastructure-level guarantee** — no shared index to leak from; cost is merging namespaces for authorized cross-client queries.",
+    ],
+  },
+};

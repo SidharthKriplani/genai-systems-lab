@@ -1396,7 +1396,14 @@ export default function App() {
   }
   useEffect(() => {
     function onKey(e) {
-      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+      // Never let bare-letter/digit shortcuts fire while the user is typing. Covers
+      // inputs, textareas, selects, AND contenteditable (e.g. the My Tracks note editor)
+      // — typing "g" in a note/search box was navigating to Ground Truth (2026-07-03 bugfix).
+      const t = e.target;
+      const tag = t && t.tagName;
+      const editable = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"
+        || (t && (t.isContentEditable || (t.closest && t.closest('[contenteditable="true"], input, textarea, select'))));
+      if (editable) return;
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(s => !s); return; }
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "Q") { e.preventDefault(); navigate("qa"); return; }
       if (e.key === "?") { e.preventDefault(); setShowShortcuts(s => !s); return; }

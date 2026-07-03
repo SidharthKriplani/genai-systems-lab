@@ -34,7 +34,11 @@ import { RUNNER_MARKET_GAP } from "./foundations/market-gap";
 import { RUNNER_DEEPEN_THIN } from "./foundations/deepen-thin";
 // ── MSL-parity expansion: retrieval breadth modules + production-gym tone pass ──
 import { RUNNER_RETRIEVAL_BREADTH } from "./foundations/retrieval-breadth";
+import { RUNNER_BREADTH_2 } from "./foundations/breadth-2";
 import { RUNNER_PRODUCTION_TONE } from "./foundations/production-tone";
+// ── keyPoints + recap patch for the 30 older interactive modules that lacked them ──
+import { RECAP_PATCH_A } from "./foundations/recap-patch-a";
+import { RECAP_PATCH_B } from "./foundations/recap-patch-b";
 
 export const RUNNER_DATA = {
 
@@ -3734,9 +3738,23 @@ itself).` },
   // ── Retrieval breadth (3 new modules, additive) ──────────────────────────────
   ...RUNNER_RETRIEVAL_BREADTH,
 
+  // ── Breadth tranche 2 (sparse-attention, eval-contamination, calibration,
+  //    prompt-caching, multiturn-context) ────────────────────────────────────────
+  ...RUNNER_BREADTH_2,
+
   // ── Production-gym TONE PASS — spread ABSOLUTELY LAST so it overrides the terse
   //    cost-latency-concepts / observability-concepts / latency-planner (incl. the
   //    D1 override of observability-concepts). ──────────────────────────────────
   ...RUNNER_PRODUCTION_TONE,
 
 };
+
+// ── Merge keyPoints + recap into the 30 older interactive modules that had scenario/
+//    explanation/mcqs/takeaway but no keyPoints/recap. MERGE (not spread) so their
+//    existing content + interactive component are preserved — only the two missing
+//    fields are added. Every Foundations module now carries a recap. ────────────────
+for (const patch of [RECAP_PATCH_A, RECAP_PATCH_B]) {
+  for (const id of Object.keys(patch)) {
+    if (RUNNER_DATA[id]) RUNNER_DATA[id] = { ...RUNNER_DATA[id], ...patch[id] };
+  }
+}

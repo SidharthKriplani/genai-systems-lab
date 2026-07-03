@@ -10115,6 +10115,13 @@ export const MODULES = [
   { id: "dense-vs-sparse-retrieval", label: "Dense vs Sparse",    tag: "RETRIEVAL", level: "intermediate", title: "Dense vs Sparse Retrieval (and Hybrid)", subtitle: "When BM25 beats embeddings — and how RRF fuses them.",           fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "multi-hop-retrieval",       label: "Multi-Hop Retrieval", tag: "RETRIEVAL", level: "advanced",     title: "Multi-Hop Retrieval",                    subtitle: "Answers that need chaining across documents — decompose, retrieve, reason, repeat.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
   { id: "query-rewriting",           label: "Query Rewriting",     tag: "RETRIEVAL", level: "intermediate", title: "Query Rewriting (HyDE, Step-Back, Expansion)", subtitle: "Fix under-specified queries before retrieval runs.",     fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+
+  // ── Breadth tranche 2 (teaching via RUNNER_DATA) ──
+  { id: "sparse-attention",   label: "Sparse Attention",   tag: "LANG MODELS", level: "advanced",     title: "Sparse Attention (Long-Context Cost)", subtitle: "Sliding-window, Longformer/BigBird, attention sinks — beating O(n²).", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "eval-contamination", label: "Benchmark Contamination", tag: "EVALUATION", level: "intermediate", title: "Benchmark Contamination & Gaming",  subtitle: "Why a model aces MMLU and fails your task — leakage, Goodhart, held-out hygiene.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "calibration",        label: "Calibration",        tag: "EVALUATION", level: "advanced",     title: "Calibration (Confidence vs Accuracy)", subtitle: "ECE, reliability diagrams, why RLHF mis-calibrates, temperature scaling.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "prompt-caching",     label: "Prompt Caching",     tag: "PROMPT",     level: "intermediate", title: "Prompt / Prefix Caching",           subtitle: "Skip prefill on the shared prefix — cheaper input, lower TTFT.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
+  { id: "multiturn-context",  label: "Multi-Turn Context", tag: "PROMPT",     level: "intermediate", title: "Multi-Turn Context Management",      subtitle: "Context rot across turns — summarize, truncate, or retrieve history.", fidelity: { tier: "conceptual", note: "Full teaching below — hands-on interactive coming." }, component: StubModule },
 ];
 
 const LEVEL_STYLE = {
@@ -11963,7 +11970,7 @@ export const GYMS = [
     label: "Language Models",
     desc: "Tokenization, attention, positional encoding, KV cache, sampling, and the training signal. The foundation before you touch any lab.",
     color: "#6366f1",
-    moduleIds: ["seq-parallel", "tokenizer", "attention", "positional-encoding", "rope", "gqa-mqa", "transformer", "training-signal", "nextoken", "sampling", "speculative-decoding", "tempgame", "hallucination", "kv-cache"],
+    moduleIds: ["seq-parallel", "tokenizer", "attention", "positional-encoding", "rope", "gqa-mqa", "sparse-attention", "transformer", "training-signal", "nextoken", "sampling", "speculative-decoding", "tempgame", "hallucination", "kv-cache"],
     labId: "llmlab",
     labLabel: "LLM Lab",
   },
@@ -11990,7 +11997,7 @@ export const GYMS = [
     label: "Evaluation",
     desc: "LLM-as-judge design, eval suite construction, RAG-specific metrics, and debugging failing evals.",
     color: "#22c55e",
-    moduleIds: ["eval-loop", "eval-design", "debug", "llm-as-judge", "rag-eval", "hallucination-lab"],
+    moduleIds: ["eval-loop", "eval-design", "debug", "llm-as-judge", "rag-eval", "hallucination-lab", "eval-contamination", "calibration"],
     labId: "evallab",
     labLabel: "Eval Lab",
   },
@@ -12017,7 +12024,7 @@ export const GYMS = [
     label: "Prompt Engineering",
     desc: "Zero-shot, few-shot, chain-of-thought, system prompt design, structured outputs, and injection defense.",
     color: "#06b6d4",
-    moduleIds: ["zero-shot", "few-shot", "chain-of-thought", "system-prompts", "structured-outputs", "prompt-security", "injection-lab", "prompt-library"],
+    moduleIds: ["zero-shot", "few-shot", "chain-of-thought", "system-prompts", "structured-outputs", "prompt-security", "injection-lab", "prompt-library", "prompt-caching", "multiturn-context"],
   },
   {
     id: "vector-infrastructure",

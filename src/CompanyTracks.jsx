@@ -1,8 +1,25 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CompanyLogo } from "./CompanyLogo.jsx";
 import {
   COMPANIES, ROLES, LEVELS, getCompanyTrackItems, companyHasTrack,
 } from "./data/companyTracks.js";
+import { PREP_QUESTIONS, questionTier, TIER_META } from "./data/preplabQuestions";
+
+// Company aliases → substrings to match against a question's `source` field, so bank
+// questions attributed to (e.g.) "Google DeepMind screen" surface under Google.
+const COMPANY_SOURCE_ALIASES = {
+  Google: ["google", "deepmind"], Amazon: ["amazon", "aws", "bedrock", "re:invent"],
+  Microsoft: ["microsoft", "azure", "copilot", "autogen", "github"], Meta: ["meta ", "llama"],
+  Anthropic: ["anthropic"], Databricks: ["databricks"], Salesforce: ["salesforce", "einstein"],
+  Nvidia: ["nvidia"], LinkedIn: ["linkedin"], Adobe: ["adobe"], Netflix: ["netflix"], Uber: ["uber"],
+};
+function questionsForCompany(company) {
+  const needles = COMPANY_SOURCE_ALIASES[company] || [company.toLowerCase()];
+  return PREP_QUESTIONS.filter(qq => {
+    const s = (qq.source || "").toLowerCase();
+    return s && needles.some(n => s.includes(n));
+  });
+}
 
 // Company Tracks — curated, company × role × level prep paths for AI-engineering
 // roles. Pick a company, a role, a level → get an ordered curriculum that
@@ -50,6 +67,7 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
 
   const shown = COMPANIES.filter(c => c.toLowerCase().includes(q.toLowerCase()));
   const items = getCompanyTrackItems(company, role, level);
+  const reportedQs = useMemo(() => questionsForCompany(company), [company]);
 
   const chip = (active, accent) => ({
     padding: "6px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer",
@@ -161,6 +179,41 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
               </li>
             ))}
           </ol>
+        )}
+
+        {/* Reported interview questions — pulled from our own bank via source attribution */}
+        {reportedQs.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center gap-2 mb-2">
+              <CompanyLogo company={company} size={18} />
+              <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted, #71717a)" }}>
+                Reported at {company} · {reportedQs.length}
+              </div>
+            </div>
+            <p className="text-[12px] mb-3" style={{ color: "var(--text-muted, #a1a1aa)" }}>
+              Questions from our bank attributed to {company} interviews. Open the Question Bank to drill them.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {reportedQs.slice(0, 12).map(qq => {
+                const meta = TIER_META[questionTier(qq)];
+                return (
+                  <button key={qq.id}
+                    onClick={() => onNavigateTo && onNavigateTo({ tab: "preplab", mode: "browse" })}
+                    className="w-full text-left flex items-start gap-2.5"
+                    style={{ padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                      background: "var(--surface)", border: "1px solid var(--border)", transition: "border-color 0.12s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(139,92,246,0.5)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; }}>
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${meta.chip}`}>{meta.label}</span>
+                    <span className="flex-1 min-w-0 text-[13px]" style={{ color: "var(--text, #e4e4e7)" }}>{qq.question}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {reportedQs.length > 12 && (
+              <div className="text-[11px] mt-2" style={{ color: "var(--text-muted, #71717a)" }}>+{reportedQs.length - 12} more in the Question Bank</div>
+            )}
+          </div>
         )}
       </div>
     </div>

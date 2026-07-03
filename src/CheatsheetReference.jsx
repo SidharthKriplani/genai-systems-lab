@@ -112,26 +112,25 @@ export default function CheatsheetReference() {
         )}
       </div>
 
-      {/* Topic filter chips */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {topics.map((t) => {
-          const active = t === activeTopic;
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setActiveTopic(t)}
-              className={
-                "rounded-full border px-3 py-1 text-xs font-medium transition-colors " +
-                (active
-                  ? "border-violet-500 bg-violet-500/15 text-violet-200"
-                  : "border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200")
-              }
-            >
-              {t}
-            </button>
-          );
-        })}
+      {/* Topic filter — dropdown */}
+      <div className="mb-6 flex items-center gap-2">
+        <label htmlFor="cheat-topic" className="text-xs font-medium text-zinc-500">Topic</label>
+        <select
+          id="cheat-topic"
+          value={activeTopic}
+          onChange={(e) => setActiveTopic(e.target.value)}
+          className="rounded-lg border px-3 py-1.5 text-xs font-medium text-zinc-200 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/40"
+          style={{ background: "var(--surface, #18181b)", borderColor: "var(--border, #3f3f46)" }}
+          aria-label="Filter by topic"
+        >
+          {topics.map((t) => (
+            <option key={t} value={t}>{t === "All" ? "All topics" : t}</option>
+          ))}
+        </select>
+        {activeTopic !== "All" && (
+          <button type="button" onClick={() => setActiveTopic("All")}
+            className="text-xs text-zinc-500 hover:text-zinc-300">clear</button>
+        )}
       </div>
 
       {/* Result count */}
