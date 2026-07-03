@@ -306,9 +306,9 @@ const NAV_SECTIONS = [
     // { id: "foundationlab", label: "FM Lab" },
     { id: "aipm", label: "AI Product" },
   ]},
-  { key: "prep", label: "PREP & ASSESS", icon: "clipboard", items: [
-    { id: "preplab", label: "PrepLab" },
-    { id: "fluency", label: "Interview Room" },
+  { key: "prep", label: "INTERVIEW", icon: "clipboard", items: [
+    { id: "preplab", label: "Question Bank" },
+    { id: "fluency", label: "Speaking & Mock" },
     { id: "company-tracks", label: "Company Tracks" },
   ]},
 ];
