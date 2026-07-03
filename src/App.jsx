@@ -45,6 +45,7 @@ const ProgressPage           = lazy(() => import("./Progress"));
 const MyTracksPage           = lazy(() => import("./MyTracks"));
 const ReviewPage             = lazy(() => import("./Review"));
 const CompanyTracksPage      = lazy(() => import("./CompanyTracks"));
+const AboutPage              = lazy(() => import("./About"));
 
 function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
@@ -268,6 +269,7 @@ const NAV_TRACK = [
   { id: "plans", label: "Plans" },
   { id: "my-tracks", label: "My Tracks" },
   { id: "review", label: "Review" },
+  { id: "about", label: "About" },
 ];
 
 // The four frames + PREP & ASSESS (accordion). Domains nest under the frame, never as peers.
@@ -1090,12 +1092,12 @@ const LLM_LAB_MODULES = [
   "streaming",      // patterns: token streaming implementation
 ];
 
-const VALID_VIEWS = ["home","starthere","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review","company-tracks"];
+const VALID_VIEWS = ["home","starthere","concepts","flows","lab","agents","agentlab","evallab","llmlab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","preplab","groundtruth","progress","profile","plans","qa","paths","retrieval","evaluation","agentshub","production","foundations","leaderboard","my-tracks","review","company-tracks","about"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
 const GUEST_ALLOWED_TABS = new Set([
-  "home", "plans", "profile", "progress",
+  "home", "plans", "profile", "progress", "about",
   "foundations", "foundationlab", "promptlab", // Foundations always free
   "groundtruth", // free but limited to 3 pinned posts (enforced in GroundTruth.jsx)
   "preplab",     // free but limited to 1 demo question (enforced in PrepLab.jsx)
@@ -1486,6 +1488,7 @@ export default function App() {
       preplab: "Prep Lab — GenAI Systems Lab",
       "my-tracks": "My Tracks — GenAI Systems Lab",
       review: "Review — GenAI Systems Lab",
+      about: "About — GenAI Systems Lab",
       groundtruth: "Ground Truth — GenAI Systems Lab",
       progress: "Your Progress — GenAI Systems Lab",
       qa: "QA Dashboard — GenAI Systems Lab",
@@ -2000,6 +2003,11 @@ export default function App() {
           {topView === "groundtruth" && <GroundTruth onNavigate={navigate} onNavigateTo={navigateTo} initialPostId={gtPostId} onPostOpened={() => setGtPostId(null)} user={user} pathContext={gtPathContext} />}
           {topView === "profile" && <ProfilePage onNavigate={navigateTo} user={user} onSignOut={() => setUser(null)} />}
           {topView === "plans"   && <PlansPage   onNavigate={navigate} user={user} />}
+          {topView === "about"   && (
+            <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
+              <AboutPage onNavigate={navigate} />
+            </Suspense>
+          )}
           {topView === "my-tracks" && (
             <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
               <MyTracksPage onNavigate={navigate} />

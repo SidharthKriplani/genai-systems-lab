@@ -993,3 +993,5 @@ None duplicate GSL's existing gyms (language-models, retrieval, ai-agents, evalu
 - esbuild parse of `src/Concepts.jsx` (jsx loader) → **OK**.
 - esbuild **bundle** of `foundationsRunnerData.js` (must resolve the 4 new `./tracks/*` imports) → **BUNDLE OK** (673kb).
 - Runtime check on the bundled RUNNER_DATA: all 20 new keys present, each with `scenario`+`explanation[]`+`takeaway`, all carrying the "In development" marker; total RUNNER_DATA keys 89. All 20 MODULES ids present exactly once; all 4 gyms present; brace diff 0 on every new file.
+
+- 2026-07-03: Added About page (`src/About.jsx`, dark theme) — what GSL is, who it's for, the KNOW/DO/BUILD/JUDGE + PREP frames, challenge domains, how to start, WhatsApp community link, and BreakLabs siblings. Wired additively into `NAV_TRACK`, `VALID_VIEWS`, `GUEST_ALLOWED_TABS`, `TAB_TITLES`, the `about` route branch, and `nav.js` ALL_TABS (id `about`, hash `#about`).

@@ -11,6 +11,7 @@ export const ALL_TABS = [
   { id: "profile",     label: "Profile",     group: "TRACK",      audience: "Your identity + saved items" },
   { id: "plans",       label: "Plans",       group: "TRACK",      audience: "Structured learning tracks" },
   { id: "review",      label: "Review",      group: "TRACK",      audience: "Spaced-rep over what you've mastered" },
+  { id: "about",       label: "About",       group: "TRACK",      audience: "What GSL is + community" },
   { id: "leaderboard", label: "Leaderboard", group: "EXTRAS",     audience: "Global rankings by score" },
   // Primary nav — challenge areas
   { id: "retrieval",   label: "Retrieval",   group: "CHALLENGES", audience: "RAG · context · hallucination" },
