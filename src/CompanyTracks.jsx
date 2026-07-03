@@ -3,9 +3,6 @@ import { CompanyLogo } from "./CompanyLogo.jsx";
 import {
   COMPANIES, ROLES, LEVELS, getCompanyTrackItems, companyHasTrack,
 } from "./data/companyTracks.js";
-// R1 + R8 (2026-07-03): Interview Signal (intel) and Questions-by-Company (archetype slice)
-// now render INSIDE Company Tracks — the standalone PrepLab modes are gone. Not interlinks.
-import { InterviewIntelMode, CompanyPrepMode } from "./PrepLab.jsx";
 
 // Company Tracks — curated, company × role × level prep paths for AI-engineering
 // roles. Pick a company, a role, a level → get an ordered curriculum that
@@ -50,7 +47,6 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
   const [role, setRole] = useState(ROLES[0]);
   const [level, setLevel] = useState(LEVELS[1]); // default Senior
   const [q, setQ] = useState("");
-  const [view, setView] = useState("track"); // "track" | "questions" | "intel"
 
   const shown = COMPANIES.filter(c => c.toLowerCase().includes(q.toLowerCase()));
   const items = getCompanyTrackItems(company, role, level);
@@ -111,55 +107,8 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
           Foundations track, Ground Truth post, lab, or PrepLab drill you need, in order.
         </p>
 
-        {view === "questions" ? (
-          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-            <CompanyPrepMode onExit={() => setView("track")} onNavigate={onNavigate} />
-          </div>
-        ) : view === "intel" ? (
-          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-            <InterviewIntelMode onExit={() => setView("track")} />
-          </div>
-        ) : (<>
-        {/* R1 + R8 + R2 (2026-07-03): Questions-by-Company and Interview Signal now render INLINE
-            here (in-page views, not link-outs). The Spoken-scenarios interlink was removed. */}
-        <div className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--text-muted, #71717a)" }}>
-          Everything for this company
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-6">
-          {[
-            {
-              key: "questions",
-              title: "Questions",
-              desc: "Archetype-weighted slice of the Question Bank.",
-              accent: "#22c55e",
-              onClick: () => setView("questions"),
-            },
-            {
-              key: "intel",
-              title: "Interview intel",
-              desc: "Real loop patterns — what's actually tested.",
-              accent: "#818cf8",
-              onClick: () => setView("intel"),
-            },
-          ].map(t => (
-            <button key={t.key} onClick={t.onClick}
-              className="text-left group"
-              style={{
-                padding: "12px 14px", borderRadius: 10, cursor: "pointer",
-                background: "var(--surface)", border: "1px solid var(--border)",
-                transition: "border-color 0.12s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent + "88"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[13px] font-bold" style={{ color: "var(--text, #e4e4e7)" }}>{t.title}</span>
-                <span style={{ color: t.accent }}>→</span>
-              </div>
-              <div className="text-[11.5px] leading-snug" style={{ color: "var(--text-muted, #a1a1aa)" }}>{t.desc}</div>
-            </button>
-          ))}
-        </div>
-
+        {/* R1/R8 (2026-07-03, revised): Interview Signal + Questions-by-Company DELETED — no clean
+            native integration, so per instruction both components were removed rather than embedded. */}
         <div className="text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-muted, #71717a)" }}>Role</div>
         <div className="flex gap-2 flex-wrap mb-4">
           {ROLES.map(r => <button key={r} style={chip(r === role, "#8b5cf6")} onClick={() => setRole(r)}>{r}</button>)}
@@ -213,7 +162,6 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
             ))}
           </ol>
         )}
-        </>)}
       </div>
     </div>
   );
