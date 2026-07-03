@@ -22,6 +22,11 @@
 //
 // DATA-FILE SYNTAX: single quotes only, no backticks.
 
+// Researched, sourced company interview profiles (how each company actually interviews).
+import { CP_A } from './companyProfiles-a.js';
+import { CP_B } from './companyProfiles-b.js';
+export const COMPANY_PROFILES = { ...CP_A, ...CP_B };
+
 export const COMPANIES = [
   'Google', 'Meta', 'Amazon', 'Microsoft', 'Nvidia', 'Netflix', 'Uber',
   'LinkedIn', 'Adobe', 'Salesforce', 'Databricks', 'Anthropic',

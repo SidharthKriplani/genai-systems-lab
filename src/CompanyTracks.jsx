@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { CompanyLogo } from "./CompanyLogo.jsx";
 import {
-  COMPANIES, ROLES, LEVELS, getCompanyTrackItems, companyHasTrack,
+  COMPANIES, ROLES, LEVELS, getCompanyTrackItems, companyHasTrack, COMPANY_PROFILES,
 } from "./data/companyTracks.js";
 import { PREP_QUESTIONS, questionTier, TIER_META } from "./data/preplabQuestions";
 
@@ -67,6 +67,7 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
 
   const shown = COMPANIES.filter(c => c.toLowerCase().includes(q.toLowerCase()));
   const items = getCompanyTrackItems(company, role, level);
+  const profile = COMPANY_PROFILES[company];
   const reportedQs = useMemo(() => questionsForCompany(company), [company]);
 
   const chip = (active, accent) => ({
@@ -124,6 +125,62 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
           Curated prep for {company} — pick a role and seniority. Each item opens the exact
           Foundations track, Ground Truth post, lab, or PrepLab drill you need, in order.
         </p>
+
+        {/* Researched interview profile — how this company actually interviews (sourced). */}
+        {profile && (
+          <div className="rounded-xl mb-6" style={{ border: "1px solid var(--border)", background: "var(--surface)", padding: "16px 18px" }}>
+            <div className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "#a5b4fc" }}>
+              How {company} interviews
+            </div>
+            <p className="text-[13px] mb-3" style={{ color: "var(--text, #e4e4e7)", lineHeight: 1.6 }}>{profile.overview}</p>
+
+            <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted, #71717a)" }}>The loop</div>
+                <ol className="flex flex-col gap-1.5 list-none p-0 m-0">
+                  {profile.process.map((r, i) => (
+                    <li key={i} className="flex gap-2 text-[12.5px]" style={{ color: "var(--text-muted, #a1a1aa)", lineHeight: 1.45 }}>
+                      <span className="font-mono shrink-0" style={{ color: "#71717a" }}>{i + 1}.</span>
+                      <span><span style={{ color: "var(--text, #e4e4e7)", fontWeight: 600 }}>{r.round}</span> — {r.detail}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted, #71717a)" }}>What they weight</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {profile.emphasis.map((e, i) => (
+                      <span key={i} className="text-[11px] px-2 py-0.5 rounded" style={{ background: "rgba(139,92,246,0.14)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>{e}</span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted, #71717a)" }}>Focus your prep</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {profile.focusAreas.map((f, i) => (
+                      <span key={i} className="text-[11px] px-2 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>{f}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {profile.prep && (
+              <p className="text-[12.5px] mt-3 pt-3" style={{ color: "var(--text-muted, #a1a1aa)", lineHeight: 1.55, borderTop: "1px solid var(--border)" }}>
+                <span style={{ color: "#86efac", fontWeight: 700 }}>Prep angle: </span>{profile.prep}
+              </p>
+            )}
+            {profile.sources?.length > 0 && (
+              <div className="text-[10.5px] mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5" style={{ color: "var(--text-muted, #71717a)" }}>
+                <span>Based on public reports:</span>
+                {profile.sources.map((s, i) => (
+                  <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: "#818cf8", textDecoration: "underline" }}>{s.title}</a>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* R1/R8 (2026-07-03, revised): Interview Signal + Questions-by-Company DELETED — no clean
             native integration, so per instruction both components were removed rather than embedded. */}
