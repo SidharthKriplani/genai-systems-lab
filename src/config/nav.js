@@ -41,7 +41,6 @@ export const ALL_TABS = [
   { id: "aipm",        label: "AI Product Judgment", group: "LEGACY", audience: "AI PMs + engineers moving into product — 3 judgment modes (re-homed to Practice, GSL fix #5)" },
   { id: "flows",       label: "Diagrams",       group: "LEGACY", audience: "All levels" },
   { id: "agents",      label: "Agents (legacy)",group: "LEGACY", audience: "Engineers" },
-  { id: "playground",  label: "Playground",     group: "LEGACY", audience: "All levels" },
   { id: "explore",     label: "Explore",        group: "LEGACY", audience: "Engineers" },
   { id: "systems",     label: "Systems",        group: "LEGACY", audience: "Engineers · PMs" },
   { id: "paths",       label: "Paths",          group: "LEGACY", audience: "All levels" },

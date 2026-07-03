@@ -25,7 +25,7 @@ const SystemsApp     = lazy(() => import("./Systems"));
 const FluencyApp     = lazy(() => import("./Fluency"));
 const FlowsApp       = lazy(() => import("./Flows"));
 const AIPMApp        = lazy(() => import("./AIPM"));
-const PlaygroundApp  = lazy(() => import("./Playground"));
+// Playground surface retired — its labs now live as Foundations modules (Concepts gyms).
 const CareerApp      = lazy(() => import("./Career"));
 const CodeWalkthroughApp = lazy(() => import("./CodeWalkthrough"));
 const ExploreApp     = lazy(() => import("./Explore"));
@@ -304,8 +304,9 @@ const NAV_SECTIONS = [
     // of those domains is now reached ONLY through Foundations (the Concepts gyms). The rich Agent
     // Lab / Eval Lab / LLM Lab content is rendered INSIDE its gym via the gym's "Lab" tab; the 4
     // Domain Hubs are deleted (routes + render). Prompt Engineering is the `prompt-engineering` gym.
-    { id: "__learn_more", label: "Sandboxes & drills", header: true },
-    { id: "playground", label: "Playground" },
+    // Playground retired 2026-07-03: its 7 unique labs are now individual Foundations
+    // modules (prompt-engineering / evaluation / ai-safety / production gyms); the 7
+    // duplicate sandboxes were dropped (each had a richer canonical module already).
     { id: "__code", label: "Code", header: true },  // 2026-07-03: was "Sister labs" — renamed to "Code" group.
     { id: "__pl", label: "Python · DSA", href: SIBLING_LABS.pl },
     { id: "__pal", label: "SQL", href: SIBLING_LABS.pal },
@@ -346,7 +347,7 @@ const TAB_FRAME = (() => {
 })();
 
 // Sprint 92: dead routes that redirect to Foundations (KNOW). #systems kept alive — still used as deep-reference target.
-const HASH_REDIRECTS = { paths: "concepts", promptlab: "playground", consult: "home", warroom: "home" };
+const HASH_REDIRECTS = { paths: "concepts", promptlab: "concepts", playground: "concepts", consult: "home", warroom: "home" };
 
 // 2026-07-03 MIGRATION back-compat: the standalone Agent Lab / Eval Lab / LLM Lab and the 4
 // Domain Hubs were DELETED as top-level destinations. Their content now lives INSIDE the
@@ -962,7 +963,6 @@ const ALL_MODULES_INDEX = [
   { label: "Flows",        tag: "TAB", tab: "flows",       moduleId: null },
   { label: "RAG Lab",      tag: "TAB", tab: "lab",         moduleId: null },
   { label: "Agents",       tag: "TAB", tab: "agents",      moduleId: null },
-  { label: "Playground",   tag: "TAB", tab: "playground",  moduleId: null },
   { label: "Fluency",      tag: "TAB", tab: "fluency",     moduleId: null },
   { label: "AI Product Judgment", tag: "TAB", tab: "aipm",  moduleId: null },
   { label: "Career",       tag: "TAB", tab: "career",      moduleId: null },
@@ -980,7 +980,7 @@ const ALL_MODULES_INDEX = [
 
 const TAB_COLORS = {
   systems: "#3b82f6", explore: "#8b5cf6", agents: "#6366f1", concepts: "#6366f1",
-  flows: "#6366f1", lab: "#f59e0b", playground: "#f59e0b",
+  flows: "#6366f1", lab: "#f59e0b",
   fluency: "#22c55e", aipm: "#22c55e", career: "#22c55e", home: "#71717a",
   groundtruth: "#a78bfa",
 };
@@ -1106,7 +1106,7 @@ function FeedbackFallbackModal({ onClose }) {
 // 2026-07-03 MIGRATION: agents/agentlab/evallab/llmlab and retrieval/evaluation/agentshub/
 // production are NO LONGER standalone views (removed from VALID_VIEWS). Their old hashes are
 // caught by HASH_GYM_REDIRECTS and redirected into #concepts (opening the destination gym).
-const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","promptlab","foundationlab","systems","playground","explore","fluency","aipm","career","codelabs","preplab","groundtruth","progress","profile","plans","qa","paths","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
+const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","promptlab","foundationlab","systems","explore","fluency","aipm","career","codelabs","preplab","groundtruth","progress","profile","plans","qa","paths","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -1389,7 +1389,7 @@ export default function App() {
       localStorage.setItem("genai_streak", JSON.stringify({ count, lastVisit: today }));
     } catch {}
   }, []);
-  const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","playground","concepts","flows"];
+  const SHORTCUT_TABS = ["home","lab","agentlab","evallab","llmlab","preplab","career","aipm","groundtruth","systems","agents","explore","concepts","flows"];
 
   function navigateTo({ tab, moduleId, postId, topic, mode, diff, gymId, pathContext }) {
     if (moduleId) {
@@ -1513,7 +1513,6 @@ export default function App() {
       promptlab: "Prompt Lab — GenAI Systems Lab",
       foundationlab: "Foundation Models Lab — GenAI Systems Lab",
       systems: "Systems Lab — GenAI Systems Lab",
-      playground: "Playground — GenAI Systems Lab",
       explore: "Explore — GenAI Systems Lab",
       fluency: "Fluency — GenAI Systems Lab",
       aipm: "AI Product Judgment — GenAI Systems Lab",
@@ -1969,13 +1968,12 @@ export default function App() {
               and LLM Lab (llmlab) top-level renders were DELETED. Their content now lives INSIDE
               the Foundations gyms (ai-agents / evaluation / production) via each gym's "Lab" tab
               in Concepts.jsx. Old hashes redirect into Concepts via HASH_GYM_REDIRECTS. */}
-          {/* promptlab redirects to playground via HASH_REDIRECTS */}
+          {/* promptlab + playground redirect to Concepts via HASH_REDIRECTS (Playground retired) */}
           {topView === "foundationlab" && <FoundationModelsLabApp onNavigate={navigate} />}
 
           {topView === "systems"    && <SystemsApp initialModule={systemsModule} onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "fluency"    && <FluencyApp />}
           {topView === "aipm"       && <AIPMApp />}
-          {topView === "playground" && <PlaygroundApp onModuleVisit={trackModuleVisit} onNavigate={navigateTo} />}
           {topView === "explore"    && <ExploreApp initialModule={exploreModule} onModuleVisit={trackModuleVisit} onNavigate={(tab, postId) => { if (postId) setGtPostId(postId); navigate(tab); }} />}
           {topView === "career"     && <CareerApp />}
           {topView === "codelabs"   && <CodeWalkthroughApp onNavigate={navigate} />}

@@ -26,6 +26,9 @@ import { RUNNER_AGENT_SCALE } from "./agents/agent-scale";
 import { RUNNER_AGENT_SIM } from "./agents/agent-sim";
 import { RUNNER_AGENT_ECO } from "./agents/agent-eco";
 
+// ── Playground labs → distributed into Foundations modules (./playground/*.js) ──
+import { RUNNER_PLAYGROUND } from "./playground/playground-labs";
+
 export const RUNNER_DATA = {
 
   // ── New foundations modules (authored in ./foundations/*.js) ─────────────────
@@ -46,6 +49,9 @@ export const RUNNER_DATA = {
   ...RUNNER_AGENT_SCALE,
   ...RUNNER_AGENT_SIM,
   ...RUNNER_AGENT_ECO,
+
+  // ── Playground labs (distributed into Foundations modules) ───────────────────
+  ...RUNNER_PLAYGROUND,
 
   // ── Language Models track ────────────────────────────────────────────────────
 

@@ -21,6 +21,12 @@ import {
   FrameworkLandscape, MCPDeepDive, AgenticReliability, ComputerUseAgents,
   LongRunningWorkflows, A2AProtocol, AgentConfigLab,
 } from "./Agents";
+// Playground labs → distributed into Foundations modules (each rendered through the
+// uniform module shell, not the old monolithic Playground surface).
+import {
+  PromptInjectionPlayground, SpotHallucination, BiasDetector, ContextTetris,
+  PromptLibrary, StreamingLab, FailureSimulator,
+} from "./Playground";
 const SystemsApp   = lazy(() => import("./Systems"));      // evaluation + production gyms → Lab tab
 const LaunchChecklist = lazy(() => import("./AIPM").then(m => ({ default: m.LaunchChecklist }))); // salvaged from deleted ProductionHub → production gym
 
@@ -10085,6 +10091,15 @@ export const MODULES = [
   { id: "agent-long-running",       label: "Long-Running Workflows",  tag: "AGENTS", level: "advanced",     title: "Long-Running Workflows",         subtitle: "Durable, resumable agent workflows that outlive a request.",                  fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: LongRunningWorkflows },
   { id: "agent-a2a",                label: "A2A Protocol",            tag: "AGENTS", level: "intermediate", title: "A2A Protocol",                   subtitle: "How agents talk to other agents — the agent-to-agent standard.",              fidelity: { tier: "conceptual", note: "Interactive walkthrough — see explanation for precise details." }, component: A2AProtocol },
   { id: "agent-config-lab",         label: "Agent Config Lab",        tag: "AGENTS", level: "intermediate", title: "Agent Config Lab",               subtitle: "Tune an agent's config and watch the outcome shift.",                         fidelity: { tier: "conceptual", note: "Interactive lab — see explanation for precise details." }, component: AgentConfigLab },
+
+  // ── Playground labs → distributed into Foundations modules (uniform module shell) ──
+  { id: "injection-lab",       label: "Prompt Injection Lab",   tag: "SECURITY", level: "intermediate", title: "Prompt Injection & Jailbreaks",  subtitle: "Why LLMs can't tell instructions from data — and the two-layer defense.",     fidelity: { tier: "conceptual", note: "Interactive attack sandbox — see explanation for precise details." }, component: PromptInjectionPlayground },
+  { id: "prompt-library",      label: "Prompt Library",         tag: "PROMPT",   level: "beginner",     title: "Production Prompt Library",      subtitle: "Reusable, robust prompt patterns and how to adapt them safely.",               fidelity: { tier: "conceptual", note: "Interactive library — see explanation for precise details." }, component: PromptLibrary },
+  { id: "hallucination-lab",   label: "Spot the Hallucination", tag: "EVAL",     level: "intermediate", title: "Spot the Hallucination",         subtitle: "Detect fabrication — parametric vs grounded claims, and the tells.",           fidelity: { tier: "conceptual", note: "Interactive detection drill — see explanation for precise details." }, component: SpotHallucination },
+  { id: "bias-lab",            label: "Bias Detector",          tag: "SAFETY",   level: "intermediate", title: "Bias & Fairness Detector",       subtitle: "Where bias enters LLM outputs, how to detect it, and how to mitigate.",        fidelity: { tier: "conceptual", note: "Interactive detector — see explanation for precise details." }, component: BiasDetector },
+  { id: "context-budget-lab",  label: "Context Budget",         tag: "COST",     level: "intermediate", title: "The Context Window Budget",      subtitle: "What competes for tokens — and the cost of overflow.",                         fidelity: { tier: "conceptual", note: "Interactive budgeting sandbox — see explanation for precise details." }, component: ContextTetris },
+  { id: "streaming-lab",       label: "Streaming Tokens",       tag: "LATENCY",  level: "intermediate", title: "Token Streaming",                subtitle: "Prefill vs decode, TTFT, and why streaming cuts perceived latency.",           fidelity: { tier: "conceptual", note: "Interactive streaming lab — see explanation for precise details." }, component: StreamingLab },
+  { id: "failure-sim-lab",     label: "Failure Simulator",      tag: "RESILIENCE", level: "advanced",   title: "Production Failure Modes",       subtitle: "Timeouts, rate limits, bad output, cascades — and the defenses.",              fidelity: { tier: "conceptual", note: "Interactive failure sandbox — see explanation for precise details." }, component: FailureSimulator },
 ];
 
 const LEVEL_STYLE = {
@@ -11960,7 +11975,7 @@ export const GYMS = [
     label: "Evaluation",
     desc: "LLM-as-judge design, eval suite construction, RAG-specific metrics, and debugging failing evals.",
     color: "#22c55e",
-    moduleIds: ["eval-loop", "eval-design", "debug", "llm-as-judge", "rag-eval"],
+    moduleIds: ["eval-loop", "eval-design", "debug", "llm-as-judge", "rag-eval", "hallucination-lab"],
     labId: "evallab",
     labLabel: "Eval Lab",
   },
@@ -11969,7 +11984,7 @@ export const GYMS = [
     label: "Production Systems",
     desc: "Cost, latency, observability, Flash Attention, prompt regression, quality drift, and the managed vs self-hosted decision.",
     color: "#8b5cf6",
-    moduleIds: ["cost-latency-concepts", "flashattn", "latency-planner", "observability-concepts", "prompt-regression-signals", "quality-drift", "cost-attribution", "managed-vs-selfhosted", "enterprise-ai-cost-model"],
+    moduleIds: ["cost-latency-concepts", "flashattn", "latency-planner", "observability-concepts", "prompt-regression-signals", "quality-drift", "cost-attribution", "managed-vs-selfhosted", "enterprise-ai-cost-model", "context-budget-lab", "streaming-lab", "failure-sim-lab"],
     labId: "systems",
     labLabel: "Systems Lab",
   },
@@ -11987,9 +12002,7 @@ export const GYMS = [
     label: "Prompt Engineering",
     desc: "Zero-shot, few-shot, chain-of-thought, system prompt design, structured outputs, and injection defense.",
     color: "#06b6d4",
-    moduleIds: ["zero-shot", "few-shot", "chain-of-thought", "system-prompts", "structured-outputs", "prompt-security"],
-    labId: "playground",
-    labLabel: "Playground",
+    moduleIds: ["zero-shot", "few-shot", "chain-of-thought", "system-prompts", "structured-outputs", "prompt-security", "injection-lab", "prompt-library"],
   },
   {
     id: "vector-infrastructure",
@@ -12014,7 +12027,7 @@ export const GYMS = [
     label: "AI Safety & Alignment",
     desc: "RLHF/DPO/constitutional AI, red-teaming methodology, jailbreak taxonomy, and safety measurement.",
     color: "#ef4444",
-    moduleIds: ["alignment-techniques", "red-teaming", "jailbreak-taxonomy", "safety-measurement"],
+    moduleIds: ["alignment-techniques", "red-teaming", "jailbreak-taxonomy", "safety-measurement", "bias-lab"],
     labId: "systems",
     labLabel: "Systems Lab",
   },

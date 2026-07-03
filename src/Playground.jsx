@@ -214,7 +214,7 @@ const BIAS_ROUNDS = [
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 
-function PromptInjectionPlayground() {
+export function PromptInjectionPlayground() {
   const [sIdx, setSIdx] = useState(0);
   const [attackId, setAttackId] = useState(null);
   const [animStep, setAnimStep] = useState(0);
@@ -473,7 +473,7 @@ function RerankerSim() {
   );
 }
 
-function SpotHallucination() {
+export function SpotHallucination() {
   const [idx, setIdx] = useState(0);
   const [sel, setSel] = useState(null);
   const [revealed, setRevealed] = useState(false);
@@ -568,7 +568,7 @@ function SpotHallucination() {
   );
 }
 
-function ContextTetris() {
+export function ContextTetris() {
   const pieces = [
     { id: "sys",   label: "System Prompt",    tokens: 512,  color: "#6366f1", required: true,  desc: "Instructions for the LLM — always required" },
     { id: "hist1", label: "Chat History (1h)", tokens: 1024, color: "#8b5cf6", required: false, desc: "Recent conversation turns" },
@@ -641,7 +641,7 @@ function ContextTetris() {
   );
 }
 
-function BiasDetector() {
+export function BiasDetector() {
   const [idx, setIdx] = useState(0);
   const [sel, setSel] = useState(null);
   const [revealed, setRevealed] = useState(false);
@@ -1589,7 +1589,7 @@ Revised prompt:
 
 const PROMPT_CATEGORIES = ["All", "RAG", "Agents", "Evaluation", "Extraction", "Coding", "Utility"];
 
-function PromptLibrary() {
+export function PromptLibrary() {
   const [search, setSearch]         = useState("");
   const [category, setCategory]     = useState("All");
   const [selected, setSelected]     = useState(null);
@@ -1763,7 +1763,7 @@ const TRANSPORT_MODES = [
   { id: "batch", label: "Batch",     tag: "HTTP",     note: "Wait for full response. No streaming. Highest TTFT." },
 ];
 
-function StreamingLab() {
+export function StreamingLab() {
   const [mode, setMode] = useState("sse");
   const [ttft, setTtft] = useState(400);
   const [tokenRate, setTokenRate] = useState(8);
@@ -2096,7 +2096,7 @@ const FAIL_STATUS = {
   fail: { label: "Breaks",  color: "#ef4444" },
 };
 
-function FailureSimulator() {
+export function FailureSimulator() {
   const [scenarioId,     setScenarioId]     = useState(null);
   const [selectedConfig, setSelectedConfig] = useState(null);
   const [evaluated,      setEvaluated]      = useState(false);
