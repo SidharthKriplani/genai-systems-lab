@@ -80,6 +80,14 @@ export function addNote(trackId, content) {
   setLastTrackId(trackId)
 }
 
+// Edit an existing plain-text note in place (by item index).
+export function updateNote(trackId, index, content) {
+  save(getTracks().map(t => {
+    if (t.id !== trackId) return t
+    return { ...t, items: t.items.map((it, i) => (i === index && it.type === 'note') ? { ...it, content, updatedAt: Date.now() } : it) }
+  }))
+}
+
 export function removeItem(trackId, index) {
   save(getTracks().map(t => {
     if (t.id !== trackId) return t

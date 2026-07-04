@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   getTracks, createTrack, renameTrack, deleteTrack,
-  addNote, removeItem, reorderItems, moveItem, seedTierTracks,
+  addNote, updateNote, removeItem, reorderItems, moveItem, seedTierTracks,
 } from "./utils/tracks.js";
 import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
 
@@ -184,8 +184,10 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveIte
   );
 }
 
-function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddNote, onRemoveItem, onReorderItems }) {
+function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddNote, onUpdateNote, onRemoveItem, onReorderItems }) {
   const [editingName, setEditingName] = useState(false);
+  const [editNoteIdx, setEditNoteIdx] = useState(null);
+  const [editNoteDraft, setEditNoteDraft] = useState("");
   const [draftName, setDraftName] = useState(track.name);
   const [noteText, setNoteText] = useState("");
   const [dragFrom, setDragFrom] = useState(null);
@@ -269,7 +271,7 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
               {group.entries.map(({ item, idx }) => (
             <div
               key={idx}
-              draggable
+              draggable={editNoteIdx !== idx}
               onDragStart={e => {
                 setDragFrom(idx);
                 e.dataTransfer.setData("application/x-track-item", JSON.stringify({ fromTrackId: track.id, index: idx }));
@@ -305,8 +307,38 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
                 </>
               ) : item.type === "note" ? (
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">Note</div>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{item.content}</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">Note</div>
+                    {editNoteIdx !== idx && (
+                      <button onClick={() => { setEditNoteIdx(idx); setEditNoteDraft(item.content); }}
+                        title="Edit note"
+                        className="text-zinc-600 hover:text-violet-400 text-xs transition-colors"
+                        style={{ background: "none", border: "none", cursor: "pointer" }}>✎ Edit</button>
+                    )}
+                  </div>
+                  {editNoteIdx === idx ? (
+                    <div>
+                      <textarea
+                        value={editNoteDraft}
+                        onChange={e => setEditNoteDraft(e.target.value)}
+                        rows={4}
+                        autoFocus
+                        className="w-full text-sm rounded-lg px-2 py-1.5 outline-none leading-relaxed"
+                        style={{ background: "rgba(39,39,42,0.9)", border: "1px solid #7c3aed", color: "#f4f4f5", resize: "vertical" }}
+                        onKeyDown={e => { if (e.key === "Escape") setEditNoteIdx(null); }}
+                      />
+                      <div className="flex gap-2 mt-1.5">
+                        <button onClick={() => { onUpdateNote(idx, editNoteDraft.trim()); setEditNoteIdx(null); }}
+                          className="px-2.5 py-1 text-xs font-semibold rounded-lg text-white"
+                          style={{ background: "#7c3aed", cursor: "pointer", border: "none" }}>Save</button>
+                        <button onClick={() => setEditNoteIdx(null)}
+                          className="px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200"
+                          style={{ background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">{item.content}</p>
+                  )}
                 </div>
               ) : (
                 <>
@@ -493,6 +525,7 @@ export default function MyTracks({ onNavigate, onNavigateTo }) {
             onBack={() => setSelectedId(null)}
             onRename={name => { renameTrack(selectedTrack.id, name); refresh(); }}
             onAddNote={content => { addNote(selectedTrack.id, content); refresh(); }}
+            onUpdateNote={(idx, content) => { updateNote(selectedTrack.id, idx, content); refresh(); }}
             onRemoveItem={idx => { removeItem(selectedTrack.id, idx); refresh(); }}
             onReorderItems={(from, to) => { reorderItems(selectedTrack.id, from, to); refresh(); }}
           />
