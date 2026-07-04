@@ -12501,7 +12501,7 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
 
 // ─── FOUNDATIONS APP ──────────────────────────────────────────────────────────
 
-export default function ConceptsApp({ onNavigate, initialGym }) {
+export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
   const [active, setActive] = useState(null);
   const [activeGym, setActiveGym] = useState(null);
   const [mastery, setMastery] = useState(() => {
@@ -12513,6 +12513,15 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
   useEffect(() => {
     if (initialGym) setActiveGym(initialGym);
   }, [initialGym]);
+
+  // Deep-link straight to a specific module (e.g. "Study →" from My Tracks) —
+  // resolve its gym from GYMS.moduleIds and open the module runner directly.
+  useEffect(() => {
+    if (!initialModule) return;
+    const gym = GYMS.find(g => g.moduleIds?.includes(initialModule));
+    if (gym) setActiveGym(gym.id);
+    setActive(initialModule);
+  }, [initialModule]);
 
   // Phase 0.3 pilot — one-time, additive migration of legacy Concepts agent mastery ids
   // to their Agent Lab equivalents so progress isn't lost when agent education moves to

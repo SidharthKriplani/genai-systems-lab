@@ -8,6 +8,7 @@ import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
 // moduleId → foundation/gym label, so saved Foundation modules group by their
 // foundation (Language Models, Retrieval, NLP Foundations…) not their raw tag.
 const GYM_BY_MODULE = Object.fromEntries(MODULE_SEARCH_INDEX.map(m => [m.id, m.gymLabel]));
+const GYMID_BY_MODULE = Object.fromEntries(MODULE_SEARCH_INDEX.map(m => [m.id, m.gymId]));
 function conceptGym(item) {
   return (item.type === "concept" && GYM_BY_MODULE[item.itemId]) || null;
 }
@@ -183,7 +184,7 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveIte
   );
 }
 
-function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onReorderItems }) {
+function TrackDetail({ track, onNavigate, onNavigateTo, onRename, onAddNote, onRemoveItem, onReorderItems }) {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(track.name);
   const [noteText, setNoteText] = useState("");
@@ -348,7 +349,9 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                   )}
                   {item.type === "concept" && (
                     <button
-                      onClick={() => onNavigate("concepts")}
+                      onClick={() => (onNavigateTo
+                        ? onNavigateTo({ tab: "concepts", gymId: GYMID_BY_MODULE[item.itemId], moduleId: item.itemId })
+                        : onNavigate("concepts"))}
                       title="Open Concepts"
                       className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
                       style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
@@ -438,7 +441,7 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
   );
 }
 
-export default function MyTracks({ onNavigate }) {
+export default function MyTracks({ onNavigate, onNavigateTo }) {
   const [tracks, setTracks] = useState(() => getTracks());
   const [selectedId, setSelectedId] = useState(null);
 
@@ -482,6 +485,7 @@ export default function MyTracks({ onNavigate }) {
             key={selectedTrack.id}
             track={selectedTrack}
             onNavigate={onNavigate}
+            onNavigateTo={onNavigateTo}
             onRename={name => { renameTrack(selectedTrack.id, name); refresh(); }}
             onAddNote={content => { addNote(selectedTrack.id, content); refresh(); }}
             onRemoveItem={idx => { removeItem(selectedTrack.id, idx); refresh(); }}

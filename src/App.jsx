@@ -1315,6 +1315,7 @@ export default function App() {
     try { return HASH_GYM_REDIRECTS[window.location.hash.replace('#', '').toLowerCase()] || null; }
     catch { return null; }
   });
+  const [conceptsModule, setConceptsModule] = useState(null);
   const [preplabInitialMode, setPreplabInitialMode] = useState(null);
   const [visitedModules, setVisitedModules] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited_modules") || "[]")); }
@@ -1389,6 +1390,7 @@ export default function App() {
     }
     if (postId) setGtPostId(postId);
     if (gymId)  setConceptsGym(gymId);
+    if (tab === "concepts") setConceptsModule(moduleId || null);
     if (tab === "groundtruth") {
       setGtPathContext(pathContext || null);
     } else {
@@ -1943,7 +1945,7 @@ export default function App() {
             <GateOverlay context="free-account" user={null} />
           ) : (
             <>
-          {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} initialGym={conceptsGym} />}
+          {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} initialGym={conceptsGym} initialModule={conceptsModule} />}
           {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
           {/* 2026-07-03 MIGRATION: the standalone Agent Lab (agents/agentlab), Eval Lab (evallab)
               and LLM Lab (llmlab) top-level renders were DELETED. Their content now lives INSIDE
@@ -1976,7 +1978,7 @@ export default function App() {
           )}
           {topView === "my-tracks" && (
             <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
-              <MyTracksPage onNavigate={navigate} />
+              <MyTracksPage onNavigate={navigate} onNavigateTo={navigateTo} />
             </Suspense>
           )}
           {topView === "review" && (
