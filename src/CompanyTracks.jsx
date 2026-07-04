@@ -14,12 +14,16 @@ const COMPANY_SOURCE_ALIASES = {
   Anthropic: ["anthropic"], Databricks: ["databricks"], Salesforce: ["salesforce", "einstein"],
   Nvidia: ["nvidia"], LinkedIn: ["linkedin"], Adobe: ["adobe"], Netflix: ["netflix"], Uber: ["uber"],
 };
+// Stable difficulty ordering: easy → medium → hard, preserving bank order within a band.
+const DIFF_RANK = { easy: 0, medium: 1, hard: 2 };
 function questionsForCompany(company) {
   const needles = COMPANY_SOURCE_ALIASES[company] || [company.toLowerCase()];
   return PREP_QUESTIONS.filter(qq => {
     const s = (qq.source || "").toLowerCase();
     return s && needles.some(n => s.includes(n));
-  });
+  }).map((qq, i) => ({ qq, i, r: DIFF_RANK[(qq.difficulty || "").toLowerCase()] ?? 1 }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map(x => x.qq);
 }
 
 // Company Tracks — curated, company × role × level prep paths for AI-engineering
@@ -65,6 +69,10 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
   const [role, setRole] = useState(ROLES[0]);
   const [level, setLevel] = useState(LEVELS[1]); // default Senior
   const [q, setQ] = useState("");
+  // Mobile-only: the company rail and the detail pane share the screen. On phones
+  // we show one at a time; picking a company drops into the detail, "← Companies"
+  // returns to the rail. Desktop (≥sm) always shows both, so this is inert there.
+  const [showRail, setShowRail] = useState(false);
 
   const shown = COMPANIES.filter(c => c.toLowerCase().includes(q.toLowerCase()));
   const items = getCompanyTrackItems(company, role, level);
@@ -82,8 +90,8 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
   return (
     <div className="flex" style={{ height: "calc(100vh - 0px)", minHeight: "100vh" }}>
       {/* Company rail */}
-      <div className="shrink-0 overflow-y-auto"
-        style={{ width: 248, borderRight: "1px solid var(--border)", background: "var(--surface)", padding: "1rem 0.6rem" }}>
+      <div className={`${showRail ? "flex" : "hidden sm:flex"} flex-col shrink-0 overflow-y-auto w-full sm:w-[248px]`}
+        style={{ borderRight: "1px solid var(--border)", background: "var(--surface)", padding: "1rem 0.6rem" }}>
         <div className="text-[11px] font-bold uppercase tracking-widest px-1 mb-2" style={{ color: "var(--text-muted, #71717a)" }}>
           Companies
         </div>
@@ -96,7 +104,7 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
           const on = c === company;
           const has = companyHasTrack(c);
           return (
-            <button key={c} onClick={() => setCompany(c)}
+            <button key={c} onClick={() => { setCompany(c); setShowRail(false); }}
               className="w-full text-left flex items-center gap-2 mb-0.5"
               style={{
                 padding: "7px 9px", borderRadius: 8, fontSize: "0.85rem",
@@ -117,7 +125,10 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
       </div>
 
       {/* Detail */}
-      <div className="flex-1 overflow-y-auto min-w-0" style={{ background: "var(--bg)", padding: "1.5rem 2rem" }}>
+      <div className={`${showRail ? "hidden sm:block" : "block"} flex-1 overflow-y-auto min-w-0 p-4 sm:py-6 sm:px-8`} style={{ background: "var(--bg)" }}>
+        <button onClick={() => setShowRail(true)}
+          className="sm:hidden mb-3 text-xs font-medium flex items-center gap-1"
+          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted, #a1a1aa)" }}>← Companies</button>
         <div className="flex items-center gap-3 mb-1">
           <CompanyLogo company={company} size={30} />
           <h1 className="text-2xl font-extrabold" style={{ color: "var(--text, #f4f4f5)" }}>{company}</h1>
@@ -141,7 +152,7 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
             </div>
             <p className="text-[13px] mb-3" style={{ color: "var(--text, #e4e4e7)", lineHeight: 1.6 }}>{profile.overview}</p>
 
-            <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted, #71717a)" }}>The loop</div>
                 <ol className="flex flex-col gap-1.5 list-none p-0 m-0">

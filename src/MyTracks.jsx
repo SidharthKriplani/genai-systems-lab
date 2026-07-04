@@ -96,8 +96,8 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveIte
   }
 
   return (
-    <div className="flex flex-col shrink-0 overflow-y-auto"
-      style={{ width: 240, borderRight: "1px solid rgba(63,63,70,0.5)", padding: "1rem 0.5rem", background: "rgba(9,9,11,0.6)" }}>
+    <div className={`${selectedId ? "hidden sm:flex" : "flex"} flex-col shrink-0 overflow-y-auto w-full sm:w-60`}
+      style={{ borderRight: "1px solid rgba(63,63,70,0.5)", padding: "1rem 0.5rem", background: "rgba(9,9,11,0.6)" }}>
       <div className="flex items-center justify-between px-2 mb-3">
         <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">My Tracks</span>
         <button onClick={() => setCreating(true)} title="New track"
@@ -184,7 +184,7 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveIte
   );
 }
 
-function TrackDetail({ track, onNavigate, onNavigateTo, onRename, onAddNote, onRemoveItem, onReorderItems }) {
+function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddNote, onRemoveItem, onReorderItems }) {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(track.name);
   const [noteText, setNoteText] = useState("");
@@ -215,7 +215,11 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onRename, onAddNote, onR
   }
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ padding: "1.5rem 2rem", minWidth: 0 }}>
+    <div className="flex-1 overflow-y-auto p-4 sm:px-8 sm:py-6" style={{ minWidth: 0 }}>
+      {/* Mobile: back to the track list */}
+      <button onClick={onBack}
+        className="sm:hidden mb-4 text-xs font-medium text-zinc-400 hover:text-white flex items-center gap-1"
+        style={{ background: "none", border: "none", cursor: "pointer" }}>← All tracks</button>
       {/* Track title */}
       <div className="flex items-center gap-2 mb-6">
         {editingName ? (
@@ -479,13 +483,14 @@ export default function MyTracks({ onNavigate, onNavigateTo }) {
         }}
       />
 
-      <div className="flex-1 overflow-hidden flex flex-col" style={{ background: "rgba(9,9,11,0.4)" }}>
+      <div className={`${selectedTrack ? "flex" : "hidden sm:flex"} flex-1 overflow-hidden flex-col`} style={{ background: "rgba(9,9,11,0.4)" }}>
         {selectedTrack ? (
           <TrackDetail
             key={selectedTrack.id}
             track={selectedTrack}
             onNavigate={onNavigate}
             onNavigateTo={onNavigateTo}
+            onBack={() => setSelectedId(null)}
             onRename={name => { renameTrack(selectedTrack.id, name); refresh(); }}
             onAddNote={content => { addNote(selectedTrack.id, content); refresh(); }}
             onRemoveItem={idx => { removeItem(selectedTrack.id, idx); refresh(); }}
