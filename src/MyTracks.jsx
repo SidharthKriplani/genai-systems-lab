@@ -16,6 +16,9 @@ const DIFF_STYLES = {
   easy:   "bg-emerald-950/50 text-emerald-400 border border-emerald-800/40",
   medium: "bg-amber-950/50 text-amber-400 border border-amber-800/40",
   hard:   "bg-red-950/50 text-red-400 border border-red-800/40",
+  beginner:     "bg-emerald-950/50 text-emerald-400 border border-emerald-800/40",
+  intermediate: "bg-amber-950/50 text-amber-400 border border-amber-800/40",
+  advanced:     "bg-red-950/50 text-red-400 border border-red-800/40",
 };
 
 const TYPE_LABELS = {
@@ -29,7 +32,7 @@ function groupItems(items) {
   const groups = [];
   const byKey = {};
   items.forEach((item, idx) => {
-    const key = item.meta?.category || TYPE_LABELS[item.type] || item.type;
+    const key = item.meta?.category || item.meta?.tag || TYPE_LABELS[item.type] || item.type;
     if (!byKey[key]) {
       byKey[key] = { key, entries: [] };
       groups.push(byKey[key]);
@@ -291,11 +294,14 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                           : item.type === "concept" ? "Concept"
                           : item.type}
                       </span>
-                      {item.meta?.difficulty && (
-                        <DiffBadge difficulty={item.meta.difficulty.toLowerCase()} />
+                      {(item.meta?.difficulty || item.meta?.level) && (
+                        <DiffBadge difficulty={(item.meta.difficulty || item.meta.level).toLowerCase()} />
                       )}
-                      {item.meta?.category && (
-                        <span className="text-[10px] font-mono text-zinc-500">{item.meta.category}</span>
+                      {(item.meta?.category || item.meta?.tag) && (
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+                          style={{ background: "rgba(99,102,241,0.14)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
+                          {item.meta.category || item.meta.tag}
+                        </span>
                       )}
                     </div>
                     <p className="text-sm text-zinc-200 leading-snug font-medium">{item.label}</p>
