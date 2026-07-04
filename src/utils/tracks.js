@@ -77,6 +77,22 @@ export function reorderItems(trackId, fromIndex, toIndex) {
   }))
 }
 
+// Remove the first item in a track matching `pred` (untick/remove from the popover).
+export function removeItemRef(trackId, pred) {
+  const t = getTracks().find(x => x.id === trackId)
+  if (!t) return
+  const idx = t.items.findIndex(pred)
+  if (idx >= 0) removeItem(trackId, idx)
+}
+
+export function removeGenericFromTrack(trackId, type, itemId) {
+  removeItemRef(trackId, i => i.type === type && String(i.itemId) === String(itemId))
+}
+
+export function removeQuestionFromTrack(trackId, questionId) {
+  removeItemRef(trackId, i => i.type === 'preplab' && i.questionId === questionId)
+}
+
 // Returns array of track IDs containing this question
 export function getTracksForQuestion(questionId) {
   return getTracks()

@@ -53,6 +53,7 @@ const MePage                 = lazy(() => import("./Me"));
 // R12 (2026-07-03): global search sources — Foundations gyms + questions + companies + cheatsheet.
 import { PREP_QUESTIONS, questionTier } from "./data/preplabQuestions";
 import { COMPANIES as CT_COMPANIES } from "./data/companyTracks";
+import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
 
 function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
@@ -1009,6 +1010,7 @@ const SEARCH_TABS = [
 const GLOBAL_SEARCH_INDEX = [
   ...SEARCH_TABS.map(([label, tab]) => ({ kind: "page", label, tag: "PAGE", route: { tab } })),
   ...SEARCH_GYMS.map(([gymId, label]) => ({ kind: "gym", label, tag: "FOUNDATIONS", route: { tab: "concepts", gymId } })),
+  ...MODULE_SEARCH_INDEX.map(m => ({ kind: "module", label: m.title, tag: (m.gymLabel || "MODULE").toUpperCase(), route: { tab: "concepts", gymId: m.gymId, moduleId: m.id } })),
   ...CT_COMPANIES.map(c => ({ kind: "company", label: c, tag: "COMPANY", route: { tab: "company-tracks" } })),
   { kind: "cheatsheet", label: "Cheatsheet — 2hr / 1day / 3day / 1week plans", tag: "CHEATSHEET", route: { tab: "preplab", mode: "sprint" } },
   ...PREP_QUESTIONS.map(qq => ({
@@ -1016,7 +1018,7 @@ const GLOBAL_SEARCH_INDEX = [
     route: { tab: "preplab", mode: "browse" },
   })),
 ];
-const KIND_ACCENT = { page: "#8b5cf6", gym: "#6366f1", company: "#22c55e", cheatsheet: "#f59e0b", question: "#38bdf8" };
+const KIND_ACCENT = { page: "#8b5cf6", gym: "#6366f1", module: "#818cf8", company: "#22c55e", cheatsheet: "#f59e0b", question: "#38bdf8" };
 
 function SearchModal({ onClose, onSelect }) {
   const [query, setQuery] = useState("");

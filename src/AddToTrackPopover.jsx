@@ -4,6 +4,7 @@ import {
   getTracks, createTrack,
   addQuestion, getTracksForQuestion,
   addItem, getTracksForItem,
+  removeGenericFromTrack, removeQuestionFromTrack,
   getQuickAdd, setQuickAdd, getLastTrack, quickAddItem,
 } from "./utils/tracks.js";
 
@@ -68,12 +69,13 @@ export function AddToTrackPopover({
   }
 
   function handleToggle(trackId) {
-    if (!inTracks.includes(trackId)) {
-      if (isGeneric) {
-        addItem(trackId, itemType, itemId, label || "", itemMeta || {});
-      } else {
-        addQuestion(trackId, questionId, title, topic, difficulty);
-      }
+    if (inTracks.includes(trackId)) {
+      if (isGeneric) removeGenericFromTrack(trackId, itemType, itemId);
+      else removeQuestionFromTrack(trackId, questionId);
+    } else if (isGeneric) {
+      addItem(trackId, itemType, itemId, label || "", itemMeta || {});
+    } else {
+      addQuestion(trackId, questionId, title, topic, difficulty);
     }
     refresh();
   }
@@ -124,14 +126,15 @@ export function AddToTrackPopover({
           <button
             key={t.id}
             onClick={() => handleToggle(t.id)}
+            title={added ? "In this track — click to remove" : "Add to this track"}
             style={{
               display: "flex", alignItems: "center", gap: "0.55rem",
               width: "100%", textAlign: "left", background: "none", border: "none",
-              cursor: added ? "default" : "pointer", padding: "0.45rem 0.85rem",
+              cursor: "pointer", padding: "0.45rem 0.85rem",
               color: added ? "#a78bfa" : "#d4d4d8", fontWeight: added ? 600 : 400,
               fontSize: "0.83rem", transition: "background 0.12s",
             }}
-            onMouseEnter={e => { if (!added) e.currentTarget.style.background = "rgba(63,63,70,0.4)"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(63,63,70,0.4)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
           >
             <span style={{
