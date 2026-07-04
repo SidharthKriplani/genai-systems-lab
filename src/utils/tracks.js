@@ -4,6 +4,9 @@
 // PrepLab item: { type: 'preplab', questionId, title, topic, difficulty, addedAt }
 // Note item:    { type: 'note', content, addedAt }
 
+import { MODULE_SEARCH_INDEX } from '../data/moduleSearchIndex.js'
+import { tierOf } from '../data/moduleTiers.js'
+
 const KEY = 'gsl-tracks-v1'
 const LAST_KEY = 'gsl-tracks-last-v1'      // id of the most-recently-added-to track
 const QUICK_KEY = 'gsl-tracks-quickadd-v1' // '1' = skip the picker, add straight to last track
@@ -34,6 +37,23 @@ export function createTrack(name) {
 
 export function renameTrack(id, name) {
   save(getTracks().map(t => t.id === id ? { ...t, name } : t))
+}
+
+// One-click: (re)build the S / A / B tier tracks from every Foundation module,
+// tagged by interview frequency (moduleTiers.js). Rebuilds cleanly on re-run.
+// Returns [{ name, count }] for a confirmation message.
+export function seedTierTracks() {
+  const names = { S: 'S Tier', A: 'A Tier', B: 'B Tier' }
+  const now = Date.now()
+  const buckets = { S: [], A: [], B: [] }
+  for (const m of MODULE_SEARCH_INDEX) {
+    const t = tierOf(m.id)
+    buckets[t].push({ type: 'concept', itemId: m.id, label: m.title, meta: { tier: t, category: m.gymLabel }, addedAt: now })
+  }
+  const kept = getTracks().filter(t => !['S Tier', 'A Tier', 'B Tier'].includes(t.name))
+  const tierTracks = ['S', 'A', 'B'].map(t => ({ id: uid(), name: names[t], createdAt: now, items: buckets[t] }))
+  save([...kept, ...tierTracks])
+  return tierTracks.map(t => ({ name: t.name, count: t.items.length }))
 }
 
 export function deleteTrack(id) {

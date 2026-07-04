@@ -5,6 +5,7 @@ import { GRADIENT_CONTENT } from "./data/gradientContent";
 import { EmbeddingExplorer, AttentionViz3D, LatencyPlanner, DiffusionViz3D, CosineSimilarityExplorer } from "./Explore";  // borrowed from de-listed Explore (Wave 3 — all viz preserved)
 import { Icon } from './Icon.jsx';
 import FoundationsRunner from "./FoundationsRunner";
+import { tierOf, TIER_STYLE } from "./data/moduleTiers";
 import { RUNNER_DATA } from "./data/foundationsRunnerData";
 import { AddTrackBtn } from "./AddToTrackPopover";
 
@@ -12429,6 +12430,10 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
                   }`}>
                     {m.level === "beginner" ? "BEG" : m.level === "intermediate" ? "INT" : "ADV"}
                   </span>
+                  {(() => { const _t = tierOf(m.id); const _s = TIER_STYLE[_t]; return (
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border" title={_t + " tier — interview frequency"}
+                      style={{ color: _s.color, background: _s.bg, borderColor: _s.border }}>{_s.label}</span>
+                  ); })()}
                   {RUNNER_DATA[m.id]?.interviewWeight === "high" && (
                     <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-600 bg-zinc-800 text-zinc-300">
                       HIGH

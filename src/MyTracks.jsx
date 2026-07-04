@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   getTracks, createTrack, renameTrack, deleteTrack,
-  addNote, removeItem, reorderItems, moveItem,
+  addNote, removeItem, reorderItems, moveItem, seedTierTracks,
 } from "./utils/tracks.js";
 import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
 
@@ -73,7 +73,7 @@ function DiffBadge({ difficulty }) {
   );
 }
 
-function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveItem }) {
+function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveItem, onBuildTiers }) {
   const [hoverId, setHoverId] = useState(null);
   const [dropId, setDropId] = useState(null);
   const [newName, setNewName] = useState("");
@@ -100,6 +100,17 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveIte
         <button onClick={() => setCreating(true)} title="New track"
           style={{ background: "none", border: "none", cursor: "pointer", color: "#8b5cf6", fontSize: "1.1rem", lineHeight: 1, padding: "0 0.2rem" }}>+</button>
       </div>
+
+      {onBuildTiers && (
+        <button
+          onClick={onBuildTiers}
+          title="Create the S / A / B tier tracks from every Foundation module, ranked by interview frequency"
+          className="mx-2 mb-3 text-[11px] font-semibold rounded-lg px-2 py-1.5 transition-colors hover:opacity-90"
+          style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.35)", color: "#fcd34d", cursor: "pointer" }}
+        >
+          Build S / A / B tier tracks
+        </button>
+      )}
 
       {creating && (
         <form onSubmit={handleCreate} className="flex gap-1.5 px-2 mb-2">
@@ -452,6 +463,15 @@ export default function MyTracks({ onNavigate }) {
         onCreate={name => { const t = createTrack(name); refresh(); setSelectedId(t.id); }}
         onDelete={id => { deleteTrack(id); refresh(); if (selectedId === id) setSelectedId(null); }}
         onMoveItem={(fromTrackId, toTrackId, index) => { moveItem(fromTrackId, toTrackId, index); refresh(); }}
+        onBuildTiers={() => {
+          if (!window.confirm("Build the S / A / B tier tracks? This creates (or rebuilds) three tracks — S Tier, A Tier, B Tier — from every Foundation module, ranked by senior-AIE interview frequency.")) return;
+          const res = seedTierTracks();
+          setTracks(getTracks());
+          const sTrack = getTracks().find(t => t.name === "S Tier");
+          if (sTrack) setSelectedId(sTrack.id);
+          const total = res.reduce((n, r) => n + r.count, 0);
+          window.alert(`Done: S (${res.find(r=>r.name==='S Tier')?.count}), A (${res.find(r=>r.name==='A Tier')?.count}), B (${res.find(r=>r.name==='B Tier')?.count}) — ${total} modules across 3 tracks.`);
+        }}
       />
 
       <div className="flex-1 overflow-hidden flex flex-col" style={{ background: "rgba(9,9,11,0.4)" }}>
