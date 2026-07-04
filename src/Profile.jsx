@@ -1,9 +1,19 @@
-// src/Profile.jsx — User profile page (PAL-parity)
-import { useState } from "react";
+// src/Profile.jsx — User profile page. Standardized 5-CARD layout (cross-lab parity).
+// The 5 canonical cards (same set + order in every lab), each filled with GSL's OWN data:
+//   1. Readiness score          — getOverallReadiness() (readiness.js, capped-breadth model)
+//   2. Company target + countdown — gsl-readiness-target {company,date} + COMPANIES/COMPANY_PROFILES
+//   3. Streak + activity        — gsl-streak + gsl-activity-<date> heatmap + recent PrepLab
+//   4. Leaderboard / vs-average — gsl_leaderboard (Supabase) rank + vs-average of total_score
+//   5. Completion by area       — getOverallReadiness().areas (per-domain coverage)
+// Identity / achievements / saved posts / sync / settings are preserved alongside.
+import { useState, useEffect } from "react";
 import { track } from "./analytics";
 import { supabase, signInWithGoogle, signInWithGitHub, signOut, pushProgress, pullProgress } from "./supabase";
 import { POSTS } from "./groundTruthIndex";
 import { Icon } from "./Icon.jsx";
+import { getOverallReadiness } from "./readiness";
+import { computeTotalScore, fetchLeaderboard } from "./leaderboardUtils";
+import { COMPANIES, COMPANY_PROFILES } from "./data/companyTracks.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function initials(name, email) {
@@ -21,18 +31,96 @@ function formatDate(iso) {
   catch { return ""; }
 }
 
+function toDateKey(d) { return d.toISOString().slice(0, 10); }
+
+// Days until an ISO date (yyyy-mm-dd). null if unset/invalid.
+function daysUntil(isoDate) {
+  if (!isoDate) return null;
+  const target = new Date(isoDate + "T00:00:00");
+  if (isNaN(target.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / 86400000);
+}
+
+// Read-only streak (does NOT bump — Home owns the write). Recomputes from the
+// activity heatmap so the profile is a passive view.
+function readStreakInfo() {
+  try {
+    const streak = parseInt(localStorage.getItem("gsl-streak") || "0", 10);
+    let activeDays = 0;
+    for (let i = 0; i < 28; i++) {
+      const key = "gsl-activity-" + toDateKey(new Date(Date.now() - i * 86400000));
+      if (parseInt(localStorage.getItem(key) || "0", 10) > 0) activeDays++;
+    }
+    return { streak, activeDays };
+  } catch { return { streak: 0, activeDays: 0 }; }
+}
+
+const TARGET_KEY = "gsl-readiness-target";
+function readTarget() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(TARGET_KEY) || "null");
+    if (raw && typeof raw === "object") return { company: raw.company || "", date: raw.date || "" };
+  } catch { /* ignore */ }
+  return { company: "", date: "" };
+}
+function writeTarget(next) {
+  try {
+    if (!next.company && !next.date) localStorage.removeItem(TARGET_KEY);
+    else localStorage.setItem(TARGET_KEY, JSON.stringify(next));
+  } catch { /* ignore */ }
+}
+
+// ── Card shell (dark violet theme) ──────────────────────────────────────────────
+function Card({ children, className = "" }) {
+  return (
+    <div className={"rounded-2xl p-5 " + className}
+      style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+      {children}
+    </div>
+  );
+}
+
+function CardLabel({ children }) {
+  return (
+    <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold mb-3">{children}</p>
+  );
+}
+
 // ── Stat Pill ─────────────────────────────────────────────────────────────────
 function StatPill({ label, value, color }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl py-3 px-2"
-      style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
       <span className="text-xl font-black" style={{ color: color || "white" }}>{value}</span>
       <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5 text-center leading-tight">{label}</span>
     </div>
   );
 }
 
-
+// Small company logo (Google favicon service + initial fallback).
+function CompanyLogo({ company, size = 20 }) {
+  const [failed, setFailed] = useState(false);
+  const prof = COMPANY_PROFILES?.[company];
+  const domain = prof?.domain || null;
+  const initial = (String(company || "").trim()[0] || "?").toUpperCase();
+  if (!domain || failed) {
+    return (
+      <span aria-hidden="true" className="inline-flex items-center justify-center shrink-0 font-bold"
+        style={{ width: size, height: size, borderRadius: Math.max(3, Math.round(size * 0.22)),
+          background: "var(--surface)", border: "1px solid var(--border)", color: "#a1a1aa",
+          fontSize: Math.max(9, Math.round(size * 0.5)), lineHeight: 1 }}>
+        {initial}
+      </span>
+    );
+  }
+  return (
+    <img src={"https://www.google.com/s2/favicons?domain=" + domain + "&sz=64"} alt={company}
+      onError={() => setFailed(true)} className="shrink-0 object-contain"
+      style={{ width: size, height: size, borderRadius: Math.max(3, Math.round(size * 0.22)) }} />
+  );
+}
 
 // ── Achievements ──────────────────────────────────────────────────────────────
 const ACHIEVEMENTS = [
@@ -129,13 +217,33 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
     catch { return new Set(); }
   });
 
+  // ── Card 2 — company target state ──
+  const [target, setTarget] = useState(readTarget);
+  function setTargetField(patch) {
+    const next = { ...target, ...patch };
+    setTarget(next);
+    writeTarget(next);
+  }
+
+  // ── Card 4 — leaderboard rank + vs-average ──
+  const [board, setBoard] = useState(null); // { rows, myScore } | null
+  useEffect(() => {
+    let cancelled = false;
+    if (!supabase || !user) return;
+    (async () => {
+      const rows = await fetchLeaderboard(200);
+      if (cancelled) return;
+      setBoard({ rows: rows || [], myScore: computeTotalScore() });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   // ── Data ──────────────────────────────────────────────────────────────────
   const history     = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); } catch { return {}; } })();
   const leaderboard = (() => { try { return JSON.parse(localStorage.getItem("genai_leaderboard") || "[]"); } catch { return []; } })();
   const mastery     = (() => { try { return new Set(JSON.parse(localStorage.getItem("gsl-concepts-mastery") || "[]")); } catch { return new Set(); } })();
-  const streak         = (() => { try { return parseInt(localStorage.getItem("gsl-streak") || "0", 10); } catch { return 0; } })();
-  // Use state-driven bookmarkIds so removeBookmark triggers re-render
-  const bookmarkSet    = bookmarkIds;
+  const { streak, activeDays } = readStreakInfo();
+  const bookmarkSet = bookmarkIds;
 
   const histKeys       = Object.keys(history);
   const totalAnswered  = histKeys.length;
@@ -144,6 +252,9 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
   const ragPassed      = leaderboard.filter(e => e.passed).length;
   const masteredCount  = mastery.size;
   const bookmarksCount = bookmarkSet.size;
+
+  // ── Readiness (Card 1 + Card 5) ─────────────────────────────────────────────
+  const readiness = getOverallReadiness();
 
   // ── Overall level (lightweight — from preplab + lab data only) ──────────────
   const overallLevel = (() => {
@@ -249,12 +360,34 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
   const avatarUrl   = user.user_metadata?.avatar_url;
   const memberSince = formatDate(user.created_at);
 
+  // ── Card 2 derived ──
+  const days = daysUntil(target.date);
+  const companyLabel = target.company && target.company !== "Other / Not listed" ? target.company : null;
+  let countdownText;
+  if (days == null)      countdownText = "No target set";
+  else if (days < 0)     countdownText = "Interview date passed";
+  else if (days === 0)   countdownText = "Interview is today";
+  else                   countdownText = days + " day" + (days === 1 ? "" : "s") + " to go";
+
+  // ── Card 4 derived — rank + vs-average ──
+  let rank = null, cohortSize = 0, avgScore = 0, myScore = 0;
+  if (board) {
+    const rows = board.rows;
+    myScore = board.myScore;
+    cohortSize = rows.length;
+    if (rows.length) {
+      avgScore = Math.round(rows.reduce((s, r) => s + (r.total_score || 0), 0) / rows.length);
+      const mine = rows.filter(r => r.user_id === user.id);
+      if (mine.length) rank = rows.findIndex(r => r.user_id === user.id) + 1;
+      else rank = rows.filter(r => (r.total_score || 0) > myScore).length + 1; // provisional if not yet synced
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
 
       {/* ── Identity card ─────────────────────────────────────────────── */}
-      <div className="rounded-2xl p-5 flex items-center gap-4"
-        style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+      <Card className="flex items-center gap-4">
         {avatarUrl ? (
           <img src={avatarUrl} alt={displayName}
             className="w-14 h-14 rounded-full object-cover shrink-0"
@@ -280,30 +413,157 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
             Sign out
           </button>
         </div>
-      </div>
+      </Card>
 
-      {/* Stats and readiness live on the Progress page — Profile is identity + achievements + settings only */}
+      {/* ── Card 1 — Readiness score ──────────────────────────────────── */}
+      <Card>
+        <CardLabel>Readiness score</CardLabel>
+        <div className="flex items-baseline gap-3 mb-2">
+          <span className="text-4xl font-black tracking-tight" style={{ color: readiness.color }}>{readiness.score}%</span>
+          <span className="text-sm font-bold" style={{ color: readiness.color }}>{readiness.level}</span>
+        </div>
+        <div className="w-full h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "var(--border)" }}>
+          <div style={{ width: readiness.score + "%", height: "100%", background: readiness.color, transition: "width 0.5s" }} />
+        </div>
+        <p className="text-[11px] text-zinc-500 leading-relaxed">
+          Weighted mean of coverage across the five GenAI domains (each capped at 100%), so breadth — not grinding one area — moves the score.
+        </p>
+        {readiness.weakest && (
+          <button onClick={() => onNavigate && onNavigate({ tab: readiness.weakest.id })}
+            className="mt-3 text-xs font-bold transition-colors"
+            style={{ color: readiness.weakest.color }}>
+            Work next: {readiness.weakest.label} →
+          </button>
+        )}
+      </Card>
 
-      {/* ── Recent activity ───────────────────────────────────────────── */}
-      {recentActivity.length > 0 && (
-        <div>
-          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold mb-2.5">Recent PrepLab activity</p>
-          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-            {recentActivity.map((a, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-2.5 border-b last:border-0"
-                style={{ background: "var(--surface-2)", borderColor: "var(--border)" }}>
-                <span className="text-xs text-zinc-400 font-mono truncate mr-3">{a.id}</span>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0"
-                  style={a.correct
-                    ? { background: "rgba(34,197,94,0.12)", color: "#4ade80" }
-                    : { background: "rgba(239,68,68,0.12)", color: "#f87171" }}>
-                  {a.correct ? "Correct" : "Wrong"}
-                </span>
-              </div>
-            ))}
+      {/* ── Card 2 — Company target + countdown ───────────────────────── */}
+      <Card>
+        <CardLabel>Company target</CardLabel>
+        <div className="flex items-center gap-3 mb-4">
+          {companyLabel && <CompanyLogo company={companyLabel} size={34} />}
+          <div className="flex-1 min-w-0">
+            <div className="text-base font-black text-white truncate">
+              {companyLabel || "Set a target company"}
+            </div>
+            <div className="text-xs font-bold" style={{ color: days != null && days >= 0 ? "#c4b5fd" : "#71717a" }}>
+              {countdownText}{days != null && days >= 0 && companyLabel ? " · " + companyLabel : ""}
+            </div>
           </div>
         </div>
-      )}
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))" }}>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Target company</span>
+            <select value={target.company} onChange={e => setTargetField({ company: e.target.value })}
+              className="rounded-lg px-2.5 py-2 text-xs text-zinc-200"
+              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <option value="">No company set</option>
+              {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Interview date</span>
+            <input type="date" value={target.date} onChange={e => setTargetField({ date: e.target.value })}
+              className="rounded-lg px-2.5 py-2 text-xs text-zinc-200"
+              style={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
+          </label>
+        </div>
+        {(target.company || target.date) && (
+          <button onClick={() => setTargetField({ company: "", date: "" })}
+            className="mt-3 text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors">
+            Clear target
+          </button>
+        )}
+        {!target.company && !target.date && (
+          <p className="mt-3 text-[11px] text-zinc-600 leading-relaxed">
+            Set a target company and interview date to turn prep into a countdown. GSL works best as a cram-to-a-date plan.
+          </p>
+        )}
+      </Card>
+
+      {/* ── Card 3 — Streak + activity ────────────────────────────────── */}
+      <Card>
+        <CardLabel>Streak &amp; activity</CardLabel>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <StatPill label="Day streak" value={streak} color="#c4b5fd" />
+          <StatPill label="Active days / 28" value={activeDays} color="white" />
+          <StatPill label="Questions answered" value={totalAnswered} color="white" />
+        </div>
+        {recentActivity.length > 0 ? (
+          <>
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Recent PrepLab activity</p>
+            <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+              {recentActivity.map((a, i) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2.5 border-b last:border-0"
+                  style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+                  <span className="text-xs text-zinc-400 font-mono truncate mr-3">{a.id}</span>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0"
+                    style={a.correct
+                      ? { background: "rgba(34,197,94,0.12)", color: "#4ade80" }
+                      : { background: "rgba(239,68,68,0.12)", color: "#f87171" }}>
+                    {a.correct ? "Correct" : "Wrong"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-zinc-600">No activity yet — answer a PrepLab question to start a streak.</p>
+        )}
+      </Card>
+
+      {/* ── Card 4 — Leaderboard / vs-average ─────────────────────────── */}
+      <Card>
+        <CardLabel>Leaderboard</CardLabel>
+        {!supabase ? (
+          <p className="text-xs text-zinc-600 leading-relaxed">Leaderboard needs a backend connection. Not configured in this build.</p>
+        ) : board == null ? (
+          <p className="text-xs text-zinc-600">Loading your rank…</p>
+        ) : cohortSize === 0 ? (
+          <p className="text-xs text-zinc-600 leading-relaxed">No ranked players yet. Answer questions and sync to appear on the board.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              <StatPill label="Your rank" value={rank ? "#" + rank : "—"} color="#c4b5fd" />
+              <StatPill label="Your score" value={myScore} color="white" />
+              <StatPill label="Cohort" value={cohortSize} color="white" />
+            </div>
+            <div className="rounded-xl px-4 py-3 text-xs" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <span className="text-zinc-400">vs cohort average </span>
+              <span className="font-black text-white">{avgScore}</span>
+              <span className={"font-bold ml-2 " + (myScore >= avgScore ? "text-green-400" : "text-amber-400")}>
+                {myScore >= avgScore ? "+" : ""}{myScore - avgScore} pts {myScore >= avgScore ? "above" : "below"} average
+              </span>
+            </div>
+            <button onClick={() => onNavigate && onNavigate({ tab: "leaderboard" })}
+              className="mt-3 text-xs font-bold text-violet-300 hover:text-violet-200 transition-colors">
+              View full leaderboard →
+            </button>
+          </>
+        )}
+      </Card>
+
+      {/* ── Card 5 — Completion by area ───────────────────────────────── */}
+      <Card>
+        <CardLabel>Completion by area</CardLabel>
+        <div className="space-y-2.5">
+          {readiness.areas.filter(a => a.id !== "assessment").map(a => (
+            <div key={a.id}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-zinc-300">{a.label}</span>
+                <span className="text-xs font-mono text-zinc-500">{a.pct}%</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                <div style={{ width: a.pct + "%", height: "100%", background: a.color, transition: "width 0.4s" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => onNavigate && onNavigate({ tab: "progress" })}
+          className="mt-4 text-xs font-bold text-violet-300 hover:text-violet-200 transition-colors">
+          View full progress →
+        </button>
+      </Card>
 
       {/* ── Achievements ──────────────────────────────────────────────── */}
       <div>

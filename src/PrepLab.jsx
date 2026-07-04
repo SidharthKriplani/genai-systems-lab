@@ -307,6 +307,16 @@ function shuffle(arr) {
   return a;
 }
 
+// Stable difficulty ordering: easy → medium → hard, preserving input order within a
+// band. Used only by the Browse view (the scannable flat list); Drill mode stays shuffled.
+const DIFF_RANK = { easy: 0, medium: 1, hard: 2 };
+function sortByDifficulty(arr) {
+  return arr
+    .map((q, i) => ({ q, i, r: DIFF_RANK[(q.difficulty || "").toLowerCase()] ?? 1 }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map(x => x.q);
+}
+
 // Shared history persistence — used by TrainerMode, InterviewPrepMode, and WeaknessHeatmapMode
 function recordHistory(questionId, correct) {
   try {
@@ -1711,8 +1721,9 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
           </div>
         ) : viewMode === "browse" ? (
           // ── BROWSE MODE ──────────────────────────────────────────────────
+          // Browse is a scannable flat list — order it easy → medium → hard.
           <div className="space-y-1.5">
-            {questions.map(bq => {
+            {sortByDifficulty(questions).map(bq => {
               const isExp = expandedId === bq.id;
               const diffColor = bq.difficulty === "hard" ? "#ef4444" : bq.difficulty === "medium" ? "#f59e0b" : "#3b82f6";
               const bqGroup = TOPIC_GROUPS.find(g => g.topics.includes(bq.topic))?.id || "all";

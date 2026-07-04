@@ -187,6 +187,16 @@ const PREPLAB_Qs = [
   },
 ];
 
+// Stable difficulty ordering: easy → medium → hard (case-insensitive), preserving
+// authored order within a band. Used to order the flat "Test Your Judgment" list.
+const DIFF_RANK = { easy: 0, medium: 1, hard: 2 };
+function sortByDifficulty(qs) {
+  return qs
+    .map((q, i) => ({ q, i, r: DIFF_RANK[(q.difficulty || "").toLowerCase()] ?? 1 }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map(x => x.q);
+}
+
 // ─── Progress helpers ─────────────────────────────────────────────────────────
 function getRetrievalProgress() {
   try {
@@ -382,7 +392,7 @@ export default function RetrievalHub({ onNavigate, onNavigateTo }) {
           </button>
         </div>
         <div className="space-y-3">
-          {PREPLAB_Qs.map(q => (
+          {sortByDifficulty(PREPLAB_Qs).map(q => (
             <div key={q.id} className="rounded-xl p-4"
               style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
               <div className="flex items-center gap-2 mb-2">

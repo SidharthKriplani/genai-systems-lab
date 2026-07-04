@@ -1,13 +1,13 @@
 // src/Progress.jsx — Progress dashboard (extracted from App.jsx sprint 92c)
 // Shows: weighted score, readiness by area, study plan, review queue, guided paths, detailed breakdown.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "./Icon.jsx";
 import { POSTS as GT_POSTS } from "./groundTruthIndex";
 import { getAllAreasReadiness } from "./readiness";
 import { supabase, signInWithGoogle } from "./supabase";
 import { ALL_SCENARIOS, SCORE_TIERS } from "./ragScenarios";
-import { computeBreakdown } from "./leaderboardUtils";
+import { computeBreakdown, computeTotalScore, fetchLeaderboard } from "./leaderboardUtils";
 import ReadinessWidget from "./ReadinessWidget";
 
 // ── Tier badge (local copy — original in App.jsx used by LeaderboardView) ──────
@@ -61,6 +61,19 @@ const FOUNDATIONS_TRACKS = [
 ];
 
 export default function ProgressView({ visited, visitedModules, leaderboard, onNavigate, bookmarks = new Set(), toggleBookmark = () => {}, user = null }) {
+  // ── Real leaderboard rank + vs-average (async, mirrors Profile Card 4) ──────────
+  const [board, setBoard] = useState(null); // { rows, myScore } | null
+  useEffect(() => {
+    let cancelled = false;
+    if (!supabase || !user) return;
+    (async () => {
+      const rows = await fetchLeaderboard(200);
+      if (cancelled) return;
+      setBoard({ rows: rows || [], myScore: computeTotalScore() });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   // ── Data reads ─────────────────────────────────────────────────────────────────
   const history    = (() => { try { return JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}"); } catch { return {}; } })();
   const mastery    = (() => { try { return new Set(JSON.parse(localStorage.getItem("gsl-concepts-mastery") || "[]")); } catch { return new Set(); } })();
@@ -69,6 +82,30 @@ export default function ProgressView({ visited, visitedModules, leaderboard, onN
   const gtRead     = (() => { try { return new Set(JSON.parse(localStorage.getItem("genai_gt_read") || "[]")); } catch { return new Set(); } })();
   const areasReady = getAllAreasReadiness();
   const bd         = computeBreakdown();
+
+  // ── Activity heatmap (last 52 weeks) ─────────────────────────────────────────
+  // Real per-day activity: GSL writes `gsl-activity-<YYYY-MM-DD>` visit counts
+  // (integer, incremented on each Home visit — see Home.jsx getStreakInfo()).
+  const heatToday = new Date(); heatToday.setHours(0, 0, 0, 0);
+  const heatmapDays = [];
+  for (let i = 363; i >= 0; i--) {
+    const d = new Date(heatToday);
+    d.setDate(heatToday.getDate() - i);
+    heatmapDays.push(d.toISOString().slice(0, 10));
+  }
+  const activeSet = new Set(
+    heatmapDays.filter(d => {
+      try { return parseInt(localStorage.getItem("gsl-activity-" + d) || "0", 10) > 0; }
+      catch { return false; }
+    })
+  );
+  // Longest streak derived from the activity keys (current streak is `gsl-streak`).
+  let longestStreak = 0, run = 0;
+  for (const d of heatmapDays) {
+    if (activeSet.has(d)) { run++; if (run > longestStreak) longestStreak = run; }
+    else run = 0;
+  }
+  const currentStreak = streak;
 
   // ── Aggregate stats ────────────────────────────────────────────────────────────
   const histKeys      = Object.keys(history);
@@ -218,6 +255,20 @@ export default function ProgressView({ visited, visitedModules, leaderboard, onN
 
   const isFirstTime = ragPassed === 0 && totalAnswered === 0 && mastery.size === 0;
 
+  // ── Derived rank + cohort vs-average (from async board) ─────────────────────────
+  let rank = null, cohortSize = 0, avgScore = 0, myScore = 0;
+  if (board) {
+    const rows = board.rows;
+    myScore = board.myScore;
+    cohortSize = rows.length;
+    if (rows.length) {
+      avgScore = Math.round(rows.reduce((s, r) => s + (r.total_score || 0), 0) / rows.length);
+      const mine = rows.filter(r => r.user_id === user?.id);
+      if (mine.length) rank = rows.findIndex(r => r.user_id === user?.id) + 1;
+      else rank = rows.filter(r => (r.total_score || 0) > myScore).length + 1; // provisional if not yet synced
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
 
@@ -293,10 +344,61 @@ export default function ProgressView({ visited, visitedModules, leaderboard, onN
         </div>
       </div>
 
-      {/* ── Readiness widget (score + target countdown + weakest-area CTA) ── */}
+      {/* ── 1. Readiness widget (score + target countdown + weakest-area CTA) ── */}
       <ReadinessWidget onNavigate={onNavigate} />
 
-      {/* ── Readiness by area ── */}
+      {/* ── 2. Activity heatmap ── */}
+      <div className="rounded-xl p-5 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Activity heatmap</p>
+          {currentStreak > 0 ? (
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full"
+              style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#fbbf24" }}>
+              {currentStreak} day{currentStreak !== 1 ? "s" : ""} streak
+            </span>
+          ) : (
+            <span className="text-[10px] font-mono text-zinc-600">Practice today to start a streak</span>
+          )}
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(52, 10px)",
+            gridTemplateRows: "repeat(7, 10px)",
+            gridAutoFlow: "column",
+            gap: "2px",
+            width: "max-content",
+          }}>
+            {heatmapDays.map(day => (
+              <div key={day} title={day} style={{
+                width: "10px", height: "10px", borderRadius: "2px",
+                background: activeSet.has(day) ? "var(--gal-build)" : "rgba(39,39,42,0.8)",
+                border: activeSet.has(day) ? "none" : "1px solid rgba(63,63,70,0.5)",
+              }} />
+            ))}
+          </div>
+        </div>
+        <p className="text-[10px] font-mono text-zinc-600">Last 52 weeks</p>
+      </div>
+
+      {/* ── 3. Streak ── */}
+      <div className="rounded-xl p-5" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold mb-3">Streak</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-3xl font-black" style={{ color: "var(--gal-build)" }}>{currentStreak}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">Current streak</p>
+            <p className="text-xs text-zinc-500 mt-0.5">{currentStreak === 1 ? "day" : "days"} in a row</p>
+          </div>
+          <div>
+            <p className="text-3xl font-black text-white">{longestStreak}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">Longest streak</p>
+            <p className="text-xs text-zinc-500 mt-0.5">best run so far</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4. Completion by area — Readiness by area ── */}
       <div className="rounded-xl p-5 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
         <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Readiness by area</p>
         {[
@@ -320,6 +422,61 @@ export default function ProgressView({ visited, visitedModules, leaderboard, onN
             </button>
           );
         })}
+      </div>
+
+      {/* ── 5. Leaderboard / score summary (company countdown lives in the readiness widget above) ── */}
+      <div className="rounded-xl p-5" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Leaderboard</p>
+          <button onClick={() => onNavigate("leaderboard")}
+            className="text-[10px] font-mono font-bold transition-colors hover:text-white" style={{ color: "#a78bfa" }}>
+            See full board →
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <p className="text-2xl font-black text-white">{bd.total.toLocaleString()}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">Weighted score</p>
+          </div>
+          <div>
+            <p className="text-2xl font-black text-white">{bd.prepScore.toLocaleString()}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">PrepLab</p>
+          </div>
+          <div>
+            <p className="text-2xl font-black text-white">{bd.conceptsScore.toLocaleString()}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">Foundations</p>
+          </div>
+          <div>
+            <p className="text-2xl font-black text-white">{bd.scenarioScore.toLocaleString()}</p>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">RAG Lab</p>
+          </div>
+        </div>
+        {/* Real rank + cohort vs-average (async, same graceful states as Profile) */}
+        {!supabase ? (
+          <p className="text-[11px] text-zinc-500 mt-3">Leaderboard needs a backend connection. Not configured in this build.</p>
+        ) : !user ? (
+          <p className="text-[11px] text-zinc-500 mt-3">Sign in to rank on the global board and compare against the average.</p>
+        ) : board == null ? (
+          <p className="text-[11px] text-zinc-500 mt-3">Loading your rank…</p>
+        ) : cohortSize === 0 ? (
+          <p className="text-[11px] text-zinc-500 mt-3">No ranked players yet — be the first. Sync your score to appear on the board.</p>
+        ) : (
+          <div className="mt-3 rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs"
+            style={{ background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)" }}>
+            <span>
+              <span className="text-zinc-500">Your rank </span>
+              <span className="font-black" style={{ color: "#a78bfa" }}>{rank ? "#" + rank : "—"}</span>
+              <span className="text-zinc-600"> of {cohortSize}</span>
+            </span>
+            <span>
+              <span className="text-zinc-500">vs cohort average </span>
+              <span className="font-black text-white">{avgScore.toLocaleString()}</span>
+              <span className={"font-bold ml-2 " + (myScore >= avgScore ? "text-green-400" : "text-amber-400")}>
+                {myScore >= avgScore ? "+" : ""}{(myScore - avgScore).toLocaleString()} pts {myScore >= avgScore ? "above" : "below"} average
+              </span>
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Study plan ── */}

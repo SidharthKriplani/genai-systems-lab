@@ -86,6 +86,16 @@ const PREPLAB_Qs = [
   { id: "drift-3",     difficulty: "Hard",   diffColor: "#ef4444", gated: true,  question: "You want to detect drift in sentence embedding space. Why is PSI insufficient and what should you use instead?" },
 ];
 
+// Stable difficulty ordering: easy → medium → hard (case-insensitive), preserving
+// authored order within a band. Used to order the flat "Test Your Judgment" list.
+const DIFF_RANK = { easy: 0, medium: 1, hard: 2 };
+function sortByDifficulty(qs) {
+  return qs
+    .map((q, i) => ({ q, i, r: DIFF_RANK[(q.difficulty || "").toLowerCase()] ?? 1 }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map(x => x.q);
+}
+
 function getProgress() {
   try {
     const history = JSON.parse(localStorage.getItem("gsl-preplab-history") || "{}");
@@ -231,7 +241,7 @@ export default function ProductionHub({ onNavigate, onNavigateTo }) {
           <button onClick={() => { track("prod_hub_preplab_all", {}); onNavigate("preplab"); }} className="text-[11px] font-bold text-zinc-400 hover:text-white transition-colors">All production questions →</button>
         </div>
         <div className="space-y-3">
-          {PREPLAB_Qs.map(q => (
+          {sortByDifficulty(PREPLAB_Qs).map(q => (
             <div key={q.id} className="rounded-xl p-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border" style={{ color: q.diffColor, borderColor: q.diffColor + "40", background: q.diffColor + "10" }}>{q.difficulty}</span>
