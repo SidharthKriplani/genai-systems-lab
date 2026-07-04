@@ -12258,8 +12258,9 @@ const GYM_LAB = {
 function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
   const gym = GYMS.find(g => g.id === gymId);
   const [labOpen, setLabOpen] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
   // Reset lab tab whenever the gym changes.
-  useEffect(() => { setLabOpen(false); }, [gymId]);
+  useEffect(() => { setLabOpen(false); setChecklistOpen(false); }, [gymId]);
   if (!gym) return null;
   const modules = gym.moduleIds.map(id => MODULES.find(m => m.id === id)).filter(Boolean);
   const completedCount = modules.filter(m => mastery.has(m.id)).length;
@@ -12358,20 +12359,6 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
           decoding/inference are logic-accurate (real derived outcomes) — vs the thinner 9-module
           Concepts production gym (MCQ + light interactives). The thin modules stay below for
           deep-link backward-compat. */}
-      {/* production gym's Lab tab is handled by the unified labMeta block above (LLM Lab).
-          LaunchChecklist — the one genuinely-valuable module salvaged from the DELETED
-          ProductionHub — is folded in here so the pre-ship rigor checklist keeps a home. */}
-      {gym.id === "production" && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
-          <div className="px-4 pt-4 pb-1">
-            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Ship-readiness · Launch Checklist</p>
-          </div>
-          <Suspense fallback={<div className="p-4 text-xs text-zinc-500">Loading checklist…</div>}>
-            <LaunchChecklist />
-          </Suspense>
-        </div>
-      )}
-
       {/* ── Progress bar + next module CTA ── */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
         <div className="flex items-center justify-between text-xs">
@@ -12451,6 +12438,25 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
           );
         })}
       </div>
+
+      {/* Ship-readiness · Launch Checklist — salvaged from the deleted ProductionHub.
+          Below the module list, collapsed by default (toggle to expand). */}
+      {gym.id === "production" && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+          <button
+            onClick={() => setChecklistOpen(o => !o)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-900/60 transition-colors"
+          >
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Ship-readiness · Launch Checklist</span>
+            <span className="text-[11px] font-mono text-zinc-500">{checklistOpen ? "Hide ▲" : "Show ▼"}</span>
+          </button>
+          {checklistOpen && (
+            <Suspense fallback={<div className="p-4 text-xs text-zinc-500">Loading checklist…</div>}>
+              <LaunchChecklist />
+            </Suspense>
+          )}
+        </div>
+      )}
 
       {/* ai-agents no longer has a separate lab surface — its 16 Agent Lab components ARE the
           modules above — so the "Go to lab" footer (which would round-trip back to this gym via
@@ -12594,7 +12600,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
               className="flex-1 text-left px-3 py-2 flex items-center gap-2 min-w-0"
               style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", font: "inherit" }}
             >
-              <span className="text-xs font-medium truncate flex-1">{m.label}</span>
+              <span className="text-xs font-medium truncate flex-1" title={m.title}>{m.title}</span>
               <div className="flex items-center gap-1 shrink-0">
                 {done && <span className="text-[9px] text-emerald-500 font-bold"><Icon name="check" size={9} /></span>}
                 <span className={`text-[9px] font-mono ${
@@ -12628,7 +12634,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
             return (
               <button key={id} onClick={() => openModule(id)}
                 className={`shrink-0 px-3 py-2.5 rounded text-xs font-medium transition-colors ${active === id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400"}`}>
-                {m.label}
+                {m.title}
               </button>
             );
           })}
@@ -12670,7 +12676,7 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
                 active === id ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400"
               }`}
             >
-              {m.label}
+              {m.title}
             </button>
           );
         })}
