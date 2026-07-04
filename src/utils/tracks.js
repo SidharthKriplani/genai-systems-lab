@@ -77,6 +77,19 @@ export function reorderItems(trackId, fromIndex, toIndex) {
   }))
 }
 
+// Move an item from one track to another (drag-and-drop across tracks).
+export function moveItem(fromTrackId, toTrackId, index) {
+  if (fromTrackId === toTrackId) return
+  const src = getTracks().find(t => t.id === fromTrackId)
+  if (!src || index < 0 || index >= src.items.length) return
+  const item = src.items[index]
+  save(getTracks().map(t => {
+    if (t.id === fromTrackId) return { ...t, items: t.items.filter((_, i) => i !== index) }
+    if (t.id === toTrackId) return { ...t, items: [...t.items, item] }
+    return t
+  }))
+}
+
 // Remove the first item in a track matching `pred` (untick/remove from the popover).
 export function removeItemRef(trackId, pred) {
   const t = getTracks().find(x => x.id === trackId)

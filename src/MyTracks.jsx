@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   getTracks, createTrack, renameTrack, deleteTrack,
-  addNote, removeItem, reorderItems,
+  addNote, removeItem, reorderItems, moveItem,
 } from "./utils/tracks.js";
 
 const TOPIC_LABELS = {
@@ -17,6 +17,27 @@ const DIFF_STYLES = {
   medium: "bg-amber-950/50 text-amber-400 border border-amber-800/40",
   hard:   "bg-red-950/50 text-red-400 border border-red-800/40",
 };
+
+const TYPE_LABELS = {
+  preplab: "PrepLab", note: "Notes", gt_post: "GT Posts",
+  hub_q: "Foundations Q", concept: "Concepts",
+};
+
+// Group items by category (meta.category) or a readable type label, keeping
+// each item's true index in track.items and first-appearance order of groups.
+function groupItems(items) {
+  const groups = [];
+  const byKey = {};
+  items.forEach((item, idx) => {
+    const key = item.meta?.category || TYPE_LABELS[item.type] || item.type;
+    if (!byKey[key]) {
+      byKey[key] = { key, entries: [] };
+      groups.push(byKey[key]);
+    }
+    byKey[key].entries.push({ item, idx });
+  });
+  return groups;
+}
 
 function TopicBadge({ topic }) {
   if (!topic) return null;
@@ -38,8 +59,9 @@ function DiffBadge({ difficulty }) {
   );
 }
 
-function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete }) {
+function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveItem }) {
   const [hoverId, setHoverId] = useState(null);
+  const [dropId, setDropId] = useState(null);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const inputRef = useRef(null);
@@ -94,10 +116,22 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete }) {
           onClick={() => onSelect(t.id)}
           onMouseEnter={() => setHoverId(t.id)}
           onMouseLeave={() => setHoverId(null)}
+          onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropId(t.id); }}
+          onDragLeave={() => setDropId(prev => (prev === t.id ? null : prev))}
+          onDrop={e => {
+            e.preventDefault();
+            setDropId(null);
+            try {
+              const d = JSON.parse(e.dataTransfer.getData("application/x-track-item"));
+              if (d && d.fromTrackId && d.fromTrackId !== t.id && Number.isInteger(d.index)) {
+                onMoveItem(d.fromTrackId, t.id, d.index);
+              }
+            } catch (err) {}
+          }}
           className="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer mb-0.5 transition-all"
           style={{
-            background: t.id === selectedId ? "rgba(124,58,237,0.15)" : hoverId === t.id ? "rgba(39,39,42,0.5)" : "transparent",
-            border: `1px solid ${t.id === selectedId ? "rgba(139,92,246,0.5)" : "transparent"}`,
+            background: dropId === t.id ? "rgba(124,58,237,0.25)" : t.id === selectedId ? "rgba(124,58,237,0.15)" : hoverId === t.id ? "rgba(39,39,42,0.5)" : "transparent",
+            border: `1px solid ${dropId === t.id ? "rgba(139,92,246,0.7)" : t.id === selectedId ? "rgba(139,92,246,0.5)" : "transparent"}`,
           }}
         >
           <div className="min-w-0">
@@ -190,12 +224,25 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
           Empty track. Click the + on any PrepLab question, Ground Truth post, or Foundations question to add it here.
         </p>
       ) : (
-        <div className="space-y-2 mb-6">
-          {track.items.map((item, idx) => (
+        <div className="space-y-4 mb-6">
+          {groupItems(track.items).map(group => (
+            <div key={group.key} className="space-y-2">
+              <div className="flex items-center gap-2 px-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                  {group.key}
+                </span>
+                <span className="text-[10px] font-mono text-zinc-700">·</span>
+                <span className="text-[10px] font-mono text-zinc-600">{group.entries.length}</span>
+              </div>
+              {group.entries.map(({ item, idx }) => (
             <div
               key={idx}
               draggable
-              onDragStart={() => setDragFrom(idx)}
+              onDragStart={e => {
+                setDragFrom(idx);
+                e.dataTransfer.setData("application/x-track-item", JSON.stringify({ fromTrackId: track.id, index: idx }));
+                e.dataTransfer.effectAllowed = "move";
+              }}
               onDragOver={e => e.preventDefault()}
               onDrop={() => { if (dragFrom !== null && dragFrom !== idx) { onReorderItems(dragFrom, idx); setDragFrom(null); } }}
               onDragEnd={() => setDragFrom(null)}
@@ -290,6 +337,8 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                 style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0.1rem" }}
               >✕</button>
             </div>
+              ))}
+            </div>
           ))}
         </div>
       )}
@@ -345,6 +394,7 @@ export default function MyTracks({ onNavigate }) {
         onSelect={setSelectedId}
         onCreate={name => { const t = createTrack(name); refresh(); setSelectedId(t.id); }}
         onDelete={id => { deleteTrack(id); refresh(); if (selectedId === id) setSelectedId(null); }}
+        onMoveItem={(fromTrackId, toTrackId, index) => { moveItem(fromTrackId, toTrackId, index); refresh(); }}
       />
 
       <div className="flex-1 overflow-hidden flex flex-col" style={{ background: "rgba(9,9,11,0.4)" }}>
