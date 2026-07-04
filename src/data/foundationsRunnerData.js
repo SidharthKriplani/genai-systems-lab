@@ -45,6 +45,10 @@ import { RUNNER_NLP_2 } from "./foundations/nlp-foundations-2";
 import { RUNNER_NLP_3 } from "./foundations/nlp-foundations-3";
 import { RUNNER_NLP_4 } from "./foundations/nlp-foundations-4";
 
+// ── Gap modules (authored 2026-07-04) — agent-eval, rag-ingestion, routing, security ──
+import { RUNNER_GAP_A } from "./foundations/gap-agenteval-ragingest";
+import { RUNNER_GAP_B } from "./foundations/gap-routing-security";
+
 export const RUNNER_DATA = {
 
   // ── New foundations modules (authored in ./foundations/*.js) ─────────────────
@@ -3757,6 +3761,10 @@ itself).` },
   ...RUNNER_NLP_2,
   ...RUNNER_NLP_3,
   ...RUNNER_NLP_4,
+
+  // ── Gap modules (2026-07-04) ──────────────────────────────────────────────────
+  ...RUNNER_GAP_A,
+  ...RUNNER_GAP_B,
 
 };
 

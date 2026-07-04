@@ -1,0 +1,193 @@
+// Gap-B modules — model routing/cascades/fallbacks + LLM security beyond injection.
+// Spread into foundationsRunnerData.js.
+export const RUNNER_GAP_B = {
+  "model-routing-cascades": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "Your LLM product started on one model — the frontier flagship — because it was simplest and it worked. Then the bill arrived. You're paying flagship prices for *every* query, including 'reset my password,' 'what's your refund window,' and 'thanks!'. Meanwhile p95 latency is bad because even trivial queries wait on a giant model, and last Tuesday your single provider had a 40-minute outage and your product was simply *down*. Finance wants the cost halved, the on-call wants the outage risk gone, and product refuses to let quality drop on the genuinely hard questions. You realise the mistake was architectural: you're routing 100% of traffic to the most expensive, slowest, most single-point-of-failure option you have — when most of that traffic didn't need it.",
+    explanation: [
+      "The founding observation of this whole topic is deceptively simple: **not every query needs the frontier model.** Real traffic is a *distribution* of difficulty. A large fraction is trivial (greetings, FAQ lookups, simple rewrites), a middle band is moderate (summarise this, classify that, short reasoning), and a thin tail is genuinely hard (multi-step reasoning, subtle code, adversarial edge cases). Sending the whole distribution to one big model means you pay the *worst-case* cost and latency on the *average-case* query. ==The entire discipline of routing is about matching each query to the cheapest model that can still answer it correctly — spending your quality budget where it actually moves the needle.==",
+      "The first pattern is the **router**: a cheap, fast classifier that sits *in front* of your models, looks at the incoming query, estimates its difficulty (or type), and dispatches it to the cheapest-capable model. The classifier can be a small fine-tuned model, an embedding-based similarity check against labelled examples, a set of heuristics (length, presence of code, detected task type), or even a tiny LLM asked 'is this easy or hard?'. The router itself must be *much* cheaper and faster than the models it routes to, or it defeats its own purpose. ==A router makes a decision *once, up front*, and commits — the query goes to exactly one model and you never look back.== That's its strength (one inference, low latency) and its weakness (if the router misjudges, the query gets the wrong model with no recovery).",
+      "The second pattern fixes that weakness by *not committing up front*: the **cascade**. Here you try the small, cheap model *first*, then check whether its answer is good enough; only if the check *fails* do you **escalate** to the larger model. The cheap model handles everything it can, and the expensive model is a *fallback for hard cases*, invoked only when needed. ==The router bets before seeing the answer; the cascade lets the answer itself decide whether to escalate.== This is strictly more information — you're deciding *after* seeing an attempt, not before — which is why cascades often route more accurately than a front-door classifier. The cost is latency on the tail: an escalated query pays for *both* the small model *and* the large model, in series.",
+      { type: "illustration", label: "Router vs cascade — decide-before vs decide-after", content: `ROUTER (decide BEFORE the answer exists):
+  query ─► [cheap classifier] ─┬─ "easy"  ─► small model ─► done
+                               └─ "hard"  ─► large model ─► done
+  • ONE model inference per query, lowest latency
+  • misjudge → wrong model, no recovery (commit up front)
+
+CASCADE (decide AFTER seeing an attempt):
+  query ─► small model ─► [confidence check] ─┬─ pass ─► return cheap answer
+                                              └─ FAIL ─► large model ─► return
+  • easy queries: 1 cheap call.  hard queries: cheap + large (SERIAL)
+  • more accurate routing (the answer itself informs the decision)
+  • but escalated queries pay BOTH models + the check's latency` },
+      "A cascade lives or dies on the **confidence signal** — the check that decides 'is this cheap answer good enough, or escalate?'. Interviewers want you to name concrete signals and their tradeoffs. **(1) Token logprobs / sequence probability**: if the small model's own output probability is low, it's unsure — cheap to read, but a poorly-calibrated model can be *confidently wrong* (high logprob, wrong answer), so this misses the dangerous cases. **(2) Self-consistency**: sample the small model a few times; if the samples *disagree*, escalate. Robust, but multiplies the cheap model's cost. **(3) A verifier / judge**: a separate (often small) model or rule-set that grades the answer — e.g. 'does this cite a source? does it actually answer the question?'. Most flexible and most aligned with 'good enough,' but adds a call and can itself be wrong. ==The confidence signal is where cascades succeed or fail: a good signal escalates exactly the queries the small model got wrong; a bad one either escalates everything (no savings) or nothing (quality craters).==",
+      "Routing solves cost and latency; it does *nothing* for the outage that took you down. That's a separate axis: **provider failover / fallbacks.** Your primary model — say, provider A's flagship — will, on some days, be *down, rate-limited, or timing out*. A resilient system defines a **fallback chain**: if the primary call fails (error, timeout, 429 rate-limit) after a short retry, automatically fall back to a *different* provider's comparable model, or to a *degraded but available* smaller model, rather than returning an error to the user. ==Routing is about picking the cheapest-capable model when everything is healthy; failover is about staying *up* when your first choice is *not* healthy — orthogonal concerns that a mature stack handles together.== The subtlety: a fallback model may have a different tokenizer, context window, or output format, so 'just retry on provider B' isn't free — you need prompt/formatting that survives the swap, and you should degrade *gracefully* (a smaller model's answer beats an error page).",
+      { type: "illustration", label: "The economics — why routing pays (illustrative)", content: `Suppose traffic splits: 70% easy, 25% moderate, 5% hard.
+Costs (relative): small = 1x,  large = 20x per query.
+
+ALL-LARGE baseline:            100% × 20  = 20.0  (cost per 100 queries: 2000)
+
+ROUTER (easy→small, rest→large):
+   70×1  + 30×20            =  70 + 600  =  670   → 66% cheaper
+   (if the router misroutes 5% of hard→small, those answers are WRONG)
+
+CASCADE (small first, escalate the ~30% it can't handle):
+   100×1  (every query tries small)
+ +  30×20 (the 30% that escalate hit large too)
+                            = 100 + 600  =  700   → ~65% cheaper
+   + BUT tail latency doubles on escalated queries (serial small→large)
+
+Take: both ~cut cost 2-3x. Router = lowest latency, riskier misroute.
+      Cascade = more accurate (decides after seeing an answer), slower tail.` },
+      "Finally, the **risks** a staff-level answer must own. **Misroute blind spots**: a router (or a bad cascade signal) that sends a hard query to the small model produces a *confidently wrong* answer with no second look — and because it's cheap, you might never notice until users do. The failure is *silent*, which is worse than a loud one. **Cascade tail latency**: escalation is serial (small, *then* large), so your hardest, most important queries — exactly the ones users care most about — get the *slowest* experience; if not bounded, a cascade can also loop or over-escalate. **Router drift**: the difficulty distribution shifts over time (new features, new user segments), and a router trained on last quarter's traffic quietly mis-classifies today's. **Calibration**: every confidence signal assumes the small model *knows when it doesn't know* — and models are famously overconfident, so a naive logprob threshold escalates the wrong set. ==The interview-grade summary: route to the cheapest-capable model (router = decide-before, cascade = decide-after via a confidence signal), layer provider failover for uptime, and respect that the whole scheme rests on a well-calibrated 'is this good enough?' check — get that wrong and you've built a cheap machine for producing confident errors.==",
+    ],
+    keyPoints: [
+      "**Not every query needs the frontier model.** Traffic is a difficulty distribution (mostly easy, a thin hard tail); sending all of it to one big model pays worst-case cost/latency on average-case queries. Routing matches each query to the *cheapest-capable* model to spend the quality budget where it matters.",
+      "**Router = decide before the answer exists.** A cheap, fast classifier (small model / embeddings / heuristics) estimates difficulty and dispatches to one model, committing up front. Lowest latency (one inference) but a misroute gives the wrong model with no recovery — the router must be far cheaper than what it routes to.",
+      "**Cascade = decide after an attempt.** Try the small model first; a confidence check decides whether to *escalate* to the large model. More accurate than a front-door router (the answer itself informs the decision) but escalated queries pay both models in series → tail latency. Confidence signals: logprobs (cheap, misses confident-wrong), self-consistency (robust, multiplies cost), verifier/judge (flexible, adds a call).",
+      "**Provider failover is orthogonal to routing.** Routing picks the cheapest-capable model when healthy; failover keeps you *up* when the primary is down / rate-limited / timing out — a fallback chain to another provider or a degraded smaller model instead of erroring. Watch tokenizer/context/format differences across the swap; degrade gracefully (a small model's answer beats an error page).",
+      "**Economics and risks.** With small=1x, large=20x and 70% easy traffic, routing/cascading cut cost ~2-3x. Risks: silent misroute blind spots (confidently wrong cheap answers), cascade tail latency on the most important queries, router drift as the traffic distribution shifts, and mis-calibrated confidence signals (overconfident small models escalate the wrong set).",
+    ],
+    recap: [
+      "**Core idea:** traffic is a difficulty distribution; route each query to the *cheapest model that can still answer it*, not the flagship for everything.",
+      "**Router** = cheap classifier decides *before* seeing an answer → one inference, lowest latency, but a misroute has no recovery. **Cascade** = small model first, escalate on a *confidence check* → decides *after* an attempt, more accurate, but escalated queries pay small+large serially (tail latency).",
+      "**Confidence signals** (the heart of a cascade): logprobs (cheap, misses confident-wrong), self-consistency (robust, costs more), verifier/judge (flexible, extra call). A bad signal escalates everything (no savings) or nothing (quality craters).",
+      "**Failover ≠ routing.** Failover keeps you up when the primary is down/rate-limited: fall back to another provider or a degraded model instead of erroring; mind tokenizer/context/format drift and degrade gracefully.",
+      "**Risks:** silent misroutes (cheap confident-wrong answers), cascade tail latency on your hardest queries, router drift, and over-confident models breaking the 'good enough' check.",
+    ],
+    mcqs: [
+      {
+        question: "Your team debates a router versus a cascade for cutting cost. What is the fundamental difference between the two, and one consequence of that difference?",
+        options: [
+          "They're the same thing; 'cascade' is just the marketing term for a router",
+          "A router decides *before* any answer exists — a cheap classifier commits the query to one model up front (one inference, lowest latency, but a misroute has no recovery); a cascade decides *after* an attempt — it runs the small model first and escalates only if a confidence check fails (more accurate routing, but escalated queries pay both models serially, adding tail latency)",
+          "A router is always more accurate than a cascade because it uses a dedicated classifier, whereas a cascade guesses randomly",
+          "A cascade sends every query to every model in parallel and picks the best answer, so it's the fastest option",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: the defining distinction is *when* the decision is made. A router classifies the query and commits it to a single model before any answer is produced — one inference, lowest latency, but if it misjudges there's no second look. A cascade runs the cheap model first and uses a confidence check on that actual answer to decide whether to escalate — it has strictly more information (an attempt to inspect), so it routes more accurately, but an escalated query pays for the small model *and* the large model in series, adding tail latency. Option A is wrong — they're distinct patterns. Option C is backwards — the cascade's after-the-fact decision is typically *more* accurate, and it never 'guesses randomly.' Option D describes parallel ensembling/best-of-N, not a cascade, which is serial and escalates only on failure.",
+      },
+      {
+        question: "You build a cascade: small model first, escalate to the large model only when the small model is 'unsure.' A teammate proposes using the small model's token logprobs (sequence probability) as the sole escalation signal. What is the key risk?",
+        options: [
+          "Logprobs are impossible to obtain from any model, so the cascade can never be built",
+          "Logprobs make the small model slower than the large model, defeating the purpose",
+          "Models are often poorly calibrated and can be *confidently wrong* — a high-logprob (high-confidence) answer that is nonetheless incorrect will pass the check and never escalate, so the cascade silently returns wrong cheap answers on exactly the cases it should have escalated",
+          "Logprobs guarantee perfect escalation, so there is no risk at all",
+        ],
+        correct: 2,
+        explanation: "Option C is correct: a logprob threshold assumes the model 'knows when it doesn't know,' but LLMs are frequently overconfident and can assign high probability to wrong outputs. Those confident-but-wrong answers clear the confidence check and are returned without escalation — the cascade fails silently on the dangerous cases. That's why more robust signals (self-consistency across samples, or a separate verifier/judge) or a combination are often preferred, at extra cost. Option A is wrong — logprobs are available from many models. Option B is wrong — reading logprobs doesn't make the small model slower than the large one. Option D is the exact overconfidence trap the question warns against.",
+      },
+      {
+        question: "After adding a router that cuts cost, your product still went fully down during a 40-minute outage at your model provider. Why didn't routing help, and what actually addresses this?",
+        options: [
+          "Routing should have prevented the outage; the router was simply misconfigured",
+          "Routing matches queries to the cheapest-capable model when the system is *healthy* — it's about cost/latency, not availability. Uptime is a separate concern addressed by provider failover: a fallback chain that, when the primary errors/rate-limits/times out, automatically falls back to a different provider or a degraded smaller model instead of returning an error",
+          "The only fix is to buy a second copy of the same provider's flagship model",
+          "Nothing can be done; if a provider is down, the product must be down too",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: routing and failover are orthogonal. Routing decides *which* model to use among healthy options to save cost and latency; it makes no promise about what happens when your chosen provider is unavailable. Availability is handled by a failover/fallback chain — on a primary error, timeout, or 429 rate-limit (after a short retry), automatically route to a *different* provider's comparable model or to a degraded-but-available smaller model, degrading gracefully rather than erroring out. Option A misunderstands routing's purpose. Option C (same provider again) doesn't remove the single-provider dependency. Option D is wrong — cross-provider failover is exactly the standard mitigation.",
+      },
+    ],
+    takeaway: "Not every query needs the frontier model: traffic is a difficulty distribution, so route each query to the cheapest-capable model. A router decides before any answer exists (one cheap classifier, lowest latency, misroutes unrecoverable), while a cascade runs the small model first and escalates on a confidence check (logprobs / self-consistency / a verifier) — more accurate because it decides after seeing an attempt, but escalated queries pay both models serially. Layer provider failover (a fallback chain to another provider or a degraded model) for uptime, since that's orthogonal to cost routing, and remember the whole scheme rests on a well-calibrated 'is this good enough?' signal — a bad one just produces confident errors cheaply.",
+  },
+
+  "llm-security-beyond-injection": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "You've already hardened your LLM app against prompt injection, so you feel covered. Then three separate incidents land in one week. First, a support-bot transcript shows the model helpfully repeating a customer's full credit-card number and home address back in its answer — no attacker, just the model surfacing PII that was in its context. Second, an internal agent with a database tool got a cleverly-worded request and returned a chunk of another tenant's records, plus, on inspection, part of your system prompt. Third, a security review finds your 'read a file' agent was provisioned with a cloud credential that can *also* delete production buckets — it never needed that, but if anything ever tricks it, the blast radius is catastrophic. None of these are prompt injection. They're the rest of LLM security, and you hadn't built for any of it.",
+    explanation: [
+      "Prompt injection gets all the attention, but it's *one* threat in a much larger surface — and it's covered in its own module, so set it aside here. This module is about everything else that goes wrong when an LLM sits inside a real system with real data and real tools. ==The unifying frame: an LLM app is a pipeline that takes *input* (which may contain sensitive data), holds *context* (which may contain secrets and other users' data), and produces *output* that flows to a user *and often to tools/systems* — every one of those boundaries is a place data can leak or a privilege can be abused.== Security beyond injection is about putting controls on those boundaries.",
+      "Start with the most concrete: **PII detection and redaction**, on *both* the input and the output. On the **input** side, a user may paste a credit-card number, an SSN, a medical detail — and if you log that prompt, embed it into a vector DB, or send it to a third-party model API, you've now *spread* that PII into systems that were never scoped to hold it (a compliance problem the moment it's written down). On the **output** side, the model may *emit* PII — regurgitating something from its context, or reconstructing it — straight to a user who shouldn't see it (as in the credit-card transcript). The control is a **redaction pass** (regex for structured PII like cards/SSNs/emails, plus an NER model or a classifier for names/addresses) that detects and masks PII *before* it's logged/stored (input) and *before* it reaches the user (output). ==PII is a two-sided problem: you filter it going *in* so you don't spread it, and going *out* so you don't leak it.==",
+      "The second category is **data exfiltration** — sensitive information *escaping* the boundary it was supposed to stay inside. Three distinct flavours interviewers probe. **(1) System-prompt leakage**: your system prompt often contains proprietary instructions, business logic, or even embedded keys; a model can be coaxed into reciting it, handing competitors (or attackers) your playbook. **(2) Cross-tenant / training-data leakage**: in a multi-tenant app, another user's data may be in the model's context (via a shared cache, a mis-scoped retrieval, or a tool), and the model surfaces it to the wrong user — or, for a fine-tuned model, it *memorised* training records and reproduces them verbatim. **(3) Tool-mediated exfiltration**: an agent with tools can *actively* leak — e.g. it's induced to put secret data into an outbound request (a URL it fetches, an email it sends), carrying data *out* of your perimeter through a legitimate-looking action. ==Exfiltration is the mirror of injection: injection is bad data getting *in* to influence the model; exfiltration is sensitive data getting *out* through the model or its tools.==",
+      { type: "illustration", label: "The boundaries where LLM security fails (beyond injection)", content: `        INPUT                CONTEXT / MODEL              OUTPUT
+   (user, docs, tools)     (secrets, other tenants,     (to user AND to tools)
+                            system prompt, memorised
+                            training data)
+   ┌─────────────┐         ┌──────────────────┐        ┌──────────────┐
+   │ PII pasted  │──►[in   │  system prompt    │  out]──►│ PII emitted  │
+   │ by user     │  filter]│  other tenant data│  filter]│ to wrong user│
+   │             │         │  embedded secrets │        │ secret in a  │
+   └─────────────┘         └──────────────────┘        │ tool call ───┼──► LEAK
+        ▲                          │                    └──────────────┘
+        │                          ▼
+    INPUT GUARDRAIL          TOOL PERMISSIONS            OUTPUT GUARDRAIL
+    (redact PII before        (least privilege:          (block PII/secrets/
+     logging & storing)        scoped creds, only         unsafe content before
+                               the tools it needs)        it reaches user/tool)
+
+  Injection = bad data IN (separate module).  This module = data/privilege
+  leaking OUT, plus the guardrails and scoping that stop it.` },
+      "The controls for both PII and exfiltration converge on one architectural idea: **guardrails — input and output filters that wrap the model.** An **input guardrail** inspects (and redacts/blocks) what goes *into* the model or into your logs/stores. An **output guardrail** inspects what comes *out* *before* it reaches the user *or a downstream tool* — blocking PII, secrets/credentials (API keys, tokens matched by pattern), unsafe content, and off-policy answers. ==The critical, often-missed point: the output guardrail must sit between the model and the *tool*, not just between the model and the user — because an agent's most dangerous output isn't shown to a human, it's *executed*.== A response that says 'ok, deleting the records' is only caught if something inspects the tool call before it runs. Guardrails can be rules/regex (fast, cheap, brittle), classifier models (PII/toxicity/secret detectors), or an LLM judge (flexible, slower) — usually layered.",
+      "The single highest-leverage control for *agents* is **tool-permission scoping and least privilege.** An agent's real power — and real danger — is that it can *act*: call tools, hit APIs, run code, touch databases. The principle: ==an agent should be able to call only the tools it actually needs, and each tool should hold only the narrowest credential that lets it do its job — nothing more.== The scenario's 'read a file' agent holding a delete-production credential is the textbook violation: the *capability* it was granted vastly exceeds the *function* it performs, so any compromise (injection, a confused-deputy trick, a model mistake) inherits that whole blast radius. Least privilege shrinks blast radius *by construction*: scope credentials tightly (read-only where read-only suffices, single-tenant where cross-tenant isn't needed), require human approval for irreversible/high-impact actions, sandbox code execution, and prefer allow-lists of exact tools over broad access. ==You cannot make the model perfectly safe, so you make the *tools* safe: even a fully-compromised agent can only do what its scoped permissions allow.==",
+      { type: "illustration", label: "Least privilege — scoping the blast radius", content: `OVER-SCOPED (the anti-pattern):
+  "read-a-file" agent ─► cloud cred with: read, write, DELETE, admin
+     any compromise (injection / confused deputy / model mistake)
+     ─► can wipe production.  Blast radius = everything the cred can do.
+
+LEAST PRIVILEGE (scope to the exact need):
+  "read-a-file" agent ─► cred with: read-only, this-bucket-only
+     same compromise ─► worst case, reads one bucket it was meant to read.
+
+  Controls that shrink blast radius:
+    • allow-list the EXACT tools the agent needs (deny by default)
+    • narrowest cred per tool (read-only, single-tenant, scoped path)
+    • human-in-the-loop approval for irreversible / high-impact actions
+    • sandbox code execution; no ambient prod credentials
+  Principle: you can't guarantee the model is safe → make the TOOLS safe.` },
+      "Wrapping it all is **compliance**, which turns these controls from 'nice engineering' into *requirements*. **Data residency**: some data legally must stay in a region (EU user data in the EU), which constrains *which model/provider/region* you may even send a prompt to — a third-party API in the wrong region can be a violation on its own. **Audit logging**: you must be able to reconstruct *what the model saw, what it did, and what tools it called* — both to investigate incidents and to satisfy regulators; but the logs themselves then hold sensitive data, so they need the *same* PII redaction and access controls (logging raw prompts is a common self-inflicted leak). **Retention**: sensitive data — and the prompts/outputs containing it — should be kept only as long as needed and then deleted, per policy (GDPR-style 'right to be forgotten,' minimisation). ==Compliance is why 'the model works' is not the bar: a system that leaks PII, can't be audited, or ships EU data to the wrong region is a *failing* system even if every answer is correct.== The interview-grade synthesis: beyond injection, secure the boundaries — redact PII in and out, prevent exfiltration (system prompt, cross-tenant, tool-mediated) with input/output guardrails that also gate tool calls, scope agent tools to least privilege so a compromise has a tiny blast radius, and satisfy compliance (residency, audit, retention) — because in production, safety and legality are part of correctness.",
+    ],
+    keyPoints: [
+      "**An LLM app leaks at its boundaries: input, context, output-to-user, and output-to-tools.** Prompt injection (separate module) is bad data getting *in*; this module is sensitive data/privilege getting *out*. Put controls on every boundary.",
+      "**PII detection & redaction is two-sided.** Filter PII on *input* so you don't spread it into logs/vector DBs/third-party APIs (a compliance breach the moment it's stored), and on *output* so the model doesn't emit it to a user who shouldn't see it. Use regex for structured PII (cards/SSNs/emails) plus NER/classifier for names/addresses.",
+      "**Data exfiltration has three flavours:** system-prompt leakage (reciting proprietary/embedded instructions or keys), cross-tenant / memorised-training-data leakage (surfacing another user's or a memorised record), and tool-mediated exfiltration (an agent smuggling secrets out via an outbound URL/email/tool call). Exfiltration is the mirror of injection.",
+      "**Guardrails = input and output filters wrapping the model — and the output guardrail must gate tool calls, not just user replies.** An agent's most dangerous output is *executed*, not shown, so inspect the tool call before it runs. Block PII, secrets/credentials, unsafe/off-policy content; layer rules + classifiers + an LLM judge.",
+      "**Least privilege is the top control for agents; compliance makes it mandatory.** Scope each agent to only the tools it needs and each tool to the narrowest credential (read-only, single-tenant), require approval for irreversible actions, sandbox code — so any compromise has a tiny blast radius. Compliance (data residency, audit logging with redaction, retention/minimisation) means a leaky or unauditable system fails even when every answer is correct.",
+    ],
+    recap: [
+      "**Frame:** an LLM app leaks at boundaries — input (PII pasted in), context (secrets, other tenants, system prompt, memorised data), output-to-user, output-to-tools. Injection = data IN (separate); this module = data/privilege OUT.",
+      "**PII redaction is two-sided:** filter *in* (don't spread PII into logs/vector DB/3rd-party APIs) and *out* (don't emit it to the user). Regex for structured PII + NER/classifier for names/addresses.",
+      "**Exfiltration, 3 flavours:** system-prompt leakage; cross-tenant / memorised-training-data leakage; tool-mediated (agent smuggles secrets out via an outbound action).",
+      "**Guardrails wrap the model — and the OUTPUT guardrail must gate the TOOL CALL, not just the user reply** (the dangerous output is executed, not shown). Block PII/secrets/unsafe; layer rules + classifiers + judge.",
+      "**Least privilege (top agent control):** only the tools it needs, narrowest cred per tool (read-only/single-tenant), approval for irreversible actions, sandboxed code → tiny blast radius on compromise. **Compliance** (residency, redacted audit logs, retention) makes a leaky/unauditable system a failing one even if answers are correct.",
+    ],
+    mcqs: [
+      {
+        question: "Your support bot repeated a customer's full credit-card number back in its answer, and separately your prompt logs now contain SSNs users pasted in. Why is PII a *two-sided* problem, and what's the control on each side?",
+        options: [
+          "PII only matters on output; input PII is harmless because the user already knows their own data",
+          "On the *input* side, PII the user pastes gets spread into logs, vector stores, and third-party APIs the moment you store or forward it (a compliance breach), so you redact it before logging/storing; on the *output* side, the model can emit PII to the wrong recipient, so you redact/block it before the response reaches the user — regex for structured PII plus NER/classifiers for names and addresses",
+          "You only need output filtering, because input filtering would break the model's ability to answer",
+          "PII detection is unnecessary if you use prompt-injection defenses, which cover it",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: PII must be handled on both boundaries. On input, once a user's PII is logged, embedded into a vector DB, or forwarded to a third-party model API, it has spread into systems never scoped to hold it — a compliance problem independent of any attacker — so it should be detected and masked before storage/forwarding. On output, the model can regurgitate or reconstruct PII and hand it to someone who shouldn't see it (the credit-card transcript), so an output redaction pass must run before the response reaches the user. Structured PII (cards, SSNs, emails) is caught with regex; unstructured PII (names, addresses) needs an NER model or classifier. Option A ignores the input-spread/compliance risk. Option C is wrong — input redaction masks PII without preventing answers. Option D conflates injection defenses with PII handling; they're different controls.",
+      },
+      {
+        question: "You add an output guardrail that scans the model's replies for PII and secrets before showing them to the user. Your agent still exfiltrated data. What did the guardrail placement miss?",
+        options: [
+          "Output guardrails are useless; only input guardrails matter",
+          "The guardrail must also sit between the model and its *tools*, not only between the model and the user — an agent's most dangerous output is *executed* (a tool call that sends an email, fetches a URL, or hits a database), so a tool call carrying secret data out must be inspected before it runs, which a user-facing-only filter never sees",
+          "The guardrail should have been placed only on the input side",
+          "The agent needed a larger model, which would not have exfiltrated data",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: for an agent, the highest-risk output is not the text shown to a human but the *action* it takes — a tool call that can carry data out of your perimeter (an outbound request, an email, a DB write). A guardrail placed only between the model and the user never inspects those tool calls, so tool-mediated exfiltration sails past it. The output guardrail must gate the tool invocation itself, inspecting and blocking calls that would leak secrets or PII before they execute. Option A wrongly dismisses output guardrails. Option C ignores that the leak is on the action/output path. Option D is wrong — model size doesn't address a missing control on the tool boundary.",
+      },
+      {
+        question: "A security review finds your 'read a file' agent holds a cloud credential that can also delete production storage. Applying least privilege, what's the correct fix and why does it matter more than trying to make the model itself perfectly safe?",
+        options: [
+          "Leave the credential broad but add a longer system-prompt warning telling the model not to delete anything",
+          "Scope the credential to the narrowest capability the agent actually needs (read-only, restricted to the specific bucket/path), allow-list only the tools it requires, and require human approval for any irreversible action — because you cannot guarantee the model is uncompromisable, so you shrink the blast radius by construction: even a fully-compromised agent can only do what its scoped permissions permit",
+          "Give the agent admin credentials but log every action, so you can undo mistakes later",
+          "Replace the agent with a bigger model that is smart enough not to misuse the credential",
+        ],
+        correct: 1,
+        explanation: "Option B is correct: least privilege scopes each agent to only the tools it needs and each tool to the narrowest credential that does its job — here, read-only and restricted to the intended bucket — plus human approval gates on irreversible actions. This matters because model-level safety can never be guaranteed (injection, confused-deputy tricks, and plain model mistakes all exist), so the durable defense is to shrink the blast radius structurally: a compromised read-only, single-bucket agent can, at worst, read the one bucket it was meant to read. Option A relies on the model obeying instructions, which is exactly what can't be guaranteed. Option C keeps a catastrophic blast radius and 'undo later' fails for irreversible deletes. Option D wrongly assumes a smarter model removes the need to scope privileges.",
+      },
+    ],
+    takeaway: "Beyond prompt injection, an LLM app leaks at its boundaries, so secure each one: redact PII on both input (don't spread it into logs/vector DBs/third-party APIs) and output (don't emit it to the wrong user); prevent data exfiltration in its three forms (system-prompt leakage, cross-tenant/memorised-training-data leakage, and tool-mediated smuggling) with input and output guardrails — where the output guardrail must gate *tool calls*, not just user replies, since an agent's most dangerous output is executed rather than shown. Scope agents to least privilege (only the tools they need, the narrowest credential per tool, approval for irreversible actions) so any compromise has a tiny blast radius, and satisfy compliance (data residency, redacted audit logging, retention/minimisation) — because in production a system that leaks, can't be audited, or mishandles regional data is failing even when every answer is correct.",
+  },
+};

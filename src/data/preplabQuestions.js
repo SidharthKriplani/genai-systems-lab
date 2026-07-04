@@ -22,6 +22,8 @@ import { Q_PEFT_RLHF } from "./questions/q-peft-rlhf";
 import { Q_DPO_DISTILL } from "./questions/q-dpo-distill";
 import { Q_MOE_PROMPT } from "./questions/q-moe-prompt";
 import { Q_CORE_DEEPEN } from "./questions/q-core-deepen";
+import { Q_GAP_A } from "./questions/q-gap-a";
+import { Q_GAP_B } from "./questions/q-gap-b";
 
 export const PREP_QUESTIONS = [
   // ── RAG (12) ──────────────────────────────────────────────────────────────
@@ -6716,6 +6718,8 @@ export const PREP_QUESTIONS = [
 // Append the concept-level L0/L1/L2 ladders (tokenizer, embeddings, LoRA, RLHF,
 // DPO, distillation, MoE, prompt-engineering) — 104 questions across 8 concepts.
 PREP_QUESTIONS.push(...Q_FOUNDATIONS, ...Q_PEFT_RLHF, ...Q_DPO_DISTILL, ...Q_MOE_PROMPT, ...Q_CORE_DEEPEN);
+// Gap-module ladders (2026-07-04): agent-eval, rag-ingestion, model-routing, llm-security.
+PREP_QUESTIONS.push(...Q_GAP_A, ...Q_GAP_B);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // L0 / L1 / L2 ladder (the product moat) — 2026-07-03

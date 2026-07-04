@@ -43,6 +43,10 @@ const TOPIC_LABELS = {
   llm: "LLM fundamentals",
   recommendations: "Recommenders",
   leadership: "Leadership / EM",
+  "agent-eval": "Agent evaluation",
+  "rag-ingestion": "RAG ingestion",
+  "model-routing": "Model routing",
+  "llm-security": "LLM security",
 };
 
 const topicLabel = (t) => TOPIC_LABELS[t] || (t ? t[0].toUpperCase() + t.slice(1) : "General");

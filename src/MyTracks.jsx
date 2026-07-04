@@ -18,6 +18,8 @@ const TOPIC_LABELS = {
   safety: "Safety", product: "Product", behavioral: "Behavioral",
   multimodal: "Multimodal", reasoning: "Reasoning",
   serving: "Serving", foundations: "Foundations",
+  "agent-eval": "Agent Evaluation", "rag-ingestion": "RAG Ingestion",
+  "model-routing": "Model Routing", "llm-security": "LLM Security",
 };
 
 const DIFF_STYLES = {

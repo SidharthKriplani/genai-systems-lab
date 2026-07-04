@@ -150,6 +150,9 @@ const TOPIC_LABELS = {
   lora: "LoRA / PEFT", rlhf: "RLHF", dpo: "DPO",
   moe: "Mixture-of-Experts", distillation: "Distillation",
   "prompt-engineering": "Prompt Engineering",
+  // Gap-module topics (2026-07-04)
+  "agent-eval": "Agent Evaluation", "rag-ingestion": "RAG Ingestion",
+  "model-routing": "Model Routing", "llm-security": "LLM Security",
 };
 
 // Topic group tiles — aligned to challenge area names (R8 redesign)
@@ -157,14 +160,14 @@ const TOPIC_GROUPS = [
   {
     id: "rag",
     label: "Retrieval",
-    desc: "RAG failure modes, chunking, embeddings, reranking, context overflow",
-    topics: ["rag"],
+    desc: "RAG failure modes, chunking, embeddings, reranking, context overflow, ingestion & indexing",
+    topics: ["rag", "rag-ingestion"],
   },
   {
     id: "agents",
     label: "Agents",
-    desc: "Agent loops, memory architecture, orchestration, tool use, injection",
-    topics: ["agents"],
+    desc: "Agent loops, memory architecture, orchestration, tool use, injection, trajectory evaluation",
+    topics: ["agents", "agent-eval"],
   },
   {
     id: "evals",
@@ -182,8 +185,8 @@ const TOPIC_GROUPS = [
   {
     id: "prod",
     label: "Production",
-    desc: "Serving, inference, LLMOps, cost, latency, safety, observability",
-    topics: ["serving", "llmops", "safety", "behavioral", "product"],
+    desc: "Serving, inference, LLMOps, cost, latency, safety, observability, model routing, LLM security",
+    topics: ["serving", "llmops", "safety", "behavioral", "product", "model-routing", "llm-security"],
   },
 ];
 

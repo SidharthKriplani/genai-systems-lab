@@ -29,6 +29,8 @@ const TOPIC_LABELS = {
   embeddings: "Embeddings", lora: "LoRA / PEFT", rlhf: "RLHF", dpo: "DPO",
   moe: "Mixture-of-experts", distillation: "Distillation",
   "prompt-engineering": "Prompt engineering",
+  "agent-eval": "Agent Evaluation", "rag-ingestion": "RAG Ingestion",
+  "model-routing": "Model Routing", "llm-security": "LLM Security",
 };
 const labelFor = (t) => TOPIC_LABELS[t] || t;
 

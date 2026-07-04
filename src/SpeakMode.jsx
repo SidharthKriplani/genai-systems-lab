@@ -18,6 +18,8 @@ const TOPIC_LABELS = {
   llm: "LLM", merging: "Model Merging", production: "Production", quantization: "Quantization",
   recommendations: "Recommendations", streaming: "Streaming", sysdesign: "System Design",
   transformers: "Transformers",
+  "agent-eval": "Agent Evaluation", "rag-ingestion": "RAG Ingestion",
+  "model-routing": "Model Routing", "llm-security": "LLM Security",
 };
 const topicLabel = (t) => TOPIC_LABELS[t] || (t ? t[0].toUpperCase() + t.slice(1) : "General");
 

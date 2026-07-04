@@ -38,6 +38,10 @@ import RopeViz from "./components/nicheViz/RopeViz.jsx";
 import SparseAttentionViz from "./components/nicheViz/SparseAttentionViz.jsx";
 import DenseVsSparseViz from "./components/nicheViz/DenseVsSparseViz.jsx";
 import QueryRewritingViz from "./components/nicheViz/QueryRewritingViz.jsx";
+import AgentEvalViz from "./components/nicheViz/AgentEvalViz.jsx";
+import RagIngestionViz from "./components/nicheViz/RagIngestionViz.jsx";
+import ModelRoutingViz from "./components/nicheViz/ModelRoutingViz.jsx";
+import LlmSecurityViz from "./components/nicheViz/LlmSecurityViz.jsx";
 import MultiHopRetrievalViz from "./components/nicheViz/MultiHopRetrievalViz.jsx";
 import EvalContaminationViz from "./components/nicheViz/EvalContaminationViz.jsx";
 import CalibrationViz from "./components/nicheViz/CalibrationViz.jsx";
@@ -10162,11 +10166,11 @@ export const MODULES = [
   { id: "nlp-transfer-learning",         label: "Transfer Learning",   tag: "NLP FOUNDATIONS", level: "intermediate", title: "Transfer Learning in NLP",                     subtitle: "ELMo → ULMFiT → BERT: pretrain-then-finetune, NLP's ImageNet moment.",                                 fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: TransferLearningViz },
   { id: "nlp-sentence-embeddings",       label: "Sentence Embeddings", tag: "NLP FOUNDATIONS", level: "advanced",     title: "Sentence Embeddings & Semantic Similarity",    subtitle: "SBERT, pooling strategies, and cosine similarity — the bridge to modern RAG.",                         fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: SentenceEmbedViz },
 
-  // ── Gap skeletons (2026-07-03) — specced, NOT yet authored. Render "content coming" via StubModule; no RUNNER_DATA. ──
-  { id: "agent-eval-trajectory",        label: "Agent Evaluation",     tag: "AGENTS",     level: "advanced",     title: "Agent Evaluation: Trajectory vs Outcome", subtitle: "Tool-call accuracy, step success, trajectory scoring — why outcome-only eval misses.",         fidelity: { tier: "conceptual", note: "Skeleton — content coming soon." }, component: StubModule },
-  { id: "rag-ingestion-pipeline",       label: "RAG Ingestion",        tag: "RETRIEVAL",  level: "intermediate", title: "RAG Ingestion & Indexing Pipeline",       subtitle: "Parsing, cleaning, dedup, metadata, incremental re-indexing & freshness.",                   fidelity: { tier: "conceptual", note: "Skeleton — content coming soon." }, component: StubModule },
-  { id: "model-routing-cascades",       label: "Model Routing",        tag: "PRODUCTION", level: "intermediate", title: "Model Routing, Cascades & Fallbacks",     subtitle: "Route by difficulty/cost, small→large cascade, confidence fallback, provider failover.",     fidelity: { tier: "conceptual", note: "Skeleton — content coming soon." }, component: StubModule },
-  { id: "llm-security-beyond-injection",label: "LLM Security",         tag: "SAFETY",     level: "advanced",     title: "LLM Security Beyond Injection",           subtitle: "PII redaction, exfiltration, output filtering, tool-permission scoping, compliance.",         fidelity: { tier: "conceptual", note: "Skeleton — content coming soon." }, component: StubModule },
+  // ── Gap modules (authored 2026-07-04) — full teaching in RUNNER_DATA + monochrome interactive + L0/L1/L2 questions. ──
+  { id: "agent-eval-trajectory",        label: "Agent Evaluation",     tag: "AGENTS",     level: "advanced",     title: "Agent Evaluation: Trajectory vs Outcome", subtitle: "Tool-call accuracy, step success, trajectory scoring — why outcome-only eval misses.",         fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: AgentEvalViz },
+  { id: "rag-ingestion-pipeline",       label: "RAG Ingestion",        tag: "RETRIEVAL",  level: "intermediate", title: "RAG Ingestion & Indexing Pipeline",       subtitle: "Parsing, cleaning, dedup, metadata, incremental re-indexing & freshness.",                   fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: RagIngestionViz },
+  { id: "model-routing-cascades",       label: "Model Routing",        tag: "PRODUCTION", level: "intermediate", title: "Model Routing, Cascades & Fallbacks",     subtitle: "Route by difficulty/cost, small→large cascade, confidence fallback, provider failover.",     fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: ModelRoutingViz },
+  { id: "llm-security-beyond-injection",label: "LLM Security",         tag: "SAFETY",     level: "advanced",     title: "LLM Security Beyond Injection",           subtitle: "PII redaction, exfiltration, output filtering, tool-permission scoping, compliance.",         fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: LlmSecurityViz },
 
   // ── D3: market-gap Foundations modules (teaching via RUNNER_DATA; interactive TBD) ──
   { id: "rope",       label: "RoPE",             tag: "LANG MODELS", level: "advanced",     title: "Rotary Position Embeddings (RoPE)", subtitle: "Why rotation encodes position — and how context length extends.",          fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: RopeViz },
