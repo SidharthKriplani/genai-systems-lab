@@ -12571,13 +12571,26 @@ export default function ConceptsApp({ onNavigate, initialGym }) {
   // ── Shared sidebar (used in both runner and standard view) ──
   const SidebarContent = (
     <div className="w-52 shrink-0 overflow-y-auto py-4 hidden sm:block" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
-      <div className="px-3 mb-3">
+      <div className="px-3 mb-3 space-y-2">
         <button
           onClick={() => currentGym ? setActive(null) : setActiveGym(null)}
           className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors"
         >
           ← {currentGym ? currentGym.label : "Foundations"}
         </button>
+        {/* Gym switcher — jump to another gym without going back to the grid. */}
+        <select
+          value={currentGym?.id || ""}
+          onChange={e => {
+            const g = GYMS.find(x => x.id === e.target.value);
+            if (g) { setActiveGym(g.id); setActive(g.moduleIds[0] || null); }
+          }}
+          className="w-full text-[11px] rounded border px-2 py-1.5 outline-none cursor-pointer"
+          style={{ background: "var(--surface-2, #18181b)", borderColor: "var(--border)", color: "#d4d4d8" }}
+          title="Switch gym"
+        >
+          {GYMS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+        </select>
       </div>
       {sidebarIds.map(id => {
         const m = MODULES.find(x => x.id === id);
