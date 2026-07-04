@@ -29,7 +29,7 @@ export default function FoundationsRunner({
   const [recapMode, setRecapMode] = useState(false);
   const [tab, setTab]             = useState("lesson"); // "lesson" | "code"
 
-  const { scenario, explanation, takeaway, keyPoints, recap } = runnerData;
+  const { scenario, groundUp, explanation, takeaway, keyPoints, recap } = runnerData;
 
   // ── Code tab (2026-07-03): a module "has code" when it carries an explicit runnerData.code
   //    field OR any `illustration` block in its explanation (the ASCII/trace/code panels). When
@@ -173,11 +173,14 @@ export default function FoundationsRunner({
       ) : (
       <div className="space-y-14">
 
-        {/* ── Scenario ─────────────────────────────────────────────────────── */}
+        {/* ── Opener: from-zero "Start Here" (migrated modules with `groundUp`)
+             OR the legacy "Production Scenario" for modules not yet migrated ─── */}
         <section>
-          <SectionRule label="Production Scenario" />
-          <div className="mt-4 rounded-xl p-5 border border-zinc-800 bg-zinc-900/50">
-            <p className="text-sm text-zinc-200 leading-relaxed font-medium">{scenario}</p>
+          <SectionRule label={groundUp ? "Start Here" : "Production Scenario"} />
+          <div className="mt-4 rounded-xl p-5 border border-zinc-800 bg-zinc-900/50 space-y-3">
+            {String(groundUp || scenario).split("\n\n").map((para, i) => (
+              <p key={i} className="text-sm text-zinc-200 leading-relaxed font-medium"><InlineMd text={para} /></p>
+            ))}
           </div>
         </section>
 
@@ -216,6 +219,17 @@ export default function FoundationsRunner({
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* ── In Production — Apply It (migrated modules: the old production
+             scenario, demoted to an application beat after the teaching) ───── */}
+        {groundUp && scenario && (
+          <section>
+            <SectionRule label="In Production — Apply It" />
+            <div className="mt-4 rounded-xl p-5 border border-zinc-800 bg-zinc-900/50">
+              <p className="text-sm text-zinc-200 leading-relaxed font-medium"><InlineMd text={scenario} /></p>
+            </div>
           </section>
         )}
 
