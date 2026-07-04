@@ -8,6 +8,7 @@ import { getAllAreasReadiness } from "./readiness";
 import { supabase, signInWithGoogle } from "./supabase";
 import { ALL_SCENARIOS, SCORE_TIERS } from "./ragScenarios";
 import { computeBreakdown } from "./leaderboardUtils";
+import ReadinessWidget from "./ReadinessWidget";
 
 // ── Tier badge (local copy — original in App.jsx used by LeaderboardView) ──────
 function TierBadge({ tier }) {
@@ -291,6 +292,9 @@ export default function ProgressView({ visited, visitedModules, leaderboard, onN
           </div>
         </div>
       </div>
+
+      {/* ── Readiness widget (score + target countdown + weakest-area CTA) ── */}
+      <ReadinessWidget onNavigate={onNavigate} />
 
       {/* ── Readiness by area ── */}
       <div className="rounded-xl p-5 space-y-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>

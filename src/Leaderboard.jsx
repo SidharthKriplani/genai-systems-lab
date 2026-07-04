@@ -24,11 +24,42 @@ function RankMedal({ rank }) {
 
 // ─── YOUR STANDING CARD ───────────────────────────────────────────────────────
 
+// ─── FIELD BENCHMARK ──────────────────────────────────────────────────────────
+// Computes You / Field avg / Top 10% + percentile from the already-fetched board
+// rows. p90 = the 90th-percentile score (nearest-rank method). Percentile = share
+// of participants with a strictly lower score than you. Guards for an empty board.
+function computeBenchmark(rows, myScore) {
+  const scores = (rows || []).map(r => r.total_score || 0).filter(s => s >= 0);
+  const n = scores.length;
+  if (n === 0) return null;
+  const avg = Math.round(scores.reduce((s, v) => s + v, 0) / n);
+  const sorted = [...scores].sort((a, b) => a - b);
+  // 90th-percentile score (nearest-rank; clamp index into range)
+  const idx = Math.min(n - 1, Math.max(0, Math.ceil(0.9 * n) - 1));
+  const p90 = sorted[idx];
+  // Percentile: % of participants you're strictly ahead of.
+  const below = sorted.filter(s => s < myScore).length;
+  const aheadPct = Math.round((below / n) * 100);
+  const max = sorted[n - 1] || 1;
+  return { avg, p90, aheadPct, max, n };
+}
+
+function BenchmarkBar({ label, value, max, color }) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  return (
+    <div className="absolute top-0 bottom-0 flex flex-col items-center" style={{ left: `${pct}%`, transform: "translateX(-50%)" }}>
+      <div className="w-0.5 h-full rounded-full" style={{ background: color }} />
+      <span className="text-[9px] font-mono font-bold whitespace-nowrap mt-1" style={{ color }}>{label}</span>
+    </div>
+  );
+}
+
 function YourStandingCard({ user, rows }) {
   const bd = computeBreakdown();
   const myRow = user ? rows.find(r => r.user_id === user.id) : null;
   const myRank = myRow ? rows.indexOf(myRow) + 1 : null;
   const tier = scoreTier(bd.total);
+  const bench = computeBenchmark(rows, bd.total);
 
   return (
     <div className="rounded-xl border p-5 space-y-4" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -55,6 +86,28 @@ function YourStandingCard({ user, rows }) {
           </div>
         ))}
       </div>
+
+      {/* vs Field benchmark — You / Field avg / Top 10% + percentile */}
+      {bench ? (
+        <div className="rounded-lg border p-3 space-y-3" style={{ background: "var(--surface-2)", borderColor: "var(--border)" }}>
+          <div className="flex items-center justify-center gap-4 text-[11px] font-mono">
+            <span style={{ color: "var(--gal-build)" }}>You: <span className="font-bold">{bd.total.toLocaleString()}</span></span>
+            <span className="text-zinc-500">Field avg: <span className="font-bold text-zinc-300">{bench.avg.toLocaleString()}</span></span>
+            <span className="text-violet-400">Top 10%: <span className="font-bold">{bench.p90.toLocaleString()}</span></span>
+          </div>
+          {/* Marker bar: You / Avg / Top-10% positioned on a 0..max track */}
+          <div className="relative h-1 rounded-full mx-2 mb-5" style={{ background: "rgba(63,63,70,0.6)" }}>
+            <BenchmarkBar label="avg"    value={bench.avg}      max={bench.max} color="#a1a1aa" />
+            <BenchmarkBar label="top 10%" value={bench.p90}     max={bench.max} color="#a78bfa" />
+            <BenchmarkBar label="you"    value={bd.total}       max={bench.max} color="var(--gal-build)" />
+          </div>
+          <p className="text-[11px] text-zinc-400 text-center">
+            Ahead of <span className="text-white font-bold">{bench.aheadPct}%</span> of participants
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs text-zinc-500 text-center italic">Be the first on the board.</p>
+      )}
 
       {/* Rank line */}
       {myRank && (

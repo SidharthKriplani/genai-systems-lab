@@ -5,6 +5,7 @@ import { track } from "./analytics";
 import { POSTS } from "./groundTruthIndex";
 import { getAllAreasReadiness, getOverallReadiness } from "./readiness";
 import { Icon } from "./Icon.jsx";
+import ReadinessWidget from "./ReadinessWidget";
 
 // ─── CountUp ──────────────────────────────────────────────────────────────────
 function CountUp({ target, duration = 1200, suffix = "" }) {
@@ -569,41 +570,11 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
         </div>
       )}
 
-      {/* Readiness hero — capped-breadth overall score + work-next front door.
-          Mirrors MSL/PAL: overall = mean of per-area coverage, each area capped
-          so breadth (not grinding one area) drives the score. Streak excluded. */}
+      {/* Readiness widget — standardized cross-lab component: capped-breadth overall
+          score + level + themed bar, target company/date countdown, and a weakest-area
+          work-next CTA. Replaces the former inline readiness hero (no duplication). */}
       {overall.areas.some(a => a.hasActivity) && (
-        <div className="rounded-xl p-5 sm:p-6" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-          <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Interview readiness</p>
-          <div className="flex items-baseline gap-3 mb-3">
-            <span className="text-5xl font-black leading-none tracking-tight" style={{ color: overall.color }}>
-              {overall.score}%
-            </span>
-            <span className="text-sm font-mono font-bold" style={{ color: overall.color }}>{overall.level}</span>
-            {overall.hasQuiz && (
-              <span className="text-[10px] font-mono text-zinc-500">· incl. self-assessment</span>
-            )}
-          </div>
-          <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden mb-3">
-            <div className="h-1.5 rounded-full transition-all" style={{ width: `${overall.score}%`, background: overall.color }} />
-          </div>
-          <p className="text-[10px] text-zinc-600 leading-relaxed mb-4">
-            Capped-breadth score across {overall.hasQuiz ? "six" : "five"} areas — each area contributes up to 100%, so breadth across domains matters more than grinding one.
-          </p>
-          {overall.weakest && (
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="text-sm text-zinc-300">
-                Work next: <span className="font-bold text-white">{overall.weakest.label}</span>
-                <span className="text-xs text-zinc-500 ml-1.5">({overall.weakest.pct}%)</span>
-              </div>
-              <button onClick={() => { track("readiness_work_next", { area: overall.weakest.id }); onNavigate(overall.weakest.id); }}
-                className="text-xs font-mono font-bold px-4 py-2 rounded-lg transition-all hover:opacity-80 whitespace-nowrap"
-                style={{ background: overall.weakest.color + "18", border: `1px solid ${overall.weakest.color}40`, color: overall.weakest.color }}>
-                Work on it →
-              </button>
-            </div>
-          )}
-        </div>
+        <ReadinessWidget onNavigate={onNavigate} />
       )}
 
       {/* Per-area readiness — shows when user has activity in any area */}
