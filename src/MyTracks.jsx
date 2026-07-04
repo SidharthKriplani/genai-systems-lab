@@ -3,6 +3,14 @@ import {
   getTracks, createTrack, renameTrack, deleteTrack,
   addNote, removeItem, reorderItems, moveItem,
 } from "./utils/tracks.js";
+import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
+
+// moduleId → foundation/gym label, so saved Foundation modules group by their
+// foundation (Language Models, Retrieval, NLP Foundations…) not their raw tag.
+const GYM_BY_MODULE = Object.fromEntries(MODULE_SEARCH_INDEX.map(m => [m.id, m.gymLabel]));
+function conceptGym(item) {
+  return (item.type === "concept" && GYM_BY_MODULE[item.itemId]) || null;
+}
 
 const TOPIC_LABELS = {
   rag: "RAG", agents: "Agents", finetuning: "Fine-Tuning",
@@ -35,7 +43,7 @@ function groupItems(items) {
   const groups = [];
   const byKey = {};
   items.forEach((item, idx) => {
-    const key = item.meta?.category || item.meta?.tag || TYPE_LABELS[item.type] || item.type;
+    const key = conceptGym(item) || item.meta?.category || item.meta?.tag || TYPE_LABELS[item.type] || item.type;
     if (!byKey[key]) {
       byKey[key] = { key, entries: [] };
       groups.push(byKey[key]);
@@ -300,10 +308,10 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                       {(item.meta?.difficulty || item.meta?.level) && (
                         <DiffBadge difficulty={(item.meta.difficulty || item.meta.level).toLowerCase()} />
                       )}
-                      {(item.meta?.category || item.meta?.tag) && (
+                      {(conceptGym(item) || item.meta?.category || item.meta?.tag) && (
                         <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded"
                           style={{ background: "rgba(99,102,241,0.14)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
-                          {item.meta.category || item.meta.tag}
+                          {conceptGym(item) || item.meta.category || item.meta.tag}
                         </span>
                       )}
                     </div>

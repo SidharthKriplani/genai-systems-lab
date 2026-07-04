@@ -1017,7 +1017,7 @@ const GLOBAL_SEARCH_INDEX = [
     kind: "question", label: qq.question, tag: (questionTier(qq) + " · " + (qq.topic || "q")).toUpperCase(),
     route: { tab: "preplab", mode: "browse" },
   })),
-];
+].filter(e => e && e.kind && e.label); // drop undefined (sparse-array holes) + malformed entries
 const KIND_ACCENT = { page: "#8b5cf6", gym: "#6366f1", module: "#818cf8", company: "#22c55e", cheatsheet: "#f59e0b", question: "#38bdf8" };
 
 function SearchModal({ onClose, onSelect }) {
@@ -1029,11 +1029,13 @@ function SearchModal({ onClose, onSelect }) {
   const q = query.trim().toLowerCase();
   const results = q
     ? GLOBAL_SEARCH_INDEX.filter(m =>
-        m.label.toLowerCase().includes(q) ||
-        m.tag.toLowerCase().includes(q) ||
-        m.kind.toLowerCase().includes(q)
+        m && (
+          (m.label || "").toLowerCase().includes(q) ||
+          (m.tag || "").toLowerCase().includes(q) ||
+          (m.kind || "").toLowerCase().includes(q)
+        )
       ).slice(0, 40)
-    : GLOBAL_SEARCH_INDEX.filter(m => m.kind === "gym" || m.kind === "page").slice(0, 9);
+    : GLOBAL_SEARCH_INDEX.filter(m => m && (m.kind === "gym" || m.kind === "page")).slice(0, 9);
 
   function onKeyDown(e) {
     if (e.key === "ArrowDown") { e.preventDefault(); setCursor(c => Math.min(c + 1, results.length - 1)); }
