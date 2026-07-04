@@ -12167,6 +12167,16 @@ export const GYMS = [
   },
 ];
 
+// Difficulty ordering for a gym's module list: beginner → intermediate → advanced,
+// stable within each band (same-difficulty modules keep their authored order).
+const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 };
+function sortIdsByLevel(ids) {
+  return ids
+    .map((id, i) => ({ id, i, r: LEVEL_RANK[MODULES.find(m => m.id === id)?.level] ?? 1 }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map(x => x.id);
+}
+
 // ─── GYM SELECTOR VIEW ────────────────────────────────────────────────────────
 
 function GymSelectorView({ mastery, onEnterGym }) {
@@ -12181,7 +12191,7 @@ function GymSelectorView({ mastery, onEnterGym }) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {GYMS.map(gym => {
-          const gymMods = gym.moduleIds.map(id => MODULES.find(m => m.id === id)).filter(Boolean);
+          const gymMods = sortIdsByLevel(gym.moduleIds).map(id => MODULES.find(m => m.id === id)).filter(Boolean);
           const completed = gymMods.filter(m => mastery.has(m.id)).length;
           const total = gymMods.length;
           const pct = total > 0 ? Math.round(completed / total * 100) : 0;
@@ -12276,7 +12286,7 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
   // Reset lab tab whenever the gym changes.
   useEffect(() => { setLabOpen(false); setChecklistOpen(false); }, [gymId]);
   if (!gym) return null;
-  const modules = gym.moduleIds.map(id => MODULES.find(m => m.id === id)).filter(Boolean);
+  const modules = sortIdsByLevel(gym.moduleIds).map(id => MODULES.find(m => m.id === id)).filter(Boolean);
   const completedCount = modules.filter(m => mastery.has(m.id)).length;
   const nextModule = modules.find(m => !mastery.has(m.id));
   const pct = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
@@ -12592,7 +12602,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
   if (!mod) return null;
   const Component = mod.component;
   const currentGym = GYMS.find(g => g.moduleIds.includes(active));
-  const sidebarIds = currentGym ? currentGym.moduleIds : MODULES.map(m => m.id);
+  const sidebarIds = currentGym ? sortIdsByLevel(currentGym.moduleIds) : MODULES.map(m => m.id);
   const runnerData = RUNNER_DATA[active];
 
   // ── Shared sidebar (used in both runner and standard view) ──
@@ -12610,7 +12620,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
           value={currentGym?.id || ""}
           onChange={e => {
             const g = GYMS.find(x => x.id === e.target.value);
-            if (g) { setActiveGym(g.id); setActive(g.moduleIds[0] || null); }
+            if (g) { setActiveGym(g.id); setActive(sortIdsByLevel(g.moduleIds)[0] || null); }
           }}
           className="w-full text-[11px] rounded border px-2 py-1.5 outline-none cursor-pointer"
           style={{ background: "var(--surface-2, #18181b)", borderColor: "var(--border)", color: "#d4d4d8" }}
