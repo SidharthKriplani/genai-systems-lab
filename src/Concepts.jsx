@@ -10161,6 +10161,12 @@ export const MODULES = [
   { id: "nlp-transfer-learning",         label: "Transfer Learning",   tag: "NLP FOUNDATIONS", level: "intermediate", title: "Transfer Learning in NLP",                     subtitle: "ELMo → ULMFiT → BERT: pretrain-then-finetune, NLP's ImageNet moment.",                                 fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: TransferLearningViz },
   { id: "nlp-sentence-embeddings",       label: "Sentence Embeddings", tag: "NLP FOUNDATIONS", level: "advanced",     title: "Sentence Embeddings & Semantic Similarity",    subtitle: "SBERT, pooling strategies, and cosine similarity — the bridge to modern RAG.",                         fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: SentenceEmbedViz },
 
+  // ── Gap skeletons (2026-07-03) — specced, NOT yet authored. Render "content coming" via StubModule; no RUNNER_DATA. ──
+  { id: "agent-eval-trajectory",        label: "Agent Evaluation",     tag: "AGENTS",     level: "advanced",     title: "Agent Evaluation: Trajectory vs Outcome", subtitle: "Tool-call accuracy, step success, trajectory scoring — why outcome-only eval misses.",         fidelity: { tier: "conceptual", note: "Skeleton — content coming soon." }, component: StubModule },
+  { id: "rag-ingestion-pipeline",       label: "RAG Ingestion",        tag: "RETRIEVAL",  level: "intermediate", title: "RAG Ingestion & Indexing Pipeline",       subtitle: "Parsing, cleaning, dedup, metadata, incremental re-indexing & freshness.",                   fidelity: { tier: "conceptual", note: "Skeleton — content coming soon." }, component: StubModule },
+  { id: "model-routing-cascades",       label: "Model Routing",        tag: "PRODUCTION", level: "intermediate", title: "Model Routing, Cascades & Fallbacks",     subtitle: "Route by difficulty/cost, small→large cascade, confidence fallback, provider failover.",     fidelity: { tier: "conceptual", note: "Skeleton — content coming soon." }, component: StubModule },
+  { id: "llm-security-beyond-injection",label: "LLM Security",         tag: "SAFETY",     level: "advanced",     title: "LLM Security Beyond Injection",           subtitle: "PII redaction, exfiltration, output filtering, tool-permission scoping, compliance.",         fidelity: { tier: "conceptual", note: "Skeleton — content coming soon." }, component: StubModule },
+
   // ── D3: market-gap Foundations modules (teaching via RUNNER_DATA; interactive TBD) ──
   { id: "rope",       label: "RoPE",             tag: "LANG MODELS", level: "advanced",     title: "Rotary Position Embeddings (RoPE)", subtitle: "Why rotation encodes position — and how context length extends.",          fidelity: { tier: "conceptual", note: "Interactive — explore the mechanics, then read the teaching below." }, component: RopeViz },
   { id: "gqa-mqa",    label: "GQA / MQA",        tag: "LANG MODELS", level: "advanced",     title: "Grouped-Query & Multi-Query Attention", subtitle: "Shrinking the KV cache — the memory bottleneck at inference.",           fidelity: { tier: "conceptual", note: "Interactive — see explanation for precise details." }, component: GQAMemoryViz },
@@ -12041,7 +12047,7 @@ export const GYMS = [
     label: "Retrieval",
     desc: "Embeddings, chunking strategies, the RAG pipeline end-to-end, context budgets, and reranking.",
     color: "#3b82f6",
-    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context", "reranking", "dense-vs-sparse-retrieval", "query-rewriting", "multi-hop-retrieval"],
+    moduleIds: ["embeddings", "chunking", "rag-pipeline", "context", "reranking", "dense-vs-sparse-retrieval", "query-rewriting", "multi-hop-retrieval", "rag-ingestion-pipeline"],
     labId: "lab",
     labLabel: "RAG Lab",
   },
@@ -12050,7 +12056,7 @@ export const GYMS = [
     label: "AI Agents",
     desc: "The ReAct loop, tool design, memory architecture, planning, multi-agent coordination, and the safety layer every agent needs.",
     color: "#f59e0b",
-    moduleIds: ["agent-react", "agent-tool-design", "agent-memory-foundations", "agent-memory-libraries", "agent-multiagent", "agent-failure-modes", "agent-planning-patterns", "agent-design-challenge", "agent-loop-simulator", "agent-frameworks", "agent-mcp", "agent-reliability", "agent-computer-use", "agent-long-running", "agent-a2a", "agent-config-lab"],
+    moduleIds: ["agent-react", "agent-tool-design", "agent-memory-foundations", "agent-memory-libraries", "agent-multiagent", "agent-failure-modes", "agent-planning-patterns", "agent-design-challenge", "agent-loop-simulator", "agent-frameworks", "agent-mcp", "agent-reliability", "agent-computer-use", "agent-long-running", "agent-a2a", "agent-config-lab", "agent-eval-trajectory"],
     labId: "agentlab",
     labLabel: "Agent Lab",
   },
@@ -12068,7 +12074,7 @@ export const GYMS = [
     label: "Production Systems",
     desc: "Cost, latency, observability, Flash Attention, prompt regression, quality drift, and the managed vs self-hosted decision.",
     color: "#8b5cf6",
-    moduleIds: ["cost-latency-concepts", "flashattn", "latency-planner", "observability-concepts", "prompt-regression-signals", "quality-drift", "cost-attribution", "managed-vs-selfhosted", "enterprise-ai-cost-model", "context-budget-lab", "streaming-lab", "failure-sim-lab"],
+    moduleIds: ["cost-latency-concepts", "flashattn", "latency-planner", "observability-concepts", "prompt-regression-signals", "quality-drift", "cost-attribution", "managed-vs-selfhosted", "enterprise-ai-cost-model", "context-budget-lab", "streaming-lab", "failure-sim-lab", "model-routing-cascades"],
     labId: "systems",
     labLabel: "Systems Lab",
   },
@@ -12111,7 +12117,7 @@ export const GYMS = [
     label: "AI Safety & Alignment",
     desc: "RLHF/DPO/constitutional AI, red-teaming methodology, jailbreak taxonomy, and safety measurement.",
     color: "#ef4444",
-    moduleIds: ["alignment-techniques", "red-teaming", "jailbreak-taxonomy", "safety-measurement", "bias-lab"],
+    moduleIds: ["alignment-techniques", "red-teaming", "jailbreak-taxonomy", "safety-measurement", "bias-lab", "llm-security-beyond-injection"],
     labId: "systems",
     labLabel: "Systems Lab",
   },
