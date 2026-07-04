@@ -15,6 +15,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { loadPython, runPython, isPyodideReady } from "./python.js";
+import { AddTrackBtn } from "./AddToTrackPopover.jsx";
 
 const CYAN = "var(--gal-build, #22d3ee)";
 
@@ -66,12 +67,12 @@ export function ImplementBrowser({ exercises = [], doneSet = new Set(), onOpen }
           const d = diffStyle(ex.difficulty);
           const isDone = doneSet.has(ex.id);
           return (
+            <div key={ex.id} style={{ position: "relative" }}>
             <button
-              key={ex.id}
               onClick={() => onOpen(ex.id)}
               className="w-full text-left rounded-xl border border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-900/80 transition-all p-5 group"
             >
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap pr-8">
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400">
                   {ex.topic}
                 </span>
@@ -90,6 +91,15 @@ export function ImplementBrowser({ exercises = [], doneSet = new Set(), onOpen }
                 {isDone ? "Revisit →" : "Implement it →"}
               </span>
             </button>
+            <span style={{ position: "absolute", top: 18, right: 18 }} onClick={(e) => e.stopPropagation()}>
+              <AddTrackBtn
+                itemType="code_exercise"
+                itemId={ex.id}
+                label={ex.title}
+                itemMeta={{ difficulty: ex.difficulty, tag: ex.topic }}
+              />
+            </span>
+            </div>
           );
         })}
       </div>

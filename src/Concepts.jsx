@@ -12252,7 +12252,10 @@ function GymSelectorView({ mastery, onEnterGym }) {
 // uniform Foundations module shell as every other gym. Only evaluation + production keep a Lab tab.
 const GYM_LAB = {
   "evaluation": { kind: "eval",   label: "Eval Lab",   note: "18 interactive modules — LLM-as-judge, RAGAS, calibration, observability, incident room." },
-  "production": { kind: "llm",    label: "LLM Lab",    note: "9 interactive modules — serving, KV cache, speculative decoding, quantisation, streaming." },
+  // LLM Lab moved from "production" → "inference-optimization" (2026-07-03): serving/KV-cache/
+  // quantisation/streaming belong with inference optimization; removes the triple-overlap where
+  // Production, Inference Optimization, and Language Models all surfaced the same serving topics.
+  "inference-optimization": { kind: "llm", label: "LLM Lab", note: "9 interactive modules — serving, KV cache, speculative decoding, quantisation, streaming." },
 };
 
 function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {

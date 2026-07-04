@@ -24,6 +24,9 @@ const DIFF_STYLES = {
 const TYPE_LABELS = {
   preplab: "PrepLab", note: "Notes", gt_post: "GT Posts",
   hub_q: "Foundations Q", concept: "Concepts",
+  cheatsheet: "Quick Reference", sd_scenario: "System Design",
+  code_exercise: "Code Exercises", code_lab: "Code Labs",
+  company_track: "Company Tracks", judgment: "Judgment",
 };
 
 // Group items by category (meta.category) or a readable type label, keeping
@@ -292,7 +295,7 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                         {item.type === "gt_post" ? "GT Post"
                           : item.type === "hub_q" ? "Foundations Q"
                           : item.type === "concept" ? "Concept"
-                          : item.type}
+                          : TYPE_LABELS[item.type] || item.type}
                       </span>
                       {(item.meta?.difficulty || item.meta?.level) && (
                         <DiffBadge difficulty={(item.meta.difficulty || item.meta.level).toLowerCase()} />
@@ -329,6 +332,46 @@ function TrackDetail({ track, onNavigate, onRename, onAddNote, onRemoveItem, onR
                       className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
                       style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
                     >Study →</button>
+                  )}
+                  {item.type === "cheatsheet" && (
+                    <button
+                      onClick={() => onNavigate?.("preplab")}
+                      title="Open Quick Reference"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Open →</button>
+                  )}
+                  {item.type === "sd_scenario" && (
+                    <button
+                      onClick={() => onNavigate?.("sysdesign")}
+                      title="Open System Design"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Open →</button>
+                  )}
+                  {(item.type === "code_exercise" || item.type === "code_lab") && (
+                    <button
+                      onClick={() => onNavigate?.("codelabs")}
+                      title="Open Coding Dojo"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Open →</button>
+                  )}
+                  {item.type === "company_track" && (
+                    <button
+                      onClick={() => onNavigate?.("company-tracks")}
+                      title="Open Company Tracks"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Open →</button>
+                  )}
+                  {item.type === "judgment" && (
+                    <button
+                      onClick={() => onNavigate?.("preplab")}
+                      title="Open"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Open →</button>
                   )}
                 </>
               )}

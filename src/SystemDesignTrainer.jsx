@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SD_SCENARIOS } from "./data/systemDesignScenarios.js";
+import { AddTrackBtn } from "./AddToTrackPopover.jsx";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  System Design Trainer — an attempt-then-reveal staged walkthrough.
@@ -173,25 +174,34 @@ export default function SystemDesignTrainer({ onExit } = {}) {
           ) : (
             <div className="mt-8 space-y-3">
               {scenarios.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => enterScenario(s.id)}
-                  className="w-full text-left rounded-xl p-5 transition-colors"
-                  style={{ ...surface, borderColor: s.id === lastId ? CYAN : BORDER }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="text-base font-semibold" style={{ color: INK_HI }}>{s.title}</div>
-                    {s.id === lastId && (
-                      <span className="text-[11px] shrink-0 mt-0.5" style={{ color: CYAN }}>last opened</span>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-sm leading-relaxed" style={{ color: INK_LOW }}>{s.prompt}</p>
-                  {Array.isArray(s.tags) && s.tags.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {s.tags.map((t) => <Tag key={t}>{t}</Tag>)}
+                <div key={s.id} style={{ position: "relative" }}>
+                  <button
+                    onClick={() => enterScenario(s.id)}
+                    className="w-full text-left rounded-xl p-5 transition-colors"
+                    style={{ ...surface, borderColor: s.id === lastId ? CYAN : BORDER }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="text-base font-semibold" style={{ color: INK_HI }}>{s.title}</div>
+                      {s.id === lastId && (
+                        <span className="text-[11px] shrink-0 mt-0.5" style={{ color: CYAN, marginRight: 28 }}>last opened</span>
+                      )}
                     </div>
-                  )}
-                </button>
+                    <p className="mt-1.5 text-sm leading-relaxed" style={{ color: INK_LOW }}>{s.prompt}</p>
+                    {Array.isArray(s.tags) && s.tags.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {s.tags.map((t) => <Tag key={t}>{t}</Tag>)}
+                      </div>
+                    )}
+                  </button>
+                  <span style={{ position: "absolute", top: 14, right: 14 }} onClick={(e) => e.stopPropagation()}>
+                    <AddTrackBtn
+                      itemType="sd_scenario"
+                      itemId={s.id}
+                      label={s.title}
+                      itemMeta={{ tag: (s.tags || [])[0] }}
+                    />
+                  </span>
+                </div>
               ))}
             </div>
           )}

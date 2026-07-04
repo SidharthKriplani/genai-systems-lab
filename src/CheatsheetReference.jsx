@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { CHEAT_CARDS } from "./data/cheatsheetCards";
+import { AddTrackBtn } from "./AddToTrackPopover.jsx";
 
 const SEARCH_KEY = "gsl-cheat-search";
 
@@ -161,9 +162,19 @@ export default function CheatsheetReference() {
                 <h3 className="text-sm font-bold leading-snug text-zinc-100">
                   {c.term}
                 </h3>
-                <span className="shrink-0 rounded-full border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-300">
-                  {c.topic}
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="rounded-full border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-300">
+                    {c.topic}
+                  </span>
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <AddTrackBtn
+                      itemType="cheatsheet"
+                      itemId={c.topic + "::" + c.term}
+                      label={c.term}
+                      itemMeta={{ topic: c.topic }}
+                    />
+                  </span>
+                </div>
               </div>
 
               {/* Formula */}

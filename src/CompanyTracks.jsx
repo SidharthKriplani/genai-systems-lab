@@ -4,6 +4,7 @@ import {
   COMPANIES, ROLES, LEVELS, getCompanyTrackItems, companyHasTrack, COMPANY_PROFILES,
 } from "./data/companyTracks.js";
 import { PREP_QUESTIONS, questionTier, TIER_META } from "./data/preplabQuestions";
+import { AddTrackBtn } from "./AddToTrackPopover.jsx";
 
 // Company aliases → substrings to match against a question's `source` field, so bank
 // questions attributed to (e.g.) "Google DeepMind screen" surface under Google.
@@ -120,6 +121,12 @@ export default function CompanyTracks({ onNavigate, onNavigateTo }) {
         <div className="flex items-center gap-3 mb-1">
           <CompanyLogo company={company} size={30} />
           <h1 className="text-2xl font-extrabold" style={{ color: "var(--text, #f4f4f5)" }}>{company}</h1>
+          <AddTrackBtn
+            itemType="company_track"
+            itemId={company}
+            label={company}
+            itemMeta={{}}
+          />
         </div>
         <p className="text-[13px] mb-4" style={{ color: "var(--text-muted, #a1a1aa)", lineHeight: 1.5, maxWidth: 640 }}>
           Curated prep for {company} — pick a role and seniority. Each item opens the exact

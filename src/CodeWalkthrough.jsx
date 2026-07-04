@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { CODE_LABS } from "./data/codeLabsData";
 import { CODE_EXERCISES } from "./data/codeExercises";
 import CodeExercise, { ImplementBrowser } from "./CodeExercise.jsx";
+import { AddTrackBtn } from "./AddToTrackPopover.jsx";
 
 const EX_DONE_KEY = "gsl-code-exercises";
 function loadExDone() {
@@ -181,12 +182,12 @@ function LabBrowser({ labs, doneSet, onOpen }) {
           const d = DIFF_STYLE[lab.difficulty] || DIFF_STYLE.core;
           const isDone = doneSet.has(lab.id);
           return (
+            <div key={lab.id} style={{ position: "relative" }}>
             <button
-              key={lab.id}
               onClick={() => onOpen(lab.id)}
               className="w-full text-left rounded-xl border border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-900/80 transition-all p-5 group"
             >
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap pr-8">
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400">
                   {lab.tag}
                 </span>
@@ -209,6 +210,15 @@ function LabBrowser({ labs, doneSet, onOpen }) {
                 {isDone ? "Review →" : "Read the walkthrough →"}
               </span>
             </button>
+            <span style={{ position: "absolute", top: 18, right: 18 }} onClick={(e) => e.stopPropagation()}>
+              <AddTrackBtn
+                itemType="code_lab"
+                itemId={lab.id}
+                label={lab.title}
+                itemMeta={{ difficulty: lab.difficulty, tag: lab.tag }}
+              />
+            </span>
+            </div>
           );
         })}
       </div>
