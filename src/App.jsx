@@ -234,7 +234,7 @@ function SidebarRow({ item, active, onNavigate, onAfter }) {
 }
 
 // Mobile drawer nav — same four-frame structure, flat (no accordion) for the drawer.
-function MobileFrameNav({ topView, onNavigate, onClose }) {
+function MobileFrameNav({ topView, onNavigate, onClose, user }) {
   function Row(it) {
     if (it.header) return (
       <div key={it.id} className="px-3 pt-2 pb-1 text-[9px] font-mono uppercase tracking-widest text-zinc-600 select-none">
@@ -263,7 +263,12 @@ function MobileFrameNav({ topView, onNavigate, onClose }) {
   }
   return (
     <div className="space-y-3 px-1">
-      <div>{NAV_TRACK.map(Row)}</div>
+      {/* Home is only a real destination signed out — App.jsx redirects any
+          signed-in visit to "home" straight to "progress" (landing page
+          doesn't make sense once you're already using the product). Signed
+          in, this row and "My Progress" below it point at the exact same
+          page — a duplicate, dead-click nav item. Only show it signed out. */}
+      <div>{NAV_TRACK.filter(it => it.id !== "home" || !user).map(Row)}</div>
       {NAV_SECTIONS.map(sec => (
         <div key={sec.key}>
           <div className="flex items-center gap-2 px-3 pb-1">
@@ -1734,7 +1739,7 @@ export default function App() {
               <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Navigation</span>
               <button onClick={() => setMobileMenuOpen(false)} className="text-zinc-500 hover:text-white text-sm"><Icon name="x" size={14} /></button>
             </div>
-            <MobileFrameNav topView={topView} onNavigate={navigate} onClose={() => setMobileMenuOpen(false)} />
+            <MobileFrameNav topView={topView} onNavigate={navigate} onClose={() => setMobileMenuOpen(false)} user={user} />
             <div className="mt-3 space-y-1.5">
               <button onClick={() => { setSearchOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-400 border border-zinc-700 rounded-lg hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2">
                 <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
@@ -1760,9 +1765,9 @@ export default function App() {
         <div className="h-px mx-3 mb-2" style={{ background: "linear-gradient(90deg, transparent, var(--border-subtle), transparent)" }} />
         {/* Nav groups */}
         <nav className="flex-1 px-2 pb-4 space-y-0.5">
-          {/* TRACK — flat, always visible */}
+          {/* TRACK — flat, always visible. Home hidden signed-in (see MobileFrameNav comment). */}
           <div className="space-y-0.5 mb-2">
-            {NAV_TRACK.map(it => (
+            {NAV_TRACK.filter(it => it.id !== "home" || !user).map(it => (
               <SidebarRow key={it.id} item={it} active={topView === it.id} onNavigate={navigate} />
             ))}
           </div>
@@ -2511,7 +2516,7 @@ export default function App() {
             </div>
             <div className="h-px mx-4 mb-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
             {/* Nav sections */}
-            <MobileFrameNav topView={topView} onNavigate={navigate} onClose={() => setMobileDrawerOpen(false)} />
+            <MobileFrameNav topView={topView} onNavigate={navigate} onClose={() => setMobileDrawerOpen(false)} user={user} />
             <div className="h-px mx-4 my-2" style={{ background: "linear-gradient(90deg, transparent, #27272a, transparent)" }} />
             {/* Search shortcut */}
             <button onClick={() => { setSearchOpen(true); setMobileDrawerOpen(false); }}
