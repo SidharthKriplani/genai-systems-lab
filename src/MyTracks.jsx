@@ -488,7 +488,13 @@ export default function MyTracks({ onNavigate, onNavigateTo }) {
   }, []);
 
   useEffect(() => {
-    if (!selectedId && tracks.length > 0) setSelectedId(tracks[0].id);
+    // Only auto-select a track on desktop (two-pane layout). On mobile this
+    // is a master-detail view — auto-selecting here fights the "← All
+    // tracks" back button: setSelectedId(null) on back would get
+    // immediately overridden by this effect, causing a flash back to the
+    // detail pane instead of showing the list.
+    const isDesktop = typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches;
+    if (isDesktop && !selectedId && tracks.length > 0) setSelectedId(tracks[0].id);
   }, [tracks, selectedId]);
 
   function refresh() { setTracks(getTracks()); }
