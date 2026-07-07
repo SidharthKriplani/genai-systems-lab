@@ -93,6 +93,7 @@ function esc(str) {
 
 function inlineMd(str) {
   let s = esc(str);
+  s = s.replace(/`([^`]+?)`/g, "<code>$1</code>");
   s = s.replace(/==(.+?)==/g, "<mark>$1</mark>");
   s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, "<em>$1</em>");
@@ -202,6 +203,7 @@ function generateHtml(id, mod, meta) {
     mark { background: ${ACCENT}22; color: #fff; padding: 0 2px; border-radius: 2px; }
     ul { padding-left: 20px; margin-bottom: 16px; }
     li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    code { font-family: ui-monospace, monospace; font-size: 0.9em; background: rgba(255,255,255,0.07); border-radius: 4px; padding: 1px 5px; }
     .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
     .illustration-label { font-size: 11px; font-weight: 700; color: ${ACCENT}; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
     pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }

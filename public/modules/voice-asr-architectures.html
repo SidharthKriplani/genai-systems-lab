@@ -54,6 +54,7 @@
     mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
     ul { padding-left: 20px; margin-bottom: 16px; }
     li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    code { font-family: ui-monospace, monospace; font-size: 0.9em; background: rgba(255,255,255,0.07); border-radius: 4px; padding: 1px 5px; }
     .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
     .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
     pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
@@ -107,7 +108,7 @@ Whisper's edge in accuracy is real, but it is bought with &quot;see the entire
 utterance first.&quot; On a live call, that requirement IS the felt latency —
 the assistant literally cannot begin until you stop talking.</pre></div>
 <p>Whisper deserves its own look because it's the model people reach for by default — and the reason it's so good is also why it's <strong>offline-first.</strong></p>
-<p>Whisper was trained on <strong>680,000 hours</strong> of weakly-supervised audio scraped from the web — far more, and far messier, than curated academic corpora. That scale is why it's robust to accents, noise, and domains out of the box. It's <strong>multitask</strong>: the same model transcribes, translates to English, does language ID, and emits timestamps, all selected by special tokens prepended to the decoder (`&lt;|transcribe|&gt;`, `&lt;|translate|&gt;`, `&lt;|en|&gt;`).</p>
+<p>Whisper was trained on <strong>680,000 hours</strong> of weakly-supervised audio scraped from the web — far more, and far messier, than curated academic corpora. That scale is why it's robust to accents, noise, and domains out of the box. It's <strong>multitask</strong>: the same model transcribes, translates to English, does language ID, and emits timestamps, all selected by special tokens prepended to the decoder (<code>&lt;|transcribe|&gt;</code>, <code>&lt;|translate|&gt;</code>, <code>&lt;|en|&gt;</code>).</p>
 <p>But it's an attention decoder over a fixed <strong>30-second window</strong>, and it was trained on segments that always contain speech. <mark>So on silence or non-speech it doesn't stay quiet — it <em>hallucinates</em> fluent text (often training-caption boilerplate like 'Thanks for watching'), because it was never taught that 'nothing' is a valid output.</mark> That's a signature Whisper failure mode, and it's a direct consequence of the training recipe.</p>
 <p>This is the crux of the scenario. <strong>You cannot ship Whisper-large as-is on a live call.</strong></p>
 <p>Whisper needs the full utterance before it can attend over it, so its architecture forces a wait-then-decode pattern: the assistant stays silent while you speak, and only after you stop does it run a batch decode. That's exactly the 'frozen, then a pause' complaint. Offline benchmarks reward accuracy on complete clips and never measure this, so Whisper looks like the winner right up until it's on a phone line.</p>

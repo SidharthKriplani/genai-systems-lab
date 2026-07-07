@@ -113,8 +113,8 @@ export function SceneBlendTrap() {
   const caption = folded
     ? `One nonlinear fold and ${escaped} of 6 vectors escape the palette. This is what the FFN adds — a genuine transformation, not another blend. Linear maps rotate and stretch; the GeLU folds.`
     : attnCount === 0
-      ? "Six token vectors. The dashed boundary is their linear span — the palette. Attention outputs are weighted averages, so watch where the points can and cannot go."
-      : `${attnCount} attention layer${attnCount > 1 ? "s" : ""} applied — every output is a weighted average of the current vectors, so the points drift inward and can never leave the palette. Composing linear maps collapses to a single linear map.`;
+      ? "Six token vectors. The dashed boundary is their linear span — the palette. Attention outputs are weighted averages, so watch where the points can and cannot go. (The FFN button stays locked until attention has had its chance — apply it twice.)"
+      : `${attnCount} attention layer${attnCount > 1 ? "s" : ""} applied — every output is a weighted average of the current vectors, so the points drift inward and can never leave the palette. Averaging averages never escapes the span.${attnCount < 2 ? " Apply attention once more — then the gate has a question for you." : ""}`;
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
@@ -183,7 +183,9 @@ export function SceneHighway() {
 
   useEffect(() => () => cancelAnimationFrame(animRef.current), []);
 
-  const factor = !res ? 0.5 : pre ? 1.0 : 0.82;
+  // Physics consistency: post-norm's per-floor rescale only exists when the regulator is ON;
+  // with no norms anywhere the shaft is clean regardless of placement.
+  const factor = !res ? 0.5 : !normOn ? 1.0 : pre ? 1.0 : 0.82;
 
   function reset() { setReadouts(Array(6).fill(null)); setPulse(null); }
   function toggleRes() {
@@ -219,14 +221,15 @@ export function SceneHighway() {
     animRef.current = requestAnimationFrame(step);
   }
 
-  const caption = !normOn
+  const caption = !res
+    ? `No shaft. The message must pass through every floor and shrinks roughly 2× per handoff — by sublayer 1 there is nothing left for the optimizer to use. This is the vanishing-gradient wall.${typeof resGate === "number" ? ` (You predicted "${GATE2_OPTIONS[resGate]}".)` : ""}`
+    : !normOn
     ? "Regulator off: watch the forward meter. Residual additions compound, and the activation scale drifts wildly with depth — 1 → 25 in six sublayers here; the module's table shows ~140 by layer 24. Later layers receive inputs at scales they were never trained for. The norm re-centers the signal after every addition."
-    : !res
-      ? `No shaft. The message must pass through every floor and shrinks roughly 2× per handoff — by sublayer 1 there is nothing left for the optimizer to use. This is the vanishing-gradient wall.${typeof resGate === "number" ? ` (You predicted "${GATE2_OPTIONS[resGate]}".)` : ""}`
-      : pre
+    : pre
         ? "Pre-norm: the regulator sits inside the branch, so the shaft is never touched. The pulse rides to sublayer 1 at full strength — why hundred-layer models train without warmup: x + Sublayer(LayerNorm(x))."
         : "Post-norm: the regulator sits on the shaft itself, so the message is rescaled at every floor. Trainable — but it decays with depth, which is why the original transformer needed learning-rate warmup: LayerNorm(x + Sublayer(x)).";
-  const rms = normOn ? RMS_ON : RMS_OFF;
+  // Forward drift comes from residual ADDITIONS compounding — no residuals, no compounding story.
+  const rms = res && !normOn ? RMS_OFF : RMS_ON;
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
@@ -241,8 +244,8 @@ export function SceneHighway() {
             <button onClick={() => setNorm(true)} className={`px-2.5 py-1.5 text-xs ${pre ? "bg-zinc-700 text-white" : "bg-transparent text-zinc-500"}`}>Pre-norm</button>
             <button onClick={() => setNorm(false)} className={`px-2.5 py-1.5 text-xs border-l border-zinc-800 ${!pre ? "bg-zinc-700 text-white" : "bg-transparent text-zinc-500"}`}>Post-norm</button>
           </span>
-          <button onClick={() => { if (!animating) { setNormOn(n => !n); reset(); } }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${normOn ? "bg-zinc-700 text-white" : "bg-red-900/60 text-red-300 border border-red-700/50"}`}>
+          <button onClick={() => { if (!animating && res) { setNormOn(n => !n); reset(); } }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${!res ? "bg-zinc-800 text-zinc-600" : normOn ? "bg-zinc-700 text-white" : "bg-red-900/60 text-red-300 border border-red-700/50"}`}>
             Regulator: {normOn ? "on" : "off"}
           </button>
           <button onClick={sendPulse} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-600 text-white hover:bg-cyan-500 transition-all">▶ Send gradient pulse</button>
@@ -402,7 +405,7 @@ export function SceneZoomOut() {
     const dist = Math.abs(Math.log(blockParams(m.L, m.d)) - Math.log(paramsB));
     return dist < best.dist ? { m, dist } : best;
   }, { m: null, dist: Infinity });
-  const closeEnough = nearest.dist < 0.7;
+  const closeEnough = nearest.dist < 0.45;
   const chips = Math.min(layers, 18);
   const chipW = 56 + 100 * (d / 12288);
 

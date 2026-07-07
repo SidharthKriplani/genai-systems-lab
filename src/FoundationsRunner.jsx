@@ -32,16 +32,18 @@ export default function FoundationsRunner({
 
   const { scenario, groundUp, explanation, takeaway, keyPoints, recap } = runnerData;
 
-  // ── Code tab (2026-07-03): a module "has code" when it carries an explicit runnerData.code
-  //    field OR any `illustration` block in its explanation (the ASCII/trace/code panels). When
-  //    present, those live in a dedicated Code tab instead of inline prose; modules without code
-  //    show no tab. Supported code shapes: string | {label, content, lang} | array of either. ──
+  // ── Code tab (2026-07-03, amended 2026-07-08): the tab exists ONLY when the module carries an
+  //    explicit runnerData.code field. Illustrations JOIN an existing Code tab (they're often
+  //    traces/snippets), but illustrations ALONE no longer create one — ASCII tables are teaching
+  //    content whose position in the prose flow is deliberate (text–scene pairing; the transformer
+  //    template's RMS drift table pairs with the norm beats). Supported code shapes:
+  //    string | {label, content, lang} | array of either. ──
   const illustrations = Array.isArray(explanation)
     ? explanation.filter(it => it && typeof it === "object" && it.type === "illustration")
     : [];
   const explicitCode = normalizeCode(runnerData.code);
   const codeBlocks = [...explicitCode, ...illustrations.map(it => ({ label: it.label, content: it.content, lang: it.lang }))];
-  const hasCode = codeBlocks.length > 0;
+  const hasCode = explicitCode.length > 0;
   // When a Code tab exists, strip illustrations out of the inline explanation flow.
   const explanationForLesson = hasCode && Array.isArray(explanation)
     ? explanation.filter(it => !(it && typeof it === "object" && it.type === "illustration"))

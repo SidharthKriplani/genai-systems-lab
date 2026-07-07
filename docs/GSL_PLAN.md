@@ -223,3 +223,30 @@ This registry is the rollout mechanism for every future module: write beats, wri
 Incident during the edit: a too-wide python replacement span briefly deleted TokenJourney + SceneMask
 (caught by esbuild on foundationScenes.jsx import check, re-inserted verbatim). All 4 touched files
 esbuild-verified clean. NOT yet pushed.
+
+## Log 2026-07-08 (template audit + fixes) — independent agent audit of the transformer page
+Fresh-eyes agent audit before template rollout. Verdict was "nearly ready, fix 3 first" — all fixed:
+- **BLOCKER (runner-wide):** `hasCode` treated any illustration as code → a "</> Code" tab appeared and
+  ASCII tables were HOISTED OUT of the prose flow (transformer's RMS drift table lost its pairing with
+  the norm beats; same for every table-only module). Fix: `hasCode = explicitCode.length > 0` —
+  illustrations join an existing Code tab but never create one. FoundationsRunner.jsx:35-48.
+- **MAJOR (scene physics):** SceneHighway with residuals OFF still showed the RMS drift explosion
+  (attributed to residual additions that weren't happening) and post-norm's 0.82 gradient decay applied
+  even with the regulator off. Fix: `rms = res && !normOn ? DRIFT : FLAT`, `factor` = 1.0 whenever
+  normOn is false (no norms → clean shaft), regulator toggle disabled while residuals are off, caption
+  precedence res-first.
+- **MAJOR (DoD-6):** "The interactive lets you assemble and stack it…" dangled on the static page and
+  mis-ordered scenario vs Hands-On. Rewritten to "The production section below hands you a tempting
+  one-line proposal…". transformer.html regenerated + verified clean.
+- **MAJOR (repo hygiene):** stray `src/.fuse_hidden…` (stale 12k-line Concepts copy, sandbox artifact,
+  undeletable while held) would ride in on `git add src/` — added `.fuse_hidden*` to .gitignore.
+- MINOR fixes: e0 over-claim corrected (softmax weights are input-dependent — claim is now span
+  confinement, not "composing linear functions collapses"); FFN 4×-vs-2× reconciled (production 4×,
+  page's tiny model 2× 8→16, called out in prose); prerender inlineMd now renders `backticks` as
+  <code> (+ CSS); palette-trap lock discoverability (captions now tell you how to unlock); zoom-out
+  matcher threshold 0.7→0.45 log-distance.
+- Accepted/known: SceneHighway SVG text small at ~380px (mobile polish pass later); TokenJourney's
+  `suggestedStage` prop currently unused (kept for future choreography); highway gate panel persists
+  if toggled mid-question (cosmetic). Audit's "clean" list: tinyTransformer extraction, registry keys,
+  scene-marker skipping in prerender, bundle impact ≈ 0, zoom-out param claims verified (12·L·d²,
+  GPT-3 → 173.9B).

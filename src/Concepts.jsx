@@ -4723,7 +4723,7 @@ const NEXT_TOKEN_PROMPTS = [
     id: "nt4",
     prefix: "Once upon a time, in a land far away, there lived a",
     options: [
-      { token: " young", prob: 0.24, correct: false },
+      { token: " young", prob: 0.24, correct: true },
       { token: " beautiful", prob: 0.22, correct: false },
       { token: " brave", prob: 0.19, correct: false },
       { token: " wise", prob: 0.18, correct: false },

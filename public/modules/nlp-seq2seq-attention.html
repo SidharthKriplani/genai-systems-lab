@@ -54,6 +54,7 @@
     mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
     ul { padding-left: 20px; margin-bottom: 16px; }
     li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    code { font-family: ui-monospace, monospace; font-size: 0.9em; background: rgba(255,255,255,0.07); border-radius: 4px; padding: 1px 5px; }
     .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
     .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
     pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
@@ -111,7 +112,7 @@
   Different output step ⇒ different weights ⇒ different context.
   No single bottleneck: the whole source stays available, re-focused
   per step.</pre></div>
-<p>Two classic formulations differ only in <em>how</em> they score the match between a decoder state and each encoder state, and interviewers love the contrast. <strong>Bahdanau attention</strong> (2014, 'additive') feeds the decoder's previous state and each encoder state through a small feed-forward network (a learned layer with a tanh) to produce each alignment score — it <em>learns</em> the scoring function. <strong>Luong attention</strong> (2015, 'multiplicative') scores with a simple <strong>dot product</strong> (or a bilinear `hᵈ·W·hᵉ`) between the decoder and encoder states — cheaper, no extra network. <mark>Both then softmax those scores into weights that sum to 1 and take the weighted sum of encoder states. Additive = a learned MLP scorer; multiplicative = a dot-product scorer. The dot-product form is the one that scales up.</mark></p>
+<p>Two classic formulations differ only in <em>how</em> they score the match between a decoder state and each encoder state, and interviewers love the contrast. <strong>Bahdanau attention</strong> (2014, 'additive') feeds the decoder's previous state and each encoder state through a small feed-forward network (a learned layer with a tanh) to produce each alignment score — it <em>learns</em> the scoring function. <strong>Luong attention</strong> (2015, 'multiplicative') scores with a simple <strong>dot product</strong> (or a bilinear <code>hᵈ·W·hᵉ</code>) between the decoder and encoder states — cheaper, no extra network. <mark>Both then softmax those scores into weights that sum to 1 and take the weighted sum of encoder states. Additive = a learned MLP scorer; multiplicative = a dot-product scorer. The dot-product form is the one that scales up.</mark></p>
 <div class="illustration"><div class="illustration-label">Bahdanau (additive) vs Luong (multiplicative)</div><pre>Both produce alignment weights, then softmax, then weighted sum.
 They differ only in the SCORE function:
 

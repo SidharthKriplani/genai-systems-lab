@@ -54,6 +54,7 @@
     mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
     ul { padding-left: 20px; margin-bottom: 16px; }
     li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    code { font-family: ui-monospace, monospace; font-size: 0.9em; background: rgba(255,255,255,0.07); border-radius: 4px; padding: 1px 5px; }
     .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
     .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
     pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
@@ -89,11 +90,11 @@
 <p><strong>Host</strong> — the application the user interacts with (Claude Desktop, Cursor, your app). It owns the LLM and the UI.</p>
 <p><strong>Client</strong> — a connector <em>inside</em> the host, one per server, that speaks the protocol.</p>
 <p><strong>Server</strong> — a separate process/service that <em>exposes capabilities</em> (your filesystem server, github server, your-internal-API server). <mark>The server owns its own credentials — the host never sees them.</mark> That last point is the security story: your Postgres password lives in the Postgres MCP server, not in every host that wants to query it.</p>
-<p>The wire protocol is <strong>JSON-RPC 2.0</strong>. Transport is either <strong>stdio</strong> (local server launched as a subprocess — how Claude Desktop runs local servers) or <strong>HTTP with SSE / streamable HTTP</strong> (remote servers). The host <em>discovers</em> what a server offers at connection time via calls like `list_tools` / `list_resources` — capabilities are dynamic, not hardcoded in the host.</p>
+<p>The wire protocol is <strong>JSON-RPC 2.0</strong>. Transport is either <strong>stdio</strong> (local server launched as a subprocess — how Claude Desktop runs local servers) or <strong>HTTP with SSE / streamable HTTP</strong> (remote servers). The host <em>discovers</em> what a server offers at connection time via calls like <code>list_tools</code> / <code>list_resources</code> — capabilities are dynamic, not hardcoded in the host.</p>
 <p>MCP servers expose <strong>four primitives</strong>, and the deep-dive interactive above lets you click into each. Getting the <em>read vs. do vs. template vs. delegate</em> distinction right is the core of the module:</p>
 <p><strong>Tools</strong> — functions the model can <em>call</em> to DO things (search, write a row, create a ticket). This is function-calling, but defined in the server, not the client. Model-controlled.</p>
-<p><strong>Resources</strong> — data the model can <em>READ</em>, addressed by URI (`file:///…`, `db://customers/12345`). Read-only by convention; context injection without a tool round-trip. Typically application-controlled.</p>
-<p><strong>Prompts</strong> — reusable, parameterized prompt <em>templates</em> the server defines and the host surfaces as slash-commands/menu items (`/summarize_pr(url)`). User-controlled.</p>
+<p><strong>Resources</strong> — data the model can <em>READ</em>, addressed by URI (<code>file:///…</code>, <code>db://customers/12345</code>). Read-only by convention; context injection without a tool round-trip. Typically application-controlled.</p>
+<p><strong>Prompts</strong> — reusable, parameterized prompt <em>templates</em> the server defines and the host surfaces as slash-commands/menu items (<code>/summarize_pr(url)</code>). User-controlled.</p>
 <p><strong>Sampling</strong> — the <em>inversion</em>: the server asks the <em>host</em> to run an LLM completion on its behalf, so the server gets LLM-in-the-loop processing (summarize-during-ingest, classify) without holding its own model API key.</p>
 <div class="illustration"><div class="illustration-label">MCP architecture and the four primitives</div><pre>THE N×M -&gt; N+M COLLAPSE:
   Without MCP:  3 tools × 4 hosts = 12 bespoke integrations

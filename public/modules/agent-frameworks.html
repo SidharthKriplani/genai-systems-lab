@@ -54,6 +54,7 @@
     mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
     ul { padding-left: 20px; margin-bottom: 16px; }
     li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    code { font-family: ui-monospace, monospace; font-size: 0.9em; background: rgba(255,255,255,0.07); border-radius: 4px; padding: 1px 5px; }
     .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
     .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
     pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
@@ -90,7 +91,7 @@
 <p><strong>Tool/chain abstraction</strong> (LangChain) — glue for wiring models, prompts, retrievers, and tools into reusable components. Solves 'I keep re-writing the same RAG plumbing.'</p>
 <p><strong>Runtime / batteries-included agents</strong> (OpenAI Agents SDK, Google ADK, CrewAI) — an opinionated agent loop with tool-calling, handoffs, and guardrails already wired, tuned for one model family (OpenAI, Gemini) or one mental model (CrewAI's role-playing crews).</p>
 <p><strong>Observability</strong> (LangSmith) — tracing, eval, and replay. Orthogonal to all of the above; it watches whatever loop you run.</p>
-<p>So what does a framework abstract <em>away</em>? Concretely: <strong>the state machine, the retry/error semantics, the persistence layer, and the streaming/trace plumbing</strong> — the boring, bug-prone code that is identical across agents and easy to get subtly wrong. LangGraph's whole pitch is modeling the agent as an explicit graph of nodes with a typed shared `state`, so 'pause for human approval, then resume from exactly here after a crash' becomes a checkpointer config instead of a hand-built durable state machine.</p>
+<p>So what does a framework abstract <em>away</em>? Concretely: <strong>the state machine, the retry/error semantics, the persistence layer, and the streaming/trace plumbing</strong> — the boring, bug-prone code that is identical across agents and easy to get subtly wrong. LangGraph's whole pitch is modeling the agent as an explicit graph of nodes with a typed shared <code>state</code>, so 'pause for human approval, then resume from exactly here after a crash' becomes a checkpointer config instead of a hand-built durable state machine.</p>
 <p><mark>The value scales with control-flow complexity, not with 'is it an agent.'</mark> A single linear tool-calling agent gets almost nothing from LangGraph and pays real complexity for it. A five-agent system with handoffs, retries, and resume-after-crash gets a great deal — hand-rolling that correctly is a multi-week project of exactly the code the framework already hardened.</p>
 <div class="illustration"><div class="illustration-label">The loop is small; the framework wraps what surrounds it</div><pre>THE AGENT (what you'd hand-roll — ~30 lines):
   while not done:
