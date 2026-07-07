@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Context Window &amp; Attention Cost | GenAI Systems Lab</title>
+  <meta name="description" content="Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/context">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/context">
+  <meta property="og:title" content="Context Window &amp; Attention Cost | GenAI Systems Lab">
+  <meta property="og:description" content="Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Context Window &amp; Attention Cost">
+  <meta name="twitter:description" content="Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Context Window & Attention Cost","description":"Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/context"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 4</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Context Window &amp; Attention Cost</h1>
+    <p class="desc">Fill a context window live. Watch the O(n²) attention cost grow. See what overflows when you run out.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with something that sounds like it can't possibly be true. You give a model a long document, and the exact fact it needs is <em>right there</em> in the text — provably present, word for word. And the model still misses it. Not because it ran out of room, not because retrieval failed, but simply because of <em>where</em> in the document that fact happened to sit.</p>
+<p>Here's the reframe this whole module rests on: a model doesn't read a long context the way you'd read a page, giving every line equal, patient attention. It attends <em>unevenly</em>. Some positions in the window get a lot of the model's focus; others — and this is the surprising part — get systematically less, no matter how relevant they are. So &quot;the information is in the context&quot; and &quot;the model will actually use it&quot; turn out to be two different claims.</p>
+<p>We'll build this up carefully: first <em>why</em> the attention is uneven and where the weak spot lands, then why simply stuffing more into the window makes it worse, and finally the handful of moves that design around it. Take your time — by the end, a pipeline that got <em>worse</em> after you gave it a bigger window will make complete sense.</p></section>
+    <section><h2>How It Works</h2><p>Start from what a Transformer actually does when it reads: it assigns <strong>attention weight</strong> across every position in its context, and those weights are <em>not uniform</em>. Some positions get more of the model's focus than others — that is the whole point of attention, the mechanism that lets it decide what matters. So the first principle to hold onto is that presence in the window and attention within the window are two separate things: <strong>retrieval into context does not guarantee extraction from context.</strong></p>
+<p>Now, <em>where</em> does that attention concentrate, and why? Because models are trained on human text where the key information tends to sit near the <strong>beginning</strong> (journalism, executive summaries) or near the <strong>end</strong> (conclusions, results), they learn an attention pattern that favors both edges. Which means the <strong>middle 60%</strong> of a long context receives measurably <em>lower</em> attention weight than either end — regardless of how semantically relevant that middle content is. This is 'lost in the middle': not a theoretical worry but a documented empirical effect, and it follows directly from the training distribution.</p>
+<p>That positional weakness doesn't act alone — it <strong>compounds with irrelevance density.</strong> Stuff a window with 50 sections when only 3 are relevant, and the model must locate those 3 among 47 distractors, all competing for the same finite attention. So the relevant content becomes a <em>smaller fraction</em> of total context, which means attention spreads across noise. This is exactly why a curated 8K context with 10 highly relevant sections often <strong>outperforms</strong> a 32K context with 3 relevant among 47 — not because smaller windows are inherently better, but because the signal fraction is higher and attention concentrates on signal rather than noise.</p>
+<p>If the problem is <em>reasoning across a long span at once</em>, then the cleanest fix is to <strong>never do that.</strong> Map-reduce avoids positional bias entirely: summarize each section in its own separate inference call, then synthesize the summaries. The model never sees 32K in a single forward pass, so the middle-of-context weakness never applies. And where a long single context is unavoidable, you can exploit the bias instead of fighting it — <strong>rerank</strong> retrieved chunks and place the highest-relevance content at the beginning or end, the two positions attention already favors.</p>
+<p>One consequence is easy to miss, so it's worth stating plainly: a standard held-out accuracy metric <strong>will not surface this failure at all.</strong> Because the weakness is <em>positional</em>, you have to test for it positionally — build evals that specifically place the target fact in the middle 40–60% of the window. A model scoring 90% overall can be scoring 60% on middle-position content, and you simply won't see the gap without position-stratified testing. The interactive lets you slide a fact through the window and watch extraction accuracy sag in the middle; then the closing scenario hands you a pipeline that got <em>worse</em> after gaining a bigger window — see if you can call the cause before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Retrieval into context ≠ extraction from context.</strong> A 32K window that contains the relevant section still fails if the model doesn't attend to it — more context is not better answers.</li><li><strong>'Lost in the middle' is a documented empirical effect.</strong> Information in the middle 60% of a long context receives measurably lower attention weight, regardless of relevance.</li><li><strong>Irrelevance density compounds the effect.</strong> 3 relevant sections among 47 noisy ones makes signal a smaller fraction of context; a curated 8K window often beats a stuffed 32K one.</li><li><strong>Map-reduce avoids positional bias entirely.</strong> Summarize each section in a separate inference call, then synthesize — the model never reasons across 32K at once, so bias never applies.</li><li><strong>Exploit the bias when long context is unavoidable.</strong> Rerank chunks and place highest-relevance content at the beginning or end of the window.</li><li><strong>Standard accuracy metrics hide this.</strong> A model at 90% overall may score 60% on content in the middle 40–60% positions — you need position-stratified evals to see it.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A document-summarization pipeline was extended from an 8K window to 32K — more room, more sections, surely better synthesis. Instead it performs <em>worse</em> on multi-section synthesis than the 8K version did, even though every relevant section is provably in context. A researcher on the team just says two words: 'lost in the middle.' Take a moment before reading on: why would <em>more</em> context, with the answer definitely present, produce <em>worse</em> answers? Here's the reasoning, step by step. The relevant sections didn't leave the window — they moved into the <em>middle 60%</em>, the exact band that receives lower attention weight regardless of relevance. And it compounds: the 32K window now holds far more irrelevant sections too, so the true signal is a <em>smaller fraction</em> of total context and competes harder for the attention it was already short on. The curated 8K version wins not because small windows are magic, but because its signal-to-noise ratio was higher and its critical content sat nearer the edges. The fixes follow directly — map-reduce so the model never reasons across 32K at once, rerank so the best chunks land at the beginning or end, and position-stratified evals so you'd actually <em>see</em> a 60% middle-position score hiding behind a 90% overall number.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Long context does not equal good context. Position within the context window materially affects extraction quality — information in the middle 60% receives lower attention weight. For long-document synthesis, use map-reduce rather than stuffing, place critical content at the beginning or end, and test extraction specifically at middle-document positions.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

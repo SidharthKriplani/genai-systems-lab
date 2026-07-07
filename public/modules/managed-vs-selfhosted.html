@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Managed vs Self-Hosted Inference | GenAI Systems Lab</title>
+  <meta name="description" content="The five-axis fork: cost, control, data, capability, team.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/managed-vs-selfhosted">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/managed-vs-selfhosted">
+  <meta property="og:title" content="Managed vs Self-Hosted Inference | GenAI Systems Lab">
+  <meta property="og:description" content="The five-axis fork: cost, control, data, capability, team.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Managed vs Self-Hosted Inference">
+  <meta name="twitter:description" content="The five-axis fork: cost, control, data, capability, team.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Managed vs Self-Hosted Inference","description":"The five-axis fork: cost, control, data, capability, team.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/managed-vs-selfhosted"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">DECISION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Managed vs Self-Hosted Inference</h1>
+    <p class="desc">The five-axis fork: cost, control, data, capability, team.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with an intuition that feels obviously correct and is quietly a trap. When you call a managed API, the provider marks up the raw compute — so if you rent the GPUs and run the model <em>yourself</em>, you skip the markup and it must be cheaper. Right? It's the same reasoning as cooking at home instead of eating out, and it feels airtight.</p>
+<p>Here's the piece that intuition leaves out, and it's the whole module: when you rent a GPU, <em>you pay for every hour it's powered on, whether or not it's doing any work.</em> A managed API charges you per token — you pay only for what you use. So the real question isn't 'markup vs. no markup,' it's 'how <em>busy</em> is that GPU going to be?' If it sits mostly idle, you're paying full price for compute you never touched, and the home-cooking math inverts.</p>
+<p>So we'll build the actual cost model, honestly, from the ground up — the managed bill, the self-hosted compute, the <em>utilization</em> that decides everything, and the ops costs that never show up in the napkin math. Take your time; by the end you'll be able to compute the crossover point yourself and spot exactly where the 'obviously cheaper' intuition breaks.</p></section>
+    <section><h2>How It Works</h2><p>Start from the single fact that governs this entire decision: <strong>the two options bill on different bases.</strong> A managed API charges <em>per token</em> — you pay only for what you actually consume. Self-hosting charges <em>per hour of GPU time</em> — you pay for the hardware being powered on, whether it's saturated or idle. <strong>This means</strong> the intuition 'self-hosting skips the provider's markup, so it's cheaper' is only half the picture: it's true <em>per token at full load</em>, <strong>but</strong> the moment the GPU sits partly idle, you're paying full price for compute you never used. <strong>Therefore</strong> the deciding variable is not markup — it's <strong>utilization</strong>, and that's almost always the number the 'obviously cheaper' argument forgets to compute.</p>
+<p><strong>So</strong> let's price the managed side first, since it's the simple one. For a GPT-4-class model at roughly $5/1M input + $15/1M output tokens, with a typical 70/30 input/output split at 50M tokens/month: 35M input × $5/1M + 15M output × $15/1M = $175 + $225 = <strong>$400/month</strong>. <strong>And</strong> that price includes high availability, zero infrastructure ops, and automatic model updates — you're paying a premium for operational simplicity, and the premium is small in absolute terms.</p>
+<p><strong>Now</strong> the self-hosted side, where utilization stops being abstract. Llama 3 70B in float16 needs ~140GB VRAM, <strong>so</strong> 2×A100 80GB is the minimum viable setup, at ~$6–8/hour reserved — <strong>which means</strong> $4,300–5,800/month in compute alone, billed for all 720 hours whether or not requests arrive. <strong>But</strong> look at what that hardware <em>could</em> serve: at ~500–1,000 tokens/second (batch size 8), take 750 t/s, and 50M tokens ÷ (750 × 720 × 3,600) ≈ <strong>2.6% utilization</strong>. <strong>Therefore</strong> you're paying for 97.4% idle compute — the exact cost the per-token intuition assumed away.</p>
+<div class="illustration"><div class="illustration-label">Self-hosted utilization at 50M tokens/month</div><pre>Self-hosted utilization at 50M tokens/month:
+
+  Capacity:    750 t/s × 720 hrs × 3,600 s/hr = 1.944 billion tokens/month
+  Actual:      50 million tokens/month
+  Utilization: 50M / 1,944M ≈ 2.6%
+
+  You pay for 100% of compute capacity.
+  You use 2.6%.</pre></div>
+<p><strong>And</strong> compute is only part of the true cost, <strong>because</strong> self-hosting adds <strong>ops engineering time</strong> — managing infrastructure, handling failures, monitoring, model upgrades — an estimated 0.25–0.5 FTE. At 0.5 FTE × $300K/year ÷ 12 = <strong>$12,500/month</strong>, plus security and compliance overhead (your own data governance, audit logging, access controls) and the model-upgrade cost of evaluating and deploying new versions yourself. <strong>Therefore</strong> total cost of ownership — compute + ops — is what must be compared, and the crossover where self-hosting finally wins sits around 300–500M tokens/month for a lean team. Below that, the arithmetic isn't close: ~$400/month managed vs. ~$16,800–18,300/month self-hosted TCO, <strong>so</strong> self-hosting at low volume is not a cost optimization, it's a cost <em>increase</em>. <strong>And</strong> one last trap follows from the ops FTE: teams that self-host prematurely often keep the infrastructure running because the engineer is already allocated, even when a fresh TCO calculation says switch back — the sunk-cost path is real, which is why you start recalculating at 150M tokens/month and plan migration at 250M+. The interactive lets you slide token volume and watch the two curves cross — and the closing scenario is exactly this 50M-token decision where the intuition and the arithmetic point opposite ways.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>The self-hosting savings intuition depends entirely on utilization.</strong> You pay for the provider's markup, but the markup is only worth cutting when GPUs are busy.</li><li><strong>Managed API is cheap at low volume.</strong> ~$400/month at 50M tokens buys high availability, zero ops, and automatic model updates — a premium for operational simplicity.</li><li><strong>At 50M tokens/month, self-hosted GPU utilization is ~2.6%.</strong> 2×A100 can produce ~1.9B tokens/month; you use 50M and pay for 97.4% idle compute.</li><li><strong>TCO is the piece the intuition misses.</strong> Compute (~$4.3–5.8K) plus 0.25–0.5 FTE ops (~$12.5K) plus security, compliance, and model-upgrade overhead — not just raw compute.</li><li><strong>The crossover is ~300–500M tokens/month for a lean team.</strong> Below it, self-hosting is a cost increase; the scenario is $400 managed vs $16.8–18.3K self-hosted TCO.</li><li><strong>The sunk-cost path is a real trap.</strong> Teams keep self-hosting because the ops FTE is already allocated, even when a TCO recalculation says switch back.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. At 50M tokens/month, your team is weighing self-hosting Llama 3 70B on 2×A100 80GB GPUs against a managed API, and the infrastructure engineer insists self-hosting will be <em>way</em> cheaper. Take a moment before reading on: what's the one number that engineer almost certainly hasn't computed? Here's the reasoning, step by step. Price the managed side: at ~$5/1M input + $15/1M output with a 70/30 split, 50M tokens is about $400/month. Now the self-hosted side, and here's the trap sprung — 2×A100 costs ~$4,300–5,800/month in compute <em>whether busy or idle</em>, and at 750 t/s that hardware could serve ~1.9 billion tokens/month, so 50M is roughly 2.6% utilization. You'd be paying for 97.4% idle compute. Add ~0.5 FTE of ops (~$12,500/month) and the total is $16,800–18,300 against $400 managed. The intuition was right only at high utilization, which is why the crossover sits around 300–500M tokens/month — far above where this team is.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Self-hosting is not cheaper until utilization is high. At 50M tokens/month, GPU utilization is ~3% — you pay for idle compute. Add ops overhead and the managed API almost always wins on total cost. Build the actual math: compute at your utilization rate + ops salary equivalent vs. managed API bill. Revisit when monthly token volume exceeds 300–500M.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

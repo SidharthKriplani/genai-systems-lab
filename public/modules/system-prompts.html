@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Prompt Engineering | GenAI Systems Lab</title>
+  <meta name="description" content="Persona, constraints, format — what goes in the system turn and why.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/system-prompts">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/system-prompts">
+  <meta property="og:title" content="System Prompt Engineering | GenAI Systems Lab">
+  <meta property="og:description" content="Persona, constraints, format — what goes in the system turn and why.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="System Prompt Engineering">
+  <meta name="twitter:description" content="Persona, constraints, format — what goes in the system turn and why.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"System Prompt Engineering","description":"Persona, constraints, format — what goes in the system turn and why.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/system-prompts"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROMPTING</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>System Prompt Engineering</h1>
+    <p class="desc">Persona, constraints, format — what goes in the system turn and why.</p>
+
+    <section><h2>Start Here</h2><p>Let's start by clearing up what a system prompt actually <em>is</em>, because the most common mistake comes from picturing it wrong. It's tempting to imagine the system prompt as a settings panel or a rulebook — a place where you write &quot;never do X&quot; and the model, like a program, simply <em>cannot</em> do X. That mental model feels safe, and it's the source of most system-prompt frustration.</p>
+<p>Here's the truth the whole module rests on: a system prompt is just <strong>more text.</strong> The model reads it with the very same attention mechanism it uses to read the user's message — no special enforcement, no hard switch. That means its influence is <em>probabilistic</em>, not guaranteed: it <em>tips</em> the model toward certain behavior, strongly and reliably in ordinary cases, but it can be <em>outweighed</em> by a cleverly framed request or a long conversation pulling the other way.</p>
+<p>So we'll build up two things you'll use constantly: what a system prompt can <em>reliably</em> do versus what it <em>can't</em>, and — the practical payoff — why the instinct to fix a misbehaving bot by making the prompt <em>longer</em> is usually the wrong lever entirely. Take your time; by the end, 'just make it more detailed' will read as the reflex it is, and you'll know what to reach for instead.</p></section>
+    <section><h2>How It Works</h2><p>Start from the most important fact, the one everything else follows from: a system prompt is <strong>text the model processes with the same attention mechanism as any other input</strong> — not a configuration file, not a rule engine, not a hard switch. It's persistent text that frames every user interaction, and it does real work: it controls persona, scope, constraints, and output format. But because it's <em>just text the model reads</em>, its influence is <strong>probabilistic, not deterministic</strong> — it shifts the odds, it doesn't guarantee.</p>
+<p>That single property draws a sharp line between what a system prompt can and cannot do. It <em>can</em> reliably shift the model's default output distribution across the typical range of inputs, establish a persona and format convention that holds across most conversations, and enumerate specific refusal categories the model then applies consistently. It <em>cannot</em> override weight-level safety training, prevent circumvention under sustained adversarial pressure, or guarantee format compliance on literally every output — because a probabilistic tilt, however strong, can always be outweighed by an input that tilts the other way.</p>
+<p>So when a bot <em>over-refuses</em> — turning away legitimate questions — the cause usually isn't too <em>little</em> instruction, it's badly <em>shaped</em> instruction. The tell is scope defined by <strong>exclusion</strong> ('don't answer off-topic questions'), which forces the model to interpret a vague prohibition and, at the boundary, guess conservatively. The more reliable pattern is scope by <strong>inclusion</strong>: 'answer questions about our software product, pricing, and support policies; for anything else, direct to support@company.com.' That tells the model exactly what to <em>do</em> with an out-of-scope request rather than leaving it to interpret 'don't answer that.'</p>
+<p>This is also why the reflex to <em>lengthen</em> a struggling prompt tends to backfire. Since the model attends across the whole prompt roughly equally, a poorly structured 2,000-word system prompt actually <em>dilutes</em> its own constraints — the important ones, buried in the middle, receive less attention weight. Two moves beat length: make every constraint <strong>testable</strong> ('be professional' is untestable; 'avoid first-person expressions of personal opinion about competitors' is testable), and redefine scope by inclusion. The interactive lets you rewrite a scope rule and watch over-refusal rise and fall; then the closing scenario hands you an over-refusing bot and the 'just make it longer' reflex — decide the real fix before the reasoning walks you through it.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A system prompt is text, not a rule engine</strong> — the model processes it with the same attention as any input; its influence is probabilistic, not deterministic.</li><li><strong>It can reliably shift defaults</strong> — persona, scope, format, and enumerated refusal categories across the typical input distribution.</li><li><strong>It cannot override weight-level safety, resist sustained adversarial pressure, or guarantee format on every output.</strong></li><li><strong>Over-refusal is a scope-definition problem</strong> — broad constraint language catches legitimate boundary queries.</li><li><strong>Define scope by inclusion, not exclusion</strong> — 'answer X; for anything else do Y' beats 'don't answer Z' because it tells the model what to do with out-of-scope input.</li><li><strong>Length is not the fix</strong> — a poorly structured 2,000-word prompt dilutes attention; buried constraints get less weight. Make every constraint testable.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A customer-support chatbot refuses <em>legitimate</em> questions 15% of the time and occasionally breaks persona when users push back. Its system prompt is 80 words, and a teammate offers the reflex fix: 'just make it longer and more detailed.' Take a moment before reading on: will more words fix an <em>over-refusal</em> problem — and could more words even make it worse? Here's the reasoning, step by step. A 15% over-refusal rate is almost always a <em>scope-definition</em> problem, not a length problem: the constraint language is broad enough to catch legitimate boundary queries, usually because scope was defined by <em>exclusion</em> ('don't answer off-topic questions') and the model is left to interpret a vague prohibition. The reliable fix is to define scope by <em>inclusion</em> — 'answer questions about our product, pricing, and support policies; for anything else, direct to support@company.com' — which tells the model what to <em>do</em> with out-of-scope requests instead of guessing. And length can backfire: a poorly structured 2,000-word prompt makes the model attend across all of it roughly equally, so important constraints buried in the middle get <em>less</em> attention weight. Make each constraint testable ('avoid first-person opinions about competitors' beats 'be professional'), redefine scope by inclusion — and pair the prompt with input/output classifiers for the adversarial persona breaks, which a prompt alone can't guarantee against.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>System prompts control behavior probabilistically, not deterministically. Define scope by inclusion ('answer X, for anything else do Y') rather than exclusion ('don't answer Z'). Make constraints testable with concrete examples. Length is not the fix — clear scope definition and constraint specificity are. For adversarial circumvention resistance, system prompt hardening must be combined with input/output classifiers.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

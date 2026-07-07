@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Agent Systems | GenAI Systems Lab</title>
+  <meta name="description" content="Architecture patterns, failure cascades, and when single-agent is the right call.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/multiagent">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/multiagent">
+  <meta property="og:title" content="Multi-Agent Systems | GenAI Systems Lab">
+  <meta property="og:description" content="Architecture patterns, failure cascades, and when single-agent is the right call.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Multi-Agent Systems">
+  <meta name="twitter:description" content="Architecture patterns, failure cascades, and when single-agent is the right call.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Multi-Agent Systems","description":"Architecture patterns, failure cascades, and when single-agent is the right call.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/multiagent"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 10</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Multi-Agent Systems</h1>
+    <p class="desc">Architecture patterns, failure cascades, and when single-agent is the right call.</p>
+
+    
+    <section><h2>How It Works</h2><p>Agent-tools established how a single agent selects and executes tools. The failure it left: one agent handles all pipeline steps sequentially using the same model for every task. The compliance pipeline exposes this cost directly. Step 1 needs a long-context model for 100-page inputs. Step 2 is a cheap classification call per extracted term — independently decidable, no dependency between terms. Step 3 needs a reasoning model to synthesize across all results. One model paying frontier pricing for all three wastes the cheapest work in the pipeline. And the single agent runs all term checks in sequence when they could run in parallel.</p>
+<p>If 50 terms are extracted, 50 independent regulatory checks can run simultaneously rather than sequentially. Fan-out and merge: an orchestrator distributes each term to a Step-2 agent, collects all results, then passes the complete result set to Step 3. Wall-clock time scales with the slowest single Step-2 call, not with the number of terms. Fifty sequential calls at 500ms each take 25 seconds; fifty parallel calls take 500ms. For compliance workflows with turnaround SLAs, this gap is decisive — and it's unavailable to a single-agent sequential pipeline regardless of model speed.</p>
+<p>The missing flags in Step 3 are the canonical multi-agent handoff failure. Context doesn't flow automatically between agents — Agent C receives only what Agent B returned, not what Agent B reasoned. If Step 2 returns results as free-text summaries ('Term X appears low-risk but check jurisdiction'), Step 3 receives a lossy description where flags are embedded in natural language. The flag was there; the schema lost it. If Step 2 returns structured schema — `{term, risk_level, regulation_id, requires_review: true/false, jurisdiction}` — Step 3 receives a complete, machine-readable record it can reliably aggregate. The missing flags in this scenario are not missing because the regulatory check failed to find them — they're missing because the handoff format allowed them to be lost in summarization. Design inter-agent output contracts with the same care as tool schemas.</p></section>
+    
+    <section><h2>In Production — Apply It</h2><p>A compliance review pipeline: extract key terms from 100-page contracts (Step 1), check each term against a regulatory database (Step 2), produce a risk summary (Step 3). The team debates single LLM vs. multi-agent. Step 2 can run in parallel per term. Step 3's report is missing compliance flags that Step 2 identified.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Multi-agent systems scale via specialization and parallelism, but context doesn't flow automatically between agents. Every inter-agent handoff is a fidelity loss point unless the output schema explicitly preserves all required fields. Design inter-agent contracts (typed schemas with required fields) as carefully as tool interfaces.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Loop Simulator | GenAI Systems Lab</title>
+  <meta name="description" content="Step through a running agent loop and watch it decide.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-loop-simulator">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-loop-simulator">
+  <meta property="og:title" content="Agent Loop Simulator | GenAI Systems Lab">
+  <meta property="og:description" content="Step through a running agent loop and watch it decide.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Loop Simulator">
+  <meta name="twitter:description" content="Step through a running agent loop and watch it decide.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agent Loop Simulator","description":"Step through a running agent loop and watch it decide.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-loop-simulator"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Agent Loop Simulator</h1>
+    <p class="desc">Step through a running agent loop and watch it decide.</p>
+
+    
+    <section><h2>How It Works</h2><p>An agent is not a single model call — it is a <strong>control loop wrapped around a model</strong>. The loop has four phases: <mark>perceive (take in the current observation/state) → plan (the model reasons and decides the next action) → act (the runtime executes that action — usually a tool call) → observe (feed the result back in), then repeat.</mark> The crucial structural fact: the <strong>model itself is stateless and does not act</strong>. It only emits text/structured output. The <strong>runtime</strong> (the agent harness, not the LLM) is what parses that output, actually executes the tool, appends the result to the context, and calls the model again. Confusing 'the model' with 'the agent' is the most common conceptual error — the agent is the loop; the model is one component inside it.</p>
+<p>One iteration is a <strong>turn</strong>. On each turn the model receives the accumulated context (system prompt + goal + history of prior actions and their results) and produces one of two things: <strong>an action</strong> (a tool call — 'search_kb(&quot;refund policy&quot;)') or a <strong>terminal output</strong> (a final answer, or a `finish`/`done` signal). If it's an action, the runtime executes it, captures the result (the <em>observation</em>), appends `action → observation` to the history, and loops. <mark>This append is why the agent 'remembers' across turns: memory is the growing context, not model state.</mark> The model on turn 5 knows what happened on turns 1–4 only because those results were appended to the context it's re-shown.</p>
+<div class="illustration"><div class="illustration-label">One full pass of the agent control loop (ReAct-style trace)</div><pre>GOAL: &quot;Is order #8821 eligible for a refund?&quot;
+
+turn 1  PERCEIVE  context = [system, goal]
+        PLAN      model → &quot;I need the order status.&quot;  action: get_order_status(8821)
+        ACT       runtime executes tool
+        OBSERVE   result: {status:'delivered', days_since:40}  → appended to context
+
+turn 2  PERCEIVE  context = [system, goal, turn-1 action+result]
+        PLAN      model → &quot;40 days &gt; 30-day window. Check policy.&quot;  action: search_kb(&quot;refund window&quot;)
+        ACT       runtime executes tool
+        OBSERVE   result: &quot;Refunds allowed within 30 days of delivery.&quot; → appended
+
+turn 3  PERCEIVE  context = [ ...all prior... ]
+        PLAN      model → goal satisfied → TERMINAL OUTPUT (not an action):
+                  &quot;Not eligible: delivered 40 days ago, past the 30-day window.&quot;
+        ACT       none — the runtime detects a final answer → STOP
+
+Key: the model NEVER touched the database. The RUNTIME executed each tool and
+fed results back. The model only decided WHAT to do and WHEN to stop.</pre></div>
+<p><strong>Stopping conditions are the part everyone underestimates, and there are four kinds.</strong> (1) <strong>Goal reached</strong> — the model emits a final answer / calls `finish`; this is the <em>intended</em> exit. (2) <strong>Step cap (max iterations)</strong> — a hard limit (e.g. 10 turns) that fires regardless of progress. (3) <strong>Budget cap</strong> — a limit on tokens or dollars spent, since each turn re-sends the growing context and costs money. (4) <strong>Error/failure exit</strong> — e.g. the same tool failing repeatedly. <mark>A loop with only condition (1) is a bug, not an agent.</mark> The model can be wrong about whether the goal is met, so the harness — not the model — must enforce (2)–(4) as safety rails.</p>
+<p>Two pathologies motivate those caps, and they're the loop's characteristic failure modes. <strong>Looping / non-termination</strong>: the agent repeats the same failing action forever — calls a tool, it errors, it calls the same tool again, never adapting — burning tokens with no progress. The step cap and 'same-action-N-times' detection exist precisely to break this. <strong>Premature termination</strong>: the agent decides it's done before the goal is actually met (declares success on partial results). <mark>The step cap bounds the first failure; good stopping <em>criteria</em> and verification bound the second — they are different problems needing different rails.</mark> Note the tension: too low a cap causes premature stops on legitimately long tasks; too high a cap lets runaway loops run up the bill. The cap is a deliberate budget/risk tradeoff, not a default.</p>
+<p><strong>Planning granularity</strong> is the loop's main design axis. <strong>Interleaved (ReAct-style)</strong>: plan <em>one</em> action, observe, then decide the next from the fresh result — reactive and robust to surprises, because each decision uses the latest observation, but it makes more model calls. <strong>Plan-then-execute</strong>: the model produces a full multi-step plan up front, then the runtime executes the steps — cheaper and more auditable, but brittle if reality diverges from the plan (a failed step three invalidates steps four onward). <mark>Most production agents interleave for robustness</mark> and re-plan when observations contradict the plan. The four-phase loop is the same either way; only <em>how much the model commits to per plan step</em> changes.</p>
+<p>Put together, the loop is the whole engine and every agent capability hangs off it: <strong>tools</strong> are the action space the <em>act</em> phase can invoke; <strong>memory</strong> is the context that the <em>perceive</em> phase re-shows and the <em>observe</em> phase appends to; <strong>guardrails</strong> are checks the runtime runs between <em>plan</em> and <em>act</em> (e.g. confirm before an irreversible action); <strong>stopping conditions</strong> are how the runtime decides when to exit. <mark>The interview-grade summary: an agent is a stateless model driven by a stateful runtime around perceive→plan→act→observe, terminated by explicit goal/step/budget/error conditions — and the runtime, not the model, owns termination and safety.</mark> Master this and every other agent topic (computer use, long-running, design) is a variation on where in this loop the hard part lives.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>An agent is a control loop around a stateless model:</strong> perceive → plan → act → observe, repeated. The model only <em>decides</em> (emits an action or a terminal output); the <strong>runtime</strong> executes tools, appends results, and re-calls the model. The agent is the loop; the model is one component.</li><li><strong>Memory is the growing context, not model state.</strong> Each turn appends `action → observation` to the history the model is re-shown, which is the only reason turn 5 'remembers' turns 1–4. The model itself carries nothing across turns.</li><li><strong>Four stopping conditions, and only the first is 'intended':</strong> (1) goal reached / `finish`, (2) step cap (max iterations), (3) budget cap (tokens/$), (4) error exit (repeated tool failure). A loop with only (1) is a bug — the runtime must enforce (2)–(4).</li><li><strong>Two characteristic failures need different rails:</strong> non-termination/looping on a failing action (bounded by step caps + repeat detection) vs. premature termination declaring success too early (bounded by good stopping criteria + verification). Cap too low → premature stops; too high → runaway bills.</li><li><strong>Planning granularity is the design axis:</strong> interleaved/ReAct (one action at a time, robust, more calls) vs. plan-then-execute (upfront plan, cheaper/auditable, brittle to divergence). Most production agents interleave and re-plan; the four-phase loop is identical either way.</li><li><strong>Every capability hangs off the loop:</strong> tools = the <em>act</em> action space; memory = the <em>perceive</em>/<em>observe</em> context; guardrails = checks between <em>plan</em> and <em>act</em>; stopping conditions = the runtime's exit logic. The runtime — not the model — owns termination and safety.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Someone asks you to explain 'how an AI agent actually works' — not the marketing version. You could wave at 'it's an LLM with tools,' but the real answer is a specific control loop: the model observes, decides one action, the runtime executes it, feeds the result back, and repeats until a stopping condition fires. Getting this loop exactly right — including its termination conditions and budget caps — is the difference between an agent that completes a task and one that spins forever, loops on a failing tool, or quits early. The simulator steps you through real traces of this loop; here is the loop it visualizes, rigorously.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>An agent is a stateless model driven by a stateful runtime around a four-phase control loop — perceive → plan → act → observe — where the model only decides and the runtime executes tools, appends observations (which is the agent's memory), and re-calls until a stopping condition fires. Termination is owned by the runtime via four conditions (goal, step cap, budget cap, error exit), guarding against looping and premature stops; planning is interleaved (ReAct) or plan-then-execute, and every other agent capability — tools, memory, guardrails — is a slot in this loop.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

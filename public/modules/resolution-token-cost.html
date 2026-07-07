@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Resolution vs Token Cost | GenAI Systems Lab</title>
+  <meta name="description" content="The VLM cost dial.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/resolution-token-cost">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/resolution-token-cost">
+  <meta property="og:title" content="Image Resolution vs Token Cost | GenAI Systems Lab">
+  <meta property="og:description" content="The VLM cost dial.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Image Resolution vs Token Cost">
+  <meta name="twitter:description" content="The VLM cost dial.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Image Resolution vs Token Cost","description":"The VLM cost dial.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/resolution-token-cost"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">DECISION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Image Resolution vs Token Cost</h1>
+    <p class="desc">The VLM cost dial.</p>
+
+    
+    <section><h2>How It Works</h2><p>VLMs process images as patch sequences — each fixed-size tile of pixels becomes one visual token. Token count scales as the square of linear resolution, not linearly. This is the key quantitative fact for VLM cost optimization.</p>
+<div class="illustration"><div class="illustration-label">Visual token count vs. image resolution (14×14 pixel patches)</div><pre>Visual token count vs. image resolution (14×14 pixel patches):
+
+  Resolution    Patches (width)    Total tokens
+  512×512       512÷14 ≈ 37       37 × 37 ≈ 1,340
+  1024×1024     1024÷14 ≈ 73      73 × 73 ≈ 5,330   (4× tokens, 2× linear)
+  2048×2048     2048÷14 ≈ 146     146 × 146 ≈ 21,400 (16× tokens, 4× linear)
+
+4× linear resolution increase → 16× token count
+(area scales as linear² → token count scales as area)</pre></div>
+<p>For the 50K/day pipeline: at 2048×2048 (≈21K visual tokens/image), the pipeline generates approximately 1.05B visual tokens/day — producing the $2,400/day cost at the provider's blended vision-token rate. Switching to 512×512 (≈1,340 visual tokens): ~67M visual tokens/day, or roughly 16× fewer tokens — reducing the bill to approximately $150/day at the same rate. (The exact dollar figures vary by provider pricing; the key insight is the 16× ratio.) Potential savings: ~$2,250/day, or ~$67,000/month — before evaluating whether quality is maintained.</p>
+<p>For product attribute extraction (color, material, visible dimensions): most attributes are clearly visible at 512×512. High resolution provides value when reading fine print, examining surface texture at pixel level, or detecting subtle defects — not typically required for catalog attribute extraction. Test approach: process 1,000 images at both resolutions, compare extraction accuracy against a ground-truth annotation set. If quality is equivalent, the business case is straightforward. If quality degrades for a subset, use adaptive resolution: classify images as 'complex' (high-res) or 'standard' (low-res) with a cheap binary classifier.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Visual token count scales as the square of linear resolution</strong> — area scaling, not linear; this is the key VLM cost fact.</li><li><strong>A 4× linear increase is 16× tokens</strong> — 512→2048 goes from ~1,340 to ~21,400 visual tokens per image.</li><li><strong>Resolution has quadratic cost impact</strong> — the 50K/day pipeline drops from ~$2,400/day (2048²) to ~$150/day (512²), roughly $67K/month saved, before checking quality.</li><li><strong>Most catalog attributes read fine at 512×512</strong> — high resolution earns its cost only for fine print, pixel-level texture, or subtle defects.</li><li><strong>Measure before changing production</strong> — process ~1,000 images at both resolutions against a ground-truth set and compare accuracy.</li><li><strong>Use adaptive resolution if a subset degrades</strong> — a cheap binary classifier routes 'complex' images to high-res and 'standard' images to low-res.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>An image analysis pipeline processes 50,000 product photos per day through a VLM for attribute extraction. Inference costs $2,400/day. An engineer notices images are sent at 2048×2048 resolution and the documentation mentions a low-resolution mode at 512×512. You need to understand the resolution-token relationship before changing settings.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Visual token count scales quadratically with linear resolution — a 4× linear resolution increase costs 16× more. For bulk image processing, always evaluate whether your task requires full resolution. Catalog attribute extraction typically works at 512×512; the 16× cost difference is significant at 50K images/day. Measure accuracy at target resolution before changing settings in production.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

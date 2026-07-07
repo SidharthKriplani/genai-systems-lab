@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Agent Patterns | GenAI Systems Lab</title>
+  <meta name="description" content="When to split into multiple agents — and how they coordinate.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-multiagent">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-multiagent">
+  <meta property="og:title" content="Multi-Agent Patterns | GenAI Systems Lab">
+  <meta property="og:description" content="When to split into multiple agents — and how they coordinate.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Multi-Agent Patterns">
+  <meta name="twitter:description" content="When to split into multiple agents — and how they coordinate.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Multi-Agent Patterns","description":"When to split into multiple agents — and how they coordinate.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-multiagent"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Multi-Agent Patterns</h1>
+    <p class="desc">When to split into multiple agents — and how they coordinate.</p>
+
+    <section><h2>Start Here</h2><p>There's a story engineers tell themselves that sounds obviously true: a hard problem needs a <em>team</em>. One agent can't juggle everything, so surely five specialists — a planner, some researchers, a writer — will do better, just like humans would. It's an intuitive, almost irresistible picture. And it's the single most expensive misconception in agent design.</p>
+<p>Here's the catch nobody mentions in the demo. The moment you turn one agent into five, you haven't just added helpers — you've built a <em>distributed system</em>, with all the ancient, unglamorous problems that come with one: how do the pieces talk, what happens when one silently dies, how do you stitch their answers back together without contradictions? A single agent had none of those problems, for free. So splitting isn't a free upgrade; it's a trade, and a steep one.</p>
+<p>So let's slow down and reason about it properly, from the ground up. We'll start from the honest default — <em>one</em> agent — and force ourselves to justify every extra one. You'll learn the exact question that decides whether a task genuinely wants multiple agents, the three patterns worth knowing, and — most importantly — the precise tax you agree to pay the moment you split. By the end, the dazzling five-agent demo that triples the bill will look less like sophistication and more like a bill you forgot to read.</p></section>
+    <section><h2>How It Works</h2><p>Start from the honest null hypothesis, because everything downstream is a departure from it that must be earned: <strong>a single agent with the right tools is the default, and multi-agent is a complexity multiplier you must justify.</strong> A lone agent is one context window, one control loop, one place errors surface. <strong>This means</strong> it has, for free, none of the coordination machinery a team needs. <strong>So</strong> the moment you split into N agents you <em>inherit</em> an entire class of distributed-systems problems — message passing, partial failure, output reconciliation — that a single agent never had. <strong>Therefore</strong> most tasks that merely <em>look</em> like they need multiple agents are actually solved by a better-scoped single agent with cleaner tools, and the burden of proof sits on the split, not the default.</p>
+<p><strong>Which means</strong> the gate question is not the tempting one. <mark>It's not 'is this task complex?' — complexity alone never justifies the tax. It's 'does this task decompose into subtasks with minimal dependencies that can run in parallel?'</mark> <strong>Because</strong> if the subtasks are tightly coupled — each needs the output of the last — the fan-out saving never appears, so you pay all the coordination cost and get none of the parallelism benefit: the worst trade available.</p>
+<p>There are three recurring patterns, and the interactive lets you click through each with its architecture, real example, and specific risk. <strong>Orchestrator-worker</strong> is the workhorse: a central agent decomposes the task, fans subtasks out to specialized workers (`DataFetcher`, `Analyst`, `Writer`, `Validator`), and synthesizes their returns. The orchestrator is the value <em>and</em> the single point of failure — if it can't reconcile inconsistent worker outputs, or a worker dies silently, the whole run degrades.</p>
+<p><strong>Debate / peer review</strong> runs two or more agents independently on the same question, then a synthesizer weighs the answers — think two diagnostic agents arguing X vs Y with a third calibrating confidence. It buys calibration on high-stakes calls at <mark>2–3× the cost and latency</mark>, and it only helps if the agents have <em>independent</em> biases. Two copies of the same model with the same blind spot 'debating' just agree confidently on the same wrong answer.</p>
+<p><strong>Specialized routing</strong> puts a classifier up front that dispatches to the right expert agent (billing → BillingAgent, tech → TechAgent). It shines when intents are genuinely distinct — but the router becomes a critical dependency with its own eval suite, because a misroute sends the user to the wrong specialist and the error cascades.</p>
+<p>The costs are not incidental — they are <em>structural</em> to splitting a task across agents. <strong>Coordination overhead:</strong> every hand-off is a serialization boundary where a worker's rich internal reasoning collapses into a text message the next agent must re-interpret; context and nuance leak at every edge. <strong>Token amplification:</strong> each agent re-reads shared context, so a 5-agent system can burn 4–15× the tokens of a single agent (Anthropic reported their multi-agent research system used ~15× the tokens of chat). <strong>Partial-completion ambiguity:</strong> when worker C dies but A and B succeed, the orchestrator often can't tell 'C found nothing' from 'C never ran' — that is exactly the silent-omission bug in the scenario.</p>
+<div class="illustration"><div class="illustration-label">Single agent vs orchestrator-worker — where the bills come from</div><pre>TASK: research report over 3 subtopics, then synthesize
+
+SINGLE AGENT (sequential, one context):
+  read task → search T1 → search T2 → search T3 → write
+  tokens:   ~1×      one control loop, one place to see failures
+  latency:  sum of the searches (serial)
+  failure:  if a search returns nothing, the SAME agent sees it and adapts
+
+ORCHESTRATOR + 3 WORKERS (parallel):
+  orchestrator decomposes ─┬─ Worker A (T1) ┐
+                           ├─ Worker B (T2) ┤─ synthesize → report
+                           └─ Worker C (T3) ┘
+  tokens:   ~4–15×   every worker re-reads shared context; hand-offs re-serialize
+  latency:  max(searches) for the fan-out  ← the ONLY thing you actually won
+  failure:  C dies silently → orchestrator can't tell &quot;found nothing&quot; from
+            &quot;never ran&quot; → report ships missing T3, looks complete
+
+WIN CONDITION: subtasks independent + parallelizable + worth 4–15× tokens
+LOSE CONDITION: subtasks coupled (each needs the last) → all cost, no parallelism</pre></div>
+<p>So <em>when does multi-agent actually win?</em> When three things hold at once. First, the task is <strong>genuinely parallelizable</strong> — the fan-out latency saving (max instead of sum) is the real prize, and it only exists if subtasks don't depend on each other. Second, each subtask needs <strong>distinct expertise or distinct tools</strong> such that one generalist agent would be worse, not just differently-organized. Third, the workload is <strong>wide, not deep</strong> — breadth-first research, checking many independent sources, exploring many candidates — because that is where parallel agents genuinely outrun a single sequential one. Anthropic's own guidance: multi-agent paid off for open-ended research that fans out, and lost for tasks requiring tight shared context.</p>
+<p>The failure modes are the flip side of the same coin and worth naming so you spot them in interviews. <strong>Over-delegation:</strong> an orchestrator that routes everything but never synthesizes, or workers that delegate back to each other in a loop while nothing gets done — the fix is explicit, non-overlapping roles and a synthesis step that is <em>forbidden</em> from delegating. <strong>Inconsistent outputs:</strong> parallel workers make locally-sensible but mutually-contradictory choices (two workers pick different date ranges) and the synthesizer can't reconcile them. <strong>Coordination deadlock / cost blowup</strong> from unbounded hand-offs. <mark>Every one of these is a systems problem you introduced by splitting — none of them exist in the single-agent baseline you skipped past.</mark></p>
+<p>The interview-grade summary: multi-agent is an <em>architecture decision made under a cost constraint</em>, not a sophistication flex. State the default (single agent), state the gate (clean parallel decomposition with distinct expertise, breadth over depth), name the pattern that fits (orchestrator-worker for fan-out/synthesize, debate for calibration, routing for distinct intents), and then — crucially — name the tax you're agreeing to pay: <mark>4–15× tokens, coordination overhead, and partial-failure handling you now own.</mark> A candidate who reaches for five agents without pricing that tax has failed the question.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Single agent is the default; multi-agent is a complexity multiplier you must justify.</strong> Splitting into N agents inherits distributed-systems problems (message passing, partial failure, reconciliation) a lone agent never had. Most 'needs multi-agent' tasks are a better-scoped single agent.</li><li><strong>The gate is decomposability, not complexity:</strong> do subtasks have minimal dependencies and run in parallel? Tightly-coupled subtasks pay all the coordination cost and get zero parallelism benefit — the worst case.</li><li><strong>Three patterns:</strong> orchestrator-worker (decompose → fan out → synthesize; orchestrator is the SPOF), debate/peer-review (independent answers → calibrate; 2–3× cost, only helps with <em>independent</em> biases), specialized routing (classifier dispatches to experts; the router is a critical dependency with its own eval suite).</li><li><strong>The tax is structural:</strong> coordination overhead (nuance leaks at every text hand-off), token amplification (4–15× — Anthropic saw ~15× vs chat because agents re-read shared context), and partial-completion ambiguity ('worker died' vs 'worker found nothing' — the silent-omission bug).</li><li><strong>Multi-agent wins when all three hold:</strong> genuinely parallelizable, distinct expertise/tools per subtask, and breadth-over-depth (wide research/search) — that is where fan-out latency (max not sum) actually pays.</li><li><strong>Named failure modes:</strong> over-delegation (orchestrator never synthesizes / workers loop), inconsistent worker outputs the synthesizer can't reconcile, and cost/latency blowup from unbounded hand-offs.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A staff engineer proposes rebuilding your research assistant as five specialized agents — a planner, three parallel web-search workers, and a synthesizer — because 'one agent can't hold all of this in context.' The demo is dazzling. Then production bills triple, p95 latency doubles, and one in twenty runs returns a report that silently omits a whole subtopic because a worker died mid-run and the orchestrator never noticed. Take a moment before reading on: was multi-agent the right call, and which specific cost is biting in each symptom? Here's the reasoning, step by step. The tripled bill is <strong>token amplification</strong> — every one of those agents re-reads the shared context, so five agents can burn many times the tokens of one. The doubled latency is a sign the win you were paying for — fan-out (max instead of sum) — barely materialized, which happens when the subtasks are more coupled than they looked. And the silently-dropped subtopic is <strong>partial-completion ambiguity</strong>: worker C died, the orchestrator got no return, and it cannot tell 'C found nothing' from 'C never ran,' so it ships a report that looks complete. Notice the common thread — none of these three failures existed in the single-agent baseline. They are the tax of splitting, and unless the task was <em>genuinely</em> parallel with distinct expertise, you paid it for nothing.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Treat single agent as the default and multi-agent as a cost-bearing architecture decision: the gate is clean parallel decomposition with distinct expertise (breadth over depth), the patterns are orchestrator-worker / debate / routing, and the tax you agree to pay is 4–15× tokens, coordination overhead, and partial-failure handling you now own — never reach for five agents without pricing that tax.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

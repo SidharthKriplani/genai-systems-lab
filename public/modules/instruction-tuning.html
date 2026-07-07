@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instruction Tuning: Teaching Models to Follow | GenAI Systems Lab</title>
+  <meta name="description" content="SFT on curated instruction-response pairs — what changes and what doesn't.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/instruction-tuning">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/instruction-tuning">
+  <meta property="og:title" content="Instruction Tuning: Teaching Models to Follow | GenAI Systems Lab">
+  <meta property="og:description" content="SFT on curated instruction-response pairs — what changes and what doesn't.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Instruction Tuning: Teaching Models to Follow">
+  <meta name="twitter:description" content="SFT on curated instruction-response pairs — what changes and what doesn't.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Instruction Tuning: Teaching Models to Follow","description":"SFT on curated instruction-response pairs — what changes and what doesn't.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/instruction-tuning"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">TRAINING</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Instruction Tuning: Teaching Models to Follow</h1>
+    <p class="desc">SFT on curated instruction-response pairs — what changes and what doesn't.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a puzzle that trips up almost everyone the first time. You take a big, powerful base model — one that has read a huge slice of the internet and clearly <em>knows</em> a great deal — and you type &quot;Summarize this document:&quot; at the top. And instead of a summary, it… keeps writing more of the document. It didn't fail to understand you. It didn't run out of knowledge. It just did something <em>else.</em></p>
+<p>Here's the reframe the whole module rests on: knowing things and <em>following instructions</em> are two completely different abilities, and a base model only has the first. All pretraining ever taught it was to <em>continue text plausibly.</em> When you type an instruction, the model doesn't experience it as a command — it experiences it as the <em>opening of some text</em>, and it continues that text in whatever way its training makes most likely. Sometimes a summary is the likely continuation; often, more document is.</p>
+<p>So the real question becomes: how do you take a model that continues text and teach it to <em>obey</em> text instead — without disturbing everything it knows? That's exactly what instruction tuning does, and we'll build it up one step at a time. Take your time — by the end, a base model that 'ignores' your instruction will look completely reasonable, and you'll know precisely what one small training step fixes it.</p></section>
+    <section><h2>How It Works</h2><p>Start from the single fact that explains the whole puzzle: pretraining optimized a base model for exactly one thing — <strong>predict the next token well</strong> across a vast range of text. That is a real and powerful capability. But notice what it is <em>not</em>: it is not a preference for <em>doing what an instruction asks.</em> Nobody trained that in, so it isn't there.</p>
+<p>That gap has a direct, almost mechanical consequence. Prompt a base model with &quot;Summarize this document:&quot; and, because both patterns appear in its training data, <em>continuing to write more document text</em> is statistically about as likely as <em>producing a summary</em> — so it may well pick the continuation. The base model's underlying capability is genuine; its <em>reliable compliance</em> with an arbitrary instruction format is not. Which is exactly the thing a user-facing product depends on.</p>
+<p>Instruction tuning (<strong>SFT — Supervised Fine-Tuning</strong>) trains the model on a curated dataset of <strong>(instruction, ideal response) pairs</strong> using standard gradient descent.</p>
+<p><strong>What changes:</strong> the response to instruction-shaped inputs shifts from &quot;complete the most statistically likely continuation&quot; to &quot;follow the instruction.&quot; <strong>What does NOT change:</strong> <mark>factual knowledge, reasoning capability, or internal representations of the world.</mark></p>
+<p>This is the same <strong>Stage-1 SFT step that opens the RLHF pipeline</strong> — instruction tuning <em>is</em> RLHF's supervised first stage, run on its own without the later reward-model and RL stages.</p>
+<div class="illustration"><div class="illustration-label">Base vs instruct — same prompt, different behavior; why knowledge is untouched</div><pre>Prompt: &quot;Summarize: The quarterly report shows revenue up
+         12%, driven by enterprise renewals and a new EMEA
+         region launch, though margins compressed slightly.&quot;
+
+BASE model (next-token prediction, no instruction prior):
+  → &quot;The board will review these figures at the March
+     meeting. Analysts had expected 9% growth, so the
+     result modestly beats consensus. In the prior
+     quarter...&quot;
+  (It CONTINUES the document — a summary and more report
+   text are both plausible completions, so it picks one.)
+
+INSTRUCT model (after SFT on (instruction, response) pairs):
+  → &quot;Revenue rose 12% on enterprise renewals and an EMEA
+     launch; margins dipped slightly.&quot;
+  (It OBEYS the instruction — produces an actual summary.)
+
+WHY behavior flips but KNOWLEDGE does not:
+  SFT dataset      ≈ 10k–100k (instruction, response) pairs
+  Pretraining      ≈ 10¹²–10¹³ tokens (trillions)
+  ─────────────────────────────────────────────────────────
+  SFT touches ~10⁻⁷–10⁻⁸ of the data that encoded the
+  knowledge. It is far too small an update to rewrite what
+  the model KNOWS — it only re-weights HOW the model
+  responds to instruction-shaped inputs. Behavior shifts;
+  facts, reasoning, and world representations stay put.
+
+Named instruction-tuning datasets/methods: FLAN, T0, Alpaca,
+and self-instruct (bootstrapping instructions from the model
+itself).</pre></div>
+<p>This is also why a <strong>&quot;more capable&quot; claim from benchmark scores</strong> needs careful reading. Some benchmarks are built for <strong>completion-style prompting</strong>, where the base model's continue-the-text flexibility is exactly the right fit. An instruction-tuned model scores <em>lower</em> on those — but only because the benchmark format <em>conflicts</em> with its instruction-following prior, not because any capability decreased. For any real task — answer a question, extract a field, follow a format — the instruction-tuned model wins, because instruction-following is the load-bearing capability for user-facing work.</p>
+<p>So the whole chain lands on a clean rule: for anything a user actually talks to, start from the <strong>instruction-tuned</strong> model — every user turn is an instruction, and a base model's benchmark edge is a measurement artifact of completion-style tests. Reach for the base model only when you're building your <em>own</em> fine-tuning pipeline and want a clean parameter initialization without an instruction-following prior baked in. The interactive lets you feed the same prompt to a base and an instruct model and watch the behavior flip; then the closing scenario puts it to work on exactly this base-versus-instruct decision — see if you can call it before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Pretraining gives capability, not instruction-following</strong> — a base model may continue a document instead of summarizing it, since both are plausible completions.</li><li><strong>Instruction tuning (SFT) trains on (instruction, response) pairs</strong> and shifts the behavioral prior from &quot;complete likely text&quot; to &quot;follow the instruction.&quot;</li><li><strong>SFT changes behavior, not knowledge</strong> — factual knowledge, reasoning, and world representations are untouched (the dataset is ~10⁻⁷ the size of pretraining).</li><li><strong>Instruction tuning IS RLHF's Stage-1 SFT, run standalone</strong> — without the later reward-model and RL stages.</li><li><strong>Lower base-vs-instruct benchmark scores are a format artifact</strong> — completion-style tests favor the base prior, not a real capability loss.</li><li><strong>For any user-facing app, instruction-tuned is the right default</strong> — use the base model only as a clean init for a custom fine-tuning pipeline.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You're choosing between base Llama 3 70B and its instruction-tuned variant for a customer-facing Q&amp;A tool, and a researcher points out the <em>base</em> model scores higher on some benchmarks and is therefore 'more capable.' Take a moment before reading on: can the base model be 'more capable' on a benchmark yet the <em>wrong</em> choice for the product? Here's the reasoning, step by step. Every user interaction in a Q&amp;A tool <em>is</em> an instruction — 'answer this,' 'explain that' — which is exactly the behavior the base model lacks and the instruction-tuned variant was trained to have. The base model's benchmark edge is a <em>measurement artifact</em>: some benchmarks use completion-style prompting where a raw continue-the-text prior scores well, and the instruction-tuned model looks 'worse' only because the benchmark format fights its instruction-following prior — not because any capability was lost (SFT touches ~10⁻⁷ of the pretraining data; it re-weights <em>behavior</em>, not knowledge). So the instruction-tuned variant is correct for a user-facing tool, full stop; reach for the base model only when you need a clean initialization for your <em>own</em> fine-tuning pipeline, without an instruction-following prior baked in.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Instruction tuning shifts the model's behavioral prior from 'complete any text' to 'follow this instruction' — without changing factual knowledge or reasoning capability. Lower benchmark scores on completion-style tests are a format artifact, not capability reduction. For any user-facing application, instruction-tuned is always the right starting point.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

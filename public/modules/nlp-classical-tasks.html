@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classical NLP Tasks | GenAI Systems Lab</title>
+  <meta name="description" content="POS, NER, parsing, coreference — sequence labeling and how LLMs subsumed them.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nlp-classical-tasks">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nlp-classical-tasks">
+  <meta property="og:title" content="Classical NLP Tasks | GenAI Systems Lab">
+  <meta property="og:description" content="POS, NER, parsing, coreference — sequence labeling and how LLMs subsumed them.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Classical NLP Tasks">
+  <meta name="twitter:description" content="POS, NER, parsing, coreference — sequence labeling and how LLMs subsumed them.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Classical NLP Tasks","description":"POS, NER, parsing, coreference — sequence labeling and how LLMs subsumed them.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nlp-classical-tasks"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">NLP FOUNDATIONS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Classical NLP Tasks</h1>
+    <p class="desc">POS, NER, parsing, coreference — sequence labeling and how LLMs subsumed them.</p>
+
+    
+    <section><h2>How It Works</h2><p>Before LLMs, NLP was a stack of well-defined <em>linguistic</em> tasks, each with its own structure. Understanding them is not nostalgia — they are still the vocabulary of the field, still the fallback for reliability, and still exactly what an interviewer probes to see whether you know what's <em>under</em> the magic. We walk the canonical ladder from words to structure.</p>
+<p><strong>POS tagging</strong> (part-of-speech) labels each token with its grammatical category — noun, verb, adjective, determiner, and so on. It sounds trivial until you hit ambiguity: in 'they <em>book</em> a flight' vs 'read a <em>book</em>', the same word is a verb or a noun depending on context. <strong>NER (Named Entity Recognition)</strong> finds and types the <em>spans</em> that name real things — people, organizations, locations, dates, money. Crucially, NER is a <strong>span</strong> task: 'Bank of America' is one three-token entity, not three separate ones, so you can't just label tokens independently — you must mark where an entity <em>begins</em> and <em>ends</em>. <mark>That span structure is why NER is framed as <em>sequence labeling</em> with a tagging scheme, not plain per-token classification.</mark></p>
+<div class="illustration"><div class="illustration-label">BIO / BIOES tagging turns spans into per-token labels</div><pre>Sentence:   Tim    Cook   met   Bank   of     America   today
+            ----   ----         ----------------------
+            PERSON                    ORG
+
+BIO scheme (Begin / Inside / Outside):
+  Tim=B-PER  Cook=I-PER  met=O  Bank=B-ORG  of=I-ORG  America=I-ORG  today=O
+
+BIOES scheme (adds End + Single-token):
+  Tim=B-PER  Cook=E-PER  met=O  Bank=B-ORG  of=I-ORG  America=E-ORG  today=O
+  (a lone entity like &quot;IBM&quot; would be S-ORG)
+
+  B marks the START of a span, I its continuation, O = not an entity.
+  This is how a SPAN task becomes a PER-TOKEN classification task:
+  the boundaries are encoded in the tags themselves.</pre></div>
+<p>The tagging scheme is the trick that lets a span problem become a token-classification problem. <strong>BIO</strong> tags each token as <strong>B</strong>egin (first token of an entity), <strong>I</strong>nside (a later token of the same entity), or <strong>O</strong>utside (not an entity), with the entity type appended (`B-PER`, `I-ORG`). <strong>BIOES</strong> adds <strong>E</strong>nd and <strong>S</strong>ingle for sharper boundary signals. <mark>Encoding the span boundaries <em>into the tags</em> is what makes 'find these multi-word spans' expressible as 'classify each token' — and it's why you'll be asked about BIO in any NER interview.</mark></p>
+<p><strong>Parsing</strong> recovers sentence <em>structure</em>, and there are two flavors interviewers love to contrast. <strong>Dependency parsing</strong> draws directed <strong>arcs between words</strong>: each word points to its syntactic <em>head</em> (in 'the cat sat', 'cat' is the subject of 'sat', 'the' modifies 'cat'), producing a tree of word-to-word relations. <strong>Constituency parsing</strong> instead builds a <strong>nested phrase structure</strong>: it groups words into constituents — a noun phrase '[the cat]', a verb phrase '[sat [on the mat]]' — like brackets within brackets. <mark>Dependencies = arcs between individual words (who governs whom); constituencies = nested phrases (which words clump into units). Same sentence, two different structural views.</mark> <strong>Chunking (shallow parsing)</strong> is the lightweight middle ground: just segment the sentence into flat, non-nested phrases (noun-phrase, verb-phrase) without the full tree.</p>
+<div class="illustration"><div class="illustration-label">Dependency arcs vs constituency brackets</div><pre>Sentence:  the   cat   sat   on    the   mat
+
+DEPENDENCY PARSE  (arcs: word -&gt; its head)
+        +----------------------+
+        |          +------+     |
+   +--+ |    +--+  |   +--+     |
+   the  cat       sat  on  the  mat
+    det  nsubj      root pobj det
+  &quot;sat&quot; is the root; &quot;cat&quot; depends on &quot;sat&quot; (subject);
+  &quot;the&quot; depends on &quot;cat&quot; (determiner). Word-to-word.
+
+CONSTITUENCY PARSE  (nested phrases)
+   ( S
+       ( NP  the  cat )                &lt;- noun phrase
+       ( VP  sat
+             ( PP  on ( NP the mat ) ) ) )  &lt;- verb phrase w/ nested PP
+  Brackets inside brackets. Phrase-structure, not word links.</pre></div>
+<p><strong>Coreference resolution</strong> links different mentions that refer to the <em>same</em> real-world entity: in 'Maria dropped the report because <em>she</em> was late; <em>it</em> was due at noon,' resolving <em>she</em> -&gt; Maria and <em>it</em> -&gt; the report. It's what lets a system know that scattered pronouns and noun phrases are all talking about one thing — essential for accurate extraction and summarization.</p>
+<p><strong>How were these solved classically?</strong> The key modeling insight is about <em>structure</em>. A naive approach classifies each token <strong>independently</strong> — but that's wrong for sequence labeling, because the label of one token depends on its neighbors: `I-PER` can only legally follow `B-PER` or `I-PER`, never `O`. <strong>HMMs (Hidden Markov Models)</strong> modeled the sequence generatively (hidden tag states emitting words) but made restrictive independence assumptions. <strong>CRFs (Conditional Random Fields)</strong> were the workhorse upgrade, and the <em>why</em> is the interview point: a CRF scores the <strong>whole tag sequence jointly</strong> and normalizes <strong>globally</strong>, so it can learn hard constraints like 'I-PER cannot follow O' and pick the single best <em>consistent</em> labeling of the entire sentence. <mark>Independent per-token classification can emit illegal, incoherent tag sequences (an `I-ORG` with no `B-ORG` before it); a CRF's global normalization forbids that by scoring the sequence as a whole. That global-vs-local distinction is the classic CRF answer.</mark> Modern neural taggers keep this idea: BiLSTM-CRF and BERT-CRF put a CRF layer on top of neural features precisely to enforce valid tag transitions.</p>
+<p><strong>So why, in the era of LLMs, do production teams still run small fine-tuned taggers?</strong> The scenario names every reason. <strong>Cost and latency</strong>: a fine-tuned spaCy-style tagger is milliseconds and near-free per document; an LLM over 40,000 contracts a night is slow and expensive. <strong>Reliability and structured guarantees</strong>: a sequence labeler <em>can only</em> emit spans that exist in the input — it points <em>at</em> the text — whereas an LLM can <em>hallucinate</em> an entity that never appears. <strong>Exact spans</strong>: token labeling yields precise character offsets for click-to-source, which free-form LLM JSON does not guarantee. <mark>The mature pattern is not 'LLM replaces classical NLP' but 'right tool per constraint': LLMs win zero/few-shot flexibility and messy long-tail extraction; fine-tuned lightweight taggers win latency, cost, and the hard guarantee that every extracted span is really in the document.</mark> Many real systems do both — an LLM for the fuzzy cases, a deterministic tagger for the high-volume, must-be-exact backbone.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>The classical ladder: POS tagging -&gt; NER -&gt; chunking/parsing -&gt; coreference.</strong> POS labels each word's grammatical category; NER finds and types multi-word <em>spans</em>; parsing recovers structure; coreference links mentions of the same entity.</li><li><strong>NER is a span task solved as sequence labeling via BIO/BIOES.</strong> BIO = Begin/Inside/Outside (type appended: B-PER, I-ORG); BIOES adds End/Single. Encoding span boundaries into the tags turns 'find multi-word spans' into 'classify each token.'</li><li><strong>Dependency vs constituency parsing.</strong> Dependency = directed <em>arcs between words</em> (each word points to its syntactic head); constituency = <em>nested phrase structure</em> (noun/verb phrases bracketed within brackets). Chunking is the flat, non-nested shallow-parse middle ground.</li><li><strong>CRFs beat independent per-token classification via global normalization.</strong> A CRF scores the whole tag sequence jointly, so it enforces legal transitions (I-PER can't follow O) and picks the single best consistent labeling — where independent classifiers can emit illegal, incoherent tag sequences. Modern: BiLSTM-CRF, BERT-CRF.</li><li><strong>LLMs do many of these zero/few-shot, but production keeps fine-tuned lightweight taggers for reliability, latency, cost, and exact-span guarantees.</strong> A tagger can only emit spans that exist in the text (no hallucinated entities) and gives precise character offsets; LLMs win flexibility and long-tail cases. Right tool per constraint, often both.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your team is standing up a pipeline that reads incoming legal contracts and pulls out the parties, dates, governing-law jurisdiction, and obligations. A junior engineer proposes 'just ask GPT-4 to extract everything as JSON,' and in a demo it looks magical. But in the pilot, three problems surface: on 40,000 contracts a night the LLM bill and latency are brutal; occasionally it silently invents a party that isn't in the document; and the downstream database needs <em>exact character spans</em> so a lawyer can click a value and jump to where it appears. In the review, the staff engineer asks you to explain the <em>classical</em> NLP tasks underneath this — POS tagging, NER, parsing, coreference — how they were solved before LLMs, and why production teams still run small fine-tuned taggers instead of an LLM for everything.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Classical NLP is a ladder of well-defined tasks — POS tagging, NER (a span task solved as BIO/BIOES sequence labeling), dependency parsing (arcs between words) vs constituency parsing (nested phrases), and coreference — historically solved with HMMs and then CRFs, whose global normalization enforces legal tag sequences that independent per-token classifiers cannot. LLMs now do many of these zero/few-shot, but production still runs small fine-tuned taggers because they are faster, cheaper, and give hard structured guarantees: they can only emit spans that truly exist in the text and provide exact character offsets. The mature stance is right-tool-per-constraint, frequently running both.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

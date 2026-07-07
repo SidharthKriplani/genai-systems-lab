@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alignment: SFT, RLHF, DPO, RLAIF | GenAI Systems Lab</title>
+  <meta name="description" content="How base models become helpful + safe.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/alignment-techniques">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/alignment-techniques">
+  <meta property="og:title" content="Alignment: SFT, RLHF, DPO, RLAIF | GenAI Systems Lab">
+  <meta property="og:description" content="How base models become helpful + safe.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Alignment: SFT, RLHF, DPO, RLAIF">
+  <meta name="twitter:description" content="How base models become helpful + safe.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Alignment: SFT, RLHF, DPO, RLAIF","description":"How base models become helpful + safe.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/alignment-techniques"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">SAFETY</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Alignment: SFT, RLHF, DPO, RLAIF</h1>
+    <p class="desc">How base models become helpful + safe.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a puzzle about <em>where</em> a model's good behavior actually lives. Say a base model sometimes answers harmful requests. The quick fix everyone reaches for is a system prompt: 'be safe, refuse anything dangerous.' It helps — but it's an instruction sitting <em>on top of</em> the model, and instructions can be argued around, overridden across a long conversation, or simply forgotten in an edge case. The safety isn't <em>in</em> the model; it's a sticky note on the outside.</p>
+<p>Here's the deeper idea this module builds toward: real alignment changes the model's <em>weights</em>, so that refusing harm becomes the model's <em>default</em> — what it does when nobody told it to, in every future context. That's a fundamentally sturdier thing than a prompt. But shifting weights toward 'helpful, honest, harmless' requires teaching the model what humans actually <em>prefer</em>, and there's more than one way to do that teaching — each with a different cost.</p>
+<p>So we'll build up the family of alignment methods from the original, expensive one to its simpler successors, following the <em>cost</em> that motivated each new method. Take your time — by the end you'll be able to look at a team's resources and say which method fits, and exactly why.</p></section>
+    <section><h2>How It Works</h2><p>Start from what alignment fundamentally <em>is</em>: a <strong>weight-level change</strong> that shifts the model's output distribution away from 'statistically typical human text' and toward 'helpful, honest, harmless responses.' <strong>This matters</strong> because it's what separates alignment from a system prompt — a prompt instructs the model at inference time and can be overridden, whereas a weight change makes safe behavior the <em>default</em> across all future contexts. The original method for producing that change is <strong>RLHF</strong>, and it works — <strong>but</strong> it carries real operational cost: a separate reward model to train, PPO training that's unstable to tune, and reward hacking to monitor. <strong>So</strong> those costs are exactly what motivated two successors, each removing one of them.</p>
+<p><strong>The first successor, DPO</strong> (Direct Preference Optimization), attacks the RL machinery itself by reformulating alignment as <strong>plain supervised learning on preference pairs</strong> — eliminating the reward model and the RL loop entirely. Given a preferred and a rejected response for the same prompt, DPO trains the model to raise the log-probability of the preferred response and lower that of the rejected one, with a KL-divergence term that prevents excessive drift from pre-alignment behavior. <strong>Because</strong> it runs as standard supervised fine-tuning, there's no PPO instability, no reward hacking to watch, no second model to train — at alignment quality comparable to RLHF, and well-supported in open frameworks (TRL, Axolotl). <strong>But</strong> it still needs one thing: preference data, pairs of (prompt, preferred, rejected) — and building that dataset by hand is now the main cost.</p>
+<p><strong>The second successor, Constitutional AI</strong> (CAI, from Anthropic), attacks <em>that</em> remaining cost — the human-annotation bottleneck. <strong>Instead of</strong> collecting human preference pairs, CAI starts from a written <strong>constitution</strong> of explicit principles and has the model critique and revise <em>its own</em> responses against them (<strong>RLAIF</strong> — Reinforcement Learning from AI Feedback), generating the preference dataset synthetically. <strong>This means</strong> annotation scales automatically: write the constitution once, produce preference data at volume. <strong>But that creates a dependency</strong> — alignment quality now rides on the quality of the model doing the self-critique, <strong>so</strong> CAI works best when the base model is already capable enough to produce meaningful critiques.</p>
+<p><strong>So the three methods form a cost ladder</strong> — RLHF pays in RL infrastructure, DPO trades that for manual preference data, CAI trades manual data for a capable self-critic — and choosing among them is really a question of which cost your team can best absorb. The interactive lets you walk that ladder and see how each removes one burden while introducing another — and the closing scenario is exactly this decision: a harmful-under-prompting checkpoint, no RL infrastructure, and a recommendation to defend.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Alignment is a weight-level change</strong> — RLHF shifts the output distribution toward helpful/honest/harmless, but its reward model, PPO instability, and reward-hacking risk motivated successors.</li><li><strong>DPO reformulates RLHF as supervised learning on preference pairs</strong> — raise the log-prob of the preferred response, lower the rejected, with a KL term limiting drift; no reward model, no RL loop.</li><li><strong>DPO's win is operational simplicity, not data efficiency</strong> — comparable quality, standard SFT tooling (TRL/Axolotl), works at all model sizes, but still needs human preference labels.</li><li><strong>Constitutional AI attacks the annotation bottleneck</strong> — a written constitution + RLAIF self-critique generates preference data synthetically.</li><li><strong>CAI's quality depends on the self-critiquing model</strong> — it works best when the base model is already capable enough to produce meaningful critiques.</li><li><strong>For a Llama 3 checkpoint with no RL infra, DPO is the start</strong> — 500-2,000 preference pairs make safe refusal the default across all future contexts; add CAI only if annotation cost becomes prohibitive.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You're deploying a customer-facing assistant on a base Llama 3 checkpoint that sometimes produces harmful responses under direct prompting, and Legal is weighing RLHF vs. DPO vs. Constitutional AI. The team has no dedicated RL infrastructure. Take a moment before reading on: given everything we built, which one fits, and why? Here's the reasoning, step by step. RLHF is the most powerful but drags along a separate reward model, PPO instability, and reward-hacking risk — heavy machinery for a team without RL infrastructure. CAI removes the <em>human-annotation</em> bottleneck by having the model self-critique against a written constitution, but its quality rides on the base model being capable enough to critique itself well. That leaves DPO as the right starting point: it reformulates alignment as plain supervised learning on preference pairs, no reward model, no RL loop. Collect 500–2,000 (prompt, preferred safe response, rejected harmful response) pairs from annotation or red-team sessions, run TRL's DPO trainer, and the weights shift toward refusing harm — a <em>training</em> change, not a system prompt, so safe behavior becomes the default everywhere. Reach for CAI only if annotation cost becomes prohibitive and the checkpoint can self-critique reliably.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>RLHF is the foundational alignment technique but operationally complex. DPO achieves comparable alignment quality with a simpler supervised objective — no reward model, no RL instability, standard SFT tooling. If you have preference data and no RL infrastructure, DPO is the right starting point for aligning open-source models.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

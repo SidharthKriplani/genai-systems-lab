@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The RAG Eval Loop | GenAI Systems Lab</title>
+  <meta name="description" content="Three questions. Four metrics. Three broken eval runs to diagnose. Know whether failure is in retrieval, context, or generation.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/eval-loop">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/eval-loop">
+  <meta property="og:title" content="The RAG Eval Loop | GenAI Systems Lab">
+  <meta property="og:description" content="Three questions. Four metrics. Three broken eval runs to diagnose. Know whether failure is in retrieval, context, or generation.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The RAG Eval Loop">
+  <meta name="twitter:description" content="Three questions. Four metrics. Three broken eval runs to diagnose. Know whether failure is in retrieval, context, or generation.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"The RAG Eval Loop","description":"Three questions. Four metrics. Three broken eval runs to diagnose. Know whether failure is in retrieval, context, or generation.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/eval-loop"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 8</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>The RAG Eval Loop</h1>
+    <p class="desc">Three questions. Four metrics. Three broken eval runs to diagnose. Know whether failure is in retrieval, context, or generation.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with an honest, uncomfortable question. You change something in your system — a new retrieval model, a tweaked prompt — and someone says &quot;it's better now.&quot; How do you actually <em>know</em>? Not feel, not vibe — <em>know</em>, with a number you'd stake a decision on.</p>
+<p>That's what an <strong>eval loop</strong> is for: a repeatable way to measure whether a change helped or hurt. And here's the subtle part this whole module circles: it's surprisingly easy to build an eval that <em>looks</em> rigorous — it runs, it prints a score, it &quot;passes&quot; — while quietly being unable to tell you anything at all. A number that can't distinguish better from worse is just theater with a decimal point.</p>
+<p>So we'll build up the handful of properties a trustworthy eval loop actually needs, and — just as important — meet the specific ways a plausible-looking eval fools you: a judge with a thumb on the scale, a test set people have quietly memorized, a score with nothing to compare against. Take your time. The payoff is being able to look at &quot;evals are passing&quot; and say precisely what that does, and doesn't, prove.</p></section>
+    <section><h2>How It Works</h2><p>Let's begin with the question every change forces on you: <em>did it actually improve things?</em> The retrieval mechanics can't answer that — only an eval loop can, and a trustworthy one needs four properties working together. A fixed evaluation dataset that doesn't shift when the system shifts. An automated scorer that turns outputs into quantitative metrics. A baseline — the previous version or a known reference — to compare against. And a pre-committed pass/fail threshold that triggers review when crossed. Here's the sober part to hold onto: an eval missing <em>any</em> of these still runs and still prints a number, but that number only confirms the system produces output — not that quality is moving in the right direction.</p>
+<p>Let's look hard at one way a plausible eval betrays you: the judge isn't independent. When the same model family grades its own outputs — GPT-4 scoring GPT-4 — it isn't neutral, because it shares training distributions and learned stylistic tastes, and it systematically rewards text that resembles its own generation style. That's not measurement; it's measurement with a thumb on the scale. The honest hierarchy: human annotation is the gold standard, and LLM judges are acceptable <em>for scale</em> only when calibrated against human labels and drawn from a <em>different</em> model family than the system under test.</p>
+<p>Now a second, quieter failure: test-set contamination — the eval equivalent of overfitting. The moment the people who modify the system can see the eval set, they start optimizing toward those specific inputs rather than toward general quality, whether they mean to or not. So the eval set should be version-controlled separately from the system, managed independently, and continually augmented with adversarial cases and real failure queries pulled from production. Twelve questions written once and never touched again isn't an eval — it's a regression test for exactly those twelve inputs, nothing more. Keep these two failure modes in mind, because the production case at the end trips over both of them at once — on top of having no baseline at all.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A useful eval loop needs four properties.</strong> Fixed dataset, automated scorer, a baseline to compare against, and a pre-committed pass/fail threshold — missing any one and it only confirms the system produces output.</li><li><strong>Same-family judges have a thumb on the scale.</strong> GPT-4 grading GPT-4 shares training distribution and stylistic preferences, systematically inflating scores for its own output style.</li><li><strong>Human annotation is the gold standard.</strong> LLM judges are acceptable at scale only when calibrated against human labels and drawn from a different model family than the system under test.</li><li><strong>Static, accessible eval sets get contaminated.</strong> When people who modify the system can see the 12 test inputs, they optimize for those inputs, not general quality — the eval equivalent of test-set overfitting.</li><li><strong>Version-control the eval set separately.</strong> Manage it independently from the system and augment with adversarial cases and real production failure queries.</li><li><strong>No baseline means an uninterpretable number.</strong> Without the previous version or a known reference, a passing score cannot tell you whether quality improved or degraded.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A team ships a new RAG retrieval model and reports the evals are passing. Then you look at the evals: 12 questions written last year, graded by the <em>same</em> LLM that generates the answers, with no comparison against a baseline. The engineer shrugs — &quot;the results are still useful.&quot; Take a moment before reading on: what, specifically, can these evals <em>not</em> tell you? Here's the reasoning, step by step, and this eval fails on three fronts at once. First, the judge isn't independent — a model grading its own family's output quietly rewards text that looks like its own style, so the score is measurement with a thumb on the scale. Second, 12 static questions that team members can see is a contaminated set: it's a regression test for exactly those 12 inputs, and people optimize toward them, intentionally or not. Third, and most damning, there's no baseline — so even a <em>clean</em> number would be uninterpretable in isolation; you literally can't say whether quality rose or fell. Notice the throughline: an eval missing these properties still confirms the system produces <em>output</em>. It just can't confirm the one thing you actually asked it — that quality got better.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>An eval loop is only as good as its independence, stability, and comparison baseline. Same-model judge = biased score. 12 static questions = overfitted regression test. No baseline = uninterpretable number. Minimum viable eval loop: fixed dataset + independent judge + explicit baseline comparison + pre-committed threshold.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Voice: Streaming &amp; Latency Budgets | GenAI Systems Lab</title>
+  <meta name="description" content="Budget sub-second responsiveness across VAD → ASR → LLM → TTS.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/voice-streaming-latency">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/voice-streaming-latency">
+  <meta property="og:title" content="Real-Time Voice: Streaming &amp; Latency Budgets | GenAI Systems Lab">
+  <meta property="og:description" content="Budget sub-second responsiveness across VAD → ASR → LLM → TTS.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Real-Time Voice: Streaming &amp; Latency Budgets">
+  <meta name="twitter:description" content="Budget sub-second responsiveness across VAD → ASR → LLM → TTS.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Real-Time Voice: Streaming & Latency Budgets","description":"Budget sub-second responsiveness across VAD → ASR → LLM → TTS.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/voice-streaming-latency"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">VOICE AI</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Real-Time Voice: Streaming &amp; Latency Budgets</h1>
+    <p class="desc">Budget sub-second responsiveness across VAD → ASR → LLM → TTS.</p>
+
+    
+    <section><h2>How It Works</h2><p>A real-time voice agent is a <strong>pipeline of stages</strong>, and latency is additive across every one.</p>
+<p>The loop is: mic → <strong>VAD</strong> (voice activity detection, is anyone speaking?) → <strong>streaming ASR</strong> (audio → partial text) → <strong>endpointing</strong> (has the user finished their turn?) → <strong>LLM</strong> (generate the reply) → <strong>streaming TTS</strong> (text → audio) → speaker.</p>
+<p>Each stage adds delay, and the numbers stack. <mark>Because they stack, the metric that matters is not any single stage's speed but the total wall-clock from the user's last word to the first sound the agent makes — 'time-to-first-audio.'</mark> A pipeline where every stage is 'fast enough' in isolation can still blow the budget when you sum them.</p>
+<p>The reason the <em>first-audio</em> number dominates is <strong>human conversational physics.</strong></p>
+<p>In natural human dialogue, the gap between turns is remarkably tight — typically around 200ms, and pauses beyond ~500–700ms start to feel like the other person has stalled or the line is dead. That's the bar a voice agent is unconsciously judged against.</p>
+<p><mark>So 'time-to-first-audio' — end-of-user-speech to the first phoneme out of the speaker — is the perceived-responsiveness metric, and it's a much harsher target than total turn latency.</mark> It's why streaming everything matters: the agent doesn't need to finish generating its whole reply before the user hears something; it needs to <em>start</em> fast. Total turn latency (until the reply finishes) matters too, but first-audio is what makes the agent feel alive.</p>
+<p>The engineer's '400ms average' is the classic trap: <mark>in a live voice product you budget and measure at p95/p99, not the mean, because a small fraction of slow turns is what users actually remember and interrupt.</mark></p>
+<p>An LLM that averages 400ms time-to-first-token but has a p99 of 1,500ms will feel broken on 1 in 100 turns — and across a multi-turn call that's several visible stalls. Averages hide the tail; the tail is the experience. Worse, latency stages are somewhat independent, so their tails can co-occur: a slow ASR finalization AND a slow LLM TTFT on the same turn produces a stall far past budget.</p>
+<p>This is why voice SLOs are written as 'p95 time-to-first-audio &lt; 800ms,' never as an average — and why the profiling report was misleading.</p>
+<div class="illustration"><div class="illustration-label">An 800ms first-audio budget, stage by stage</div><pre>Target: end-of-user-speech -&gt; first audio out  =  800ms (p95)
+
+  Endpoint decision (silence/semantic)   ~200ms   &lt;- when do we DECIDE user is done?
+  Final ASR hypothesis                   ~100ms   &lt;- lock the last partial into final text
+  LLM time-to-first-token (TTFT)         ~300ms   &lt;- NOT full generation, just first token
+  TTS first audio chunk                  ~150ms   &lt;- first sentence, not whole reply
+  Network / buffering                    ~50ms
+  ---------------------------------------------
+  Total                                  ~800ms
+
+The two rules the budget encodes:
+  1. Every number is a FIRST-something (first token, first chunk) -&gt; you must STREAM.
+  2. Endpointing is the single biggest controllable chunk. Shave the silence
+     timeout and you shave perceived latency directly -- but cut too far and
+     you cut the user off mid-sentence. It is a precision/latency tradeoff.</pre></div>
+<p><strong>Endpointing</strong> is where most of the controllable latency — and most of the interruption pain — lives.</p>
+<p>Endpointing is the decision that the user is <em>done</em> talking so the agent can respond. The naive method is a <strong>silence timeout</strong>: wait for N milliseconds of quiet, then treat the turn as over. Set N too high (say 800ms) and every response is sluggish because you burn most of your budget just <em>waiting to be sure</em>. Set it too low and you cut users off mid-thought — they pause to breathe and the agent barges in.</p>
+<p><mark>Semantic endpointing improves on the timeout by using the words, not just the silence: a model predicts whether the utterance is grammatically/pragmatically complete, so 'I'd like to book a...' waits but 'book a table for two' fires fast.</mark> It lets you shorten the silence timer without cutting people off — directly buying back perceived latency.</p>
+<p>The other half of feeling responsive is <strong>barge-in</strong> — letting the user interrupt the agent.</p>
+<p>When the agent is speaking and the user starts talking, a good agent must (1) detect the incoming speech via VAD even over its own audio, (2) <em>immediately cancel the in-flight TTS</em> and stop the speaker, and (3) start listening and re-planning. If it can't, the user talks over a monologue that won't stop — the exact 'users interrupt and it ignores them' complaint.</p>
+<p>Barge-in requires <strong>full-duplex</strong> handling: listening and speaking channels open at once, plus <strong>echo cancellation</strong> so the agent's own outgoing audio doesn't get mistaken for user speech (acoustic echo cancellation, AEC). <mark>Barge-in is not a nice-to-have — an agent that can't be interrupted feels robotic no matter how low its first-audio latency is, because real conversation is interruptible.</mark></p>
+<p>The unifying principle across the whole pipeline is <strong>stream everything</strong>, and it's why the budget is a column of 'first-X' numbers.</p>
+<p>Don't wait for a final transcript — feed <strong>partial ASR hypotheses</strong> downstream so the LLM can even pre-warm. Don't wait for the LLM to finish — consume <strong>token streaming</strong> and start TTS on the first complete sentence. Don't wait for full audio — emit <strong>sentence-chunked TTS</strong> so the first sentence plays while later sentences synthesize.</p>
+<p><mark>The payoff is structural: streaming turns the pipeline from a sum of full-stage latencies into a sum of first-chunk latencies, which is often 3–5× smaller.</mark> A non-streaming pipeline pays 'full ASR + full LLM + full TTS' before any audio; a streaming one pays 'endpoint + first token + first TTS chunk' — the difference between an 800ms agent and a 3-second one.</p>
+<p>Finally, know the levers when you're <strong>over budget</strong> — this is the whiteboard follow-up.</p>
+<p>If endpointing dominates: switch silence-only to <strong>semantic endpointing</strong> and tune the timeout. If LLM TTFT dominates: use a <strong>smaller/faster model</strong> for the first turn, prompt-cache the system prompt, or speculatively start generating on the partial transcript. If TTS dominates: pick a <strong>streaming vocoder</strong> and chunk on the first sentence, not the paragraph. If network dominates: move inference closer (region/edge) and keep persistent connections.</p>
+<p>And the escape hatch worth naming: <mark>a <strong>speech-to-speech</strong> model collapses ASR + LLM + TTS into one forward pass, removing two inter-service hops and their queuing — trading pipeline controllability for a structurally lower latency floor.</mark> The interview answer is never 'make the LLM faster' — it's 'show me the p95 budget, find the dominant stage, and stream or collapse it.'</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Latency is additive across the pipeline</strong> (VAD → ASR → endpointing → LLM → TTS), so the metric that matters is total end-of-speech → first-audio, not any one stage. Stages that are each 'fast enough' can still sum past budget.</li><li><strong>Time-to-first-audio is the perceived-responsiveness metric</strong> because human turn gaps are ~200ms and pauses past ~500–700ms feel dead. It's a harsher target than total turn latency — the agent must <em>start</em> fast, not finish fast.</li><li><strong>Budget and measure at p95/p99, never the mean.</strong> A 400ms-average LLM with a 1,500ms p99 feels broken on ~1% of turns, and independent stage tails can co-occur. Averages hide exactly the turns users interrupt.</li><li><strong>Endpointing is the biggest controllable chunk and the interruption tradeoff.</strong> Silence timeouts trade latency against cutting users off; semantic endpointing uses the words to fire fast on complete utterances and wait on incomplete ones, buying back perceived latency safely.</li><li><strong>Barge-in requires full-duplex + echo cancellation.</strong> Detect user speech over the agent's own audio, cancel in-flight TTS instantly, and re-plan. An agent that can't be interrupted feels robotic regardless of its first-audio number.</li><li><strong>Stream everything</strong> — partial ASR, LLM token streaming, sentence-chunked TTS — to turn a sum of full-stage latencies into a sum of first-chunk latencies (often 3–5× smaller). Over budget? Find the dominant stage and stream it, or collapse the pipeline with a speech-to-speech model.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your real-time voice agent feels sluggish — users talk over it and interrupt. Product wants sub-800ms 'time-to-first-audio' from end-of-user-speech. An engineer profiles the pipeline and reports 'the LLM averages 400ms per turn, well under budget, so we're fine' — yet the agent still feels laggy and callers still cut in. The averages look healthy but the experience doesn't. You have to budget latency across the full ASR → LLM → TTS pipeline, find where the milliseconds actually go, and explain why a good average can still produce a bad-feeling agent.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Real-time voice is a latency-budgeting problem across additive stages (VAD → ASR → endpointing → LLM → TTS), and the metric that matters is p95 end-of-speech → first-audio, because human turn gaps are ~200ms and averages hide the tail turns users actually interrupt. Endpointing is the biggest controllable chunk — semantic endpointing shortens the silence timer without cutting people off — and barge-in (full-duplex + echo cancellation) is what keeps the agent from feeling robotic. The unifying fix is to stream everything so the pipeline pays first-chunk latencies instead of full-stage latencies (3–5× smaller); when still over budget, find the dominant stage and stream it, or collapse the hops with a speech-to-speech model.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decoding &amp; Sampling Strategies | GenAI Systems Lab</title>
+  <meta name="description" content="Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/sampling">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/sampling">
+  <meta property="og:title" content="Decoding &amp; Sampling Strategies | GenAI Systems Lab">
+  <meta property="og:description" content="Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Decoding &amp; Sampling Strategies">
+  <meta name="twitter:description" content="Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Decoding & Sampling Strategies","description":"Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/sampling"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 5</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Decoding &amp; Sampling Strategies</h1>
+    <p class="desc">Same logits. Greedy vs top-K vs top-P vs temperature. See exactly which tokens survive each filter.</p>
+
+    <section><h2>Start Here</h2><p>Here's something that trips up almost everyone at first. A language model doesn't actually <em>pick</em> the next word. What it hands you, at every single step, is a whole spread of probabilities — this word 40% likely, that word 12%, this other one 3%, and so on across the entire vocabulary. That spread is all the model knows. Choosing which word to actually emit from that spread is a <em>separate step</em>, and it's entirely up to you.</p>
+<p>That separate step is called <strong>sampling</strong>, and it's controlled by a small dial you've probably heard of: <em>temperature</em>. Here's the idea worth holding onto from the start — temperature doesn't make the model smarter or dumber. It doesn't change a single thing the model computed. It only changes <em>how you choose</em> from the spread the model already produced. Turn it one way and you always grab the single most likely word; turn it the other way and you let less-likely words into the running.</p>
+<p>We'll build this up gently — starting from the most obvious rule (always take the top word), seeing exactly where that quietly costs you, and then meeting the handful of dials real systems use to strike the right balance. Take your time. The punchline is that there's no single &quot;best&quot; setting — the right choice depends entirely on what you're asking the model to do — and that's precisely the trap in the scenario waiting at the end.</p></section>
+    <section><h2>How It Works</h2><p>The forward pass produces <strong>logits</strong> — raw scores over every vocabulary token. <strong>Softmax</strong> converts them to a probability distribution over what comes next. The question is how to <em>sample</em> from that distribution.</p>
+<p><mark>This is not a quality dial — it's a task-appropriateness dial.</mark> Getting it wrong costs you either accuracy (too random) or quality (too rigid). Both failure modes are real and both have production consequences.</p>
+<p>The naive answer: <strong>always pick the highest-probability token</strong>. This is <strong>greedy decoding</strong> — `temperature=0`. It maximizes per-token likelihood and produces deterministic, reproducible output. Sounds right.</p>
+<p>The problem is that <strong>per-token maximum ≠ globally best response</strong>. Multi-step reasoning requires committing to <em>lower</em>-probability intermediate tokens that unlock better final answers. A calculation that needs the step 'let me check the interest rate compounded quarterly' needs that token present even if `'quarterly'` wasn't the single highest-probability word there.</p>
+<p><mark>Greedy precludes that path — `temperature=0` is 'most deterministic,' not 'most accurate.'</mark></p>
+<p><strong>Temperature T</strong> divides the logits before softmax. `T &lt; 1` <strong>sharpens</strong> — the top token dominates more strongly, low-probability tokens recede. `T &gt; 1` <strong>flattens</strong> — lower-probability tokens become viable, output more varied.</p>
+<p><mark>Temperature doesn't change what the model computed — it changes how you sample from the distribution the model produced.</mark> The model's knowledge is fixed; temperature controls how you <em>use</em> it.</p>
+<div class="illustration"><div class="illustration-label">Same logits, three temperatures → softmax(logits / T)</div><pre>Raw logits for 3 tokens:   A = 2.0    B = 1.0    C = 0.0
+Temperature rescales:      softmax( logit / T )
+
+  T = 0.5  (sharpen — logits ×2 before softmax → 4.0, 2.0, 0.0)
+     A ≈ 0.84    B ≈ 0.11    C ≈ 0.02     ← near-greedy, top token dominates
+
+  T = 1.0  (unchanged)
+     A ≈ 0.67    B ≈ 0.24    C ≈ 0.09     ← the model's raw distribution
+
+  T = 2.0  (flatten — logits ÷2 before softmax → 1.0, 0.5, 0.0)
+     A ≈ 0.51    B ≈ 0.31    C ≈ 0.19     ← flatter, lower-prob tokens viable
+
+Same underlying scores; T only reshapes how peaked the sampling distribution is.
+T→0 collapses to argmax (greedy);  T→∞ approaches uniform.</pre></div>
+<p><strong>Top-p (nucleus sampling)</strong> adds a second constraint: restrict candidates to the <em>smallest set of tokens whose cumulative probability exceeds p</em>. When the distribution is sharp (confident), the nucleus is small; when flat (uncertain), it's larger.</p>
+<p><mark>Top-p adapts to the model's confidence dynamically; top-k (exactly the k highest-probability tokens) does not.</mark></p>
+<p>Two more tail controls: <strong>min-p</strong> sets a floor relative to the top token (keep tokens with probability ≥ `min-p × p_max`), tightening when the model is confident and loosening when unsure — a simpler, often more robust alternative to top-p. And <strong>repetition penalty</strong> (and frequency penalty) down-weight the logits of already-seen tokens, a fix for the looping degeneration that pure probability-following can cause.</p>
+<p><strong>Task calibration:</strong></p>
+<p>- `temperature=0` for <strong>structured extraction</strong> — SQL, JSON, code — where exact consistency is the goal and there's one correct answer.&lt;br&gt;- `T=0.2–0.7` with `top-p=0.9` as the <strong>general default</strong> for conversational and reasoning tasks.&lt;br&gt;- <strong>Higher temperature</strong> for creative generation, where exploring lower-probability tokens is the point.</p>
+<p>The answer to 'what should the default be?' is: <strong>not 0, and not 1</strong>. <mark>It depends on what the user is doing — which is why a global default is the wrong abstraction.</mark></p>
+<p>One boundary: everything here is <strong>stochastic</strong> decoding (sample from the distribution). When the task has a single best <em>sequence</em> rather than one best next token — machine translation, transcription — you don't sample at all, you <strong>search</strong>: that's beam search, covered in the decoding-strategies module (tempgame).</p>
+<p>The interactive lets you move temperature and top-p and watch the distribution sharpen or flatten. <mark>Then the closing scenario hands you a tempting global default — decide where its logic breaks before the reasoning shows you.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Decoding is a task-appropriateness dial, not a quality dial.</strong> Too random costs accuracy; too rigid costs quality — both are real production failure modes.</li><li><strong>`temperature=0` is 'most deterministic,' not 'most accurate.'</strong> Greedy maximizes per-token likelihood but blocks the lower-probability intermediate tokens multi-step reasoning needs.</li><li><strong>Temperature reshapes sampling, not knowledge.</strong> It divides logits before softmax — `T&lt;1` sharpens, `T&gt;1` flattens — but the model's computed distribution is fixed.</li><li><strong>Top-p adapts to confidence; top-k doesn't.</strong> The nucleus shrinks when the model is sure and grows when it's uncertain; top-k uses a fixed count regardless.</li><li><strong>min-p and repetition penalty are extra tail controls.</strong> min-p floors candidates relative to `p_max`; repetition/frequency penalties fight looping by down-weighting already-seen tokens.</li><li><strong>Match the setting to the task:</strong> `T=0` for structured/exact output, `T=0.2–0.7 + top-p=0.9` general, higher for creative — a single global default is the wrong abstraction.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A product designer is about to flip `temperature=0` on as the default for <em>every</em> user of the chatbot, reasoning that &quot;deterministic must mean most accurate.&quot; You've got five minutes to explain why that's wrong. Take a moment before reading on: where exactly does that reasoning break? Here's the answer, step by step. We saw that `temperature=0` is greedy decoding — always grab the single highest-probability token — and that per-token maximum is <em>not</em> the same as the globally best response; multi-step reasoning often needs a lower-probability intermediate word to unlock a better final answer, and greedy forbids that path. So `temperature=0` is <em>most deterministic</em>, not <em>most accurate</em>. And notice the deeper issue with a global default at all: the right setting depends on the task — `0` for structured extraction, `0.2–0.7` with `top-p=0.9` for conversation, higher for creative work. The honest answer to &quot;what should the default be?&quot; is <em>not 0, and not 1</em> — a single global default is simply the wrong abstraction.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Temperature controls how you sample from the model's output distribution — not how accurate the model is. Temperature=0 maximizes per-token determinism but misses better multi-step answers requiring lower-probability intermediate tokens. Match temperature to the task: 0 for structured output, 0.2–0.7 for general use, higher for creative generation.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

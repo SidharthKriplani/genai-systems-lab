@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prefill vs Decode: The Two Phases | GenAI Systems Lab</title>
+  <meta name="description" content="Compute-bound prefill (TTFT) vs memory-bound decode — the root framing.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/infra-prefill-decode">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/infra-prefill-decode">
+  <meta property="og:title" content="Prefill vs Decode: The Two Phases | GenAI Systems Lab">
+  <meta property="og:description" content="Compute-bound prefill (TTFT) vs memory-bound decode — the root framing.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Prefill vs Decode: The Two Phases">
+  <meta name="twitter:description" content="Compute-bound prefill (TTFT) vs memory-bound decode — the root framing.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Prefill vs Decode: The Two Phases","description":"Compute-bound prefill (TTFT) vs memory-bound decode — the root framing.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/infra-prefill-decode"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">INFERENCE</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Prefill vs Decode: The Two Phases</h1>
+    <p class="desc">Compute-bound prefill (TTFT) vs memory-bound decode — the root framing.</p>
+
+    <section><h2>Start Here</h2><p>Let's start from something you've felt but probably never named. When you chat with a large language model, there are really <em>two</em> waits, not one. First there's the pause before <strong>anything</strong> appears — the model gathering itself before its first word. Then there's the pace at which the rest of the answer <em>streams out</em>, word by word. Those two sensations are different enough that it's worth asking a simple question: are they even the same kind of work underneath?</p>
+<p>They aren't — and that's the quiet secret this whole module turns on. An LLM answers your prompt in <strong>two physically distinct phases</strong>, and those phases have <em>opposite</em> bottlenecks. One is hungry for raw arithmetic; the other is starved for memory bandwidth. Mix them up, and you can pour money into making inference &quot;faster&quot; in a way that changes nothing a user actually feels.</p>
+<p>We'll build this up gently and from the ground: what really happens when the model reads your prompt, why producing the <em>next</em> token is a fundamentally different job from reading the prompt, and how a single idea — arithmetic intensity — explains the entire split. Take your time with it. By the end, you'll be able to look at a profiler showing a GPU sitting nearly idle <em>while everything feels slow</em> and explain exactly why in one clean sentence.</p></section>
+    <section><h2>How It Works</h2><p>LLM inference is <strong>not one workload — it is two</strong>, and they have opposite bottlenecks. Every request runs a <strong>prefill</strong> phase followed by a <strong>decode</strong> phase, and almost every serving optimization you'll ever discuss attacks one or the other specifically.</p>
+<p><strong>Prefill</strong> processes the entire prompt at once. All the prompt tokens are already known, so the model runs them through every layer in <strong>one big parallel forward pass</strong> — a batched matmul over the whole sequence. This produces the first output token and, crucially, fills the KV cache for every prompt position. <mark>Prefill is compute-bound: you have a large matrix multiply and the tensor cores are the bottleneck.</mark></p>
+<p><strong>Decode</strong> then generates the rest of the answer <strong>one token at a time</strong>. Token N cannot be computed until token N-1 exists, because N-1 is part of the input that produces N. So decode is <em>sequential by construction</em> — one full forward pass through every layer to produce exactly one token, then repeat.</p>
+<p>The reason decode feels slow is <strong>arithmetic intensity</strong> — the ratio of FLOPs performed to bytes moved from memory.</p>
+<p>In a single-stream decode step you process <strong>one</strong> token. To do that, the GPU must stream the <em>entire</em> weight matrix of every layer from HBM into the compute units — the same ~26GB of fp16 weights for a 13B model — and do a tiny amount of math with it (one token's worth of matmuls). You move gigabytes to do megaflops. <mark>The tensor cores sit idle waiting on memory; you are memory-bandwidth-bound, not compute-bound.</mark></p>
+<p>Prefill is the opposite. Processing a 512-token prompt reuses each streamed weight across 512 positions, so the arithmetic-to-bytes ratio is high and the tensor cores stay busy. That is exactly the 90%-compute / 8%-compute split the profiler showed: <strong>prefill saturates FLOPs, decode saturates memory bandwidth.</strong></p>
+<div class="illustration"><div class="illustration-label">Why one profiler shows two totally different bottlenecks</div><pre>13B model, fp16 weights ≈ 26 GB. A100: ~312 TFLOP/s (bf16), ~2.0 TB/s HBM.
+
+PREFILL (512-token prompt, one pass):
+  streams 26 GB weights ONCE, reuses across 512 positions
+  FLOPs ≈ 2 × 13e9 × 512  ≈ 1.3e13   → ~43 ms of pure compute
+  bytes ≈ 26 GB           → ~13 ms of pure memory
+  compute time &gt; memory time  ⇒ COMPUTE-BOUND  (tensor cores ~90% busy)
+  → governs TIME-TO-FIRST-TOKEN (TTFT)
+
+DECODE (1 token per step):
+  streams 26 GB weights to produce ONE token
+  FLOPs ≈ 2 × 13e9 × 1    ≈ 2.6e10   → ~0.08 ms of pure compute
+  bytes ≈ 26 GB           → ~13 ms of pure memory
+  memory time &gt;&gt; compute time  ⇒ MEMORY-BANDWIDTH-BOUND  (cores ~8% busy)
+  → governs INTER-TOKEN LATENCY / TPOT
+
+Same weights, same GPU — the phase decides the bottleneck.</pre></div>
+<p>This split is why the two latency numbers in every serving SLA are physically distinct.</p>
+<p><strong>TTFT (time-to-first-token)</strong> is dominated by prefill: how long until the user sees anything. It scales with <em>prompt length</em> (more prompt tokens = bigger prefill matmul) and is a <strong>compute</strong> problem.</p>
+<p><strong>TPOT (time-per-output-token)</strong>, also called inter-token latency, is dominated by decode: how fast tokens stream after the first. It is roughly constant per token, set by how long it takes to stream the weights once, and is a <strong>memory-bandwidth</strong> problem. <mark>A 400-token answer's total latency ≈ TTFT + 400 × TPOT</mark> — so long generations live or die on TPOT.</p>
+<p>In the scenario, the 180ms first-token was fine (prefill, compute-fast) but 40ms/token × 400 = 16s of streaming (decode, memory-slow). A GPU with more FLOPS barely touches decode, because decode wasn't waiting on FLOPS.</p>
+<p>The <strong>KV cache</strong> is the object that ties both phases together and drives most of the memory story.</p>
+<p>During prefill, attention for each token needs the keys and values of every <em>earlier</em> token. Rather than recompute them every decode step, the model <strong>caches</strong> the keys and values for all past positions — that's the KV cache. Each new decoded token reads the whole KV cache (to attend over history) and appends its own K and V. <mark>So decode streams weights <em>plus</em> a KV cache that grows one entry per token, per layer, per attention head.</mark></p>
+<p>KV-cache size ≈ `2 × layers × hidden_dim × seq_len × batch × bytes`. It grows <strong>linearly with sequence length and concurrency</strong>, and at long contexts it can rival or exceed the weights in HBM. This is why the KV cache is the #1 memory constraint in serving — and why it becomes part of the per-step memory traffic that makes decode bandwidth-bound.</p>
+<p>The payoff of this framing is that it <strong>tells you which optimization to reach for.</strong> Every serving technique targets prefill or decode specifically:</p>
+<p><strong>Decode is memory-bound with idle compute</strong> → so you have spare FLOPs to spend. That's the door for (a) <strong>continuous batching</strong> — process many requests' decode steps together so one weight-stream serves N tokens, amortizing the bandwidth cost; and (b) <strong>speculative decoding</strong> — let a small draft model propose several tokens so the big model verifies them in one memory-bound pass (covered in the foundations Speculative Decoding module).</p>
+<p><strong>Prefill is compute-bound and scales with prompt length</strong> → so you attack it with <strong>prompt/prefix caching</strong> (reuse KV for shared system prompts), <strong>chunked prefill</strong> (break a long prompt into pieces so it doesn't monopolize the GPU), and better attention kernels (FlashAttention).</p>
+<p><mark>If you can't name whether a technique helps prefill or decode, you don't understand it yet.</mark> That is the entire value of this mental model: it converts a vague 'make inference faster' into a targeted decision about a specific bottleneck.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Inference is two workloads with opposite bottlenecks.</strong> Prefill processes the whole prompt in one parallel pass (compute-bound, sets TTFT). Decode generates one token at a time, sequentially (memory-bandwidth-bound, sets inter-token latency).</li><li><strong>Decode is memory-bound because of low arithmetic intensity.</strong> Each step streams the entire weight matrix from HBM to produce a single token — gigabytes moved, megaflops done — so tensor cores idle while memory bandwidth pegs. More FLOPS barely helps.</li><li><strong>The two SLA numbers are physically distinct.</strong> TTFT scales with prompt length and is a compute problem; TPOT is roughly constant per token and is a bandwidth problem. Total latency ≈ TTFT + (tokens × TPOT), so long answers are dominated by TPOT.</li><li><strong>The KV cache is the memory linchpin.</strong> It caches past keys/values so attention isn't recomputed each step, grows linearly with sequence length and concurrency, and adds to the per-step memory traffic — often rivaling the weights at long context.</li><li><strong>The framing dictates the fix.</strong> Decode's idle compute is what makes continuous batching and speculative decoding work; prefill's compute cost is what prefix caching and chunked prefill attack. Name the phase before you name the optimization.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A team ships a 13B chat model on a single A100. The p50 time-to-first-token is a snappy 180ms, but users complain the model 'types slowly' — each subsequent token takes ~40ms, so a 400-token answer takes 16 seconds to stream out. A well-meaning engineer proposes buying a faster GPU with more FLOPS. The profiler shows the GPU at 90% compute utilization during the first 180ms, then dropping to <strong>8% compute utilization</strong> for the rest of the request while memory bandwidth pegs at 95%. Take a moment before reading on: given what we just built, what does that profile tell you? Here's the reasoning, step by step. The first 180ms is prefill — a big parallel matmul over the whole prompt — so compute is pegged; that's why TTFT is fine. Then the phase flips to decode, one token at a time, and the very same GPU falls to 8% compute while memory bandwidth saturates — the textbook signature of a memory-bandwidth bottleneck. And notice how cleanly that kills the FLOPS proposal: a faster-FLOPS GPU speeds up a resource that was already idle during the slow part. The two numbers users feel — first-token delay and per-token delay — come from two physically different bottlenecks, so the real levers are higher HBM bandwidth or amortizing the weight stream across many tokens (batching, speculative decoding), never more FLOPS.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>LLM inference is two workloads: prefill processes the whole prompt in one compute-bound pass (sets TTFT, scales with prompt length), and decode generates tokens one at a time in a memory-bandwidth-bound loop (sets TPOT, roughly constant per token). Decode streams ~all the weights from HBM to emit a single token, so it's bandwidth-bound with idle compute — which is exactly why more FLOPS doesn't fix slow streaming, and why continuous batching and speculative decoding exist to fill that idle compute. Name the phase before you name the optimization.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

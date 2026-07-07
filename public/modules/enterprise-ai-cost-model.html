@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise AI TCO Modeling | GenAI Systems Lab</title>
+  <meta name="description" content="Build the cost bottom-up; find the leaks.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/enterprise-ai-cost-model">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/enterprise-ai-cost-model">
+  <meta property="og:title" content="Enterprise AI TCO Modeling | GenAI Systems Lab">
+  <meta property="og:description" content="Build the cost bottom-up; find the leaks.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Enterprise AI TCO Modeling">
+  <meta name="twitter:description" content="Build the cost bottom-up; find the leaks.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Enterprise AI TCO Modeling","description":"Build the cost bottom-up; find the leaks.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/enterprise-ai-cost-model"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">DECISION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Enterprise AI TCO Modeling</h1>
+    <p class="desc">Build the cost bottom-up; find the leaks.</p>
+
+    
+    <section><h2>How It Works</h2><p>Managed-vs-selfhosted established infrastructure cost at a given token volume. What it left: how many tokens will 10,000 users actually consume, and how does that distribution interact with pricing? The naive path — multiply 100-person pilot cost by 100× — fails because enterprise user populations are heterogeneous. A realistic enterprise distribution: 15% heavy users (3–4× average token volume), 65% average users, 20% light users (sporadic use, 0.2× average). The heavy-user tail is the most common source of enterprise AI budget overruns — and the 100-person pilot may not have surfaced it.</p>
+<p>From the pilot, measure: average input tokens per session, output tokens per session, sessions per active user per day, and daily active user rate (fraction of registered users who use the tool on a given day). Apply the distribution. At 10K users, 30% DAU = 3K active users/day. Apply usage tiers: 450 heavy (3× avg), 1,950 average, 600 light (0.2× avg). Total daily tokens = 450×(3×avg) + 1,950×avg + 600×(0.2×avg). This produces a range (p25, p50, p75) rather than a single number. Finance needs a range with a ceiling, not a point estimate.</p>
+<p>Cost caps require enforcement: per-user daily token budgets enforced at the application layer, automatic model downgrade when a user exceeds a threshold (switch from GPT-4 to GPT-4o-mini), query caching for repeated prompts (many writing assistants see 15–20% of queries as near-duplicates). The cost model is only useful to Finance if it includes control levers — not just a forecast, but a ceiling and the mechanism that enforces it.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Multiplying pilot cost by the user ratio fails.</strong> Enterprise user populations are heterogeneous, so a 100× multiplier on the pilot average misses the concentration effect.</li><li><strong>The heavy-user tail drives overruns.</strong> ~15% heavy users (3–4× average), 65% average, 20% light (0.2×) — the tail a 100-person pilot may never surface.</li><li><strong>Measure the right pilot inputs.</strong> Input/output tokens per session, sessions per active user per day, and daily-active-user rate — then apply the usage distribution.</li><li><strong>Model DAU, not registered users.</strong> At 10K users and 30% DAU, only 3K are active per day; apply usage tiers within that active pool.</li><li><strong>Finance needs a range with a ceiling.</strong> Produce p25/p50/p75, not a single point estimate.</li><li><strong>A forecast without control levers is incomplete.</strong> Per-user daily token budgets, automatic model downgrade past a threshold, and caching (15–20% near-duplicate queries) enforce the ceiling.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You're presenting the business case for expanding an AI writing assistant from 100 pilot users to 10,000 enterprise users. Finance wants a cost-per-user model. The naive approach — multiply pilot cost by 100× — is being challenged. You have 3 months of pilot token usage data and need to build a defensible model.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Enterprise AI cost modeling requires a user distribution assumption, not a single average. The heavy-user tail (10–20% of users driving 50–60% of costs) is the most common source of budget overruns. Present Finance a p50 scenario and a p95 ceiling with an explicit enforcement mechanism — model downgrade thresholds and per-user daily budgets — not a point estimate.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

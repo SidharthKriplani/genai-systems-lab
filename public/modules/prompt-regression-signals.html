@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Regression Signals | GenAI Systems Lab</title>
+  <meta name="description" content="Catch the break before you ship.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/prompt-regression-signals">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/prompt-regression-signals">
+  <meta property="og:title" content="Prompt Regression Signals | GenAI Systems Lab">
+  <meta property="og:description" content="Catch the break before you ship.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Prompt Regression Signals">
+  <meta name="twitter:description" content="Catch the break before you ship.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Prompt Regression Signals","description":"Catch the break before you ship.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/prompt-regression-signals"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">DECISION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Prompt Regression Signals</h1>
+    <p class="desc">Catch the break before you ship.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a question of <em>timing</em>. Say you change a prompt, ship it, and it quietly makes things worse. How long until you find out? If you're relying on the usual monitoring — quality trends, sampled scoring — the honest answer is a day or two, because a trend has to <em>accumulate</em> before it's visible. And a day or two is long enough for a wave of angry users to pile up first.</p>
+<p>Here's the insight this module is built on: some failures don't need to accumulate to be seen. If a prompt tells the model to return JSON and the model now returns prose, that's not a trend — it's <em>wrong on request number one</em>, and something downstream tried to parse it and choked <em>immediately</em>. Those signals fire instantly, before a single support ticket exists.</p>
+<p>So we'll build up the difference between slow signals and fast ones, learn which metrics catch a bad prompt on its very first response, and see how to deploy prompt changes so you never have to guess <em>which</em> change broke things. Take your time — the whole game here is buying yourself hours instead of days.</p></section>
+    <section><h2>How It Works</h2><p>Start from a property of any detection signal: <strong>it either fires on a single bad event, or only after enough events accumulate into a visible trend.</strong> Passive quality monitoring — retrieval-score distributions, answer-length trends, sampled judge scoring — is the second kind, <strong>which means</strong> it carries a 24–48 hour lag before a shift is statistically detectable. <strong>So</strong> a bad prompt can rack up three days of support tickets before any monitoring alert fires. <strong>Therefore</strong> what you want for prompt changes specifically is the <em>first</em> kind: signals that trip on the first bad response, not after a trend forms.</p>
+<p><strong>And</strong> the fastest signals exist because a prompt change often breaks something <em>structurally</em>, not just subtly. (1) <strong>Output-format compliance rate</strong> — if the prompt demands JSON, what fraction parses as valid JSON? A format-confusing change shows up as a parse error on request #1. (2) <strong>Downstream parse-error rate</strong> — if code after the LLM extracts specific fields, its failures hit your application logs immediately. (3) <strong>Answer-length distribution</strong> — over-constrained prompts truncate answers short, while over-reliance on few-shot examples produces verbose, example-mirroring output. (4) <strong>Refusal rate</strong> — a prompt that confuses the model about its task raises unhelpful 'I can't help with that' responses. Each of these moves <em>instantly</em>, before user feedback exists.</p>
+<p><strong>But</strong> fast signals only tell you <em>that</em> something broke; to know <em>which change</em> broke it you need to control the deployment. <strong>That's why</strong> A/B testing is the principled approach: route a slice of traffic to the new prompt and compare its signals in real time against the old one — most serving frameworks (LiteLLM, PromptLayer, LangSmith) support prompt versioning and traffic splitting. <strong>Without it</strong>, you're deploying blind: when a regression appears you know <em>when</em> but not <em>which</em> variable caused it if several changed at once. Even a 5% split for one hour before full rollout gives statistical signal on format compliance and downstream errors.</p>
+<p><strong>And when a regression does slip through</strong>, the cheapest causal test is already in your hands. A 30% ticket rise starting at deploy is strong circumstantial evidence but not proof — so cluster tickets by failure type, and if they concentrate around the specific output changes you made, that's causal evidence. <strong>Then</strong> roll the prompt back immediately: prompt rollbacks take seconds and cost nothing, so reverting and watching the regression vanish is the fastest causal confirmation available. The interactive lets you flip a prompt change and watch which signals fire first — and the closing scenario is exactly this three-day ticket climb, waiting for you to catch it on day one.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Passive monitoring lags 24–48 hours.</strong> Trend-based signals let a prompt change accumulate days of support tickets before an alert fires.</li><li><strong>Regression signals fire on the first bad response.</strong> Output format compliance and downstream parse error rate surface a broken prompt on request #1, before any trend forms.</li><li><strong>Length and refusal rate are fast secondary signals.</strong> Over-constrained prompts truncate answers; few-shot over-reliance causes verbose mirroring; task confusion raises refusals.</li><li><strong>A/B test every prompt change.</strong> Route a slice of traffic to the new prompt and compare in real time; even 5% for 1 hour gives statistical signal on format and downstream errors.</li><li><strong>Without A/B testing you deploy blind.</strong> You'll know when a regression started but not which change caused it if several moved at once.</li><li><strong>Rollback is the fastest causal test.</strong> Reverting takes seconds and costs nothing; if the regression disappears, the prompt caused it. Cluster tickets by failure type to confirm.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your team updated a production prompt template — added 3 few-shot examples, tightened the output-format instructions — tested it on 10 queries by hand, saw good results, and deployed. Over the next three days, support tickets rose 30%. Take a moment before reading on: did the prompt cause it, and how could you have known on day one instead of day three? Here's the reasoning, step by step. The 30% jump starting <em>at deploy</em> is strong circumstantial evidence but not proof, so cluster the tickets by failure type — if they concentrate around the exact things you changed (the new format, the new length constraint, the new examples), that's causal. But the deeper lesson is that you shouldn't have needed three days: fast signals like output-format compliance and downstream parse-error rate would have fired on the <em>first</em> non-conforming response. And the fastest causal test of all is the rollback itself — reverting takes seconds, costs nothing, and if the regression vanishes, the prompt was the cause.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Detect prompt regressions before users do. Output format compliance and downstream parse error rate fire on the first bad response. A/B test every prompt change — 5% traffic for 1 hour is enough to detect format failures before full rollout. Make prompt rollback a one-click operation; it's always faster than debugging a regression from support tickets.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

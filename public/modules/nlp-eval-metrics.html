@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NLP Evaluation Metrics | GenAI Systems Lab</title>
+  <meta name="description" content="BLEU, ROUGE, METEOR, perplexity, exact-match/F1 — and their paraphrase blind spot.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nlp-eval-metrics">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nlp-eval-metrics">
+  <meta property="og:title" content="NLP Evaluation Metrics | GenAI Systems Lab">
+  <meta property="og:description" content="BLEU, ROUGE, METEOR, perplexity, exact-match/F1 — and their paraphrase blind spot.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NLP Evaluation Metrics">
+  <meta name="twitter:description" content="BLEU, ROUGE, METEOR, perplexity, exact-match/F1 — and their paraphrase blind spot.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"NLP Evaluation Metrics","description":"BLEU, ROUGE, METEOR, perplexity, exact-match/F1 — and their paraphrase blind spot.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nlp-eval-metrics"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">NLP FOUNDATIONS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>NLP Evaluation Metrics</h1>
+    <p class="desc">BLEU, ROUGE, METEOR, perplexity, exact-match/F1 — and their paraphrase blind spot.</p>
+
+    
+    <section><h2>How It Works</h2><p>Text-generation metrics are not interchangeable knobs — each was invented for a <em>specific</em> task with a <em>specific</em> notion of what 'good' means, and using the wrong one produces exactly the contradictory numbers in the scenario. The right mental model is a family tree: n-gram-overlap metrics (BLEU, ROUGE, METEOR), an intrinsic language-model metric (perplexity), exact-match/token-F1 for span tasks, and — because overlap metrics all share one flaw — a newer branch of semantic metrics (BERTScore, LLM-as-judge). Start with the overlap family, because it dominates the field and its flaw is the whole lesson.</p>
+<p><strong>BLEU (Bilingual Evaluation Understudy)</strong> was built for <em>machine translation</em>. Its core is <strong>modified n-gram precision</strong>: of the n-grams the candidate produced, what fraction also appear in a reference translation? <mark>Precision, not recall — because in translation the danger is the model <em>inventing</em> words that aren't warranted, so you grade what it <em>said</em> against what it <em>should have</em> said.</mark> It combines precision at n=1,2,3,4 (unigrams up to 4-grams) via a geometric mean, so it rewards both word choice and local word order.</p>
+<p>Two details make BLEU robust to gaming, and interviewers love to probe them. First, <strong>clipping</strong>: a candidate 'the the the the the' would get perfect unigram precision if you counted naively (every 'the' is 'in' the reference), so BLEU <em>clips</em> each n-gram's count to the maximum number of times it appears in any single reference. 'the' appearing twice in the reference means the candidate gets credit for at most two 'the's, no more. <mark>Clipping stops a model from farming precision by repeating a single high-frequency correct word.</mark> Second, the <strong>brevity penalty (BP)</strong>: precision alone rewards <em>short</em> outputs (say only the one word you're sure of, and your precision is 1.0). To stop that, BLEU multiplies the score by a penalty when the candidate is shorter than the reference — `BP = min(1, e^(1 - r/c))` where `r` is reference length and `c` is candidate length. Output too short and BP drops below 1, dragging the whole score down. Precision guards against garbage words; the brevity penalty guards against cowardly-short outputs.</p>
+<div class="illustration"><div class="illustration-label">BLEU worked mini-example (unigram, with clip + BP)</div><pre>Reference : &quot;the cat sat on the mat&quot;          (length r = 6)
+Candidate : &quot;the cat the cat&quot;                   (length c = 4)
+
+Unigram counts in candidate:  the x2, cat x2
+Max in reference (the clip):  the -&gt; 2,  cat -&gt; 1
+  clipped(the) = min(2, 2) = 2
+  clipped(cat) = min(2, 1) = 1
+Modified unigram precision = (2 + 1) / 4 candidate words = 0.75
+  (naive, unclipped precision would have been 4/4 = 1.0 -- clipping
+   killed the second &quot;cat&quot; that the reference did not license)
+
+Brevity penalty: c=4 &lt; r=6  -&gt;  BP = e^(1 - 6/4) = e^(-0.5) = 0.607
+
+BLEU (unigram-only) = BP x precision = 0.607 x 0.75 = 0.455
+  short + repetitive output gets punished on BOTH axes.</pre></div>
+<p><strong>ROUGE (Recall-Oriented Understudy for Gisting Evaluation)</strong> was built for <em>summarization</em>, and it flips BLEU's emphasis to <em>recall</em>: of the n-grams in the reference summary, how many did the candidate <em>cover</em>? <mark>Summarization's danger is the opposite of translation's — the risk is <em>leaving out</em> important content, so you grade coverage of the reference, i.e. recall.</mark> The common variants: <strong>ROUGE-N</strong> is n-gram recall (ROUGE-1 = unigram, ROUGE-2 = bigram); <strong>ROUGE-L</strong> uses the <em>longest common subsequence</em> (LCS) between candidate and reference, rewarding in-order overlap <em>without</em> requiring the matched words to be contiguous — so 'the quick brown fox' and 'the brown fox' share the subsequence 'the brown fox' and score well even though a strict bigram match would miss 'quick brown'. This is exactly why the scenario's verbatim-copying model scored high on an overlap metric: copying maximizes overlap, which overlap metrics reward, even when the summary reads worse.</p>
+<p><strong>METEOR</strong> was designed to fix a specific weakness: BLEU and ROUGE only credit <em>exact</em> surface matches, so 'run' and 'ran', or 'quick' and 'fast', count as total misses. METEOR adds three things: <strong>stemming</strong> (so 'run'/'running'/'ran' match), <strong>synonym matching</strong> (via WordNet, so 'quick'/'fast' match), and an explicit <strong>alignment</strong> step that also penalizes fragmented, out-of-order matches. It computes a recall-weighted F-mean and correlates noticeably better with human judgment than raw BLEU — but it needs linguistic resources (a stemmer, a synonym database) that don't exist for every language, which limits its reach.</p>
+<div class="illustration"><div class="illustration-label">The shared blind spot: paraphrase tanks overlap metrics</div><pre>Reference : &quot;the film was extremely enjoyable&quot;
+Candidate : &quot;the movie was really fun&quot;        &lt;- a GREAT paraphrase
+
+Exact-token overlap:
+  shared unigrams = { the, was }   (2 of 5)
+  &quot;film&quot;!=&quot;movie&quot;, &quot;extremely&quot;!=&quot;really&quot;, &quot;enjoyable&quot;!=&quot;fun&quot;
+  BLEU/ROUGE-1 precision or recall ~ 2/5 = 0.40   &lt;- looks BAD
+
+  A human scores this ~identical in meaning. The metric scores it a
+  near-miss. Every n-gram-overlap metric shares this flaw:
+    - penalizes valid PARAPHRASE (different words, same meaning)
+    - rewards surface OVERLAP (copy the reference verbatim -&gt; high score)
+
+  This is WHY embedding-based metrics exist:
+    BERTScore  -&gt; match candidate &amp; reference tokens by contextual-
+                  embedding cosine similarity, not string equality
+                  (&quot;movie&quot;~&quot;film&quot; now count as a match)
+    LLM-as-judge -&gt; ask a strong model to rate adequacy/fluency directly</pre></div>
+<p>That blind spot — <strong>overlap metrics penalize valid paraphrase and reward surface overlap</strong> — is the single most important thing to say in an interview, because it motivates the entire modern branch. <strong>BERTScore</strong> replaces string equality with <em>semantic</em> similarity: it embeds every token with a contextual model (BERT) and matches candidate tokens to reference tokens by cosine similarity, so 'movie' and 'film' finally count as a match. <strong>LLM-as-judge</strong> goes further: prompt a strong model to score adequacy and fluency directly, capturing quality that no overlap count can — at the cost of expense, latency, and the judge's own biases (position bias, verbosity bias, self-preference). Neither is free, but both escape the paraphrase trap.</p>
+<p>Two metrics live <em>outside</em> the reference-comparison family and round out the toolkit. <strong>Perplexity</strong> is an <em>intrinsic</em> language-model metric: it measures how surprised a language model is by held-out text — `perplexity = exp(average negative log-likelihood per token)` — so lower is better, and a perplexity of `k` means the model is, on average, as uncertain as if choosing uniformly among `k` words. <mark>Perplexity needs no reference output at all; it grades the model's own fluency/fit to a corpus, which is why it's used to compare <em>language models</em>, not to grade a specific generated answer.</mark> For <strong>extractive QA and span tasks</strong> — where the answer is a substring of a passage — you use <strong>exact match (EM)</strong> (is the predicted span character-for-character the gold span?) and <strong>token-level F1</strong> (precision/recall over the overlapping tokens, which forgives partial matches like 'Barack Obama' vs 'Obama').</p>
+<p>So the decision framing, which is what the scenario actually needed: <strong>match the metric to the task's notion of 'good.'</strong> Translation cares about not inventing content and getting wording right -&gt; <strong>precision-oriented BLEU</strong>. Summarization cares about covering the key content -&gt; <strong>recall-oriented ROUGE (ROUGE-L for in-order coverage)</strong>. Want better human correlation with synonyms/inflection -&gt; <strong>METEOR</strong>. Want to stop penalizing paraphrase -&gt; <strong>BERTScore</strong> or <strong>LLM-as-judge</strong>. Comparing language models' raw fluency -&gt; <strong>perplexity</strong>. Extractive QA/spans -&gt; <strong>exact match + token-F1</strong>. The summarizer scored 0.11 BLEU because BLEU is a <em>translation</em> metric measuring the wrong thing; report ROUGE (and ideally BERTScore) and the contradiction disappears.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>BLEU is precision-oriented, for translation.</strong> Modified n-gram precision (n=1..4, geometric mean) grades what the candidate <em>said</em> against the reference, guarding against invented content. Clipping caps repeated-token credit; the brevity penalty `min(1, e^(1-r/c))` punishes cowardly-short outputs.</li><li><strong>ROUGE is recall-oriented, for summarization.</strong> It grades coverage of the reference (the risk in summarization is <em>omission</em>). ROUGE-N = n-gram recall; ROUGE-L = longest-common-subsequence, rewarding in-order but non-contiguous overlap. This is why verbatim copying scores high on overlap metrics.</li><li><strong>METEOR adds stemming + WordNet synonyms + alignment</strong>, so 'run'/'ran' and 'quick'/'fast' match, correlating better with humans than BLEU — but it needs language-specific linguistic resources, limiting coverage.</li><li><strong>Every n-gram-overlap metric shares one blind spot: it penalizes valid paraphrase and rewards surface overlap.</strong> ('the movie was really fun' vs 'the film was extremely enjoyable' scores ~0.4 despite identical meaning.) This motivates BERTScore (token match by contextual-embedding cosine, not string equality) and LLM-as-judge (direct quality rating, at cost/latency/bias).</li><li><strong>Perplexity is intrinsic (no reference needed):</strong> `exp(avg NLL/token)`, lower is better, used to compare language models' fluency. <strong>Extractive QA/spans use exact match + token-F1</strong> (F1 forgives partial overlaps like 'Obama' vs 'Barack Obama'). Match the metric to the task's notion of 'good.'</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your team ships a summarization feature and a translation feature in the same sprint, and the eval dashboard reports one number for both: BLEU. Translation looks fine, but the summarizer scores a dismal 0.11 BLEU even though a human reader says the summaries are excellent. Meanwhile a second model that copies three sentences verbatim from the source scores <em>higher</em> on BLEU while reading worse. A skeptical PM asks why one metric is telling opposite stories about quality. You realize the metric was never designed for the task you pointed it at — and that every n-gram-overlap metric shares a blind spot you need to name before anyone trusts the dashboard again.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Match the metric to the task's notion of 'good': BLEU is precision-oriented for translation (with clipping to stop repetition-farming and a brevity penalty to stop cowardly-short outputs), ROUGE is recall-oriented for summarization (ROUGE-L rewards in-order coverage), METEOR adds stemming/synonyms for better human correlation, perplexity is an intrinsic reference-free language-model metric, and exact-match/token-F1 grade extractive spans. All n-gram-overlap metrics share one blind spot — they penalize valid paraphrase and reward surface overlap — which is exactly why embedding-based BERTScore and LLM-as-judge exist.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Voice Agents: Turn-Taking | GenAI Systems Lab</title>
+  <meta name="description" content="Endpointing, barge-in, cascaded vs speech-to-speech, tool use over voice.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/voice-realtime-agents">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/voice-realtime-agents">
+  <meta property="og:title" content="Real-Time Voice Agents: Turn-Taking | GenAI Systems Lab">
+  <meta property="og:description" content="Endpointing, barge-in, cascaded vs speech-to-speech, tool use over voice.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Real-Time Voice Agents: Turn-Taking">
+  <meta name="twitter:description" content="Endpointing, barge-in, cascaded vs speech-to-speech, tool use over voice.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Real-Time Voice Agents: Turn-Taking","description":"Endpointing, barge-in, cascaded vs speech-to-speech, tool use over voice.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/voice-realtime-agents"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">VOICE AI</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Real-Time Voice Agents: Turn-Taking</h1>
+    <p class="desc">Endpointing, barge-in, cascaded vs speech-to-speech, tool use over voice.</p>
+
+    
+    <section><h2>How It Works</h2><p>The scenario is the central lesson of voice agents: <mark>strong ASR plus strong TTS does not make a good agent — the hard problem is the <strong>conversation layer</strong> between them: turn-taking, error recovery, and dialogue management.</mark></p>
+<p>Component benchmarks measure ASR word accuracy and TTS naturalness on isolated clips. Neither measures whether the agent <em>knows when to speak</em>, <em>lets itself be interrupted</em>, or <em>recovers from a mis-heard word</em>. Those are properties of the orchestration layer, and they're exactly what make an agent feel human versus robotic.</p>
+<p>That's why the pilot's components look great and the calls feel broken — the failures live in a layer the component metrics never touch.</p>
+<p><strong>Turn-taking</strong> is the first hard problem, and it has three parts that separate human-feeling agents from robotic ones.</p>
+<p><strong>Endpointing</strong> — deciding the user is done so the agent can respond (too eager cuts them off; too slow feels sluggish). <strong>Barge-in</strong> — letting the user interrupt: when they start talking, the agent must cancel its in-flight TTS and yield the floor. <strong>Backchannels</strong> — the little 'mm-hmm' / 'right' acknowledgments humans use to signal 'I'm listening' without taking the turn.</p>
+<p><mark>Get turn-taking wrong and no amount of ASR/TTS quality saves you: the agent talks over people (no barge-in) or leaves dead air (bad endpointing), which is precisely the pilot's 'talks over people' complaint.</mark> Turn-taking is the make-or-break of felt naturalness.</p>
+<p>The next design fork is the <strong>orchestration architecture: cascaded vs. speech-to-speech</strong>, and it's a genuine tradeoff, not a clear winner.</p>
+<p><strong>Cascaded</strong> runs ASR → LLM → TTS as separate services. You get <strong>full control and inspectability at each stage</strong> — you can log the transcript, guardrail the LLM's text, swap the voice, and (critically) do reliable <strong>tool calling</strong> on structured LLM output. The cost is <strong>latency</strong> (three hops) and <strong>lost prosody/emotion</strong> (the caller's tone is flattened to text and never reaches the LLM).</p>
+<p><strong>Speech-to-speech</strong> (native-audio models) takes audio in and emits audio out in one model. You get the <strong>lowest latency, natural prosody, and preserved emotion/tone</strong> — but it's <strong>harder to inspect and guardrail</strong>, and <strong>tool-calling is still maturing</strong>. <mark>The rule: cascaded when you need control, logging, and reliable tool use (most enterprise phone support today); speech-to-speech when latency and prosody dominate and your tool needs are light.</mark></p>
+<div class="illustration"><div class="illustration-label">Cascaded vs speech-to-speech — the real tradeoff</div><pre>CASCADED (ASR -&gt; LLM -&gt; TTS)          SPEECH-TO-SPEECH (native audio)
+  + control + inspectable at each stage   + lowest latency (one model, no hops)
+  + reliable tool-calling on text output  + natural prosody, preserves tone/emotion
+  + easy to log / guardrail / swap voice  + no ASR-&gt;text-&gt;LLM information loss
+  - higher latency (3 service hops)       - harder to inspect / guardrail
+  - loses caller prosody/emotion (-&gt; text) - tool-calling still maturing
+  - error surface: ASR mistakes propagate  - errors are opaque (audio in, audio out)
+
+Pick from requirements, not hype:
+  need audit logs, guardrails, robust tool-calls -&gt; CASCADED (most phone support)
+  need minimum latency + emotional nuance, light tools -&gt; SPEECH-TO-SPEECH</pre></div>
+<p><strong>Robustness to ASR errors</strong> is the fix for the pilot's most dangerous bug — acting on a mis-heard entity.</p>
+<p>ASR is never perfect, so the agent must treat transcripts as <em>probabilistic</em>, not gospel. The tools: <strong>confidence scores</strong> (ASR emits per-word/per-entity confidence — low confidence on a critical slot should trigger caution), and <strong>confirmation strategies</strong> (explicitly read back high-stakes entities: 'I heard Tuesday the 14th — is that right?').</p>
+<p><mark>The failure mode to design against is <em>silently acting on a low-confidence entity</em>: booking the 'Tuesday' the caller never said. The fix is confirm-then-act on critical slots and graceful re-prompting ('sorry, which day?') instead of committing to a guess.</mark> A great agent is not one that never mis-hears — it's one that mis-hears <em>safely</em> by confirming before it acts.</p>
+<p><strong>Tool calling over voice</strong> is where the pilot 'stumbles,' and voice adds constraints text chat doesn't have.</p>
+<p>In a cascaded agent, the LLM calls functions (check_availability, book_slot) mid-call from the running dialogue state. Voice-specific challenges: (1) you must <strong>fill and confirm slots conversationally</strong> ('what day?' → 'did you say Tuesday?') before calling the tool, since a wrong slot books the wrong thing; (2) tool latency now competes with the <strong>conversational latency budget</strong> — a 2-second API call is dead air, so the agent should <strong>cover the gap</strong> ('let me check that for you...') and stream; (3) the LLM must <strong>track dialogue state</strong> across turns (who, what, which slots are confirmed) rather than treating each turn fresh.</p>
+<p><mark>Voice tool-calling is slot-filling + confirmation + latency-masking, not just 'the LLM emits a function call' — the conversation has to carry the user through the wait and confirm before committing.</mark></p>
+<p><strong>Interruption + duplex handling</strong> ties turn-taking and tool-calling together at the systems level.</p>
+<p>When the user barges in mid-response, the agent must (1) cancel in-flight TTS immediately, (2) <em>discard or re-plan</em> the response it was giving (the user's interruption may change everything), and (3) if a tool call was in flight, decide whether it's still relevant. This requires <strong>full-duplex</strong> operation — listening and speaking channels open simultaneously — plus <strong>echo cancellation</strong> so the agent's own audio isn't mistaken for the user.</p>
+<p><mark>Half-duplex agents (listen, then speak, strictly alternating) feel robotic because real conversation is overlapping and interruptible; full-duplex with clean barge-in is what makes the agent feel like it's actually <em>in</em> the conversation.</mark> This is the systems backbone under natural turn-taking.</p>
+<p>Zooming out, designing a voice agent is designing the <strong>conversation layer</strong> on top of solid components — and the interview answer names all four concerns.</p>
+<p>The checklist: <strong>turn-taking</strong> (endpointing + barge-in + backchannels), <strong>error robustness</strong> (confidence + confirm critical slots), <strong>tool-calling over voice</strong> (slot-fill, confirm, mask latency, track state), and the <strong>architecture choice</strong> (cascaded for control/tools/logging vs. speech-to-speech for latency/prosody). Strong ASR and TTS are table stakes; the design <em>is</em> the layer between them.</p>
+<p><mark>The one-line thesis: a voice agent lives or dies on turn-taking and safe error recovery — pick cascaded vs. speech-to-speech from your control-and-tooling needs, and never let the agent act on an unconfirmed, low-confidence entity.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Strong ASR + strong TTS ≠ a good agent.</strong> The hard problem is the conversation layer between them — turn-taking, error recovery, dialogue management — which component benchmarks never measure. That's why great components can still make broken calls.</li><li><strong>Turn-taking has three parts:</strong> endpointing (when the user is done), barge-in (letting them interrupt — cancel in-flight TTS and yield), and backchannels ('mm-hmm'). Get it wrong and the agent talks over people or leaves dead air regardless of ASR/TTS quality.</li><li><strong>Cascaded vs. speech-to-speech is a real tradeoff.</strong> Cascaded (ASR→LLM→TTS) gives control, inspectability, logging, and reliable tool-calling on text output, at the cost of latency and lost prosody. Speech-to-speech gives lowest latency and preserved prosody/emotion, but is harder to guardrail and its tool-calling is still maturing.</li><li><strong>Treat transcripts as probabilistic, not gospel.</strong> Use ASR confidence scores and confirm high-stakes entities ('I heard Tuesday — right?') before acting. The dangerous failure is silently booking a low-confidence 'Tuesday' the caller never said; the fix is confirm-then-act and graceful re-prompting.</li><li><strong>Voice tool-calling = slot-fill + confirm + latency-masking + state tracking.</strong> Confirm slots conversationally before calling tools, cover tool latency with filler and streaming so it isn't dead air, and track dialogue state across turns — not just 'the LLM emits a function call.'</li><li><strong>Barge-in needs full-duplex + echo cancellation.</strong> Cancel in-flight TTS, discard/re-plan the response, and reconsider any in-flight tool call. Half-duplex strict-alternation feels robotic; full-duplex with clean barge-in is what makes the agent feel present in the conversation.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You're the lead on a production voice agent for phone support. In the pilot, it transcribes and speaks beautifully — ASR and TTS both benchmark well in isolation — yet real calls go badly: it talks over people, acts confidently on mis-heard entities (booking a 'Tuesday' the caller never said), and stumbles when it has to call a scheduling tool mid-conversation. The individual components are strong but the <em>conversation</em> fails. You have to design the turn-taking and dialogue-management layer that sits on top of ASR and TTS and decide whether to build it cascaded or on a native speech-to-speech model.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>A production voice agent is designed at the conversation layer, not the components: strong ASR and TTS are table stakes, and the failures — talking over people, acting on mis-heard entities, stumbling on mid-call tools — live in turn-taking, error recovery, and dialogue management. Turn-taking (endpointing + barge-in + backchannels) and safe error recovery (confidence scores, confirm critical slots before acting) are make-or-break, and voice tool-calling means slot-fill + confirm + latency-masking + state tracking with full-duplex barge-in underneath. Choose cascaded vs. speech-to-speech from your needs — cascaded for control, logging, and reliable tool use (most enterprise phone support today); speech-to-speech for latency and prosody with lighter tooling.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

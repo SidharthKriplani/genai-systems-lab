@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Self-Attention | GenAI Systems Lab</title>
+  <meta name="description" content="How every token relates to every other token. The core of the transformer.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/attention">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/attention">
+  <meta property="og:title" content="Self-Attention | GenAI Systems Lab">
+  <meta property="og:description" content="How every token relates to every other token. The core of the transformer.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Self-Attention">
+  <meta name="twitter:description" content="How every token relates to every other token. The core of the transformer.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Self-Attention","description":"How every token relates to every other token. The core of the transformer.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/attention"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 2</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Self-Attention</h1>
+    <p class="desc">How every token relates to every other token. The core of the transformer.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a sentence you'd never misread: <em>&quot;The surgeon who treated the patient agreed.&quot;</em> Ask yourself — <em>who</em> agreed? The surgeon, obviously. But notice what your mind just did: to make sense of the word <em>agreed</em>, it quietly reached back six words and grabbed <em>surgeon</em>. The word <em>agreed</em>, all on its own, is almost meaningless. Agreed by whom? About what? Its meaning lives in its <em>relationship</em> to other words in the sentence.</p>
+<p>Here's the thing a language model has to solve, then. When it produces a word, it can't treat that word as an island — it has to have already folded in the right earlier words that give it meaning. So the real question becomes: sitting at one position in a sentence, how does a model figure out <em>which</em> of the earlier words actually matter, and lean on those while ignoring the filler?</p>
+<p>That mechanism is called <strong>attention</strong>, and it's the single most important idea in modern language models. We'll build it up slowly and honestly — first the obvious idea (just look at everything equally), then watch exactly why it fails, and let the real answer emerge from that failure. Take your time here. Once it clicks, a lot of mysterious model behavior stops being mysterious.</p></section>
+    <section><h2>How It Works</h2><p>You know how LLMs work at a high level: <strong>next-token prediction</strong>. The model reads every token before some position, assigns a probability to every possible next token, and picks the most likely one.</p>
+<p>That's the whole mechanism. It does this for every single token in the sequence, one at a time. Simple enough.</p>
+<p>So your model just predicted the token <em>agreed</em>. Let's walk through what that means concretely.</p>
+<p>The model saw something like <em>'The surgeon who treated the patient'</em> — six tokens — and predicted that the highest-probability next token was <em>agreed</em>. The full sentence is <em>'The surgeon who treated the patient agreed.'</em> The model did exactly what it was built to do.</p>
+<p>Now you have a problem — and it's worth sitting with, because it's not obvious at first.</p>
+<p>You're not generating text for its own sake. You're building something <strong>downstream</strong> — a pipeline that extracts meaning from what the model produces. And the token <em>agreed</em> on its own is almost useless to you. Agreed by whom? Agreed about what? In response to what?</p>
+<p><mark>The word is a fragment. It has meaning only in relation to the context that produced it.</mark></p>
+<p>So your model, when it produced <em>agreed</em>, needs to have <strong>already understood</strong> what <em>agreed</em> connects to.</p>
+<p>It needs <em>surgeon</em> to be present in that representation — not just as some token 6 positions back, but as something the model <em>actively incorporated</em> when building its understanding of <em>agreed</em>. If it didn't, <em>agreed</em> is just a vector in space with no relational structure. It is useless downstream.</p>
+<p>Here's the question: how does the model, sitting at position 7, incorporate the right context from positions 1 through 6?</p>
+<p>The naive answer: <strong>look at everything</strong>. Average all the previous tokens together. Weight every token equally. You don't know what's relevant, so take all of it — at least you won't miss anything.</p>
+<p>Before reading further: <em>does this actually work?</em> Think about it for a second.</p>
+<p>Here's why it doesn't. Look at the sentence: The · <strong>surgeon</strong> · who · treated · the · patient · agreed. Seven tokens. Equal weights — each gets <strong>1/7</strong> of the total signal.</p>
+<p><em>Surgeon</em> — the subject, the answer to 'agreed by whom?' — gets exactly as much weight as <em>the</em>. As <em>who</em>. As <em>the</em> again. Five filler tokens, one content token, <em>same contribution</em>. The signal from <em>surgeon</em> has been diluted to 1/7 even in this short sentence.</p>
+<p>Now scale to 10,000 tokens. If the relevant noun is 3,000 positions back, it contributes <strong>1/10,000</strong> of the total signal. That's not incorporating context — that's drowning it in noise. You've averaged away the very information you needed.</p>
+<p><mark>Equal attention is functionally no attention.</mark></p>
+<p>So equal weighting fails. That door is closed. The model needs to be <strong>selective</strong> — but selective about <em>what</em>?</p>
+<p>The first instinct most people have: <strong>rules</strong>. Verbs should look at nouns. Pronouns should look at their antecedents. These map to real patterns in language — they <em>feel</em> right.</p>
+<p>But think about what it takes to implement them. You'd need a parser to classify every token — noun, verb, pronoun, adjective — for every language, every domain, every edge case. And even then, rules break constantly. Technical docs have different structure than conversation. Code differs from prose. Legal language breaks grammar on purpose. Every exception needs another rule.</p>
+<p><mark>This path doesn't scale. The model can't use hardcoded rules — it has to <em>learn</em> what's relevant from the data itself.</mark></p>
+<p>Now sit with this question, because this is where the real insight is: <strong>what is the model actually learning when it learns relevance?</strong></p>
+<p>Relevance is <em>not</em> a property of a single token. <em>Surgeon</em> isn't inherently relevant. It's relevant <em>to something</em> — specifically to <em>agreed</em>, in this sentence, because <em>agreed</em> is looking for an agent and <em>surgeon</em> is one. Remove <em>agreed</em> and <em>surgeon</em>'s relevance changes entirely.</p>
+<p><mark>This means relevance is a <em>relationship</em> between two tokens.</mark> And that relationship has two sides. There's something about <em>agreed</em> doing the searching — 'I'm a verb, I need a subject, I'm looking for an agent.' And something about <em>surgeon</em> available to be found — 'I'm a noun, I can be an agent, I'm available.' Two different signals, living in two different tokens.</p>
+<p>If you represent them separately — one learned vector for <strong>what a token is searching for</strong>, one for <strong>what a token exposes to searchers</strong> — you can compute a match between any two tokens at any two positions.</p>
+<p>Multiply the two vectors element by element, sum the results. <mark>That's a dot product.</mark></p>
+<div class="illustration"><div class="illustration-label">Dot product → Softmax → Attention weights</div><pre>agreed's query:   Q = [ 0.9,  0.4, -0.7,  0.8 ]
+surgeon's key:    K = [ 0.8,  0.3, -0.6,  0.7 ]
+
+                      (0.9×0.8)+(0.4×0.3)+(-0.7×-0.6)+(0.8×0.7)
+                    =  0.72  +  0.12  +  0.42  +  0.56  =  1.82  → score: 2.8
+
+the's key:        K = [ 0.0,  0.1,  0.0,  0.1 ]
+                    =  0.00  +  0.04  +  0.00  +  0.08  =  0.12  → score: -0.5
+
+Raw scores:  surgeon=2.8  patient=0.8  who=0.3  treated=0.2  the=-0.5
+
+Softmax:
+  e^2.8 = 16.4    e^0.8 = 2.2    e^0.3 = 1.4    e^0.2 = 1.2    e^-0.5 = 0.6
+  ─────────────────────────────────────────────────────────────────
+  sum = 21.8
+
+  surgeon  = 16.4 / 21.8 = 0.75   ████████████████  75%
+  patient  =  2.2 / 21.8 = 0.10   ███               10%
+  who      =  1.4 / 21.8 = 0.06   ██                 6%
+  treated  =  1.2 / 21.8 = 0.05   █                  5%
+  the      =  0.6 / 21.8 = 0.03   ▌                  3%
+                                                     ────
+                                                      1.0</pre></div>
+<p><strong>The exponential amplifies differences.</strong> <em>Surgeon</em> at 2.8 and <em>the</em> at -0.5 are 3.3× apart as raw scores — after exponentiation, <strong>27× apart</strong>.</p>
+<p>Softmax doesn't just normalize; it <em>sharpens</em>. High-scoring tokens dominate, low-scoring tokens nearly vanish. <mark>The model concentrates on what's most relevant, instead of spreading thin across everything mildly related.</mark></p>
+<p>Now take the <strong>weighted sum</strong> of what each token contributes — its <strong>value vector V</strong>. <em>Surgeon</em> holds 75% of the weight; <em>the</em> holds 3%. The result is a representation of <em>agreed</em> that is heavy with <em>surgeon</em> and nearly untouched by the noise around it.</p>
+<p>That's <strong>Q, K, and V</strong>. Q and K determine <em>how much</em> each token matters. V determines <em>what</em> it contributes.</p>
+<p><mark>You computed relevance without writing a single rule — the model learns which queries match which keys, from training data, across every domain and language simultaneously.</mark></p>
+<p>One cost falls out of the design: because every query scores against every key, the work is <strong>quadratic</strong>. n queries × n keys = <strong>n² attention pairs</strong> per layer. A 4K-token sequence has ~16 million pairs; a 16K-token sequence has <strong>256 million</strong>, and memory scales the same way since the full n×n matrix must be materialized.</p>
+<p>That quadratic structure, plus softmax's habit of <em>sharpening</em>, is enough to reason about surprising real behavior — including where attention mass ends up piling when there's nowhere better to put it. The interactive lets you turn the knobs and watch the weights concentrate. <mark>Then the closing scenario hands you a document that fails in the middle; use what you just derived to judge the proposed cause before the reasoning walks you through it.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A predicted token is meaningless without context</strong> — <em>agreed</em> is useless downstream unless the model has already incorporated <em>what</em> it connects to. Attention is the mechanism that folds that context in.</li><li><strong>Equal weighting is functionally no attention.</strong> Averaging every prior token dilutes the one content word to 1/n; at 10K tokens the relevant noun contributes 1/10,000. The signal drowns in noise.</li><li><strong>Hardcoded relevance rules don't scale</strong> across languages, domains, and edge cases — so the model must <em>learn</em> relevance from data instead.</li><li><strong>Relevance is a relationship between two tokens, split into Q and K.</strong> A query (what a token searches for) and a key (what it exposes); their dot product is the raw relevance score.</li><li><strong>Softmax sharpens, it doesn't just normalize.</strong> The exponential turns a 3.3× score gap into a 27× weight gap, concentrating attention on the top matches. V then decides what each attended token contributes.</li><li><strong>Attention is O(n²) in compute and memory</strong> — n² pairs per layer (16K tokens → 256M pairs). That cost is why long context is expensive, and why position-0 attention sinks cause mid-document degradation.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A team is puzzled: their model extracts details fine near the top and bottom of a 10K-token document, but botches anything sitting in the <em>middle</em>. A researcher floats a diagnosis — <em>attention sink</em>, where attention mass piles onto the first and last few tokens. Take a moment before reading on: given everything we just built, is that diagnosis even plausible? Here's the reasoning, step by step. We saw attention is O(n²) — every position scores against every other — and we saw softmax <em>sharpens</em>, concentrating weight rather than spreading it. During training, position 0 is visible to every later token in every sequence, so it becomes a reliable place to dump attention mass that doesn't belong to any real semantic target. Notice what that does: weight that piles onto the sink is weight <em>not</em> spent on the content in the middle, which is exactly where the extraction fails. So yes — the diagnosis holds, and it points straight at the fix: dampen the sink or reweight positions so mid-document tokens get their share of attention back.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Attention enables context-aware representations by letting every token attend to every other — but quadratic cost is why long-context models are expensive, and why attention sinks cause mid-document quality degradation that isn't about model intelligence.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

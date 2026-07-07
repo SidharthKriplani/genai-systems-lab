@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCP Deep Dive | GenAI Systems Lab</title>
+  <meta name="description" content="The Model Context Protocol — tools, resources, and the wire format.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-mcp">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-mcp">
+  <meta property="og:title" content="MCP Deep Dive | GenAI Systems Lab">
+  <meta property="og:description" content="The Model Context Protocol — tools, resources, and the wire format.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MCP Deep Dive">
+  <meta name="twitter:description" content="The Model Context Protocol — tools, resources, and the wire format.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"MCP Deep Dive","description":"The Model Context Protocol — tools, resources, and the wire format.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-mcp"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>MCP Deep Dive</h1>
+    <p class="desc">The Model Context Protocol — tools, resources, and the wire format.</p>
+
+    
+    <section><h2>How It Works</h2><p>The pain in the scenario is the <strong>N×M integration problem</strong>: N tool services × M LLM hosts = N×M bespoke integrations, each re-implementing schemas, auth, and error handling. <strong>Model Context Protocol (MCP) collapses that to N+M</strong> by inserting a standard interface between producers and consumers of tools — the same move USB did for peripherals or LSP did for editor/language-server pairs. <mark>You write the tool once as an MCP server, and any MCP-compatible host speaks to it without custom glue.</mark></p>
+<p>MCP is an open protocol (introduced by Anthropic, late 2024) with a specific, learnable shape. The interview signal is knowing that shape precisely, not hand-waving 'it's a standard for tools.'</p>
+<p>The architecture is a <strong>client/server split with three roles</strong>, and confusing them is the classic mistake:</p>
+<p><strong>Host</strong> — the application the user interacts with (Claude Desktop, Cursor, your app). It owns the LLM and the UI.</p>
+<p><strong>Client</strong> — a connector <em>inside</em> the host, one per server, that speaks the protocol.</p>
+<p><strong>Server</strong> — a separate process/service that <em>exposes capabilities</em> (your filesystem server, github server, your-internal-API server). <mark>The server owns its own credentials — the host never sees them.</mark> That last point is the security story: your Postgres password lives in the Postgres MCP server, not in every host that wants to query it.</p>
+<p>The wire protocol is <strong>JSON-RPC 2.0</strong>. Transport is either <strong>stdio</strong> (local server launched as a subprocess — how Claude Desktop runs local servers) or <strong>HTTP with SSE / streamable HTTP</strong> (remote servers). The host <em>discovers</em> what a server offers at connection time via calls like `list_tools` / `list_resources` — capabilities are dynamic, not hardcoded in the host.</p>
+<p>MCP servers expose <strong>four primitives</strong>, and the deep-dive interactive above lets you click into each. Getting the <em>read vs. do vs. template vs. delegate</em> distinction right is the core of the module:</p>
+<p><strong>Tools</strong> — functions the model can <em>call</em> to DO things (search, write a row, create a ticket). This is function-calling, but defined in the server, not the client. Model-controlled.</p>
+<p><strong>Resources</strong> — data the model can <em>READ</em>, addressed by URI (`file:///…`, `db://customers/12345`). Read-only by convention; context injection without a tool round-trip. Typically application-controlled.</p>
+<p><strong>Prompts</strong> — reusable, parameterized prompt <em>templates</em> the server defines and the host surfaces as slash-commands/menu items (`/summarize_pr(url)`). User-controlled.</p>
+<p><strong>Sampling</strong> — the <em>inversion</em>: the server asks the <em>host</em> to run an LLM completion on its behalf, so the server gets LLM-in-the-loop processing (summarize-during-ingest, classify) without holding its own model API key.</p>
+<div class="illustration"><div class="illustration-label">MCP architecture and the four primitives</div><pre>THE N×M -&gt; N+M COLLAPSE:
+  Without MCP:  3 tools × 4 hosts = 12 bespoke integrations
+  With MCP:     3 servers + 4 hosts = 7 standard connections
+
+CLIENT/SERVER SPLIT (JSON-RPC 2.0):
+  ┌─────────── HOST (Claude Desktop / Cursor / your app) ───────────┐
+  │  owns the LLM + UI                                              │
+  │   ├─ MCP Client ──stdio──►  filesystem server   (local subproc) │
+  │   ├─ MCP Client ──SSE────►  github server        (remote)       │
+  │   └─ MCP Client ──SSE────►  your-postgres server (owns the pwd) │
+  └────────────────────────────────────────────────────────────────┘
+       discovery at connect time:  list_tools / list_resources
+
+THE FOUR PRIMITIVES (who controls each):
+  Tools      DO things ....... model-controlled   search(), create_ticket()
+  Resources  READ data ....... app-controlled     file:///…, db://id/123
+  Prompts    templates ....... user-controlled    /summarize_pr(url)
+  Sampling   server asks host  ↑ inverted         server -&gt; host: &quot;run an LLM call&quot;
+
+Key: the SERVER owns its credentials; the HOST never sees them.</pre></div>
+<p>The comparison that comes up in <strong>every architecture review</strong> is <em>MCP vs. plain function calling</em>, and the honest answer is that MCP is not 'better function calling' — it is a different scope. Plain function calling defines tools <strong>inline in your app's API call</strong>: fast, zero extra process, but the definition is trapped in that one app. MCP moves the definition into a <strong>separate, reusable server</strong> with its own transport, its own auth, and support for resources/prompts/sampling that inline function calling has no notion of.</p>
+<p>The decision rule is clean: <mark>prototyping one tool in one app? Use function calling — MCP is pure overhead. Want the same tooling across multiple hosts, or to share tools across a team without each integration re-implementing them? That is exactly the N×M problem MCP was built for.</mark> The scenario — three tools, four hosts, shared auth — is squarely in MCP's zone.</p>
+<p>Two accuracy points that separate a real answer from a memorized one. First, <strong>MCP does not replace the model's tool-calling ability</strong> — it standardizes how tools are <em>described, discovered, and reached</em>. The model still emits a tool call; MCP is the plumbing that carries it to a server and back. Second, <strong>MCP is a protocol, not a runtime or a framework</strong> — it says nothing about your agent loop, your orchestration, or your model. That is why it is orthogonal to LangGraph/CrewAI (which orchestrate) and complementary to A2A (which handles agent-to-agent, the next module): an agent can <em>use</em> MCP to reach tools and <em>expose</em> itself over A2A so other agents can call it.</p>
+<p>The recurring interview trap: describing MCP as 'a tool library' or 'Anthropic's function-calling' rather than <strong>a transport-and-discovery protocol with four primitives that decouples tool producers from LLM consumers.</strong></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>MCP solves the N×M integration problem</strong> — N tools × M hosts becomes N+M by inserting a standard interface between tool producers and LLM consumers. It is the 'USB-C of agent tools': write the tool once, any MCP host uses it.</li><li><strong>Three roles:</strong> Host (owns LLM + UI: Claude Desktop, Cursor), Client (one per server, inside the host, speaks the protocol), Server (separate process exposing capabilities). <strong>The server owns its own credentials — the host never sees them.</strong></li><li><strong>Wire protocol is JSON-RPC 2.0; transport is stdio (local subprocess) or HTTP/SSE (remote).</strong> Capabilities are <em>discovered</em> at connect time via list_tools/list_resources — not hardcoded in the host.</li><li><strong>Four primitives, by controller:</strong> Tools = DO (model-controlled), Resources = READ by URI (app-controlled, read-only), Prompts = parameterized templates (user-controlled slash-commands), Sampling = the server asks the <em>host</em> to run an LLM call (inverted).</li><li><strong>MCP vs. function calling is scope, not quality:</strong> function calling defines a tool inline in one app; MCP defines it in a reusable server with its own auth + resources/prompts/sampling. Prototype one tool = function calling; share across hosts/teams = MCP.</li><li><strong>MCP is a protocol, not a runtime and not the model's tool-calling.</strong> It standardizes how tools are described/discovered/reached — orthogonal to orchestration frameworks, complementary to A2A (agent-to-agent).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your company has a web-search tool, a Postgres tool, and an internal-ticketing tool. You wired them into your Claude-based agent via function calling. Now the platform team wants those same three tools available inside Cursor for engineers, inside a Slack bot, and inside a future Gemini-based agent. The obvious path is to re-implement each tool integration in each host — three tools times four hosts is twelve bespoke integrations, each with its own auth handling and schema drift. You need an architecture that makes 'write the tool once, use it everywhere' true.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>MCP is an open protocol (JSON-RPC 2.0 over stdio or HTTP/SSE) that collapses N×M tool integrations to N+M by splitting hosts (own the LLM/UI) from servers (expose Tools/Resources/Prompts/Sampling and own their own credentials). It is not better function calling — it is a different scope: prototype one tool in one app with function calling; use MCP to share tools across many hosts and teams. It is a protocol, orthogonal to orchestration frameworks and complementary to A2A.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

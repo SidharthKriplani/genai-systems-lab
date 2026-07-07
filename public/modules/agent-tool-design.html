@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tool Use Design | GenAI Systems Lab</title>
+  <meta name="description" content="How to define the tools an agent can actually use well.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-tool-design">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-tool-design">
+  <meta property="og:title" content="Tool Use Design | GenAI Systems Lab">
+  <meta property="og:description" content="How to define the tools an agent can actually use well.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Tool Use Design">
+  <meta name="twitter:description" content="How to define the tools an agent can actually use well.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Tool Use Design","description":"How to define the tools an agent can actually use well.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-tool-design"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Tool Use Design</h1>
+    <p class="desc">How to define the tools an agent can actually use well.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a question that quietly decides whether your agent works: when a model reaches for a tool, what is it actually <em>looking at</em> to make that choice? Not your code — it never sees your code. It sees a little text card called a <strong>tool schema</strong>: the tool's name, a one-line description of what it does, and a list of the arguments it takes. That card, and only that card, is everything the model knows about the tool.</p>
+<p>Sit with how much that changes things. If you name a tool `search` and describe it as &quot;Search for things,&quot; you haven't given the model a bad implementation — the code underneath might be flawless. You've given it a bad <em>card</em>. It has no way to know what the tool searches, when it's the right choice, or when it absolutely shouldn't be used. So it does the natural thing: it fires the vague tool at everything, including questions it should have just answered itself.</p>
+<p>Here's the reassuring part, and the whole spirit of this module: because the model's entire view of a tool is that little text card, most agent reliability problems that <em>look</em> like &quot;the model is dumb&quot; are really &quot;the card was underspecified&quot; — and you fix them by editing text, not by retraining anything. We'll walk through each field of the card — name, description, parameters, even the shape of the errors it returns — and see how a single well-written line changes whether, when, and how the model calls.</p></section>
+    <section><h2>How It Works</h2><p>Begin from a single constraint about how a model calls a tool at all: it never sees your code. All it receives is a <strong>tool schema</strong> — a name, a description, and a typed parameter list — and it must choose its next action purely from that text. <strong>Because</strong> that text is the model's entire view of the tool, the schema is not documentation sitting beside the real thing; it <em>is</em> the interface through which your design intent reaches the model's behaviour. <strong>Which means</strong> if the model chooses badly, the flawless code underneath is irrelevant — the model never read it. <mark>So the overwhelming majority of agent reliability problems that look like 'the model is dumb' are actually 'the schema underspecified the tool,' and they are fixed by editing text, not weights.</mark></p>
+<p><strong>This forces</strong> a clean taxonomy of what can go wrong, because a tool call has only three degrees of freedom and each traces back to the schema: the model calls the <strong>wrong tool</strong> (name/description didn't disambiguate), passes <strong>wrong arguments</strong> (parameter descriptions didn't constrain), or calls <strong>at the wrong time</strong> (no when-to-use / when-not-to-use guidance). <strong>Therefore</strong> every failure below is a schema-authoring failure, and the rest of this module walks each field of the schema in the order the model reads it.</p>
+<p><strong>The description is where the model decides <em>whether</em> to call the tool.</strong> A description like 'Search for things' tells it nothing about what corpus is searched, so the model treats it as a catch-all and fires it for everything — including questions it should answer from parametric knowledge. The fix is to make the description carry three things: <em>what</em> the tool does over <em>what data</em>, <em>when to use it</em>, and explicitly <em>when NOT to use it</em>. That negative guidance is the single highest-leverage line in a schema — it's what stops the over-triggering in the scenario.</p>
+<div class="illustration"><div class="illustration-label">Same tool, weak vs strong schema</div><pre>WEAK — the model has no basis to choose or constrain the call:
+{
+  &quot;name&quot;: &quot;search&quot;,
+  &quot;description&quot;: &quot;Search for things&quot;,
+  &quot;parameters&quot;: { &quot;query&quot;: { &quot;type&quot;: &quot;string&quot; } }
+}
+  -&gt; fires for everything (no when/when-not), sends vague queries
+     (&quot;expenses&quot;), can't anticipate the response shape.
+
+STRONG — every field steers behaviour:
+{
+  &quot;name&quot;: &quot;search_internal_kb&quot;,
+  &quot;description&quot;: &quot;Search the internal HR &amp; policy knowledge base.
+     USE for company policies, benefits, leave, expenses.
+     Do NOT use for general knowledge or real-time data.&quot;,
+  &quot;parameters&quot;: {
+    &quot;query&quot;: {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;description&quot;: &quot;Precise topic, e.g. 'remote meal expense
+         policy 2024' — not 'expenses'.&quot;
+    },
+    &quot;top_k&quot;: {
+      &quot;type&quot;: &quot;integer&quot;,
+      &quot;description&quot;: &quot;3 for most queries, 5 for complex multi-part.&quot;,
+      &quot;default&quot;: 3
+    }
+  }
+}
+  -&gt; specific name disambiguates; 'Do NOT' stops over-calling;
+     query hint forces precise retrieval; top_k default is sane.</pre></div>
+<p><strong>Parameter design is where the <em>arguments</em> come from.</strong> Each parameter needs a type and a description that constrains what a good value looks like — a `query` field with the hint 'be precise, e.g. remote meal expense policy 2024 not expenses' measurably improves retrieval, because the model imitates the example. Prefer <strong>enums over free strings</strong> wherever the value space is closed (a `status` param as an enum of `open|pending|closed` can't be hallucinated the way a free string can). Give <strong>sane defaults</strong> so the model can omit params it's unsure about rather than inventing them. And keep the parameter <em>count</em> low: every extra required argument is another thing the model can get wrong.</p>
+<p><strong>Granularity is an architectural choice, not a detail.</strong> Too coarse — one mega-tool `manage_account(action, ...)` that does ten things via a mode flag — forces the model to reason about a huge branching argument space and fails at picking the right mode. Too fine — fifty micro-tools — floods the model's selection space so it can't tell them apart (this is exactly the scenario's regression: adding tools made an ambiguous name collide). The rule of thumb: <strong>one tool = one clear verb over one clear noun</strong>, named so specifically that its purpose is unmistakable next to its neighbours. If two tools could plausibly answer the same request, at least one is misnamed or mis-scoped.</p>
+<p><strong>Error handling is part of the schema's contract, because the model reasons over what a tool returns.</strong> A tool that throws an opaque stack trace or a bare `null` gives the ReAct loop a useless Observation — the model can't tell 'no results' from 'the service is down' from 'bad argument,' so it either gives up or retries blindly. Well-designed tools return <strong>structured, actionable errors</strong>: `{ error: 'not_found', message: 'No order #4471', suggestion: 'verify the order id' }`. That turns a dead end into a recoverable step — the model reads the suggestion and self-corrects. <mark>Design tool outputs (success AND failure) as messages <em>to the model</em>, not as internal logs.</mark></p>
+<p>The <strong>Model Context Protocol (MCP)</strong> standardises this whole interface. Instead of re-writing a bespoke tool integration for every LLM client, you expose tools once from an MCP <em>server</em> and any MCP-speaking client can call them — the schema/description/parameter grammar above is exactly what MCP formalises. The design principles don't change; MCP just makes a well-authored tool reusable across frameworks. The interactive lets you diff a weak schema against a strong one field-by-field and step through sequential/parallel/conditional calling patterns — use it to feel how a single description line changes when and whether the model calls at all.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>The schema is the model's entire view of a tool</strong> — name, description, typed params. It's a specification interface, not docs; most 'the model is dumb' failures are actually underspecified schemas fixed by editing text, not weights.</li><li><strong>The description decides WHETHER to call.</strong> Include what/over-what-data, when to use, and explicitly when NOT to use. The negative 'Do NOT use for…' line is the highest-leverage line for stopping over-triggering.</li><li><strong>Parameter descriptions decide the ARGUMENTS.</strong> Constrain with concrete examples, prefer enums over free strings for closed value spaces, give sane defaults, and minimise required-param count.</li><li><strong>Granularity: one tool = one clear verb over one clear noun.</strong> Mega-tools with mode flags overload the argument space; too many micro-tools collide on selection. If two tools could answer the same request, one is misnamed.</li><li><strong>Errors are messages to the model, not logs.</strong> Return structured, actionable errors ({error, message, suggestion}) so the ReAct loop can distinguish not-found from down from bad-arg and self-correct instead of failing blindly.</li><li><strong>MCP standardises the tool interface</strong> so a well-authored tool is reusable across any client. The design principles are unchanged — MCP just formalises the schema grammar and makes tools portable.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your HR agent has a tool named `search` described as 'Search for things.' Users report it answering benefits questions with fabricated policy numbers, and calling `search` for questions it should answer from general knowledge. The model is fine; you didn't change it. The regression came from adding three more tools last sprint, which made 'search for things' ambiguous against them. Take a moment before reading on: given that the schema is the model's entire view of the tool, where does the fix have to live — and what single line would do the most work? Here's the reasoning, step by step. You can't touch the model, and you don't need to: the over-triggering comes straight from a description that says nothing about <em>what</em> is searched, <em>when</em> to use it, or — most importantly — <em>when not to</em>. Notice that the highest-leverage change isn't a new tool or a bigger model, it's one negative clause in the description ('do NOT use for general knowledge') plus a specific name that identifies the corpus, so the model stops treating a vague 'search for things' as a catch-all and stops colliding with the three tools you added last sprint.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>A tool's schema — name, description, typed params — is the model's entire view of it, so reliability is authored there, not in the model. Put when/when-NOT guidance in the description (decides whether to call), constrain arguments with examples/enums/defaults, keep one tool = one verb over one noun, and return structured actionable errors so the agent can recover. MCP standardises this interface so good tools are reusable across clients.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

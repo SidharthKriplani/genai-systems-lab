@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Evaluation: Trajectory vs Outcome | GenAI Systems Lab</title>
+  <meta name="description" content="Tool-call accuracy, step success, trajectory scoring — why outcome-only eval misses.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-eval-trajectory">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-eval-trajectory">
+  <meta property="og:title" content="Agent Evaluation: Trajectory vs Outcome | GenAI Systems Lab">
+  <meta property="og:description" content="Tool-call accuracy, step success, trajectory scoring — why outcome-only eval misses.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Evaluation: Trajectory vs Outcome">
+  <meta name="twitter:description" content="Tool-call accuracy, step success, trajectory scoring — why outcome-only eval misses.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agent Evaluation: Trajectory vs Outcome","description":"Tool-call accuracy, step success, trajectory scoring — why outcome-only eval misses.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-eval-trajectory"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Agent Evaluation: Trajectory vs Outcome</h1>
+    <p class="desc">Tool-call accuracy, step success, trajectory scoring — why outcome-only eval misses.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with the most natural way in the world to grade an agent: did it get the right answer? You give it a task, you check the final reply against what you expected, and you mark it pass or fail. Clean, obvious, and for a plain one-shot model it's genuinely all you need — there's only one step, so the answer <em>is</em> the whole story.</p>
+<p>Now here's the small puzzle that cracks the whole module open. Imagine two students both hand in the correct answer to a math problem. One worked it out properly. The other copied a number that happened to match, skipped three steps, and got lucky. On a grade-the-answer-only test, they score <em>identically</em> — and yet only one of them will get the next problem right. Pause on that, because an <em>agent</em> is exactly the many-step case: it plans, calls a tool, reads the result, decides what to do next, over and over. Grading only its final sentence is grading only the last line of a long proof.</p>
+<p>So we'll need a second kind of evaluation — one that looks at the <em>road</em>, not just the destination. The reassuring news is that it's not exotic: it's just scoring each step the way you'd check a student's working. We'll see exactly how outcome-only grading fails in two opposite and dangerous directions, then build up the step-by-step alternative — trajectory evaluation — and the harness that runs both together.</p></section>
+    <section><h2>How It Works</h2><p>Start from the definition of what any evaluation actually grades. <strong>Outcome evaluation</strong> asks a single question: did the system's <em>final</em> output match the expected answer? Pass or fail on the endpoint. For a one-shot model call that's often enough — because there's only one step, so the step and the outcome are literally the same thing, and grading the endpoint grades the whole computation. But an <em>agent</em> is not one step. It's a <em>trajectory</em>: a sequence of (plan → tool call → observation → next action) steps, each of which can be right or wrong independently. So the moment there is a path rather than a point, grading only the endpoint means grading only the last node — <mark>which means outcome eval collapses that whole sequence into a single pass/fail and throws away everything that happened along the way.</mark></p>
+<p>That collapse is dangerous because it can be wrong in <em>two opposite directions</em>, and it helps to see them as mirror images. <strong>False pass (right answer, broken path):</strong> an agent can arrive at the correct final answer through a path that is broken, unsafe, or simply lucky — it might call a destructive tool nobody asked for, ignore a silently-failed tool, and never ground its claim in a real observation, yet still emit a plausible final sentence. Because outcome eval reads only that final sentence, it says PASS, so the broken agent looks indistinguishable from a clean one. <strong>False fail (right path, wrong answer):</strong> the exact mirror — an agent reasons correctly and calls the right tools with the right arguments, but the underlying data was stale or a downstream API errored, so the final answer comes out wrong. Outcome eval says FAIL and sends you to debug the agent's <em>reasoning</em>, when the real fault lived in the environment. <mark>Both failures have one root: outcome-only eval conflates 'the agent did the right things' with 'the world produced the right result' — and those two come apart constantly.</mark></p>
+<div class="illustration"><div class="illustration-label">Same task, same PASS — one path safe, one broken</div><pre>Task: &quot;Where is my order #A-4471?&quot;   Golden final: &quot;It was delivered on Tue.&quot;
+
+TRAJECTORY 1 (correct path)          TRAJECTORY 2 (broken path, lucky)
+ step1 plan: look up the order        step1 plan: look up the order
+ step2 lookup_order(&quot;A-4471&quot;) ✓       step2 lookup_order(&quot;A-9999&quot;) ✗ WRONG ARG
+ step3 observe: &quot;delivered Tue&quot; ✓     step3 observe: &quot;delivered Tue&quot; (someone
+ step4 reply &quot;delivered Tue&quot; ✓          else's order, happens to match)
+                                       step4 issue_refund()  ✗ HALLUCINATED CALL
+                                       step5 refund fails silently, ignored ✗
+                                       step6 reply &quot;delivered Tue&quot; ✓ (looks right)
+
+ OUTCOME EVAL:  PASS                   OUTCOME EVAL:  PASS  ← identical score!
+ TRAJECTORY EVAL: 4/4 steps ok        TRAJECTORY EVAL: 1/5 steps ok, 1 wrong
+                                        tool arg + 1 hallucinated destructive call
+
+ The two are indistinguishable to outcome eval. Only per-step scoring
+ separates the agent you can ship from the one that will burn you.</pre></div>
+<p>So the fix is <strong>trajectory evaluation</strong>: score the agent's <em>process</em>, step by step, not just its endpoint. Concretely you assert against each decision in the trajectory. The workhorse metrics: <strong>tool-call accuracy</strong> — for each step, did the agent (1) select the <em>right tool</em> and (2) call it with the <em>right arguments</em>? Calling `issue_refund` when the task was a status lookup fails tool-selection; calling `lookup_order('A-9999')` when the ID was `A-4471` fails argument-correctness. <strong>Step success rate</strong> — what fraction of steps produced a valid, expected observation. <strong>Redundant / hallucinated calls</strong> — did the agent invoke tools that weren't needed (wasteful, and in the refund case, dangerous), or invent a tool or an argument that doesn't exist? <strong>Error recovery</strong> — when a tool <em>did</em> fail, did the agent notice and adapt (retry, fall back, ask the user) or did it barrel ahead as if it succeeded? <mark>A robust agent isn't one that never hits an error; it's one whose trajectory shows it <em>detecting and recovering from</em> errors. Recovery is a first-class metric, not a footnote.</mark></p>
+<div class="illustration"><div class="illustration-label">Outcome (process) metrics vs process (trajectory) metrics</div><pre>OUTCOME metrics                    PROCESS / TRAJECTORY metrics
+──────────────────────────────    ───────────────────────────────────
+ task success (final correct?)     tool-selection accuracy (right tool?)
+ answer quality / faithfulness     tool-argument accuracy (right args?)
+ goal completion                   step success rate (valid observation?)
+ end-state assertions              redundant / hallucinated call count
+                                   error-recovery rate (adapted on failure?)
+                                   efficiency (steps / tokens / cost to goal)
+
+ RULE OF THUMB:
+   outcome tells you IF the agent worked on this input.
+   trajectory tells you WHY, WHETHER IT'LL GENERALISE, and WHETHER
+   IT'S SAFE. Ship on outcome, DEBUG and GATE on trajectory.</pre></div>
+<p>How do you actually score steps at scale? Two mechanisms, used together. <strong>Golden trajectories + per-step assertions</strong> for the deterministic parts: you hand-author reference runs (this ticket <em>should</em> call `lookup_order` with the exact ID, <em>should not</em> call `issue_refund`) and assert programmatically — tool name matches, arguments match, forbidden tools never appear. These are cheap, exact, and become your <strong>regression suite</strong>: every code or prompt change re-runs them, so a refactor that reintroduces the rogue-refund bug fails CI instead of finance. <strong>LLM-as-judge over trajectories</strong> for the fuzzy parts: hand the full step-by-step trace to a strong model with a rubric ('was each tool call justified by the prior observation? did the plan make sense? did it recover from the failure at step 4?'). <mark>LLM-as-judge scales to open-ended trajectories that assertions can't specify — but it inherits the judge's failure modes: it can be swayed by a fluent-but-wrong trace, is position/verbosity-biased, and is itself non-deterministic, so you anchor it with golden examples and spot-audit its verdicts against human labels.</mark> The judge grades taste; the assertions grade facts; you need both.</p>
+<p>Assemble these into an <strong>agent eval harness</strong> and the whole picture snaps together. The harness runs the agent against a fixed suite of tasks in a <em>controlled environment</em> (mocked or recorded tools, so runs are reproducible and a flaky API doesn't masquerade as an agent bug), captures the full trajectory of every run, and applies three layers: per-step assertions against golden trajectories (facts), an LLM-judge with a rubric (taste), and outcome checks on the final answer (did it ultimately work). It reports outcome <em>and</em> process metrics side by side, and — because trajectories are captured — every regression is <em>localizable</em>: you see the exact step where a good run and a bad run diverged. <mark>The one-line senior takeaway: outcome eval tells you whether the agent got the answer; trajectory eval tells you whether it earned it. You ship against outcome, but you debug, gate releases, and catch silent-safety regressions against the trajectory — because an agent that's right for the wrong reasons is a production incident waiting for the input that breaks the luck.</mark> The interactive below lets you score a trajectory step by step and watch a broken-but-lucky run separate from a clean one; then the closing scenario is exactly that split playing out on a live agent — try to name the failure before the reasoning walks you through it.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Outcome eval grades only the final answer; an agent is a trajectory (plan → tool call → observation → next action), so outcome-only collapses the whole sequence into pass/fail on the last node</strong> and discards everything that happened en route.</li><li><strong>It fails in two opposite directions.</strong> False pass: right answer through a broken/lucky/unsafe path (unauthorized refund, wrong-customer lookup that happened to match). False fail: correct reasoning and tool use but stale data or a downstream API error — you debug the agent when the environment was at fault.</li><li><strong>Trajectory eval scores the process step by step.</strong> Core metrics: tool-call accuracy (right tool AND right arguments), step success rate, redundant/hallucinated call count, and error-recovery rate (did it notice a tool failure and adapt vs. barrel ahead). Recovery is a first-class metric.</li><li><strong>Two scoring mechanisms, used together.</strong> Golden trajectories + per-step assertions grade the deterministic facts (tool name/args match, forbidden tools never fire) and become the regression suite; LLM-as-judge over the full trace grades the fuzzy taste (was each call justified, did the plan make sense) — but inherits judge biases (fluent-but-wrong, verbosity, non-determinism), so anchor it with golden examples and human spot-audits.</li><li><strong>The harness runs the agent in a controlled env (mocked/recorded tools → reproducible), captures every trajectory, and reports outcome AND process metrics.</strong> Ship on outcome; debug, gate releases, and catch silent-safety regressions on trajectory — because 'right for the wrong reasons' is an incident waiting for the input that breaks the luck.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You ship a customer-support agent that can search the knowledge base, look up an order by ID, issue a refund, and email the customer. Your eval suite reports 92% task success and the team is celebrating. Then finance flags a spike in refunds. You pull ten transcripts and the story is ugly: on one 'where is my order' ticket the agent called `issue_refund` (never asked!), the refund silently failed because the order was already delivered, and the agent then wrote a cheerful 'your order is on its way' — which was the right final answer, so your eval scored it PASS. On another ticket the agent looked up a completely different customer's order, saw a matching status by luck, and gave a correct-sounding reply — also PASS. Take a moment before reading on: why can 92% task success sit right on top of an agent that is quietly issuing unauthorized refunds? Here's the reasoning, step by step. Both bad tickets ended on a plausible final sentence, and your eval grades <em>only</em> the final sentence — so it collapsed a broken, lucky, unsafe path into the same PASS as a clean one, exactly like the two students who copied the same answer. Notice what actually would have caught it: per-step trajectory scoring — a golden-trajectory assertion that `issue_refund` must never fire on a status lookup, plus tool-argument checks — fails precisely at the offending step and localizes the bug, which no amount of outcome grading can do.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Outcome evaluation grades only an agent's final answer, but an agent is a trajectory (plan → tool call → observation → next action), so outcome-only eval fails in two opposite directions: it false-passes agents that are right for the wrong reasons (lucky, broken, or unsafe paths — like an unauthorized refund) and false-fails agents whose reasoning was correct but whose environment returned stale data or an error. Trajectory evaluation scores the process step by step — tool-call accuracy (right tool and right arguments), step success rate, redundant/hallucinated calls, and error-recovery — using golden-trajectory per-step assertions for the deterministic facts (which double as a regression suite) plus LLM-as-judge for open-ended quality (anchored with goldens and human audits to counter its biases). Build a harness that runs the agent in a controlled, reproducible environment, captures every trajectory, and reports outcome and process metrics side by side: ship on outcome, but debug, gate releases, and catch silent-safety regressions on the trajectory.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

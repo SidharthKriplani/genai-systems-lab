@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pgvector vs a Dedicated Vector DB | GenAI Systems Lab</title>
+  <meta name="description" content="Build-vs-buy for vector search.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/pgvector-vs-managed">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/pgvector-vs-managed">
+  <meta property="og:title" content="pgvector vs a Dedicated Vector DB | GenAI Systems Lab">
+  <meta property="og:description" content="Build-vs-buy for vector search.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="pgvector vs a Dedicated Vector DB">
+  <meta name="twitter:description" content="Build-vs-buy for vector search.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"pgvector vs a Dedicated Vector DB","description":"Build-vs-buy for vector search.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/pgvector-vs-managed"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">DECISION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>pgvector vs a Dedicated Vector DB</h1>
+    <p class="desc">Build-vs-buy for vector search.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a build-versus-buy choice almost every team hits the moment they need vector search. You could reach for a shiny dedicated vector database — Pinecone, Qdrant — that does <em>nothing but</em> nearest-neighbor search, and does it superbly. Or you could notice that you <em>already run Postgres</em>, and just… teach Postgres to store vectors too. It feels like a false economy at first: surely the purpose-built tool wins?</p>
+<p>Here's the reframe the module rests on: the right answer depends far less on 'which does ANN faster' than on <em>two other things</em> — whether your vectors need to be filtered by ordinary data you already store (like which user owns them), and how <em>many</em> vectors you'll have. The first favors keeping everything in one database, because a filter-then-search is just a normal SQL query when the vectors and the `user_id` live in the same place. The second eventually favors the dedicated tool, because a single Postgres box has a scaling ceiling that specialized systems are built to blow past.</p>
+<p>So we'll build up both forces — the JOIN advantage of staying in Postgres, and the scale advantage of leaving it — and find the crossover point where one overtakes the other. Take your time; the goal is to make 'start with pgvector, migrate at the ceiling' feel obvious rather than dogmatic.</p></section>
+    <section><h2>How It Works</h2><p>Start from what pgvector fundamentally <em>is</em>: it extends Postgres with a <strong>vector column type</strong> and an HNSW/IVF index, so your embeddings live <em>inside your relational database</em>. That single fact is the whole first half of the argument — because the vectors sit alongside your `user_id`, `tag`, and every other column, you can <strong>filter by any relational column before computing nearest neighbors, in one SQL query.</strong> That filter-then-search JOIN is something dedicated vector DBs cannot match natively, and it's decisive whenever results must be scoped to an owner or category.</p>
+<p>Now the opposing force. <strong>Dedicated vector DBs</strong> (Pinecone, Qdrant, Weaviate, Milvus) are purpose-built for ANN and nothing else — they keep the index in memory, <strong>shard it horizontally</strong> across nodes, and hold lower latency at high vector counts. So the two options are optimized for <em>different</em> things: pgvector for relational integration, dedicated DBs for pure ANN at scale. Which means there must be a crossover, and the crossover is set by <em>scale.</em></p>
+<p>Here's where it lands: pgvector handles up to <strong>~10M vectors</strong> well, but beyond that its query latency climbs and scaling out requires <strong>Postgres sharding</strong>, which is genuinely complex. And notice the JOIN advantage actually <em>reverses</em> past that ceiling — at 100M vectors you emphatically do <em>not</em> want vector search bottlenecking the relational database your whole application depends on. There's also a hidden cost the 'pgvector is free' framing omits: a memory-resident HNSW index consumes significant RAM and query CPU on the <em>same instance</em> as your relational workload, so contention can force a bigger instance tier or a dedicated read replica.</p>
+<p>So the decision rule falls out of the two forces cleanly. <strong>Start with pgvector</strong> when you already run Postgres and need relational filters with your vectors — `ALTER TABLE ADD COLUMN embedding vector(1536)` deploys in minutes — and <strong>migrate when you hit the ceiling</strong> (past ~10M vectors, or when ANN latency becomes the bottleneck). The migration itself is straightforward and non-disruptive: <strong>dual-write</strong> to both stores during transition, <strong>backfill</strong> the new index, then <strong>cut over reads.</strong> The interactive lets you dial vector count and filtering needs and watch the recommendation flip at the crossover; then the closing scenario hands you a real 2M-document, per-user feature on an existing Postgres stack — make the call before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>pgvector lives inside Postgres</strong> — a `WHERE user_id = $1` pre-filter runs in the <em>same</em> SQL query as the ANN search, a JOIN dedicated DBs can't match natively.</li><li><strong>Dedicated DBs (Pinecone/Qdrant/Weaviate/Milvus) are purpose-built for ANN</strong> — in-memory, horizontally sharded, lower latency at high vector counts.</li><li><strong>The crossover is ~10M vectors</strong> — beyond that, pgvector latency climbs and scaling needs complex Postgres sharding.</li><li><strong>The JOIN advantage reverses above the ceiling</strong> — at 100M vectors you don't want vector search bottlenecking your relational DB.</li><li><strong>Start with pgvector when you already run Postgres</strong> — `ALTER TABLE ADD COLUMN embedding vector(1536)` deploys in minutes; migrate on hitting the ceiling.</li><li><strong>'Free' pgvector has a hidden cost</strong> — a memory-resident HNSW index contends with relational workload, often forcing a bigger instance or a dedicated replica.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your backend team already runs Postgres in production, and a new feature needs vector similarity search across <strong>2M documents</strong>, each owned by a specific user. The options: add <strong>pgvector</strong> to the existing cluster, or adopt a dedicated vector DB (Pinecone, Qdrant). Take a moment: which force dominates <em>here</em> — the per-user filtering, or raw scale? Here's the reasoning, step by step. Every query must return only <em>this</em> user's documents, and because pgvector lives inside Postgres you can write `... ORDER BY embedding &lt;-&gt; $1 WHERE user_id = $2 LIMIT 10` — a filter-then-search JOIN in a <em>single</em> query, which dedicated DBs can't do natively. And 2M vectors sits comfortably under pgvector's ~10M-vector ceiling, so none of the scale pressure that would favor a dedicated system applies yet. The one cost the 'pgvector is free' framing hides is real but manageable at this size: a memory-resident HNSW index shares CPU and RAM with your relational workload, so watch for contention. So the recommendation is pgvector now — `ALTER TABLE ADD COLUMN embedding vector(1536)` ships in minutes — with a clean migration path (dual-write, backfill, cut over reads) held in reserve for if and when you cross ~10M vectors or ANN latency becomes the bottleneck.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Default to pgvector when you already run Postgres and need relational JOINs with your vectors. The JOIN superpower — WHERE user_id = $1 in the same query — is something dedicated DBs cannot replicate natively. Migrate when you exceed ~10M vectors or when ANN latency becomes the bottleneck. Dedicated vector DBs win at massive scale and pure ANN performance. Many production systems run hybrid: pgvector for small-to-mid workloads with JOIN requirements, dedicated DB for high-scale pure vector routes.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

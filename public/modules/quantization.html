@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quantization: int8/int4 Without Wrecking Quality | GenAI Systems Lab</title>
+  <meta name="description" content="PTQ vs QAT, GPTQ/AWQ, KV-cache quant, and the memory-vs-accuracy dial.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/quantization">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/quantization">
+  <meta property="og:title" content="Quantization: int8/int4 Without Wrecking Quality | GenAI Systems Lab">
+  <meta property="og:description" content="PTQ vs QAT, GPTQ/AWQ, KV-cache quant, and the memory-vs-accuracy dial.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Quantization: int8/int4 Without Wrecking Quality">
+  <meta name="twitter:description" content="PTQ vs QAT, GPTQ/AWQ, KV-cache quant, and the memory-vs-accuracy dial.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Quantization: int8/int4 Without Wrecking Quality","description":"PTQ vs QAT, GPTQ/AWQ, KV-cache quant, and the memory-vs-accuracy dial.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/quantization"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">FOUNDATIONS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Quantization: int8/int4 Without Wrecking Quality</h1>
+    <p class="desc">PTQ vs QAT, GPTQ/AWQ, KV-cache quant, and the memory-vs-accuracy dial.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with something you already know is true: a trained model is just a giant pile of numbers. Billions of them. And every one of those numbers is stored in some format that takes up a fixed number of bytes — that's a choice someone made, not a law of nature.</p>
+<p>Here's the puzzle we'll unravel. Those numbers were stored <em>generously</em> during training, because training is delicate and needs the extra precision. But you're not training anymore — you're just running the model forward to get answers. So a fair question hangs in the air: do you still need all those bytes per number once training is done? If the answer is no, you could shrink the whole model dramatically and fit it on hardware that could never hold it before.</p>
+<p>Take your time with this one. We'll work out exactly how much precision you can strip away, watch a naive attempt break in a very specific and sneaky way, and see why the <em>smart</em> methods survive where the lazy one collapses. By the end you'll be able to look at a model that passed every demo and then failed in production, and name the cause in a sentence.</p></section>
+    <section><h2>How It Works</h2><p>A model's parameters are <strong>just numbers</strong>, and the precision you store them in is a free variable.</p>
+<p>Training happens in fp16 or bf16 — <strong>2 bytes per parameter</strong>. That precision was necessary <em>during training</em> to accumulate tiny gradient updates without underflow. But at inference you're only doing a forward pass — you don't need 16 bits of dynamic range to multiply a weight by an activation.</p>
+<p>Quantization exploits exactly this: store each weight in <strong>fewer bits</strong>, and the model still runs — just with a lossier representation of each number. <mark>The core question is how much precision you can strip before behavior degrades — and the answer depends heavily on which method you use and which bits you target.</mark></p>
+<p>The reason to care is <strong>pure memory arithmetic</strong> — and it's the same arithmetic that decides which GPU a model fits on.</p>
+<p>`params × bytes_per_param = weight memory`. fp16 is 2 bytes; int8 is 1 byte; int4 is 0.5 bytes.</p>
+<p><mark>That linear scaling is the entire value proposition:</mark> halve the bit-width, halve the VRAM — and a model that needed a multi-GPU node now fits on <strong>one card</strong>.</p>
+<div class="illustration"><div class="illustration-label">VRAM by precision (70B model) and which GPU it fits</div><pre>Weight memory = num_params × bytes_per_param
+
+70B model:
+  fp16  (2 bytes)   →  70e9 × 2    = 140 GB   →  needs 2× A100 80GB (won't fit on one)
+  int8  (1 byte)    →  70e9 × 1    =  70 GB   →  fits on 1× A100 80GB (with headroom for KV cache)
+  int4  (0.5 bytes) →  70e9 × 0.5  =  35 GB   →  fits on 1× A100 40GB, or leaves ~45GB for KV/batching on 80GB
+
+Smaller models, same math:
+  13B fp16 → 26 GB   int4 → 6.5 GB  (fits a 24GB consumer 4090)
+  7B  fp16 → 14 GB   int4 → 3.5 GB  (fits an 8GB laptop GPU)
+
+Note: this is WEIGHTS only. Activations + KV cache add on top — int4 weights
+are what create the headroom to actually batch requests and hold long contexts.</pre></div>
+<p>Quantization splits into <strong>two families</strong> by <em>when</em> it happens.</p>
+<p><strong>Post-Training Quantization (PTQ)</strong> takes an already-trained fp16 model and compresses the weights afterward — no gradient updates, no training loop. It runs in minutes to hours on a single GPU and needs only a small calibration set. <mark>This is what you reach for 95% of the time.</mark></p>
+<p><strong>Quantization-Aware Training (QAT)</strong> instead simulates the quantized forward pass <em>during</em> training or fine-tuning, so the optimizer learns weights that are robust to the rounding error. QAT recovers more quality at very low bit-widths — but costs a full training run and a labeled dataset.</p>
+<p>The decision rule: <strong>use PTQ</strong> unless you're pushing below 4-bit or PTQ has measurably failed your evals. Only then is QAT's training cost justified.</p>
+<p>Within PTQ, the naive method is <strong>round-to-nearest (RTN)</strong> — map each weight to the closest value on a uniform int grid, scaled per-tensor or per-channel. This is what a one-line int4 flag often does, and it's exactly where the scenario's failure comes from.</p>
+<p>RTN assumes every weight is equally important and every error equally tolerable. <mark>Both assumptions are false.</mark> A handful of weight channels — the ones multiplied by large-magnitude <em>outlier</em> activations that transformers reliably produce — dominate the layer's output. Rounding those channels crudely injects error that <strong>propagates and compounds</strong> across dozens of layers.</p>
+<p>`int8` has 256 levels of resolution, so this rarely bites — which is why int8 RTN is usually near-lossless. `int4` has only <strong>16 levels</strong>, so crude rounding of the salient channels is catastrophic — precisely for multi-step tasks where per-layer error accumulates over a long reasoning chain.</p>
+<p>That's the whole scenario: the smoke test passed because single-step lookups tolerate the noise; multi-step arithmetic collapsed because <strong>errors compound</strong>.</p>
+<p>The smart int4 methods exist to solve exactly this.</p>
+<p><strong>GPTQ</strong> quantizes weights one layer at a time and uses second-order information — an approximation of the <em>Hessian</em> of the layer's reconstruction loss — to decide the rounding. Instead of rounding each weight independently, it rounds one weight, then adjusts the remaining not-yet-quantized weights to compensate for the error it just introduced. <mark>It minimizes the layer's output error, not the per-weight error.</mark></p>
+<p><strong>AWQ</strong> (Activation-aware Weight Quantization) takes a different route: it observes that a small fraction of channels are <em>salient</em> (they multiply the large activations), scales those channels <strong>up</strong> before quantizing so the grid resolves them finely, then scales the activations <strong>down</strong> to compensate — mathematically equivalent output, but the important channels survive int4.</p>
+<p>Both keep quality near-lossless at int4 where RTN fails. <strong>NF4</strong> (4-bit NormalFloat, from bitsandbytes/QLoRA) uses a <em>non-uniform</em> grid whose levels match the roughly-normal distribution of weights — more points where weights are dense (near zero), fewer in the sparse tails. Information-theoretically optimal for normally-distributed data, and the standard base for QLoRA fine-tuning.</p>
+<div class="illustration"><div class="illustration-label">The int8-vs-int4 quality cliff and why method choice matters</div><pre>Grid resolution:
+  int8 → 2^8  = 256 levels   (fine grid; RTN error is small)
+  int4 → 2^4  =  16 levels   (coarse grid; rounding is brutal)
+
+Quality on domain evals (typical, relative to fp16 baseline):
+  int8 RTN          ~99–100%   → near-lossless, ship it, no special method needed
+  int4 RTN (naive)  ~60–85%    → smoke test passes, reasoning/arithmetic COLLAPSES
+  int4 GPTQ         ~97–99%    → second-order error compensation saves it
+  int4 AWQ          ~97–99%    → salient-channel protection saves it
+  int4 NF4          ~97–99%    → optimal grid for weight distribution (QLoRA base)
+  below 4-bit (int3/int2) → degrades fast even WITH smart methods
+
+Why the cliff: outlier activations mean a few channels carry most of the signal.
+  256 levels tolerates crude rounding of those channels.
+   16 levels does not — you MUST protect them (AWQ) or compensate (GPTQ).</pre></div>
+<p>Weight quantization is only <strong>one lever</strong> — and for long-context serving it's often not the binding one.</p>
+<p>The <strong>KV cache</strong> — the stored keys and values for every past token — grows linearly with sequence length and concurrency, and at long contexts it can <em>exceed the weights</em> in memory. KV-cache quantization (FP8 or int8 KV) is a <strong>separate, orthogonal decision</strong>: you can run int4 weights with FP8 KV, or fp16 weights with int8 KV.</p>
+<p><mark>It's what lets you hold a 32K-token context or batch more concurrent users on the same card <em>after</em> you've already quantized weights.</mark> The KV cache is generated at runtime and is more sensitive than weights to precision loss in some regimes — so `FP8` (which preserves dynamic range better than int8 at the same bit count) is often preferred there.</p>
+<p>Treat <strong>weight-bits</strong> and <strong>KV-bits</strong> as two independent knobs on the memory budget.</p>
+<p>The final decision is a <strong>three-way tradeoff</strong> — accuracy vs. memory vs. latency — and quantization is not always the right tool.</p>
+<p>If a smaller model (e.g. a 13B) already meets quality, <em>just use it</em> — you avoid the quantization risk entirely and often get lower latency. If you need the 70B's capability but can't afford its footprint, <strong>distillation</strong> (train a small model to mimic the big one) can beat quantization on latency, but costs a training pipeline and a distillation dataset. <strong>Quantization wins</strong> when you must preserve the <em>exact</em> trained model's behavior and only need to shrink its footprint.</p>
+<p>And the single most under-appreciated failure mode is the <strong>calibration set</strong>. PTQ methods (GPTQ/AWQ) estimate activation statistics from a small calibration corpus. If that corpus doesn't match production traffic — calibrate on generic English but serve code and multilingual queries — the quantizer protects the <em>wrong</em> channels. The model passes smoke tests on the calibration-like distribution and tanks on the real one.</p>
+<p><mark>Calibration-set representativeness is a correctness requirement, not a detail.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Precision is a free variable at inference.</strong> Training needs fp16/bf16 for gradient accumulation; a forward pass does not. Quantization stores each weight in fewer bits — the model still runs, just lossier.</li><li><strong>Memory scales linearly with bit-width:</strong> `params × bytes_per_param`. fp16 (2B) → int8 (1B) → int4 (0.5B). A 70B model goes 140GB → 70GB → 35GB — which is exactly what decides the GPU it fits on.</li><li><strong>int8 RTN is near-lossless; int4 RTN silently breaks reasoning.</strong> 256 grid levels tolerate crude rounding of outlier-driven channels; 16 levels do not. Error compounds across layers, so multi-step tasks collapse while single-step smoke tests pass.</li><li><strong>Smart int4 methods rescue quality by protecting salient channels.</strong> GPTQ compensates rounding error using second-order (Hessian) info; AWQ scales up the outlier channels before rounding; NF4 uses a distribution-matched non-uniform grid. All ~97–99% vs fp16.</li><li><strong>Weight-bits and KV-cache-bits are independent knobs.</strong> The KV cache grows with sequence length and concurrency and can exceed the weights at long context; quantize it (FP8/int8 KV) separately to reclaim that memory.</li><li><strong>A mismatched calibration set is a correctness bug.</strong> PTQ estimates which channels are salient from the calibration corpus — calibrate on the real production distribution, or it protects the wrong channels.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A team fine-tuned a Llama-3 70B that hits every quality target, but they need to serve it on a single A100 80GB — and fp16 weights alone are 140GB, so it won't even load. An engineer quantizes it to int4 with a one-line bitsandbytes flag. It loads, smoke tests pass, it ships. A week later, support escalates: multi-step arithmetic and structured JSON generation have collapsed on real customer traffic, even though the demo looked fine.</p>
+<p>Take a moment before reading on — what could make a model pass every smoke test and then fail <em>specifically</em> on multi-step reasoning? Here's the reasoning, step by step. That one-line flag is almost certainly plain round-to-nearest, and int4 has only 16 grid levels. We saw that a handful of salient channels — the ones multiplied by transformers' large outlier activations — dominate each layer's output, and rounding those crudely injects error that <strong>compounds across dozens of layers</strong>. Notice how cleanly that explains the symptom: a single-fact lookup tolerates a little noise, so the smoke test passes; a multi-step arithmetic chain accumulates that error at every step until the answer is wrong. The fix follows directly from the mechanism — re-quantize with an outlier-aware method (AWQ scales up and protects the salient channels; GPTQ compensates rounding error with second-order information), and calibrate on traffic that actually looks like production. Same 70B model, same 35GB footprint — quality restored, because now the bits that matter survive.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Quantization trades precision for memory linearly (fp16 2B → int8 1B → int4 0.5B per param), and which GPU a model fits on falls straight out of that math. int8 is near-lossless with plain rounding; int4 needs outlier-aware methods (AWQ/GPTQ/NF4) or it silently breaks multi-step reasoning while passing smoke tests. Treat weight-bits and KV-cache-bits as independent knobs, and always calibrate PTQ on a corpus that matches production traffic — a mismatched calibration set is a correctness bug, not a detail.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

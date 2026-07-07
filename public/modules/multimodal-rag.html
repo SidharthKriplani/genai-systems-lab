@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multimodal RAG | GenAI Systems Lab</title>
+  <meta name="description" content="Retrieve the page, not the parse.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/multimodal-rag">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/multimodal-rag">
+  <meta property="og:title" content="Multimodal RAG | GenAI Systems Lab">
+  <meta property="og:description" content="Retrieve the page, not the parse.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Multimodal RAG">
+  <meta name="twitter:description" content="Retrieve the page, not the parse.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Multimodal RAG","description":"Retrieve the page, not the parse.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/multimodal-rag"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">MULTIMODAL</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Multimodal RAG</h1>
+    <p class="desc">Retrieve the page, not the parse.</p>
+
+    
+    <section><h2>How It Works</h2><p>VLMs can interpret images given to them directly — but they cannot retrieve them. Standard text RAG retrieves chunks by embedding similarity; figures and tables don't have text embeddings to match against a query. The representation problem: how do you make figures and tables retrievable in a text-based retrieval system?</p>
+<p>The figure captioning approach runs a VLM on each figure at index time to generate a descriptive text caption ('Bar chart showing model accuracy vs. parameter count for 8 models; GPT-4 achieves highest accuracy at 89%'). Captions are embedded and retrieved as text. When a relevant figure is retrieved, both the caption and the original image are passed to the generation model as context. Caption quality is the retrieval quality ceiling — a VLM that captions charts as 'a bar chart showing performance' without listing specific values will retrieve the right figure but the generation model won't have the detail needed to answer a specific question. Prompt captioners to explicitly enumerate all axis values, labels, and key data points.</p>
+<p>Tables in PDFs are often stored as whitespace-aligned text that breaks semantic chunking. Specialized extractors (Camelot and pdfplumber — Python libraries that parse tables directly from PDF files; Amazon Textract — a cloud OCR service) produce structured tables as JSON or CSV with explicit column headers and row values. Embed the structured table as a serialized JSON string — this preserves the relational structure that a natural language description loses, and allows exact value lookup at retrieval and generation time.</p>
+<p>Evaluate retrieval separately for text queries, figure queries, and table queries to identify which modality is underperforming. A 32% miss rate on figure questions is a different problem from a 32% miss rate on table questions, and each has a different fix.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>VLMs can interpret images but not retrieve them</strong> — figures and tables have no text embedding to match a query, so text-only RAG is blind to ~20-30% of paper content.</li><li><strong>Figure captioning is the low-friction entry point</strong> — caption each figure with a VLM at index time, embed the caption, then pass both caption and original image to the generator.</li><li><strong>Caption quality is the retrieval-quality ceiling</strong> — vague captions retrieve the right figure but lack the values to answer; prompt captioners to enumerate all axis values, labels, and key data points.</li><li><strong>Tables break semantic chunking</strong> — whitespace-aligned PDF text loses structure.</li><li><strong>Extract tables structurally (Camelot/pdfplumber/Textract) and embed as serialized JSON</strong> — this preserves headers/rows and enables exact value lookup, which a prose caption loses.</li><li><strong>Evaluate retrieval per modality</strong> — text vs figure vs table misses are different problems with different fixes.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>A research assistant tool needs to answer questions from 10,000 scientific papers where 24% of relevant information is in figures and tables. A text-only RAG pipeline achieves 68% accuracy; failures cluster around questions requiring figure or table data. You need to extend the pipeline to handle non-text content.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Text-only RAG is blind to 20-30% of scientific paper content. Figure captioning is the lowest-friction entry point — but caption quality is the retrieval quality ceiling. Prompt captioners to enumerate all values explicitly, pass both caption and original image to the generation model, and handle tables with structured extraction (JSON/CSV) rather than VLM captioning.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

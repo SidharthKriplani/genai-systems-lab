@@ -13,7 +13,9 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = join(__dirname, "..");
 const PUBLIC_GT = join(ROOT, "public", "gt");
-const BASE_URL  = "https://genai-systems-lab-ivory.vercel.app";
+// Parameterized (2026-07-08 SEO handoff) — Vercel domain for now, kept as fallback.
+// Custom-domain swap later = env var change only.
+const BASE_URL  = process.env.SITE_BASE_URL || "https://genai-systems-lab-ivory.vercel.app";
 
 // ── Load source data via vm (avoids JSX/Vite transform dependency) ───────────
 

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chain-of-Thought: When It Helps and When It Costs You | GenAI Systems Lab</title>
+  <meta name="description" content="CoT always costs tokens. See which task types actually benefit — and which ones don't.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/chain-of-thought">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/chain-of-thought">
+  <meta property="og:title" content="Chain-of-Thought: When It Helps and When It Costs You | GenAI Systems Lab">
+  <meta property="og:description" content="CoT always costs tokens. See which task types actually benefit — and which ones don't.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Chain-of-Thought: When It Helps and When It Costs You">
+  <meta name="twitter:description" content="CoT always costs tokens. See which task types actually benefit — and which ones don't.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chain-of-Thought: When It Helps and When It Costs You","description":"CoT always costs tokens. See which task types actually benefit — and which ones don't.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/chain-of-thought"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROMPTING</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Chain-of-Thought: When It Helps and When It Costs You</h1>
+    <p class="desc">CoT always costs tokens. See which task types actually benefit — and which ones don't.</p>
+
+    <section><h2>Start Here</h2><p>Let's start by picturing how a model answers a math question by default. It reads the question and then just... starts producing the answer, token by token, straight through. There's no scratch paper, no &quot;let me work this out&quot; — it goes from question to result in one uninterrupted stream. For &quot;what's 2+2&quot; that's fine. For a compound-interest calculation with several dependent steps, it's like being asked to multiply two big numbers <em>in your head out loud</em> without pausing — one early slip and everything after it is wrong.</p>
+<p>Here's the simple, almost magical idea at the center of this module. What if you just asked the model to <em>show its work</em> — write the formula, plug in the numbers, do each arithmetic step — before committing to a final answer? It turns out this helps enormously, and <em>why</em> it helps is the beautiful part. The model isn't suddenly smarter or double-checking itself. It's that once it has written a correct step, the <em>next</em> correct step becomes far more likely, because it saw millions of tidy worked derivations in training and it's now completing that familiar pattern instead of guessing.</p>
+<p>That's <strong>chain-of-thought</strong>, and we'll build up exactly how the mechanism works, when it genuinely helps, and how to make it more reliable still. Take your time — the idea is small, but knowing precisely <em>why</em> it works is what lets you predict when it will.</p></section>
+    <section><h2>How It Works</h2><p>Let's start by reading what a 62%-style baseline is actually telling us, because it points straight at the mechanism. When a model is right most of the time on calculations, it clearly <em>has</em> the underlying capability — so the failures are about <em>execution</em>, not knowledge. Here's the likely cause: generating a direct answer means predicting one unconstrained token stream from question to result. But multi-step calculations have sequential dependencies — if the formula substitution in step 2 is wrong, every step after it compounds the error. Without explicit intermediate steps, each token is generated conditioned only on the question and the model's current forward pass, with <em>no structural constraint</em> forcing mathematical consistency between the problem and the answer. Pause on that phrase — &quot;no structural constraint&quot; — because chain-of-thought is precisely the act of adding one.</p>
+<p>So let's see exactly how CoT adds that structure. It restructures the generation into a chain: question → formula identification → variable substitution → each arithmetic step → final answer. And here's the mechanism, stated carefully because it's the whole point: each correct intermediate step <em>increases the conditional probability of the next correct step</em>. The model learned from millions of worked derivations in pre-training that well-formed calculations follow consistent patterns, so a correct formula substitution makes a wrong exponent application less likely — not because the model is &quot;checking&quot; anything, but because &quot;rate=0.05, periods=12&quot; is reliably followed by &quot;1.05^12&quot; in training data far more than a direct answer reliably follows a problem statement. Notice what this means: <strong>CoT doesn't add capability — it routes generation through the derivation patterns the model already knows.</strong></p>
+<p>So let's turn the mechanism into practical choices. Zero-shot CoT — simply &quot;show your work before giving the final number&quot; — is the right starting point, no examples required. Few-shot CoT goes further, supplying complete worked examples with full derivation traces to pin down a domain-specific calculation <em>style</em>. And self-consistency runs the same prompt several times and takes the majority-vote answer across independent chains — the most robust option for high-stakes work, at the cost of multiple inference calls. The interactive just below lets you watch these steps constrain each other in real time, and the production case at the end is exactly this decision — a shaky calculation baseline, and which flavor of CoT to reach for given what a wrong answer would cost.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A 62% baseline means capability without execution</strong> — the model can do it but a direct answer is one unconstrained token stream, so step-2 errors compound.</li><li><strong>CoT routes generation through derivation patterns</strong> — each correct step raises the conditional probability of the next correct step, matching millions of worked derivations from pre-training.</li><li><strong>It adds no new capability</strong> — it structures generation; it is not the model 'checking' its work.</li><li><strong>Zero-shot CoT is the right start</strong> — 'show your work before the final number' needs no examples and closes most of the gap.</li><li><strong>Few-shot CoT gives format guidance</strong> — full worked traces for domain-specific calculation style.</li><li><strong>Self-consistency = majority vote over independent chains</strong> — most robust for high-stakes math where one chain error is costly, at the cost of multiple inference calls.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A financial Q&amp;A feature has to compute compound interest, amortization schedules, and tax estimates. Zero-shot accuracy on a 50-question test set is 62%, and a teammate suggests chain-of-thought. Take a moment before reading on: is CoT likely to help <em>here specifically</em>, and why? Here's the reasoning, step by step. A 62% baseline is a strong clue — the model clearly <em>has</em> the underlying capability (it's right most of the time), so it's failing at <em>execution</em>, not knowledge. That's precisely the failure CoT targets: these calculations have sequential dependencies, and a direct answer streams from question to result with no structure forcing consistency between the two, so an early slip compounds. CoT restructures generation into formula → substitution → each arithmetic step → answer, and each correct step raises the probability of the next correct one. Notice the fit: this is exactly the multi-step-arithmetic case where CoT shines, so zero-shot CoT (&quot;show your work first&quot;) should close most of the gap. And where a single chain error would have real financial consequences, layer on self-consistency — run it several times, take the majority vote — for robustness. The diagnosis and the tool match.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Chain-of-thought works by structuring generation so each reasoning step constrains the next, matching derivation patterns from training data. Use it for multi-step arithmetic, logical deductions, and multi-hop reasoning. Add self-consistency (majority vote over multiple chains) for high-stakes answers where single-chain reliability is insufficient.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

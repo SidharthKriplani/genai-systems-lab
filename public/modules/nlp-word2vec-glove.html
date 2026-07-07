@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word2Vec &amp; GloVe | GenAI Systems Lab</title>
+  <meta name="description" content="Skip-gram vs CBOW, negative sampling, and word arithmetic — the training side of embeddings.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nlp-word2vec-glove">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nlp-word2vec-glove">
+  <meta property="og:title" content="Word2Vec &amp; GloVe | GenAI Systems Lab">
+  <meta property="og:description" content="Skip-gram vs CBOW, negative sampling, and word arithmetic — the training side of embeddings.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Word2Vec &amp; GloVe">
+  <meta name="twitter:description" content="Skip-gram vs CBOW, negative sampling, and word arithmetic — the training side of embeddings.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Word2Vec & GloVe","description":"Skip-gram vs CBOW, negative sampling, and word arithmetic — the training side of embeddings.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nlp-word2vec-glove"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">NLP FOUNDATIONS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Word2Vec &amp; GloVe</h1>
+    <p class="desc">Skip-gram vs CBOW, negative sampling, and word arithmetic — the training side of embeddings.</p>
+
+    
+    <section><h2>How It Works</h2><p>Everything here rests on one deceptively simple idea, so state it first and let the rest follow. The <strong>distributional hypothesis</strong>: <em>a word is known by the company it keeps.</em> Words that appear in similar contexts tend to have similar meanings. 'Cat' and 'dog' both show up near 'pet', 'vet', 'feed', 'fur'; 'termination' and 'cancellation' both sit near 'contract', 'clause', 'notice', 'effective date'. <mark>No human ever labels the synonyms — the <em>statistics of co-occurrence</em> carry the meaning.</mark> Word2Vec and GloVe are two different machines for squeezing that co-occurrence signal into a dense vector per word, and both work because meaning genuinely does live in context.</p>
+<p><strong>Word2Vec</strong> turns the hypothesis into a <em>prediction</em> task, and there are two mirror-image ways to frame it. In <strong>Skip-gram</strong>, you take a center word and try to <em>predict its context</em> — given 'termination', predict the surrounding words 'contract', 'notice', 'effective'. In <strong>CBOW</strong> (Continuous Bag of Words), you flip it: take the context words and predict the <em>center</em> word — given 'contract … notice … effective', predict 'termination'. In both, the <em>side effect</em> of learning to predict well is that the model must place words used in similar contexts near each other in vector space. The vectors are what you keep; the prediction task is just the pretext.</p>
+<p><mark>When does each win? Skip-gram is generally better for <strong>rare words and small datasets</strong>, because each rare center word generates several independent (center, context) training signals — one per context word — so a rare word gets multiple gradient updates from a single occurrence. CBOW <em>averages</em> its context into one prediction, which smooths over rare words and trains faster on large corpora, so it's the pick when data is plentiful and speed matters.</mark></p>
+<div class="illustration"><div class="illustration-label">Skip-gram vs CBOW — mirror directions</div><pre>Sentence:  the  quick  brown  [fox]  jumps  over
+                              ^center       (window = 2)
+
+SKIP-GRAM   (predict CONTEXT from center)
+   fox ─►  quick ,  brown ,  jumps ,  over
+   one center word  ──►  MANY (center, context) pairs
+   → rare word &quot;fox&quot; gets several updates per occurrence
+   → wins on RARE words / small data
+
+CBOW        (predict CENTER from context)
+   quick , brown , jumps , over  ─►  fox
+   context is AVERAGED into one prediction
+   → smooths over rare words, trains faster
+   → wins on LARGE data / speed</pre></div>
+<p>Now the bottleneck that nearly sinks the naive version, because the fix is a favourite interview target. To predict a context word, Skip-gram wants a probability over <em>the entire vocabulary</em> — a softmax whose denominator sums over every word (often hundreds of thousands). <mark>Computing that normalizing sum for every training pair is brutally expensive: one forward/backward pass touches the whole vocabulary.</mark> Two fixes make it tractable. <strong>Negative sampling</strong> reframes the problem entirely: instead of 'predict the right word out of 400,000', it asks a much cheaper <em>binary</em> question — 'is this (center, context) pair a <em>real</em> pair from the corpus, or a <em>fake</em> one I drew from noise?' For each true pair you sample a handful (say 5–20) of random 'negative' words and train a logistic classifier to score the real pair high and the noise pairs low. You update weights for only ~k+1 words per step, not the whole vocabulary. <strong>Hierarchical softmax</strong> is the other fix: arrange the vocabulary as a binary (Huffman) tree so predicting a word costs ~log(V) node decisions instead of V — roughly 17 steps for a 130k vocabulary instead of 130,000.</p>
+<div class="illustration"><div class="illustration-label">The softmax bottleneck and its two fixes</div><pre>FULL SOFTMAX (naive):  P(context | center) = exp(...) / Σ over ALL V words
+   V = 400,000  →  every update normalizes over 400,000 words.  Too slow.
+
+NEGATIVE SAMPLING (turn it into binary real-vs-noise):
+   real pair:  (fox, jumps)           → label 1  (&quot;is this real?&quot;)
+   noise:      (fox, banana)          → label 0
+               (fox, democracy)       → label 0   (k≈5-20 sampled)
+   update ~ k+1 words per step, NOT V.  Logistic loss, hugely cheaper.
+
+HIERARCHICAL SOFTMAX (tree instead of flat list):
+   words = leaves of a binary tree;  predict = walk root→leaf
+   cost ~ log2(V) ≈ 17 node decisions for V=130k   (vs 130,000)</pre></div>
+<p>Here's the result that made Word2Vec famous and revealed something deep about the space: <strong>word analogies as vector arithmetic.</strong> Take the vector for 'king', subtract 'man', add 'woman' — the nearest word to the result is <em>'queen'</em>. `king − man + woman ≈ queen`. Similarly `paris − france + italy ≈ rome`. <mark>This works because the embedding space has learned approximately <em>linear</em> structure: a consistent 'gender' direction, a 'capital-of' direction, a 'plural' direction. Meaning-differences become roughly constant vector offsets.</mark> The model was never told about gender or capitals; those regularities <em>emerged</em> from co-occurrence statistics alone. That linear structure is a big part of why these embeddings were so useful as drop-in features.</p>
+<div class="illustration"><div class="illustration-label">Analogies as vector offsets (linear structure)</div><pre>        woman ● ─────────────► ● queen
+               ▲                  ▲
+     &quot;gender&quot;  │                  │  &quot;gender&quot;   (same offset vector)
+       offset  │                  │
+         man ● ─────────────► ● king
+                  &quot;royalty&quot;
+
+   king − man + woman ≈ queen
+   The (man→woman) offset ≈ the (king→queen) offset.
+   A single consistent DIRECTION encodes &quot;gender&quot;. Emergent, unlabeled.</pre></div>
+<p><strong>GloVe</strong> (Global Vectors) reaches the same destination by a different road, and the contrast is a clean interview point. Word2Vec is <em>local</em>: it slides a window across the corpus and learns from each local (center, context) pair, never explicitly building a global picture. GloVe is <em>global</em>: it first builds the full <strong>word-word co-occurrence matrix</strong> X (how often word i appears near word j across the <em>entire</em> corpus), then learns vectors by <em>factorizing</em> that matrix — fitting vectors so that `wᵢ · wⱼ` approximates a function of `log(Xᵢⱼ)`. <mark>GloVe's insight is that the meaningful signal lives in <strong>ratios of co-occurrence probabilities</strong>: P(ice near 'solid') / P(steam near 'solid') is large, P(ice near 'gas') / P(steam near 'gas') is small — those <em>ratios</em> discriminate 'ice' from 'steam' far better than raw counts. GloVe designs its objective so vector differences capture exactly those ratios.</mark> Practically, Word2Vec (esp. skip-gram + negative sampling) and GloVe land in very similar places; GloVe's global counts can be more efficient to reuse, Word2Vec's streaming is simpler online.</p>
+<p>Now the limitation you must warn the team about, because it defines the entire next era. Both Word2Vec and GloVe produce <strong>static embeddings</strong>: <em>one fixed vector per word type</em>, computed once and frozen. But 'bank' means a riverbank in 'sat on the bank' and a financial institution in 'deposited at the bank' — and a static embedding is forced to represent both senses with the <em>same single point</em>, landing somewhere in the muddled average between them. <mark>A static embedding cannot depend on the sentence the word appears in; it collapses every sense of a polysemous word into one vector.</mark> This is the hard ceiling. The fix is <strong>contextual embeddings</strong> — ELMo, then BERT — where the vector for 'bank' is <em>computed from the whole sentence at inference time</em>, so 'river bank' and 'bank account' get <em>different</em> vectors. That single limitation is the bridge from this module to the transformer era: static → contextual is <em>the</em> leap.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Distributional hypothesis: a word is known by the company it keeps.</strong> Words in similar contexts get similar vectors — meaning emerges from co-occurrence statistics, with zero human labels. Word2Vec and GloVe are two machines for compressing that signal into dense per-word vectors.</li><li><strong>Word2Vec = prediction. Skip-gram predicts context from the center word; CBOW predicts the center from context.</strong> Skip-gram wins on rare words / small data (each occurrence yields several training pairs); CBOW averages context, is faster, and wins on large corpora. The vectors are the side effect of learning to predict.</li><li><strong>The full softmax over the whole vocabulary is the bottleneck.</strong> Two fixes: negative sampling reframes it as cheap binary 'real pair vs sampled noise' logistic discrimination (update ~k+1 words, not V); hierarchical softmax uses a binary tree so prediction costs ~log(V), not V.</li><li><strong>Analogies are vector arithmetic: king − man + woman ≈ queen.</strong> The space learns approximately linear structure — a consistent 'gender' or 'capital-of' direction — so meaning-differences become constant offsets. These regularities emerge purely from co-occurrence, never labeled.</li><li><strong>GloVe factorizes the GLOBAL word-word co-occurrence matrix (via ratios of co-occurrence probabilities); Word2Vec learns from LOCAL sliding windows.</strong> Both are STATIC embeddings — one frozen vector per word — so 'bank' (river vs money) collapses to one point. That ceiling motivates contextual embeddings (ELMo/BERT).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You're building the search layer for a legal-docs product, and before any transformer touches the problem you need word vectors — a way to turn 'termination' and 'cancellation' into numbers that land near each other. A junior engineer asks the obvious question: how does a model learn that two words <em>mean</em> similar things when all it ever sees is raw text with no dictionary, no synonyms file, no human labels? You reach for the two classics that answered exactly this — Word2Vec and GloVe — because their core idea still underlies every embedding model shipping today. And there's a subtle failure you need to warn the team about early: the word 'bank' in 'river bank' and 'bank account' is going to collapse to a <em>single</em> vector, and that limitation is precisely what pushed the field toward BERT.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Word2Vec and GloVe both operationalize the distributional hypothesis — a word is known by the company it keeps — but Word2Vec learns from local sliding windows (Skip-gram predicts context, better for rare words; CBOW predicts the center, faster) while GloVe factorizes the global co-occurrence matrix via ratios of probabilities; both sidestep the full-vocabulary softmax with negative sampling or hierarchical softmax, and both reveal emergent linear structure (king − man + woman ≈ queen). Their shared, defining limitation is that they are static — one frozen vector per word — so a polysemous word like 'bank' collapses to a single point, which is exactly the ceiling contextual embeddings (ELMo/BERT) were built to break.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

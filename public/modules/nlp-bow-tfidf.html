@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bag-of-Words &amp; TF-IDF | GenAI Systems Lab</title>
+  <meta name="description" content="Sparse text vectors, why IDF weights discriminative terms, and the line to BM25.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nlp-bow-tfidf">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nlp-bow-tfidf">
+  <meta property="og:title" content="Bag-of-Words &amp; TF-IDF | GenAI Systems Lab">
+  <meta property="og:description" content="Sparse text vectors, why IDF weights discriminative terms, and the line to BM25.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bag-of-Words &amp; TF-IDF">
+  <meta name="twitter:description" content="Sparse text vectors, why IDF weights discriminative terms, and the line to BM25.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Bag-of-Words & TF-IDF","description":"Sparse text vectors, why IDF weights discriminative terms, and the line to BM25.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nlp-bow-tfidf"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">NLP FOUNDATIONS</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Bag-of-Words &amp; TF-IDF</h1>
+    <p class="desc">Sparse text vectors, why IDF weights discriminative terms, and the line to BM25.</p>
+
+    
+    <section><h2>How It Works</h2><p>Before any of this, you need a way to turn text into numbers a machine can compare. The most basic is the <strong>one-hot vector</strong>: assign every word in your vocabulary an index, and represent a single word as a vector that's all zeros except a 1 at its index. A vocabulary of 50,000 words means a 50,000-dimensional vector with a single 1. It's a pure identity label — <mark>one-hot vectors encode <em>which</em> word but carry zero information about meaning: 'king' and 'queen' are exactly as far apart as 'king' and 'banana'.</mark></p>
+<p>To represent a whole <em>document</em>, you sum the one-hots of its words, which gives a <strong>bag-of-words (BoW) count vector</strong>: one dimension per vocabulary word, each entry holding how many times that word appears. 'the cat sat on the mat' becomes a vector with 2 in the 'the' slot, 1 in each of 'cat'/'sat'/'on'/'mat', and 0 everywhere else. The name is the warning label: it's a <em>bag</em>, so <mark>word order is completely discarded — 'dog bites man' and 'man bites dog' produce the identical vector.</mark> BoW vectors are also brutally <strong>sparse</strong>: a short document touches a few dozen of your 50,000 dimensions, so nearly every entry is zero.</p>
+<p>Raw counts have the exact bug in the scenario: they reward whatever appears <em>most</em>, and what appears most is filler ('the', 'to', 'how'). The fix is <strong>TF-IDF</strong>, which reweights each term by two multiplied factors. <strong>Term frequency</strong> `tf(t,d)` = how often term `t` appears in document `d` (a word matters more in a doc that uses it a lot). <strong>Inverse document frequency</strong> `idf(t) = log(N / df(t))`, where `N` is the total number of documents and `df(t)` is how many documents contain `t` at all. The full weight is <mark>`tf-idf(t,d) = tf(t,d) × log(N / df(t))`.</mark></p>
+<div class="illustration"><div class="illustration-label">Why IDF crushes 'the' and lifts 'password'</div><pre>Corpus of N = 1000 help articles.
+
+term        df (docs containing it)   idf = log(N/df)
+──────────────────────────────────────────────────────
+&quot;the&quot;       1000  (in every doc)      log(1000/1000) = 0     ← killed
+&quot;to&quot;         950                      log(1000/950)  ≈ 0.05   ← tiny
+&quot;reset&quot;       80                      log(1000/80)   ≈ 2.53
+&quot;password&quot;    30  (rare, telling)     log(1000/30)   ≈ 3.51   ← amplified
+
+  A word in EVERY document has idf = log(1) = 0, so its tf-idf is 0
+  no matter how often it appears — ubiquity means zero discriminative
+  power. A RARE word gets a large idf, so even a few occurrences give it
+  a high weight. TF-IDF = &quot;how much this term is IN this doc&quot; TIMES
+  &quot;how much this term SETS this doc APART from the rest.&quot;</pre></div>
+<p>Sit with <em>why</em> the `log(N/df)` form does the right thing. If a term appears in <strong>every</strong> document, `df = N`, so `idf = log(N/N) = log(1) = 0` — its weight is annihilated regardless of how often it occurs. That's exactly what you want for 'the': ubiquity means zero discriminating power. If a term appears in <strong>one</strong> document out of a million, `idf = log(1,000,000)` is large, so that rare term dominates the vector. <mark>IDF operationalizes a deep intuition: a word is informative about a document in proportion to how <em>rare</em> it is across the corpus — commonness is the enemy of signal.</mark> The `log` damps the effect so a term in 10 docs isn't treated as 100x more important than one in 1000 docs, just meaningfully more.</p>
+<p>Two documents of different lengths can't be compared on raw TF-IDF vectors — a long article has bigger numbers everywhere just for being long. So you <strong>L2-normalize</strong> each vector to unit length (divide by its magnitude), which cancels the length effect. Then you compare documents with <strong>cosine similarity</strong>: the dot product of the two unit vectors, which equals the cosine of the angle between them. <mark>Cosine similarity measures <em>direction</em>, not magnitude — do these two documents point the same way in term-space? — so it's naturally length-invariant, and after L2 normalization it's just a dot product.</mark> A query is treated as a tiny document, TF-IDF-weighted the same way, and you rank corpus documents by cosine similarity to the query vector. The short 'Password reset' article now wins because its <em>direction</em> is dominated by the high-IDF term the query cares about.</p>
+<p>Be honest about the ceiling, because interviewers push here. TF-IDF has <strong>no notion of meaning</strong>: it matches only on <em>shared literal terms</em>. A query 'reset password' and a document that says 'recover credentials' have near-zero cosine similarity despite being about the same thing — the <strong>synonymy / vocabulary-mismatch problem</strong>. It also lives in a <strong>huge, sparse space</strong> (one dimension per vocabulary word, most entries zero), which is memory-heavy and blind to any structure between dimensions. <mark>TF-IDF is powerful precisely because it's lexical, and limited for exactly the same reason: it sees words, never concepts.</mark></p>
+<p>Two lines connect this to everything modern. First, <strong>BM25</strong> is TF-IDF grown up: it keeps the IDF idea but adds two refinements TF-IDF lacks — <em>TF saturation</em> (the 20th occurrence of a word adds far less than the 2nd, via a bounded curve rather than raw linear counts) and <em>document-length normalization</em> baked directly into the score (so long docs don't get an unfair edge). BM25 is the default sparse retriever in production search for exactly these fixes. Second, <mark>TF-IDF/BM25 is the <em>sparse</em> half of modern <strong>hybrid retrieval</strong>: you fuse a lexical retriever (great at exact/rare terms) with a dense embedding retriever (great at meaning) because their strengths are mirror images.</mark> Understanding TF-IDF isn't historical trivia — it's one of the two legs today's retrieval stands on.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>One-hot → bag-of-words builds document vectors but loses meaning and order.</strong> One-hot encodes only word identity ('king' as far from 'queen' as from 'banana'); summing them gives a BoW count vector that discards word order ('dog bites man' = 'man bites dog') and is brutally sparse.</li><li><strong>TF-IDF = tf(t,d) × log(N/df(t)) down-weights the ubiquitous and up-weights the discriminative.</strong> TF says a term matters more when frequent <em>in this doc</em>; IDF says it matters more when <em>rare across the corpus</em>. A term in every doc gets idf = log(1) = 0, so filler like 'the' is annihilated.</li><li><strong>IDF's log(N/df) form encodes 'rare = informative' with damping.</strong> df = N → idf = 0 (killed); a term in 1 of a million docs → large idf (dominates). The log prevents rarity from being rewarded too extremely (10 docs isn't 100x a 1000-doc term).</li><li><strong>L2-normalize, then compare with cosine similarity for length-invariant matching.</strong> Long docs have bigger raw numbers; unit-normalizing cancels length, and cosine (the dot product of unit vectors = angle between them) measures direction not magnitude. The query is a tiny TF-IDF doc; rank by cosine to it.</li><li><strong>Limits (no semantics, huge sparse space) motivate BM25 and hybrid retrieval.</strong> TF-IDF matches only literal shared terms, so synonyms miss (vocabulary mismatch) and dimensionality is huge/sparse. BM25 adds TF saturation + length normalization; TF-IDF/BM25 is the sparse leg fused with dense embeddings in hybrid retrieval.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You're building a first-pass document search over a few thousand help-center articles, no embeddings yet, just classical IR. Your naive approach counts word overlap between the query and each document, and it's oddly bad: the query 'how to reset password' keeps surfacing long articles that happen to say 'the' and 'to' and 'how' a hundred times, while the one crisp article titled 'Password reset' ranks low because it's short and uses those filler words less. The signal you care about — the rare, telling word 'password' — is being drowned out by ubiquitous words that appear everywhere and mean nothing. You need a weighting that punishes the common and rewards the discriminative.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Bag-of-words turns documents into sparse count vectors that lose word order and meaning, and raw counts wrongly reward ubiquitous filler; TF-IDF fixes this with tf(t,d) × log(N/df(t)), where IDF annihilates terms appearing everywhere (idf = log(1) = 0) and amplifies rare, discriminative ones. Documents are L2-normalized and compared by cosine similarity so ranking is length-invariant and direction-based, with the query treated as a tiny TF-IDF document. TF-IDF's blindness to synonymy and its huge sparse space motivate BM25 (adds TF saturation and document-length normalization) and the sparse leg of modern hybrid dense+sparse retrieval.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

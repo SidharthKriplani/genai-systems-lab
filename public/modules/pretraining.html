@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pretraining: What the Base Model Actually Learns | GenAI Systems Lab</title>
+  <meta name="description" content="What emerges from next-token prediction at scale — and why you almost never train from scratch.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/pretraining">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/pretraining">
+  <meta property="og:title" content="Pretraining: What the Base Model Actually Learns | GenAI Systems Lab">
+  <meta property="og:description" content="What emerges from next-token prediction at scale — and why you almost never train from scratch.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Pretraining: What the Base Model Actually Learns">
+  <meta name="twitter:description" content="What emerges from next-token prediction at scale — and why you almost never train from scratch.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Pretraining: What the Base Model Actually Learns","description":"What emerges from next-token prediction at scale — and why you almost never train from scratch.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/pretraining"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">TRAINING</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Pretraining: What the Base Model Actually Learns</h1>
+    <p class="desc">What emerges from next-token prediction at scale — and why you almost never train from scratch.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a question that feels like it has an obvious answer. If you want a model that's brilliant at law, surely you should train it <em>on law</em> — feed it your legal documents from scratch and let it grow into a specialist. It sounds almost too reasonable to argue with.</p>
+<p>Here's the quiet assumption hiding inside that idea, and the whole module turns on catching it: it assumes that &quot;understanding law&quot; is a <em>thing you get from seeing legal text.</em> But think about what a good legal model actually has to do — track who &quot;the Party&quot; refers to twelve clauses later, follow &quot;if X then Y unless Z&quot; logic, reason through a multi-step argument. None of those are legal <em>facts.</em> They're general reasoning abilities. And it turns out those abilities don't come from the <em>subject</em> of the text at all — they come from the sheer <em>scale</em> of text a model learns to predict.</p>
+<p>So we'll build this up gently: first what pretraining actually grows and where it comes from, then why a specialist corpus is far too small to grow it, and finally what fine-tuning adds on top and at what cost. Take your time — by the end you'll be able to answer a confident &quot;let's train from scratch on our data&quot; with a calm, precise account of what that would actually get you.</p></section>
+    <section><h2>How It Works</h2><p>Start from what pretraining <em>is</em>, before any domain question: it's the phase where a model learns by predicting the <strong>next token</strong> across <strong>hundreds of billions to trillions of tokens</strong> of internet text, books, code, and structured data. That single objective, repeated at enormous scale, is where a model's core abilities come from.</p>
+<p>Because the objective is prediction-at-scale rather than fact-storage, what emerges is <strong>not memorized facts but learned representations</strong> — internal structure for grammar, world knowledge, reasoning patterns, and the ability to generalize. Which is why the <em>amount</em> of pretraining matters so much: a 7B model trained on 1T tokens has fundamentally different capabilities than a 7B model trained on 100B tokens, even if both are later fine-tuned on identical task data. Same parameters, different scale, different mind.</p>
+<p>So the capabilities that make a model useful on any specialist task — tracking entity references, following conditional logic, reasoning through multi-step arguments, following instructions — <strong>are not domain facts at all.</strong> They are emergent products of that pretraining scale. This forces an uncomfortable conclusion for the &quot;train on our data from scratch&quot; instinct: a corpus of a few years' proprietary documents is nowhere near the scale needed to grow those abilities, so from-scratch training yields a model that has <em>seen</em> the domain but cannot <em>reason</em> about it.</p>
+<p>There's a second reason the from-scratch argument fails, and it's worth being precise about because it's the whole cost case. Legal, medical, and financial text is <em>already well-represented</em> in general pretraining corpora — it appears online in large volumes — so a foundation model has already absorbed it. What domain fine-tuning adds on top is a <strong>shift in token distribution</strong> toward your domain's terminology and patterns: the <em>same</em> shift domain pretraining would give, but at <strong>100–1,000× lower compute.</strong> The compute gap <em>is</em> the argument, so it deserves to be priced out rather than asserted.</p>
+<div class="illustration"><div class="illustration-label">From-scratch vs fine-tune — the 100–1,000× compute gap</div><pre>Training compute follows C ≈ 6 × N × D FLOPs
+  (N = parameters, D = tokens processed)
+
+FROM SCRATCH — a Chinchilla-optimal 7B legal model:
+  N = 7 × 10⁹ params,  D ≈ 1.4 × 10¹² tokens (trillions)
+  C ≈ 6 × 7e9 × 1.4e12 ≈ 5.9 × 10²² FLOPs
+  → weeks on a large GPU cluster
+  → ~$1M–$10M+ in compute
+  → PLUS a full data-curation + dedup + filtering pipeline
+
+FINE-TUNE — same 7B base, adapt on the legal corpus:
+  D ≈ 10⁴–10⁶ examples (NOT trillions of tokens)
+  C is smaller by roughly the token-count ratio: ~10⁶–10⁸ ×
+  fewer tokens processed than a from-scratch run
+  → hours on a single node (LoRA: one 80GB GPU)
+  → typically &lt; $1k
+  → reuses ALL the reasoning/language capability already
+    baked into the base model's weights
+
+Cost gap: ~100–1,000× cheaper to fine-tune, and you KEEP the
+emergent capabilities from-scratch training would have to
+re-grow from a corpus far too small to grow them.</pre></div>
+<p>That doesn't mean domain pretraining is <em>never</em> justified — but the conditions are narrow, and they follow from everything above. It's genuine <strong>only when</strong> the domain has data volumes exceeding <strong>100B tokens</strong> (enough scale to actually grow capability) AND a fundamentally different token structure that a general model actively misrepresents — rare programming languages, highly specialized scientific notation, or languages underrepresented in general corpora. For standard legal text, neither condition holds: the reasoning and language capabilities come from pretraining scale and cannot be acquired from a few years of proprietary documents alone.</p>
+<p>So the whole chain lands on one recommendation: <strong>fine-tune the best foundation model your compute budget can serve at inference time</strong>, then evaluate before deciding to go further. The domain instinct is correct — exposure matters — but from-scratch pretraining is the wrong way to get it. The interactive lets you compare capability-versus-scale directly; then the closing scenario puts it to work on exactly this build-versus-fine-tune decision — see if you can call the answer, and the reason, before the reasoning walks you through it.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Legal/domain &quot;understanding&quot; comes from pretraining SCALE, not from seeing legal text</strong> — reasoning, entity tracking, and conditional logic are emergent capabilities, not domain facts.</li><li><strong>Pretraining produces learned representations, not memorized facts</strong> — a 7B model on 1T tokens is a different mind than a 7B model on 100B tokens, even after identical fine-tuning.</li><li><strong>Domain fine-tuning gives the same token-distribution shift as domain pretraining at 100–1,000× lower compute</strong> — the compute gap is the whole argument.</li><li><strong>Training from scratch on 3 years of docs re-grows capabilities from a corpus far too small to grow them</strong> — you get a model that's seen law but can't reason about it.</li><li><strong>From-scratch is justified only when the domain has 100B+ tokens AND a token structure general models misrepresent</strong> — rare languages, specialized notation.</li><li><strong>Recommended path: fine-tune the best affordable foundation model, then evaluate</strong> before going further.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your team is deciding between training a domain model from scratch on three years of proprietary legal documents versus fine-tuning a foundation model on that same data. The CTO argues, reasonably enough, that training on legal data from scratch will produce deeper legal understanding. Take a moment before reading on: what does that argument quietly assume, and where does it break? Here's the reasoning, step by step. It assumes legal understanding comes from <em>seeing legal text</em> — but the load-bearing abilities (entity tracking, conditional logic, multi-step argument, instruction-following) emerge from pretraining <em>scale</em>, and three years of documents is orders of magnitude too little to grow them. Train from scratch and you get a model that has <em>seen</em> a lot of law and can <em>reason</em> about none of it. Meanwhile legal, medical, and financial text is already well-represented in general corpora, so a foundation model already carries that exposure; fine-tuning just shifts the token distribution toward your domain — the <em>same</em> shift domain pretraining would give, at 100–1,000× lower compute (C ≈ 6·N·D makes the gap concrete). The CTO's instinct that domain exposure matters is right; the conclusion that from-scratch pretraining is how to get it is wrong. Fine-tune the best foundation model your inference budget can serve, then evaluate.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Pretraining produces fundamental capabilities — reasoning, language understanding, in-context learning — that emerge from scale and cannot be replicated cheaply. Fine-tuning adapts those capabilities to your domain at a fraction of the cost. Training from scratch is justified only when your domain has 100B+ tokens of unique structure not represented in general corpora.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Few-Shot Prompting: Format, Consistency, and Selection | GenAI Systems Lab</title>
+  <meta name="description" content="See what happens when examples are inconsistent. Understand the 4 principles of good example selection.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/few-shot">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/few-shot">
+  <meta property="og:title" content="Few-Shot Prompting: Format, Consistency, and Selection | GenAI Systems Lab">
+  <meta property="og:description" content="See what happens when examples are inconsistent. Understand the 4 principles of good example selection.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Few-Shot Prompting: Format, Consistency, and Selection">
+  <meta name="twitter:description" content="See what happens when examples are inconsistent. Understand the 4 principles of good example selection.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Few-Shot Prompting: Format, Consistency, and Selection","description":"See what happens when examples are inconsistent. Understand the 4 principles of good example selection.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/few-shot"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROMPTING</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Few-Shot Prompting: Format, Consistency, and Selection</h1>
+    <p class="desc">See what happens when examples are inconsistent. Understand the 4 principles of good example selection.</p>
+
+    <section><h2>Start Here</h2><p>Let's start where zero-shot left off. When just <em>describing</em> a task isn't enough, the natural next move is to <em>show</em> the model a few worked examples — &quot;here's an input, here's the right answer&quot; a handful of times — and let it pattern-match from there. That's <strong>few-shot</strong> prompting, and it feels almost foolproof: examples are more concrete than instructions, so more examples should mean better results, right?</p>
+<p>Here's the twist this module is built to teach, and it's a subtle one. Those examples don't just <em>illustrate</em> the task — the model silently reads them as a picture of <em>what answers are normal</em>. So if you hand it eight billing examples and one of everything else, you haven't just given it examples; you've quietly whispered &quot;the answer is usually billing.&quot; And on any borderline case, that whisper can override what the email actually says. Examples are a specification, and a lopsided specification steers you wrong.</p>
+<p>So the skill here isn't &quot;add examples&quot; — it's <em>choosing</em> them well. We'll build up the three specific ways an example set can betray you, each with a clean fix, and finish with the trick that sidesteps all three at once. Take your time; by the end, a set of examples that made things <em>worse</em> will make perfect sense.</p></section>
+    <section><h2>How It Works</h2><p>Let's pick up the thread from zero-shot, which showed us exactly where plain instructions run out: the boundary cases, where two categories both genuinely apply and the model has no example telling it which one wins. Few-shot examples exist to resolve precisely those cases by <em>demonstration</em>. But here's the catch we have to respect from the start — if the examples are badly chosen, they don't merely fail to help, they actively <em>distort</em> the model's output distribution. So examples are powerful, and that same power cuts both ways.</p>
+<p>Let's make the distortion concrete, because it's the crux. Eight billing examples and one each for four other categories quietly teaches the model that billing is the statistically expected output <em>in this context</em>. And for any borderline email, that learned prior dominates the actual content of the email. This is the thing to internalize about <strong>in-context learning</strong>: the model learns both the <em>task</em> and the <em>distribution of answers across categories</em> from the examples you show. An unbalanced set sets a wrong prior — and a wrong prior is worse than no prior.</p>
+<p>So let's lay out the three distinct ways an example set fails, because naming them is half the cure. (1) <strong>Category imbalance</strong> — eight billing examples versus one each for the rest tells the model &quot;billing is the expected answer.&quot; Fix: balance coverage across categories, or deliberately weight toward the most-confused <em>pairs</em>. (2) <strong>Unrepresentative examples</strong> — cherry-picked easy cases teach nothing at the boundaries where the model actually needs guidance. Fix: include the hard ones — the API billing question, the authentication error that looks like an account issue. (3) <strong>Recency bias</strong> — the last few examples before the target input carry outsized influence, so if all your boundary cases are clustered at the end, the model over-indexes on them as the expected format for <em>everything</em>. Three separate traps, three separate fixes.</p>
+<p>Now here's the lovely move that sidesteps all three at once. Instead of a fixed, hand-picked example set, use <strong>dynamic few-shot selection</strong>: at inference time, retrieve the most <em>similar</em> labeled examples from a historical annotation store. An email about API authentication pulls technical examples; an email about billing disputes pulls billing examples. Because the examples are chosen by relevance to <em>this</em> query, they're naturally balanced to it — no fixed skew, no stale ordering. It costs you a labeled annotation store and a fast retrieval mechanism, typically the very same embedding model already running in your RAG pipeline. The interactive just below lets you feel how example choice moves the output, and the production case at the end is exactly this — an example set that made things worse until it was rebuilt.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Few-shot resolves boundary cases by demonstration</strong> — the cases zero-shot instructions leave underspecified.</li><li><strong>In-context learning is distribution-sensitive</strong> — the model learns the task <em>and</em> the answer distribution from your examples; 8 billing + 1-each-other teaches 'billing is expected.'</li><li><strong>Category imbalance biases predictions</strong> — balance coverage across categories, or deliberately weight toward the most-confused pairs.</li><li><strong>Unrepresentative (easy) examples fail at the boundary</strong> — include the hard cases: the API-billing question, the auth error that looks like an account issue.</li><li><strong>Recency bias skews the prior</strong> — the last examples before the input dominate; don't cluster all boundary cases at the end.</li><li><strong>Dynamic few-shot beats a static set</strong> — retrieve the most similar labeled examples at inference so they're naturally balanced to the query (needs a labeled store + fast retrieval).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. An email classification system sorts support emails into 12 categories. Zero-shot gets 71%. Someone adds examples to help — but the set is 8 billing examples plus 1 each for four other categories, and accuracy on those four categories gets <em>worse</em>. Take a moment before reading on: how could adding examples hurt? Here's the reasoning, step by step. Remember that the model reads the example set as a distribution of expected answers, not just as illustrations. Eight-to-one toward billing teaches it that billing is the statistically likely output <em>in this context</em>, and for any borderline email that learned prior overpowers the actual content — so genuinely non-billing emails get pulled toward billing. Notice that this is one of three distinct traps: category imbalance (this one), unrepresentative easy examples that skip the hard boundary cases, and recency bias where the last examples dominate. And notice the fix that dissolves all three — dynamic selection: retrieve the most <em>similar</em> labeled examples per query, so a billing email gets billing examples and an auth email gets technical ones, naturally balanced to the input. The examples didn't fail because there were examples; they failed because they were skewed.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Few-shot examples are a task specification, not illustrations. Unbalanced examples bias the model; unrepresentative examples fail on the cases that actually need guidance. Balance coverage across categories, include the ambiguous boundary cases, and for production classifiers with many categories, use dynamic retrieval of similar labeled examples rather than a static set.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

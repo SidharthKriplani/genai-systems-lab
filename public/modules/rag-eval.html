@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluating RAG Pipelines: RAGAS &amp; Beyond | GenAI Systems Lab</title>
+  <meta name="description" content="Context recall, answer faithfulness, and the metrics that catch retrieval bugs.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/rag-eval">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/rag-eval">
+  <meta property="og:title" content="Evaluating RAG Pipelines: RAGAS &amp; Beyond | GenAI Systems Lab">
+  <meta property="og:description" content="Context recall, answer faithfulness, and the metrics that catch retrieval bugs.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Evaluating RAG Pipelines: RAGAS &amp; Beyond">
+  <meta name="twitter:description" content="Context recall, answer faithfulness, and the metrics that catch retrieval bugs.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Evaluating RAG Pipelines: RAGAS & Beyond","description":"Context recall, answer faithfulness, and the metrics that catch retrieval bugs.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/rag-eval"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">EVAL</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Evaluating RAG Pipelines: RAGAS &amp; Beyond</h1>
+    <p class="desc">Context recall, answer faithfulness, and the metrics that catch retrieval bugs.</p>
+
+    
+    <section><h2>How It Works</h2><p>A RAG system is a <strong>pipeline of two stages</strong> — <em>retrieve</em> then <em>generate</em> — and the cardinal rule of evaluating it is that you must <strong>measure the two stages separately</strong>, because a single end-to-end score cannot localize failure. <mark>If retrieval feeds the generator garbage, even a flawless generator produces a wrong answer; if retrieval is perfect but the generator ignores it, you also get a wrong answer. Same symptom, opposite cure.</mark> A blended 8.2/10 hides which disease you have.</p>
+<p>The generation side is best understood as a <strong>triad of three distinct relationships</strong> among three objects: the <strong>question</strong>, the <strong>retrieved context</strong>, and the <strong>answer</strong>. Popularized by RAGAS, the triad is:</p>
+<p>- <strong>Faithfulness / groundedness</strong> — <em>answer ↔ context.</em> Is every claim in the answer actually supported by the retrieved context? This is your <strong>anti-hallucination</strong> metric. A low score is the exact bug in the scenario: the model asserted a policy no chunk contains.&lt;br&gt;- <strong>Answer relevance</strong> — <em>answer ↔ question.</em> Does the answer actually address what was asked, without padding or drift? A faithful answer can still be useless if it answers a different question.&lt;br&gt;- <strong>Context relevance / precision</strong> — <em>context ↔ question.</em> Of the retrieved chunks, how much is actually pertinent? Low context relevance means retrieval dumped noise, which both wastes tokens and tempts the model to hallucinate off irrelevant text.</p>
+<p><mark>These three are orthogonal: you can be faithful but irrelevant, relevant but unfaithful, or answering well off a context full of noise. One number collapses all three.</mark></p>
+<div class="illustration"><div class="illustration-label">The RAG triad — three edges, three failure modes</div><pre>                    QUESTION
+                   /          \
+     context      /            \    answer
+     relevance   /              \   relevance
+    (retrieval) /                \ (did we answer
+               /                  \  what was asked?)
+          CONTEXT ────────────── ANSWER
+                   faithfulness
+                  (is every claim
+                   grounded in context?)
+
+  Low CONTEXT relevance  → retrieval pulled noise / wrong chunks
+  Low FAITHFULNESS       → generator hallucinated beyond the context
+  Low ANSWER relevance   → generator answered the wrong thing / drifted
+
+  A single &quot;answer quality&quot; score = the blur of all three.</pre></div>
+<p>Now the <strong>retrieval</strong> side, which the triad's context-relevance edge only partially covers. Retrieval quality is a <strong>ranking</strong> problem, and you evaluate it with classic information-retrieval metrics against a labeled set of (query → relevant-chunk) pairs:</p>
+<p>- <strong>Recall@k</strong> — of all truly-relevant chunks, what fraction landed in the top-k? This is the <em>don't-lose-the-answer</em> metric; if recall@k is low, generation is doomed no matter how good the model.&lt;br&gt;- <strong>Precision@k</strong> — of the top-k returned, what fraction is actually relevant? Low precision means noise in the context window.&lt;br&gt;- <strong>MRR (Mean Reciprocal Rank)</strong> — 1/(rank of the first relevant chunk), averaged. Rewards putting <em>a</em> correct chunk high; good when one right chunk is enough.&lt;br&gt;- <strong>nDCG (normalized Discounted Cumulative Gain)</strong> — rewards placing <em>all</em> relevant chunks high, discounting by position, and handles <strong>graded</strong> relevance (some chunks more relevant than others). The most complete ranking metric when relevance isn't binary.</p>
+<p><mark>These are computed on retrieval output <em>before generation ever runs</em> — they answer 'did we hand the generator the right material?' independently of what it then wrote.</mark></p>
+<div class="illustration"><div class="illustration-label">Retrieval metrics on one query — worked</div><pre>Query: &quot;refund window for damaged goods&quot;
+Relevant chunks (labeled): {C3, C7}   |   top-5 retrieved: [C9, C3, C2, C7, C5]
+                                          rank: 1   2   3   4   5
+
+Recall@5   = |{C3,C7} in top-5| / |{C3,C7}|  = 2/2 = 1.00   (both found)
+Precision@5= relevant in top-5 / 5          = 2/5 = 0.40   (3 of 5 are noise)
+MRR        = 1 / rank(first relevant = C3)  = 1/2 = 0.50
+nDCG@5     : C3 at rank2, C7 at rank4 → discounted gains summed / ideal
+           (ideal = both relevant at ranks 1,2) → ~0.77
+
+Reading: nothing lost (recall 1.0) but ranked loosely (MRR/nDCG middling,
+precision 0.40). A reranker would help; more retrieval breadth would not.</pre></div>
+<p><strong>Why separate the two evals at all — why not trust one end-to-end judge?</strong> Because <strong>localization</strong>. When end-to-end quality drops, a single number tells you <em>that</em> it dropped, never <em>where</em>. Split the pipeline and the diagnosis is mechanical:</p>
+<p>- Retrieval metrics <strong>bad</strong>, generation faithful on the (bad) context it got → <strong>fix retrieval</strong> (embeddings, chunking, hybrid search, reranking).&lt;br&gt;- Retrieval metrics <strong>good</strong> (right chunks in context) but <strong>faithfulness low</strong> → <strong>fix generation</strong> (the model is ignoring context and hallucinating — prompt it to ground, lower temperature, or change models).&lt;br&gt;- Context relevance good but <strong>answer relevance low</strong> → the model has the material but isn't answering the question — a prompting/instruction problem.</p>
+<p><mark>This is exactly the scenario's two diseases, now separable: 'wrong chunks retrieved' shows up as low recall@k / context relevance; 'ignored good context' shows up as low faithfulness with high context relevance.</mark></p>
+<p>Practical build notes. <strong>RAGAS</strong> operationalizes the triad using an LLM to judge faithfulness, answer relevance, and context precision/recall, often <em>without</em> human-written reference answers — cheap to run in CI, but inherits LLM-judge biases (a separate topic). Retrieval metrics need a <strong>labeled gold set</strong> of query→relevant-chunk mappings, which is the expensive-but-worth-it asset; you can bootstrap it by having an LLM generate questions from known chunks (the source chunk is the ground-truth relevant one). Run retrieval and generation evals as <strong>separate gates in CI</strong>: a retrieval regression and a generation regression demand different fixes, and a blended score would let one mask the other. <mark>The whole discipline reduces to one habit: never report a single RAG number; report a retrieval score and a generation triad, so every regression has an address.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>RAG is retrieve-then-generate, so you must eval both stages separately.</strong> A single end-to-end score tells you <em>that</em> quality dropped but never <em>where</em> — retrieval feeding garbage and a generator ignoring good context produce the identical symptom with opposite cures.</li><li><strong>The generation triad (RAGAS): faithfulness, answer relevance, context relevance.</strong> Faithfulness (answer↔context) is anti-hallucination; answer relevance (answer↔question) is did-you-answer-it; context relevance (context↔question) is did-retrieval-give-pertinent-material. They're orthogonal — one number blurs all three.</li><li><strong>Retrieval is a ranking problem, evaluated with IR metrics.</strong> Recall@k (don't lose the answer), precision@k (noise in context), MRR (first relevant chunk high), nDCG (all relevant chunks high, graded relevance, position-discounted) — computed on retrieval output before generation runs.</li><li><strong>Separation enables localization.</strong> Bad retrieval metrics → fix embeddings/chunking/reranking. Good retrieval but low faithfulness → the model is hallucinating past its context, fix generation. Good context but low answer relevance → prompting problem.</li><li><strong>RAGAS runs the triad with an LLM judge (often reference-free); retrieval metrics need a labeled gold set.</strong> Bootstrap gold labels by generating questions from known chunks. Run retrieval and generation as separate CI gates so neither regression masks the other.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your RAG assistant scores 8.2/10 on a single 'answer quality' LLM-judge metric, and leadership is happy — until a customer catches it citing a policy that doesn't exist in any of your documents. You investigate and find two separate diseases wearing the same symptom: sometimes retrieval returns the wrong chunks (so even a perfect answer would be impossible), and sometimes retrieval is fine but the model ignores the context and invents a plausible answer from its parametric memory. Your one blended score cannot tell these apart. You need an eval design that pins the blame on the right component.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Evaluate RAG as two separable stages: retrieval with ranking metrics (recall@k, precision@k, MRR, nDCG) and generation with the RAGAS triad (faithfulness, answer relevance, context relevance). Keeping them separate is what lets you localize a regression — bad retrieval metrics mean fix retrieval, while good context with low faithfulness means the generator is hallucinating past its context. Never report one blended number.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

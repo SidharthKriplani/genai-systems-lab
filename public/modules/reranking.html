@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reranking: Cross-Encoder Precision | GenAI Systems Lab</title>
+  <meta name="description" content="Why bi-encoder retrieval needs a second pass — and when to skip it.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/reranking">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/reranking">
+  <meta property="og:title" content="Reranking: Cross-Encoder Precision | GenAI Systems Lab">
+  <meta property="og:description" content="Why bi-encoder retrieval needs a second pass — and when to skip it.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Reranking: Cross-Encoder Precision">
+  <meta name="twitter:description" content="Why bi-encoder retrieval needs a second pass — and when to skip it.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Reranking: Cross-Encoder Precision","description":"Why bi-encoder retrieval needs a second pass — and when to skip it.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/reranking"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">RETRIEVAL</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Reranking: Cross-Encoder Precision</h1>
+    <p class="desc">Why bi-encoder retrieval needs a second pass — and when to skip it.</p>
+
+    
+    <section><h2>How It Works</h2><p>Retrieval and reranking are two different scoring machines with two different cost/quality profiles, and RAG works best when you use each for what it is good at.</p>
+<p>Your first stage is a <strong>bi-encoder</strong> (the embedding model behind your vector DB). It encodes the query into a vector <em>once</em>, encodes every document into a vector <em>once</em> (offline, ahead of time), and scores a query-document pair by a cheap <strong>dot product or cosine similarity</strong> between the two vectors. Because the document vectors are precomputed and the comparison is just a distance in vector space, you can score <em>millions</em> of documents in milliseconds via an ANN index (HNSW, IVF). <mark>That speed is the entire reason bi-encoders exist — but it comes from a compression you should be suspicious of.</mark></p>
+<p>The compression is this: a bi-encoder squashes an entire document into <strong>one fixed vector before it has ever seen the query</strong>. Query and document never interact until the final dot product. So a subtle mismatch — the query asks about <em>refunds after 30 days</em> and the chunk covers <em>refunds within 30 days</em> — can be invisible, because both map to nearly the same region of embedding space. The bi-encoder trades <strong>term-level, query-aware reasoning</strong> for the ability to precompute. That is why <strong>recall is high but precision at the very top is mediocre</strong>: the right chunk is <em>in</em> the neighborhood (recall@50 = 0.94), but its exact rank among near-neighbors is noisy (it lands at 18, not 3).</p>
+<p>A <strong>cross-encoder</strong> makes the opposite trade. It takes the query and one document <strong>concatenated together</strong> — `[CLS] query [SEP] document [SEP]` — and runs the <em>whole pair</em> through a Transformer, so every query token can attend to every document token through full self-attention. The output is a single relevance score. This is <strong>query-aware from the first layer</strong>: 'after 30 days' vs 'within 30 days' now genuinely interact, and the model can tell they are opposites. <mark>That is why a cross-encoder reorders the top far more accurately than a bi-encoder — it is doing real reading, not a distance in a frozen vector space.</mark></p>
+<p>The catch is that there is <strong>nothing to precompute</strong>. The document representation depends on the query, so you cannot build an index. You must run a <strong>fresh forward pass for every (query, document) pair at request time</strong>. Scoring a million documents this way is a non-starter.</p>
+<div class="illustration"><div class="illustration-label">Bi-encoder vs cross-encoder — where the query meets the document</div><pre>BI-ENCODER (retrieval)                CROSS-ENCODER (rerank)
+  query ─► [Encoder] ─► q-vector          [ query [SEP] document ]
+  doc   ─► [Encoder] ─► d-vector  (offline)          │
+                 │                              [ Transformer ]
+             dot(q, d)  ◄── cheap                     │
+                                               relevance score
+  • doc vectors PRECOMPUTED once          • NO precompute — depends on query
+  • score = distance in vector space      • full self-attention: q-tokens ⇄ d-tokens
+  • millions of docs in ~ms (ANN index)   • one forward pass PER pair, at request time
+  • recall HIGH, top precision MEDIOCRE    • top precision HIGH, throughput LOW
+  • query &amp; doc never interact             • query &amp; doc interact from layer 1</pre></div>
+<p>This is why the production pattern is <strong>retrieve-k-then-rerank-to-n</strong>, a two-stage funnel. Stage 1 (bi-encoder) is a cheap, high-<em>recall</em> net: cast wide and pull <strong>k ≈ 50–100</strong> candidates from millions — you only need the right chunk to land <em>somewhere</em> in that set, which recall@50 = 0.94 says it does. Stage 2 (cross-encoder) is an expensive, high-<em>precision</em> filter: it reads all k candidates carefully and reorders them, so you can then keep the <strong>top n ≈ 3–5</strong> for the prompt. <mark>The reranker's job is to fix exactly your bug — pull the rank-18 chunk up to rank 2 — without you having to widen the context window and drown the model in distractors.</mark></p>
+<p>The two stages are complementary because they optimize different metrics: retrieval maximizes recall@k (don't lose the answer), reranking maximizes precision@n (put the answer on top). Widening top-k to 20 tried to solve a <em>precision</em> problem with a <em>recall</em> tool, which is why quality got worse.</p>
+<div class="illustration"><div class="illustration-label">The funnel and its latency budget</div><pre>  millions of chunks
+        │  Stage 1: bi-encoder / ANN   (~5–15 ms)   ← high recall
+        ▼
+     top k = 50 candidates
+        │  Stage 2: cross-encoder      (~50–300 ms) ← high precision
+        ▼
+     top n = 4 chunks ─► prompt ─► LLM
+
+Cross-encoder cost is ~LINEAR in k (one forward pass per candidate):
+     k = 50  reranked one-by-one, OR batched on a GPU
+     doubling k roughly doubles rerank latency &amp; cost
+     → k is a DIAL: bigger k = higher recall into stage 2, but more $ / ms
+     → n is bounded by context budget &amp; distractor tolerance, not by the reranker</pre></div>
+<p>The costs are real and you should quote them. A cross-encoder adds <strong>tens to a few hundred milliseconds</strong> and its cost scales roughly <strong>linearly in k</strong> — reranking 100 candidates is ~2× the work of 50. On CPU it can dominate your latency; on a GPU you batch the k pairs but still pay for the accelerator. There are middle grounds: <strong>late-interaction models like ColBERT</strong> precompute per-<em>token</em> document embeddings and do a cheaper query-aware `MaxSim` match — more accurate than a bi-encoder, cheaper than a full cross-encoder — and hosted rerank APIs (Cohere Rerank, Voyage, Jina, BGE-reranker) trade a network hop for not self-hosting.</p>
+<p><strong>When is reranking worth it?</strong> When your <strong>recall@k is already high but precision@n is low</strong> — the answer is being retrieved but ranked too low to make the cut (exactly this scenario). It is <em>not</em> worth it when recall@k itself is poor: a reranker can only reorder what stage 1 handed it, so if the right chunk isn't in the top-k, reranking cannot invent it — fix retrieval (embeddings, chunking, hybrid/BM25) first. <mark>Reranking is a precision tool; reaching for it to fix a recall problem is the classic misdiagnosis.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Bi-encoder = precompute, cross-encoder = query-aware.</strong> A bi-encoder embeds query and doc separately (cheap dot-product, indexable, millions in ms) but they never interact until the end; a cross-encoder concatenates them and runs full self-attention, so it reads the pair — accurate but one forward pass per pair, no index.</li><li><strong>Recall ≠ precision, and they need different tools.</strong> Retrieval maximizes recall@k (don't lose the answer in a wide net); reranking maximizes precision@n (put the answer on top of a small set). High recall@50 with the answer stuck at rank 18 is a <em>precision</em> failure a reranker fixes.</li><li><strong>The pattern is retrieve-k-then-rerank-to-n.</strong> Bi-encoder pulls k≈50–100 high-recall candidates from millions; cross-encoder reorders them and you keep top n≈3–5. Widening top-k instead adds distractors and hurts generation — the wrong fix.</li><li><strong>Reranker cost is ~linear in k and adds tens–hundreds of ms.</strong> k is a latency/recall dial; n is bounded by context budget and distractor tolerance. Late-interaction (ColBERT) and hosted rerank APIs (Cohere/Voyage/BGE) are middle grounds.</li><li><strong>A reranker can only reorder what retrieval returned.</strong> If recall@k is poor (right chunk not in top-k), reranking cannot recover it — fix embeddings/chunking/hybrid search first. Reranking is worth it precisely when recall is high but top-n precision is low.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your RAG support bot retrieves the top 5 chunks by vector similarity and stuffs them into the prompt. Eval says recall@50 is 0.94 — the right document is almost always somewhere in the top 50 — yet users complain the bot 'ignores the obvious answer.' You dig in: the correct chunk is frequently sitting at rank 18, well below the 5 you actually pass to the model. Widening to top-20 blows your context budget and <em>lowers</em> answer quality (more distractors). Someone suggests 'add a reranker.' You need to explain what that actually buys you and what it costs before you sign off on the extra latency.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Retrieval (bi-encoder) is a cheap high-recall net that pulls k≈50–100 candidates from millions; reranking (cross-encoder) is an expensive high-precision filter that reads each (query, doc) pair with full self-attention and reorders them so you keep the top n≈3–5. Reach for a reranker when recall@k is high but the answer is ranked too low — never to compensate for poor recall, since it can only reorder what retrieval already returned.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

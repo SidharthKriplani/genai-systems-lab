@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Routing, Cascades &amp; Fallbacks | GenAI Systems Lab</title>
+  <meta name="description" content="Route by difficulty/cost, small→large cascade, confidence fallback, provider failover.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/model-routing-cascades">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/model-routing-cascades">
+  <meta property="og:title" content="Model Routing, Cascades &amp; Fallbacks | GenAI Systems Lab">
+  <meta property="og:description" content="Route by difficulty/cost, small→large cascade, confidence fallback, provider failover.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Model Routing, Cascades &amp; Fallbacks">
+  <meta name="twitter:description" content="Route by difficulty/cost, small→large cascade, confidence fallback, provider failover.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Model Routing, Cascades & Fallbacks","description":"Route by difficulty/cost, small→large cascade, confidence fallback, provider failover.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/model-routing-cascades"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PRODUCTION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Model Routing, Cascades &amp; Fallbacks</h1>
+    <p class="desc">Route by difficulty/cost, small→large cascade, confidence fallback, provider failover.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with the simplest possible design, the one every LLM product actually begins with: pick the best model you can afford and send <em>everything</em> to it. It's the obvious choice — one model, one code path, and the quality is as high as it gets. For a demo, it's exactly right.</p>
+<p>Here's the small observation that unravels it. Look at your real traffic for a minute and you'll notice the questions aren't all the same <em>shape</em>. 'Reset my password' and 'thanks!' sit right next to 'walk me through this subtle multi-step bug.' They're wildly different in difficulty — and yet, in the send-everything design, they all pay the <em>same</em> price: the frontier model's price, the frontier model's latency. You're buying a Ferrari to fetch the mail.</p>
+<p>No need to rush. We'll build up from that one observation — traffic is a <em>mix</em> of difficulties — and let two different fixes fall out of it: deciding which model to use <em>before</em> you see an answer, versus <em>after</em>. Then we'll handle a separate problem the whole scheme ignores (what happens when your provider simply goes down), and by the end you'll be able to look at a bloated LLM bill and say exactly which lever to pull.</p></section>
+    <section><h2>How It Works</h2><p>Start from a single observation about traffic itself: <strong>real queries are a distribution of difficulty, not a uniform stream.</strong> A large fraction is trivial (greetings, FAQ lookups, simple rewrites), a middle band is moderate (summarise this, classify that, short reasoning), and a thin tail is genuinely hard (multi-step reasoning, subtle code, adversarial edge cases). Now put that fact next to the send-everything-to-one-model design and the waste becomes visible: routing the whole distribution to one big model means you pay the <em>worst-case</em> cost and latency on the <em>average-case</em> query — a price the average query never needed. <mark>So the entire discipline of routing follows directly from the distribution: match each query to the cheapest model that can still answer it correctly, and spend your quality budget only where it actually moves the needle.</mark></p>
+<p>The first pattern is the <strong>router</strong>: a cheap, fast classifier that sits <em>in front</em> of your models, looks at the incoming query, estimates its difficulty (or type), and dispatches it to the cheapest-capable model. The classifier can be a small fine-tuned model, an embedding-based similarity check against labelled examples, a set of heuristics (length, presence of code, detected task type), or even a tiny LLM asked 'is this easy or hard?'. The router itself must be <em>much</em> cheaper and faster than the models it routes to, or it defeats its own purpose. <mark>A router makes a decision <em>once, up front</em>, and commits — the query goes to exactly one model and you never look back.</mark> That's its strength (one inference, low latency) and its weakness (if the router misjudges, the query gets the wrong model with no recovery).</p>
+<p>The second pattern fixes that weakness by <em>not committing up front</em>: the <strong>cascade</strong>. Here you try the small, cheap model <em>first</em>, then check whether its answer is good enough; only if the check <em>fails</em> do you <strong>escalate</strong> to the larger model. The cheap model handles everything it can, and the expensive model is a <em>fallback for hard cases</em>, invoked only when needed. <mark>The router bets before seeing the answer; the cascade lets the answer itself decide whether to escalate.</mark> This is strictly more information — you're deciding <em>after</em> seeing an attempt, not before — which is why cascades often route more accurately than a front-door classifier. The cost is latency on the tail: an escalated query pays for <em>both</em> the small model <em>and</em> the large model, in series.</p>
+<div class="illustration"><div class="illustration-label">Router vs cascade — decide-before vs decide-after</div><pre>ROUTER (decide BEFORE the answer exists):
+  query ─► [cheap classifier] ─┬─ &quot;easy&quot;  ─► small model ─► done
+                               └─ &quot;hard&quot;  ─► large model ─► done
+  • ONE model inference per query, lowest latency
+  • misjudge → wrong model, no recovery (commit up front)
+
+CASCADE (decide AFTER seeing an attempt):
+  query ─► small model ─► [confidence check] ─┬─ pass ─► return cheap answer
+                                              └─ FAIL ─► large model ─► return
+  • easy queries: 1 cheap call.  hard queries: cheap + large (SERIAL)
+  • more accurate routing (the answer itself informs the decision)
+  • but escalated queries pay BOTH models + the check's latency</pre></div>
+<p>A cascade lives or dies on the <strong>confidence signal</strong> — the check that decides 'is this cheap answer good enough, or escalate?'. Interviewers want you to name concrete signals and their tradeoffs. <strong>(1) Token logprobs / sequence probability</strong>: if the small model's own output probability is low, it's unsure — cheap to read, but a poorly-calibrated model can be <em>confidently wrong</em> (high logprob, wrong answer), so this misses the dangerous cases. <strong>(2) Self-consistency</strong>: sample the small model a few times; if the samples <em>disagree</em>, escalate. Robust, but multiplies the cheap model's cost. <strong>(3) A verifier / judge</strong>: a separate (often small) model or rule-set that grades the answer — e.g. 'does this cite a source? does it actually answer the question?'. Most flexible and most aligned with 'good enough,' but adds a call and can itself be wrong. <mark>The confidence signal is where cascades succeed or fail: a good signal escalates exactly the queries the small model got wrong; a bad one either escalates everything (no savings) or nothing (quality craters).</mark></p>
+<p>Routing solves cost and latency; it does <em>nothing</em> for the outage that took you down. That's a separate axis: <strong>provider failover / fallbacks.</strong> Your primary model — say, provider A's flagship — will, on some days, be <em>down, rate-limited, or timing out</em>. A resilient system defines a <strong>fallback chain</strong>: if the primary call fails (error, timeout, 429 rate-limit) after a short retry, automatically fall back to a <em>different</em> provider's comparable model, or to a <em>degraded but available</em> smaller model, rather than returning an error to the user. <mark>Routing is about picking the cheapest-capable model when everything is healthy; failover is about staying <em>up</em> when your first choice is <em>not</em> healthy — orthogonal concerns that a mature stack handles together.</mark> The subtlety: a fallback model may have a different tokenizer, context window, or output format, so 'just retry on provider B' isn't free — you need prompt/formatting that survives the swap, and you should degrade <em>gracefully</em> (a smaller model's answer beats an error page).</p>
+<div class="illustration"><div class="illustration-label">The economics — why routing pays (illustrative)</div><pre>Suppose traffic splits: 70% easy, 25% moderate, 5% hard.
+Costs (relative): small = 1x,  large = 20x per query.
+
+ALL-LARGE baseline:            100% × 20  = 20.0  (cost per 100 queries: 2000)
+
+ROUTER (easy→small, rest→large):
+   70×1  + 30×20            =  70 + 600  =  670   → 66% cheaper
+   (if the router misroutes 5% of hard→small, those answers are WRONG)
+
+CASCADE (small first, escalate the ~30% it can't handle):
+   100×1  (every query tries small)
+ +  30×20 (the 30% that escalate hit large too)
+                            = 100 + 600  =  700   → ~65% cheaper
+   + BUT tail latency doubles on escalated queries (serial small→large)
+
+Take: both ~cut cost 2-3x. Router = lowest latency, riskier misroute.
+      Cascade = more accurate (decides after seeing an answer), slower tail.</pre></div>
+<p>Finally, the <strong>risks</strong> a staff-level answer must own. <strong>Misroute blind spots</strong>: a router (or a bad cascade signal) that sends a hard query to the small model produces a <em>confidently wrong</em> answer with no second look — and because it's cheap, you might never notice until users do. The failure is <em>silent</em>, which is worse than a loud one. <strong>Cascade tail latency</strong>: escalation is serial (small, <em>then</em> large), so your hardest, most important queries — exactly the ones users care most about — get the <em>slowest</em> experience; if not bounded, a cascade can also loop or over-escalate. <strong>Router drift</strong>: the difficulty distribution shifts over time (new features, new user segments), and a router trained on last quarter's traffic quietly mis-classifies today's. <strong>Calibration</strong>: every confidence signal assumes the small model <em>knows when it doesn't know</em> — and models are famously overconfident, so a naive logprob threshold escalates the wrong set. <mark>The interview-grade summary: route to the cheapest-capable model (router = decide-before, cascade = decide-after via a confidence signal), layer provider failover for uptime, and respect that the whole scheme rests on a well-calibrated 'is this good enough?' check — get that wrong and you've built a cheap machine for producing confident errors.</mark> The interactive below lets you send a difficulty distribution through a router and a cascade and watch cost, latency, and misroutes trade off; then the closing scenario hands you three demands at once — see if you can sort them into 'routing' and 'failover' before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Not every query needs the frontier model.</strong> Traffic is a difficulty distribution (mostly easy, a thin hard tail); sending all of it to one big model pays worst-case cost/latency on average-case queries. Routing matches each query to the <em>cheapest-capable</em> model to spend the quality budget where it matters.</li><li><strong>Router = decide before the answer exists.</strong> A cheap, fast classifier (small model / embeddings / heuristics) estimates difficulty and dispatches to one model, committing up front. Lowest latency (one inference) but a misroute gives the wrong model with no recovery — the router must be far cheaper than what it routes to.</li><li><strong>Cascade = decide after an attempt.</strong> Try the small model first; a confidence check decides whether to <em>escalate</em> to the large model. More accurate than a front-door router (the answer itself informs the decision) but escalated queries pay both models in series → tail latency. Confidence signals: logprobs (cheap, misses confident-wrong), self-consistency (robust, multiplies cost), verifier/judge (flexible, adds a call).</li><li><strong>Provider failover is orthogonal to routing.</strong> Routing picks the cheapest-capable model when healthy; failover keeps you <em>up</em> when the primary is down / rate-limited / timing out — a fallback chain to another provider or a degraded smaller model instead of erroring. Watch tokenizer/context/format differences across the swap; degrade gracefully (a small model's answer beats an error page).</li><li><strong>Economics and risks.</strong> With small=1x, large=20x and 70% easy traffic, routing/cascading cut cost ~2-3x. Risks: silent misroute blind spots (confidently wrong cheap answers), cascade tail latency on the most important queries, router drift as the traffic distribution shifts, and mis-calibrated confidence signals (overconfident small models escalate the wrong set).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your LLM product started on the frontier flagship because it was simplest and it worked — then the bill arrived. You're paying flagship prices for <em>every</em> query, including 'reset my password,' 'what's your refund window,' and 'thanks!'. p95 latency is bad because even trivial queries wait on a giant model, and last Tuesday your single provider had a 40-minute outage and the product was simply <em>down</em>. Finance wants cost halved, on-call wants the outage risk gone, product refuses to let quality drop on the hard questions. Take a moment before reading on: which of these are the <em>same</em> problem, and which is a different axis entirely? Here's the reasoning, step by step. Cost and latency are one problem with one root — you're sending a whole <em>distribution</em> of difficulty to the worst-case model, so a router or cascade that matches each query to the cheapest-capable model fixes both at once (recall the ~2-3x savings when 70% of traffic is easy). The outage is a <em>different axis</em>: routing only ever chooses among <em>healthy</em> models, so it does nothing for availability — that needs provider failover, a fallback chain to another provider or a degraded model. Notice how cleanly the three demands separate: two of them are routing, the third is failover, and a mature stack layers both.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Not every query needs the frontier model: traffic is a difficulty distribution, so route each query to the cheapest-capable model. A router decides before any answer exists (one cheap classifier, lowest latency, misroutes unrecoverable), while a cascade runs the small model first and escalates on a confidence check (logprobs / self-consistency / a verifier) — more accurate because it decides after seeing an attempt, but escalated queries pay both models serially. Layer provider failover (a fallback chain to another provider or a degraded model) for uptime, since that's orthogonal to cost routing, and remember the whole scheme rests on a well-calibrated 'is this good enough?' signal — a bad one just produces confident errors cheaply.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

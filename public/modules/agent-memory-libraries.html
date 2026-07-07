@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Memory · Libraries | GenAI Systems Lab</title>
+  <meta name="description" content="The six storage libraries and how to pick one.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-memory-libraries">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-memory-libraries">
+  <meta property="og:title" content="Agent Memory · Libraries | GenAI Systems Lab">
+  <meta property="og:description" content="The six storage libraries and how to pick one.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Memory · Libraries">
+  <meta name="twitter:description" content="The six storage libraries and how to pick one.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agent Memory · Libraries","description":"The six storage libraries and how to pick one.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-memory-libraries"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Agent Memory · Libraries</h1>
+    <p class="desc">The six storage libraries and how to pick one.</p>
+
+    
+    <section><h2>How It Works</h2><p>The foundations module gave you the four memory <em>types</em> (working, episodic, semantic, procedural). This module is about the <em>implementation</em> layer: the production-hardened libraries — <strong>Mem0, Zep, LangMem, MemGPT/Letta</strong>, and custom vector stores — that turn those concepts into a running system, and the choice of which to reach for. <mark>The recurring mistake is spending sprints building a custom memory solution when a library already solves the hard cases — TTL expiry, memory consolidation, conflict resolution — that a naive vector store does not.</mark></p>
+<p>Start from what a <em>raw</em> vector store gives you and what it does not. A vector store gives you <strong>semantic retrieval</strong>: embed text, store the vectors, and at query time pull the top-k most similar chunks. That is genuinely useful — it's the substrate under long-term memory. But it is only <em>storage + similarity search</em>. It has no notion of <em>time</em>, <em>identity</em>, <em>change</em>, or <em>importance</em>.</p>
+<p>That gap is exactly where the scenario bites, and it maps to the two long-term memory kinds you must implement differently. <strong>Episodic memory</strong> = specific past events/conversations ('three weeks ago the user asked about X') — inherently <em>temporal and user-scoped</em>. <strong>Semantic memory</strong> = distilled durable facts about the user or world ('is vegetarian', 'prefers metric') — inherently <em>deduplicated and updatable</em>. A raw vector store stores both as undifferentiated chunks and will happily return a stale timezone next to the corrected one, because it has no mechanism to know one <em>supersedes</em> the other.</p>
+<div class="illustration"><div class="illustration-label">Raw vector store vs a memory library — the missing machinery</div><pre>USER over three weeks says:
+  turn 3   &quot;I'm in PST&quot;
+  turn 40  &quot;actually I moved, I'm EST now&quot;
+  turn 41  &quot;I'm vegetarian&quot;        turn 60  &quot;I'm vegetarian&quot;  (again)
+
+RAW VECTOR STORE (embed + top-k):
+  stores 4 chunks. Query 'what timezone?' -&gt; returns BOTH
+  &quot;I'm in PST&quot; and &quot;I'm EST now&quot; ranked by similarity.
+  Stores the vegetarian fact TWICE. No idea one supersedes another.
+     missing: time awareness, conflict resolution, dedup, TTL, importance
+
+MEMORY LIBRARY (Mem0 / Zep / LangMem):
+  extract fact  -&gt; {timezone: EST}   (CONFLICT RESOLUTION: EST supersedes PST)
+  extract fact  -&gt; {diet: vegetarian} stored ONCE  (DEDUP / consolidation)
+  each memory carries a timestamp + recency + importance (EPISODIC ordering)
+  stale/low-value memories expire  (TTL) so the store doesn't bloat
+     you get: an evolving USER PROFILE, not a pile of raw chunks</pre></div>
+<p>So what do the libraries actually <em>do</em> on top of a vector store? Four things a naive store lacks. <strong>(1) Extraction / consolidation</strong> — they distill raw turns into structured memories ('user is vegetarian') rather than storing every message verbatim, so the store holds facts, not transcript. <strong>(2) Conflict resolution</strong> — when a new fact contradicts an old one (EST supersedes PST), they update rather than accumulate. <strong>(3) Temporal awareness</strong> — memories carry timestamps and recency so 'three weeks ago' is answerable and recent facts can outrank old ones. <strong>(4) Lifecycle / TTL + importance</strong> — low-value or stale memories expire so the store doesn't bloat and retrieval stays sharp. These are the exact features you found yourself hand-rolling.</p>
+<p>The libraries differentiate on positioning, and knowing the shape matters more than memorising the table. <strong>Mem0</strong> and <strong>LangMem</strong> are the go-to for cross-session recall and user personalization — extract-and-consolidate a durable user profile with minimal setup. <strong>Zep</strong> adds a temporal knowledge-graph model, strong when relationships between facts and time ordering matter. <strong>MemGPT/Letta</strong> take a different tack: an OS-inspired architecture that treats the context window like paged memory, <em>itself</em> deciding what to swap in and out of the limited context — memory-management-as-agent, useful when you want the system to autonomously manage its own working set. A <strong>custom vector store</strong> remains the right call when you need access control, custom metadata filtering, or scale beyond what the managed libraries support.</p>
+<p>The decision procedure is a short escalation, and it's the answer to the interview question. <strong>Start with in-context only</strong> — no memory library at all — because it's the cheapest and simplest, and many agents never need more. <strong>Add Mem0 or LangMem</strong> the moment you need cross-session recall or per-user personalization (the scenario's vegetarian/metric/EST profile is exactly this trigger). <strong>Reach for Zep</strong> when temporal/relational structure between facts is load-bearing. <strong>Roll your own vector store only</strong> when access control, bespoke metadata filtering, or scale forces it. <mark>Building custom <em>first</em> is the anti-pattern — you'll re-implement TTL, dedup, and conflict resolution badly.</mark></p>
+<p>The trap to avoid is over-engineering memory before you've felt the pain that justifies it — and its mirror, under-engineering by dumping everything into a raw vector store and being surprised when it returns contradictory or stale facts. Library choice also shapes architecture in ways that are hard to refactor later (a temporal knowledge graph vs a flat profile store are not swap-compatible), so the choice deserves real thought at design time. The interactive lets you inspect the six memory types with implementation snippets, compare the libraries head-to-head, and run a decision wizard against your own session-length / personalization / latency constraints — use the wizard to pressure-test the escalation above on a concrete use case.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>This is the implementation layer for the memory types:</strong> the production libraries (Mem0, Zep, LangMem, MemGPT/Letta) + custom vector stores that realise long-term memory. The anti-pattern is hand-building what a library already solves.</li><li><strong>A raw vector store is only storage + similarity search</strong> — it has no notion of time, identity, change, or importance, so it returns stale facts (old timezone) next to corrected ones and stores duplicates.</li><li><strong>Libraries add four things a naive store lacks:</strong> extraction/consolidation (facts not transcript), conflict resolution (new supersedes old), temporal awareness (timestamps/recency), and lifecycle/TTL + importance (expiry so the store doesn't bloat).</li><li><strong>Episodic (temporal, event-specific) and semantic (durable, deduplicated facts) memory need different handling</strong> — the reason a flat vector store fails at both simultaneously.</li><li><strong>Positioning:</strong> Mem0/LangMem = cross-session recall + personalization; Zep = temporal knowledge-graph relations; MemGPT/Letta = OS-style context paging (memory-management-as-agent); custom store = access control / metadata / scale.</li><li><strong>Escalation, not custom-first:</strong> start in-context only → add Mem0/LangMem for cross-session recall → Zep for temporal/relational structure → custom vector store only for access control, metadata filtering, or scale.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You need your assistant to remember, across sessions, that a user is vegetarian, prefers metric units, and works in EST — and to recall a fact they mentioned three weeks ago. Your first instinct is to build a custom vector store: embed every message, retrieve top-k each turn. Two sprints in you're hand-rolling TTL expiry, dedup, and conflict resolution (the user changed their timezone) — all of which Mem0 or Zep already handle. The interview question underneath: when do you reach for a memory library versus build your own, and what do these libraries actually do that a raw vector store doesn't?</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Memory libraries are the implementation layer for long-term memory: a raw vector store is only storage + top-k similarity, with no sense of time, identity, change, or importance, so it returns stale and duplicate facts. Mem0/Zep/LangMem/MemGPT add extraction, conflict resolution, temporal awareness, and TTL. Escalate rather than over-build — in-context → Mem0/LangMem for recall+personalization → Zep for temporal graphs → custom store only for access control or scale.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

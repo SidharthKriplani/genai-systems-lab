@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRPO &amp; RLVR — Modern Post-Training | GenAI Systems Lab</title>
+  <meta name="description" content="Critic-free RL and verifiable rewards beyond RLHF/DPO.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/grpo-rlvr">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/grpo-rlvr">
+  <meta property="og:title" content="GRPO &amp; RLVR — Modern Post-Training | GenAI Systems Lab">
+  <meta property="og:description" content="Critic-free RL and verifiable rewards beyond RLHF/DPO.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GRPO &amp; RLVR — Modern Post-Training">
+  <meta name="twitter:description" content="Critic-free RL and verifiable rewards beyond RLHF/DPO.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"GRPO & RLVR — Modern Post-Training","description":"Critic-free RL and verifiable rewards beyond RLHF/DPO.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/grpo-rlvr"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">FOUNDATION MODELS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>GRPO &amp; RLVR — Modern Post-Training</h1>
+    <p class="desc">Critic-free RL and verifiable rewards beyond RLHF/DPO.</p>
+
+    
+    <section><h2>How It Works</h2><p>Start with the classic <strong>RLHF-with-PPO</strong> stack, because GRPO and RLVR are each defined by what they <em>remove</em> from it. RLHF has three phases: (1) supervised fine-tune; (2) train a <strong>reward model (RM)</strong> on human preference pairs ('response A is better than B') so it outputs a scalar reward; (3) optimize the policy against that RM using <strong>PPO</strong>, with a <strong>KL penalty</strong> to a frozen reference model so the policy doesn't drift into gibberish that games the RM.</p>
+<p>PPO itself needs a <strong>value network (critic)</strong> — a second large network that estimates the expected future reward of a state, used to compute the <strong>advantage</strong> (how much better an action was than expected) that stabilizes the gradient. <mark>So a full PPO run holds up to FOUR models in memory — policy, reference, reward model, and critic — which is the cost and complexity GRPO attacks.</mark></p>
+<div class="illustration"><div class="illustration-label">RLHF+PPO stack vs GRPO — what gets removed</div><pre>RLHF + PPO  (up to 4 models resident):
+  [ POLICY ]     &lt;- being trained
+  [ REFERENCE ]  &lt;- frozen, for KL penalty (anti-reward-hacking)
+  [ REWARD MODEL ] &lt;- learned from human preference pairs -&gt; scalar reward
+  [ CRITIC/VALUE ] &lt;- estimates baseline; advantage = reward - value(state)
+
+  advantage_t = reward - V(state_t)      (needs the learned critic)
+
+GRPO  (DeepSeek) -- DROP THE CRITIC:
+  For one prompt, sample a GROUP of G outputs {o_1 ... o_G}.
+  Score each -&gt; rewards {r_1 ... r_G}.
+  baseline = MEAN reward of the group (no value net!)
+  advantage(o_i) = (r_i - mean(r)) / std(r)   &lt;- group-relative, normalized
+
+  [ POLICY ] + [ REFERENCE (KL) ] + reward source.  Critic GONE.
+  -&gt; ~one fewer large network; simpler, cheaper, less to destabilize.</pre></div>
+<p><strong>GRPO (Group Relative Policy Optimization)</strong>, from DeepSeek, changes exactly one thing about PPO: it <strong>removes the critic</strong>. PPO needed the value network to compute a baseline for the advantage. GRPO gets that baseline for <em>free</em> by sampling a <strong>group of G outputs for the same prompt</strong>, scoring all of them, and using the <strong>group's mean reward as the baseline</strong>. An output's advantage is its reward <strong>relative to its siblings</strong> — normalized by the group's standard deviation.</p>
+<p><mark>That's the whole trick: 'was this response better or worse than the <em>other</em> responses I sampled for this same prompt?' No learned critic required — the comparison group <em>is</em> the baseline.</mark> It keeps PPO's clipped objective and KL-to-reference term, but drops one of the four networks, cutting memory and removing a notoriously finicky component to tune.</p>
+<p>GRPO answers <em>how</em> you optimize (critic-free, group-relative). <strong>RLVR</strong> answers a different question: <strong>where does the reward come from?</strong> In classic RLHF, the reward is a <strong>learned reward model</strong> — a neural net trained to imitate human preferences. <strong>RLVR — Reinforcement Learning from Verifiable Rewards — throws out the learned RM entirely and uses a rule or verifier that checks whether the answer is actually correct.</strong></p>
+<p>For math: does the final answer equal the ground truth (or pass a symbolic check)? Reward 1, else 0. For code: does it <strong>compile and pass the unit tests / execute correctly</strong>? For format: does it follow the required schema? <mark>The reward is computed by <em>running a checker</em>, not by <em>asking a neural network what a human would probably prefer</em>.</mark> That is exactly the stakeholder's instinct: when you can literally check the answer, you don't need a model to guess at quality.</p>
+<div class="illustration"><div class="illustration-label">Learned reward model (RLHF) vs verifiable reward (RLVR)</div><pre>RLHF -- LEARNED reward model:
+  response -&gt;  [ neural RM trained on human prefs ]  -&gt; scalar reward
+  + captures fuzzy, subjective quality (helpfulness, tone, style)
+  - APPROXIMATE and GAMEABLE: policy finds inputs that fool the RM
+    (reward hacking); RM drifts off-distribution as policy improves;
+    needs costly human preference data to train.
+
+RLVR -- VERIFIABLE reward (rule / verifier, NOT a learned model):
+  math:   answer == ground_truth ?           -&gt; 1 else 0
+  code:   compiles AND passes unit tests ?    -&gt; 1 else 0
+  format: matches required schema ?           -&gt; 1 else 0
+  + GROUNDED: reward = actual correctness, essentially ungameable
+    (can't &quot;fool&quot; a unit test), no RM to train, no preference labels.
+  - only works where correctness is CHECKABLE (math, code, logic,
+    structured output). Fails for open-ended &quot;which essay is nicer?&quot;
+
+Common modern recipe:  GRPO (critic-free optimizer)
+                        + RLVR (verifiable reward source)
+  = DeepSeek-R1-style reasoning RL; the RLVR reward source is
+    also central to Sarvam's post-training.</pre></div>
+<p><strong>GRPO and RLVR are orthogonal and usually combined.</strong> GRPO is the <em>optimizer</em> (critic-free, group-relative advantage); RLVR is the <em>reward source</em> (a verifier, not a learned RM). DeepSeek-R1-style reasoning training is essentially <strong>GRPO + RLVR</strong>: sample a group of chain-of-thought solutions, reward each by whether the final answer verifies, take group-relative advantages, update. Sarvam's post-training likewise leans on <strong>verifiable rewards</strong> for its reasoning and multilingual-correctness objectives.</p>
+<p><strong>When do verifiable rewards beat a learned RM?</strong> <mark>Whenever correctness is <em>checkable</em>: math, code, unit-testable functions, logical/constraint satisfaction, structured/JSON output, tool-call correctness.</mark> In those domains a learned RM is strictly worse — it only <em>approximates</em> a signal you can compute exactly, and it can be gamed (reward hacking) and drifts out of distribution as the policy improves. A verifier can't be fooled by a plausible-but-wrong answer: the unit test either passes or it doesn't.</p>
+<p><strong>When does a learned RM still win?</strong> When the objective is <strong>subjective or open-ended</strong> — helpfulness, tone, writing style, harmlessness, 'which of these two essays is nicer?' — there is no verifier to run, so you need a model that captures fuzzy human preference. That's the RLHF/RLVR division of labor: <strong>RLVR for objectively checkable skills, RLHF-style learned reward for taste and safety.</strong> Frontier post-training typically blends both.</p>
+<p>One more cousin: <strong>DPO (Direct Preference Optimization)</strong> attacks the same RLHF cost from another angle — it skips the <em>explicit</em> reward model AND the RL loop, optimizing the policy <em>directly</em> on preference pairs with a simple classification-style loss. So the landscape: <strong>RLHF/PPO</strong> (learned RM + critic, full RL), <strong>DPO</strong> (no RM, no RL loop, direct on preferences), <strong>GRPO</strong> (RL but critic-free, group-relative), <strong>RLVR</strong> (RL with a <em>verifier</em> reward instead of a learned RM). <mark>The recurring interview trap: conflating GRPO (an optimizer that drops the critic) with RLVR (a reward <em>source</em> that drops the learned reward model). They solve different problems and are most powerful together.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>RLHF+PPO holds up to four models:</strong> policy, frozen reference (for the KL penalty vs reward-hacking), a <strong>learned reward model</strong> (from human preference pairs), and a <strong>critic/value net</strong> (for the advantage baseline). GRPO and RLVR are each defined by what they delete from this.</li><li><strong>GRPO drops the CRITIC.</strong> For each prompt it samples a <strong>group of G outputs</strong>, scores them, and uses the <strong>group mean as the baseline</strong>; advantage = (reward − group_mean)/group_std — 'better or worse than my siblings for this same prompt.' No value network needed.</li><li><strong>RLVR drops the LEARNED REWARD MODEL.</strong> The reward is computed by a <strong>rule/verifier that checks correctness</strong> — answer == ground truth (math), compiles + passes tests (code), matches schema (format) — reward 1/0, not a neural net's guess at human preference.</li><li><strong>GRPO and RLVR are orthogonal — optimizer vs reward source — and usually combined</strong> (DeepSeek-R1-style: sample a group of solutions, reward by verification, take group-relative advantages). RLVR is central to Sarvam's post-training.</li><li><strong>Verifiable rewards beat a learned RM wherever correctness is checkable</strong> (math, code, logic, structured output, tool calls): exact instead of approximate, essentially <strong>ungameable</strong> (can't fool a unit test), no preference labels, no RM drift as the policy improves.</li><li><strong>A learned RM still wins for subjective/open-ended goals</strong> (helpfulness, tone, style, safety) where no verifier exists. Related: <strong>DPO</strong> skips both the RM and the RL loop, optimizing directly on preference pairs. Don't conflate GRPO (drops critic) with RLVR (drops learned RM).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your team wants to improve a model's math and coding accuracy with RL. The classic recipe is RLHF with PPO — but that means training a separate reward model on human preference data AND a value/critic network, roughly doubling your memory and adding a fragile, gameable reward model. Meanwhile DeepSeek-R1 reached strong reasoning with GRPO, and Sarvam and others push RLVR — 'reinforcement learning from verifiable rewards.' A stakeholder asks: for math and code, why would you train a reward model at all when you can just <em>check if the answer is right</em>? You need to explain PPO → GRPO and RLHF → RLVR, and when verifiable rewards beat a learned reward model.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>GRPO and RLVR are each defined by what they cut from the RLHF+PPO stack, and they're orthogonal: GRPO is the optimizer that drops the critic (baseline = group-mean reward over G sampled outputs, giving group-relative advantage), while RLVR is the reward source that drops the learned reward model (reward = a verifier checking actual correctness — right answer, passing tests). Verifiable rewards beat a learned RM wherever correctness is checkable (math, code, logic) — exact and ungameable — while learned RMs remain necessary for subjective goals; the two are most powerful combined (DeepSeek-R1-style reasoning RL, and Sarvam's post-training).</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

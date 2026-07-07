@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spot the Hallucination | GenAI Systems Lab</title>
+  <meta name="description" content="Detect fabrication — parametric vs grounded claims, and the tells.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/hallucination-lab">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/hallucination-lab">
+  <meta property="og:title" content="Spot the Hallucination | GenAI Systems Lab">
+  <meta property="og:description" content="Detect fabrication — parametric vs grounded claims, and the tells.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Spot the Hallucination">
+  <meta name="twitter:description" content="Detect fabrication — parametric vs grounded claims, and the tells.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Spot the Hallucination","description":"Detect fabrication — parametric vs grounded claims, and the tells.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/hallucination-lab"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">EVAL</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Spot the Hallucination</h1>
+    <p class="desc">Detect fabrication — parametric vs grounded claims, and the tells.</p>
+
+    
+    <section><h2>How It Works</h2><p>First principles: an LLM is a next-token predictor trained to produce <em>fluent, plausible</em> continuations — it is optimized for likelihood, not truth. <mark>Fluency and factuality are separate axes, and the model only ever optimized the first one.</mark> A hallucination is not a glitch; it is the model doing its job (emit the most probable continuation) in a situation where the most probable continuation happens to be false. That reframing is the whole lesson: you cannot detect fabrication by asking 'does this read as correct?' — sounding correct is the failure mode's <em>disguise</em>.</p>
+<p>The critical distinction is <strong>parametric vs. grounded</strong> claims. A <em>parametric</em> claim comes from weights — the model's compressed memory of training data, which is lossy, stale, and blends sources. A <em>grounded</em> claim is supported by evidence supplied in-context (a retrieved chunk, a provided document). <mark>Hallucination is what happens when the model emits a parametric claim while presenting it as grounded.</mark> In RAG this is the core risk: retrieval gives the model <em>some</em> context, and if the context is thin or missing the answer, the model's obedience reflex makes it <em>interpolate from parametric memory</em> rather than admit the gap — and it dresses the guess in the same confident register as a real answer.</p>
+<p>Fabrication has <strong>tell-tale signatures</strong> you can learn to spot:</p>
+<p><strong>Plausible specifics</strong> — real-sounding but invented detail: a section number, a date, a version, a statistic. Specificity is a confidence signal humans trust, and the model fabricates it fluently. <em>The tell:</em> the more precise a claim, the more it needs a source, and hallucinations rarely have one that checks out.</p>
+<p><strong>Wrong attributions / entity confusion</strong> — the right fact attached to the wrong entity, or a real-looking citation to a document/author/section that doesn't exist. The model blends nearby items in its training distribution.</p>
+<p><strong>Fabricated numbers</strong> — invented figures (prices, percentages, measurements) stated to false precision. Numeric queries are high-risk because there's exactly one correct answer and infinitely many plausible wrong ones the model can sample.</p>
+<p><mark>Across all three, the register is identical to a correct answer — same grammar, same confidence, same fluency. That identical register is why fluency ≠ truth, and why 'it sounded authoritative' is worthless as a verification signal.</mark></p>
+<div class="illustration"><div class="illustration-label">Parametric guess vs. grounded answer — same fluency, opposite truth</div><pre>QUESTION: &quot;What's the refund window in the current policy?&quot;
+
+  RETRIEVED CONTEXT:  (thin — the exact clause wasn't retrieved)
+
+  MODEL OUTPUT (hallucination):
+    &quot;Per Section 4.2 of the 2023 Terms, refunds are available
+     within 45 days of purchase for a 12% restocking fee.&quot;
+       │            │                    │
+       │            │                    └─ fabricated number
+       │            └─ fabricated date/version
+       └─ wrong attribution — no Section 4.2 exists
+
+  Register: confident, specific, fluent  ← the DISGUISE
+
+  GROUNDED ANSWER (context actually contained the clause):
+    &quot;The policy states a 30-day refund window [policy.pdf, §2].&quot;
+       └─ verifiable citation, claim traceable to evidence
+
+  Same fluent English. One is parametric guessing dressed as fact;
+  the other is grounded. You cannot tell them apart by tone.</pre></div>
+<p>Hallucination is <strong>not random</strong> — it clusters around predictable conditions, which is what makes it manageable: <strong>sparse or missing retrieval context</strong> (the model fills the gap from memory), <strong>long-tail queries</strong> (little training signal, so the prior is weak and wanders), <strong>numeric specificity</strong> (one right answer, many plausible wrong ones), and <strong>instruction-following pressure</strong> (a prompt that says 'always answer' overrides the model's uncertainty and forces a guess). Knowing the clusters tells you <em>where</em> to point verification.</p>
+<p><strong>Verification strategies</strong> attack the parametric-vs-grounded gap directly:</p>
+<p><strong>Grounding checks</strong> — require every claim to be traceable to supplied context; if a sentence has no supporting chunk, flag it. This is the core RAG safeguard.</p>
+<p><strong>Citation-first</strong> — force the model to cite the source <em>for each claim</em> (and ideally quote the supporting span). Fabricated citations become detectable because you can check whether the cited span exists and actually supports the claim. Citation-first also <em>reduces</em> hallucination, because grounding the generation on retrieved spans pulls the model off parametric guessing.</p>
+<p><strong>Abstention / confidence routing</strong> — the real fix is not a bigger model; it's a <em>threshold</em>. When the model's certainty (or retrieval score, or a self-consistency check across samples) is low, route the query to 'I don't know / escalate to a human' rather than generate. <mark>A system that abstains on the 5% it can't ground beats one that confidently fabricates on that 5%.</mark></p>
+<p><strong>LLM-as-judge / self-consistency</strong> — a second pass (or multiple sampled answers) scores whether the answer is supported by the context; disagreement across samples is a hallucination signal.</p>
+<p>The interactive below runs you through rounds of RAG outputs where one response per round is fabricated, spanning the four production types (factual error, unsupported claim, entity confusion, numeric fabrication). Your job is to catch it — and the training payoff is calibrating your eye to the <em>signature</em> (unsourced specifics, citations that don't check out, numbers stated to false precision) rather than the <em>tone</em>. Every round, ask 'is this claim traceable to evidence, or is it a confident parametric guess?'</p>
+<p>Interview framing: <em>hallucination is the model emitting a parametric claim as if grounded, because it optimizes fluency not truth; you detect it by grounding/citation checks (not by how confident it sounds) and you mitigate it with citation-first prompting plus abstention when certainty or retrieval support is low — not by swapping in a bigger model.</em></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>LLMs optimize fluency, not truth.</strong> Fluency and factuality are separate axes; the model only ever optimized the first, so a hallucination is the correct behavior (most-probable continuation) producing a false statement.</li><li><strong>Parametric vs. grounded is the core distinction.</strong> A parametric claim comes from lossy weight-memory; a grounded claim is supported by in-context evidence. Hallucination = a parametric claim presented as grounded.</li><li><strong>Signatures: plausible specifics, wrong attributions, fabricated numbers.</strong> Fabrication wears the same confident, specific, fluent register as a correct answer — so 'it sounded authoritative' is worthless as a verification signal.</li><li><strong>Hallucination clusters, it isn't random:</strong> sparse/missing retrieval, long-tail queries, numeric specificity, and 'always answer' instruction pressure. The clusters tell you where to aim verification.</li><li><strong>Citation-first grounds AND detects.</strong> Forcing a source per claim pulls the model off parametric guessing and makes fabricated citations checkable (does the cited span exist and support the claim?).</li><li><strong>The fix is abstention, not a bigger model.</strong> Route low-certainty / low-retrieval-support queries to 'I don't know / escalate.' A system that abstains on the unknowable 5% beats one that confidently fabricates on it.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your RAG assistant answers a customer's question about a refund policy in fluent, confident, well-structured English — citing 'Section 4.2 of the 2023 Terms.' A support agent checks: there is no Section 4.2, and the policy it describes is wrong. The model didn't malfunction; it produced exactly the kind of plausible, specific, authoritative-sounding text it was trained to produce. You need to teach the team to detect fabrication by its <em>signature</em>, not by whether it sounds right — because fluency is precisely what makes hallucinations dangerous.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Hallucination is an LLM emitting a parametric (weight-memory) claim as if it were grounded, because the model optimizes fluency rather than truth — so fabrication wears the same confident, specific register as a correct answer and can't be caught by tone. Detect it with grounding and citation checks aimed at its clusters (thin retrieval, long-tail queries, numeric specificity), and mitigate it with citation-first prompting plus abstention on low-confidence queries, not by swapping in a bigger model.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

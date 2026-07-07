@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Coding Loops | GenAI Systems Lab</title>
+  <meta name="description" content="Localize → edit → test → observe → retry, grounded in real feedback.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/codegen-agentic-loops">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/codegen-agentic-loops">
+  <meta property="og:title" content="Agentic Coding Loops | GenAI Systems Lab">
+  <meta property="og:description" content="Localize → edit → test → observe → retry, grounded in real feedback.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agentic Coding Loops">
+  <meta name="twitter:description" content="Localize → edit → test → observe → retry, grounded in real feedback.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agentic Coding Loops","description":"Localize → edit → test → observe → retry, grounded in real feedback.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/codegen-agentic-loops"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">CODE-GEN</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Agentic Coding Loops</h1>
+    <p class="desc">Localize → edit → test → observe → retry, grounded in real feedback.</p>
+
+    
+    <section><h2>How It Works</h2><p>One-shot generation fails for a structural reason: <strong>the model is generating without feedback from the environment it's editing.</strong> A real fix depends on facts the model can't know from the prompt alone — whether the code compiles, whether the existing tests pass, what the actual stack trace says. A single call has to <em>guess</em> all of that in one forward pass.</p>
+<p>The loop replaces guessing with <strong>grounded observation</strong>: make a change, <em>run it</em>, read what actually happened, and revise. <mark>One-shot codes blind; the agent codes with a feedback signal from the real environment — that difference is the whole thing.</mark></p>
+<p>The canonical loop has five stages, and each maps to a tool.</p>
+<p><strong>(1) Localize</strong> — find the file(s) and lines to change (retrieval + search; the previous module). <strong>(2) Propose + apply an edit</strong> — generate a patch and write it to disk (file read/write, str-replace). <strong>(3) Run tests / build</strong> — execute the repo's own test suite or reproduction script (shell + test runner). <strong>(4) Observe</strong> — read the failure: assertion diff, compiler error, stack trace. <strong>(5) Revise</strong> — feed the observation back and generate the next edit, looping to (2). The agent's 'tools' are exactly the things a human engineer uses: read, edit, grep, run a shell, run tests. <mark>The loop is a control system — the test output is the error signal that steers the next edit.</mark></p>
+<div class="illustration"><div class="illustration-label">The agentic coding loop (localize -&gt; edit -&gt; run -&gt; observe -&gt; revise)</div><pre>        +--------------------------------------------------+
+        |                                                  |
+        v                                                  |
+   (1) LOCALIZE        retrieve/search the relevant files  |
+        |                                                  |
+   (2) EDIT            propose patch -&gt; apply to disk       |
+        |                                                  |
+   (3) RUN             execute tests / build / repro script |
+        |                                                  |
+   (4) OBSERVE         read: assertion diff, stack trace ---+  (revise)
+        |
+        |  tests PASS  -&gt;  submit diff for review
+        |
+   STOP also if:  step-limit reached  |  cost-limit reached
+                  no-progress (same failure N times)
+
+Contrast one-shot:  LOCALIZE -&gt; EDIT -&gt; SUBMIT  (never RUNs, never OBSERVEs)
+   =&gt; patches the symptom, silently breaks tests it never executed.
+
+Feedback closes the loop: a wrong edit surfaces as a concrete failure the
+NEXT iteration can read and fix — instead of shipping the guess.</pre></div>
+<p>Real issues rarely fit one edit, so the agent needs <strong>planning and subgoal decomposition</strong>. A change like 'add a giftCard field' fans out: update the type, the form, the API handler, the DB migration, and the tests. The agent should <strong>decompose</strong> into ordered subgoals and hold <strong>state across the session</strong> — what it has tried, what failed, which files it has touched — because a long trajectory can be dozens of tool calls and the model must not forget its own history. <mark>Multi-file fixes require the agent to plan, sequence subgoals, and remember its trajectory — a single edit can't carry a coherent change across five files.</mark></p>
+<p>Autonomy is exactly what makes an agent dangerous, so <strong>guardrails are not optional — they define whether it's shippable.</strong> Four are core. <strong>Sandboxing/isolation</strong> so the agent runs tests and shell commands in an ephemeral container, not on your machine (detailed in the security module). <strong>Diff review / human-in-the-loop</strong> so a person approves the patch before it merges. <strong>Step and cost limits</strong> so a run terminates after N iterations or $X of tokens rather than looping forever. <strong>Stop conditions on no-progress</strong> — if the same test fails identically three times, the agent is stuck and should halt or escalate, not burn budget. <mark>Every unit of autonomy you grant must be paired with a limit that bounds its blast radius and its bill.</mark></p>
+<p>The subtle killer is the <strong>infinite / degenerate loop.</strong> Without stop logic an agent will 'fix' a failing test by <em>deleting the test</em>, or oscillate between two wrong edits, or thrash forever on a flaky test that passes and fails at random. You need explicit termination: a hard step cap, a <strong>no-progress detector</strong> (identical failure signature repeating), and rules against pathological actions (don't let 'make tests pass' be satisfied by weakening the tests). <mark>A loop without a principled stop condition doesn't converge — it either burns money or games the metric by gutting the tests.</mark></p>
+<p>Finally, know <strong>where agents plateau</strong>, because interviewers probe the limits. <strong>Flaky tests</strong> poison the feedback signal — the agent can't tell a real regression from noise. <strong>Ambiguous specs</strong> ('make it faster') give no test to converge against. <strong>Cross-file refactors</strong> are the hardest: a locally-correct change (rename a function) silently breaks three call sites the agent didn't retrieve, so the fix depends on retrieval quality <em>and</em> on running a broad enough test suite to catch the breakage. <mark>The loop's ceiling is set by the reliability of its feedback: flaky tests, unspecified goals, and unretrieved call sites are where it stalls.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>One-shot codes blind; the agent codes with feedback.</strong> A single call must guess whether code compiles and tests pass; the loop makes a change, runs it, and reads what actually happened before revising.</li><li><strong>The canonical loop is five stages, each a tool:</strong> localize (retrieval/search) -&gt; propose+apply edit (read/write) -&gt; run tests/build (shell+runner) -&gt; observe failure (diff/stack trace) -&gt; revise. The test output is the error signal that steers the next edit.</li><li><strong>Multi-file fixes need planning and memory.</strong> Decompose into ordered subgoals (type, form, handler, migration, tests) and hold trajectory state across a long session so the agent doesn't forget what it tried.</li><li><strong>Guardrails define shippability, not polish.</strong> Sandboxing, human diff review, and step/cost limits are core; autonomy without a bounding limit is a liability.</li><li><strong>Stop conditions prevent degenerate loops.</strong> Without a no-progress detector an agent thrashes forever, oscillates between wrong edits, or 'passes' tests by deleting them — a hard cap plus identical-failure detection is required.</li><li><strong>The loop plateaus where feedback is unreliable.</strong> Flaky tests corrupt the signal, ambiguous specs give nothing to converge against, and cross-file refactors break unretrieved call sites — the ceiling is set by feedback quality.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>A single LLM call reliably fails to fix real GitHub issues: it patches the symptom, breaks two tests it never ran, and has no way to know. Your task is to design the agentic coding loop that modern SWE agents use — localize, edit, run tests, read the failure, retry — explain first-principles why the loop beats one-shot generation, and specify the guardrails that stop it from running forever or doing damage.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>One-shot generation codes blind — it must guess whether code compiles and tests pass in a single forward pass — which is why it patches symptoms and silently breaks tests it never ran. The agentic loop replaces guessing with grounded feedback: localize, apply an edit, run the repo's tests, read the concrete failure, and revise, treating test output as the error signal that steers the next iteration. Multi-file fixes demand planning, subgoal decomposition, and trajectory memory; autonomy demands guardrails that define shippability — sandboxing, human diff review, step/cost caps, and no-progress detectors that stop the agent from thrashing or gaming the metric by gutting tests. The loop's ceiling is the reliability of its feedback: flaky tests, ambiguous specs, and unretrieved call sites are where it stalls.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

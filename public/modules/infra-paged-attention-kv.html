@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PagedAttention &amp; KV-Cache Memory | GenAI Systems Lab</title>
+  <meta name="description" content="OS-style paging of the KV cache — kill fragmentation, share prefixes.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/infra-paged-attention-kv">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/infra-paged-attention-kv">
+  <meta property="og:title" content="PagedAttention &amp; KV-Cache Memory | GenAI Systems Lab">
+  <meta property="og:description" content="OS-style paging of the KV cache — kill fragmentation, share prefixes.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PagedAttention &amp; KV-Cache Memory">
+  <meta name="twitter:description" content="OS-style paging of the KV cache — kill fragmentation, share prefixes.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"PagedAttention & KV-Cache Memory","description":"OS-style paging of the KV cache — kill fragmentation, share prefixes.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/infra-paged-attention-kv"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">INFERENCE</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>PagedAttention &amp; KV-Cache Memory</h1>
+    <p class="desc">OS-style paging of the KV cache — kill fragmentation, share prefixes.</p>
+
+    <section><h2>Start Here</h2><p>Let's carry forward the one fact the last module pinned down: what limits how many requests you can serve at once is <strong>not</strong> the GPU's math — it's memory, specifically the KV cache. So the game becomes simple to state: fit more KV caches into the same HBM. And here's the puzzle we'll unravel — even when the arithmetic says a card should hold forty conversations, in practice it falls over at fourteen, with most of the memory somehow 'used' but not actually holding anything. Where did it go?</p>
+<p>The answer is one of the most satisfying ideas in all of systems, because it isn't new at all. It's a fifty-year-old operating-systems trick — <strong>virtual memory and paging</strong> — quietly reborn to solve an LLM problem. The reason your card fills up isn't that KV caches are big; it's that the <em>naive way of storing them</em> leaves huge pockets of reserved-but-empty space, the same fragmentation that plagued early memory allocators.</p>
+<p>We'll build it from the ground up: first the arithmetic of what a KV cache actually costs per token, then exactly how the obvious contiguous storage wastes most of it, and finally how paging recovers nearly all of it — and, as a bonus, lets requests <em>share</em> memory they have in common. Take your time. By the end, a card that OOMs while looking half-empty will make complete sense.</p></section>
+    <section><h2>How It Works</h2><p>The previous module ended on the real ceiling: <strong>KV-cache memory, not compute, caps how many requests you can batch.</strong> So the game is fitting more KV caches in HBM. The problem is that the <em>naive</em> way of storing the KV cache wastes most of the memory you paid for.</p>
+<p>First, the arithmetic. Per token, the KV cache stores a key and a value in <strong>every layer, for every attention head</strong> (or KV head under grouped-query attention). <mark>KV bytes ≈ `2 (K and V) × layers × kv_heads × head_dim × bytes_per_elem`, per token.</mark> For a 13B-class model at fp16 that's on the order of ~0.5–1 MB per token; multiply by sequence length and by the number of concurrent requests and the KV cache quickly becomes the dominant consumer of VRAM — which is why storing it efficiently is the whole ballgame.</p>
+<p>Naive serving stores each request's KV cache in <strong>one contiguous block of memory sized to the maximum possible sequence length.</strong> That creates two classic memory-management pathologies at once.</p>
+<p><strong>Internal fragmentation (the big one):</strong> you reserve, say, 2,048 tokens of KV space up front, but the request only generates 100 tokens — so ~95% of that reservation sits allocated-but-empty for the request's whole lifetime. You can't lend it to another request because it's earmarked. <mark>Every request pre-pays for its worst case, so the card fills with reserved-but-unused KV space.</mark></p>
+<p><strong>External fragmentation:</strong> requests of different lengths come and go, leaving oddly-sized gaps between live contiguous blocks. A new request needs a contiguous run big enough for its max length; even if the <em>total</em> free memory is plenty, no single gap is large enough, so allocation fails. That's the scenario: 30GB 'used', 12GB actually holding KV, and OOM at 14 requests — the rest is fragmentation waste.</p>
+<p><strong>PagedAttention</strong> (the idea vLLM is built on) fixes this by borrowing the oldest trick in operating systems: <strong>virtual memory and paging.</strong></p>
+<p>Instead of one contiguous per-request block, the KV cache is split into small <strong>fixed-size blocks</strong> (e.g. 16 tokens' worth of KV each). A request's logical sequence of tokens is mapped to a set of physical blocks through a <strong>block table</strong> — exactly like an OS page table mapping virtual pages to physical frames. <mark>The physical blocks a request uses need not be contiguous; they're allocated from a shared pool on demand, one block at a time as the sequence grows.</mark></p>
+<p>The attention kernel is made 'paged-aware': it gathers the K/V it needs by following the block table rather than assuming a flat contiguous array. The result: you allocate KV memory in small increments only as tokens are actually produced, so internal fragmentation drops to at most one partially-filled block per sequence (a few percent), and external fragmentation vanishes because every block is the same size and interchangeable.</p>
+<div class="illustration"><div class="illustration-label">Contiguous max-length reservation vs paged blocks</div><pre>NAIVE CONTIGUOUS (reserve max_len = 2048 per request):
+  req A: [■■■■□□□□□□□□□□□□□□□□□□□□□□]  used 100 / reserved 2048  → ~95% wasted
+  req B: [■■■■■■□□□□□□□□□□□□□□□□□□□□]  used 300 / reserved 2048  → ~85% wasted
+  free memory is fragmented into gaps too small for a new 2048-block reservation
+  → OOM long before the card is actually full.
+
+PAGEDATTENTION (fixed 16-token blocks + per-request block table):
+  block pool (physical):  [b0][b1][b2][b3][b4][b5][b6][b7] ... (shared)
+  req A block table → [b0, b3]          (2 blocks = up to 32 tokens, grows on demand)
+  req B block table → [b1, b2, b5, b7]  (blocks need NOT be contiguous)
+  → allocate a block only when a sequence fills the previous one;
+    waste ≤ one partial block per request (a few %), no external fragmentation.
+
+Shared prefix (copy-on-write): system prompt lives in blocks [b0,b1];
+  many requests' block tables point at [b0,b1] → stored ONCE, not per request.</pre></div>
+<p>The payoff is <strong>large and directly measured in concurrency.</strong> Cutting KV waste from ~60–80% down to a few percent lets you pack <strong>several times more concurrent sequences</strong> onto the same GPU — the original vLLM paper reports up to ~2–4× higher throughput than prior systems at the same latency, essentially all of it from reclaimed KV memory feeding a bigger continuous batch. <mark>PagedAttention is <em>what makes continuous batching memory-efficient at scale</em> — the two are complementary: batching wants more sequences, paging lets the memory hold them.</mark></p>
+<p>Paging also unlocks <strong>sharing.</strong> Because blocks are addressable and reference-countable, multiple requests can point their block tables at the <strong>same physical blocks</strong> for a shared prefix — a common system prompt, a few-shot preamble, or the branches of a beam search / parallel samples. The shared blocks are stored <strong>once</strong> and use <strong>copy-on-write</strong>: the moment one request needs to diverge (write a different token), it gets its own copy of just that block. For a workload where every request carries the same 500-token system prompt, prefix sharing alone can save enormous KV memory.</p>
+<p>PagedAttention is one lever on the KV budget; production systems stack it with two others when memory is <em>still</em> tight.</p>
+<p><strong>KV-cache quantization</strong> (int8 or FP8 KV) halves or quarters KV bytes per token — orthogonal to weight quantization, and covered in the foundations Quantization module. Paged blocks make this clean: you just store lower-precision K/V in each block.</p>
+<p><strong>KV eviction / windowing</strong> drops or offloads KV for tokens unlikely to matter — e.g. sliding-window attention keeps only the last W tokens' KV, and 'H2O'-style heavy-hitter policies keep the tokens attention actually attends to. And under memory pressure, a scheduler can <strong>preempt</strong> a running request: page its KV out to CPU (or recompute it later) to make room, then swap it back — the serving analog of OS page-out. <mark>The unifying idea is that once the KV cache is paged, it becomes a managed resource you can quantize, share, evict, and swap — instead of a rigid contiguous reservation you can only over-provision.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>KV bytes per token ≈ 2 × layers × kv_heads × head_dim × bytes</strong>, accumulated over sequence length and concurrency. It's the dominant VRAM consumer in serving, so how you <em>store</em> it determines how many requests fit — not just how big it is.</li><li><strong>Naive contiguous storage wastes most KV memory.</strong> Reserving max-sequence-length per request causes internal fragmentation (short requests hold huge empty reservations) and external fragmentation (variable-length requests leave gaps too small to reuse) — you OOM with the card half-empty.</li><li><strong>PagedAttention applies OS paging to the KV cache.</strong> Fixed-size blocks + a per-request block table map logical tokens to non-contiguous physical blocks allocated on demand, cutting waste to ≤ one partial block per sequence and eliminating external fragmentation.</li><li><strong>Paging is what makes continuous batching scale.</strong> Reclaimed KV memory feeds a larger batch, yielding ~2–4× throughput at the same latency in vLLM — the two techniques are complementary, not alternatives.</li><li><strong>Addressable blocks enable prefix sharing (copy-on-write).</strong> A shared system prompt, few-shot preamble, or beam/parallel-sample branch is stored once; a request copies only the block it diverges on — huge savings when every request carries the same prefix.</li><li><strong>Paging turns KV into a managed resource.</strong> Once blocked, KV can also be quantized (int8/FP8 KV), windowed/evicted (sliding-window, heavy-hitter), or preempted/swapped to CPU under pressure — layered levers on the same memory budget.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A continuously-batched server should, by the memory math, fit ~40 concurrent 2K-context requests on an 80GB A100 after weights. In practice it OOMs at ~14 concurrent requests, and nvidia-smi shows 30GB of VRAM 'used' while active KV caches only account for ~12GB. Average sequences are short, yet most of the card is unusable. Take a moment before reading on: given what we built, where is the memory going? Here's the reasoning, step by step. Naive serving hands each request one contiguous block sized to the <em>maximum</em> possible sequence length, so a short request that generates 100 tokens still holds a 2,048-token reservation — internal fragmentation — and the come-and-go of variable lengths leaves gaps too small to reuse — external fragmentation. That gap between 12GB live and 30GB 'used' <em>is</em> the fragmentation; it's why allocation fails at 14 while the card looks half-full. Notice the fix falls straight out of the diagnosis: PagedAttention stores KV in small fixed-size blocks mapped by a per-request block table, allocated on demand and non-contiguous, cutting waste to at most one partial block per sequence and eliminating external fragmentation entirely. That reclaimed memory feeds a bigger continuous batch (~2–4× throughput at equal latency in vLLM), and because blocks are addressable, requests sharing a system prompt can point at the same physical blocks via copy-on-write.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>KV-cache memory, not compute, caps serving concurrency — and naive contiguous, max-length KV storage wastes most of it to internal and external fragmentation, so you OOM with the card half-empty. PagedAttention applies OS-style paging: fixed-size KV blocks mapped by a per-request block table, allocated on demand and non-contiguous, cutting waste to ≤ one partial block per sequence. That reclaimed memory feeds a larger continuous batch (~2–4× throughput at equal latency in vLLM), and addressable blocks enable copy-on-write prefix sharing for common system prompts and beam branches. Once paged, the KV cache becomes a managed resource you can also quantize, window/evict, and swap to CPU under pressure.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

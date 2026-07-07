@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASR Architectures: CTC, RNN-T, Whisper | GenAI Systems Lab</title>
+  <meta name="description" content="How audio becomes text — and the streaming-vs-accuracy fork.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/voice-asr-architectures">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/voice-asr-architectures">
+  <meta property="og:title" content="ASR Architectures: CTC, RNN-T, Whisper | GenAI Systems Lab">
+  <meta property="og:description" content="How audio becomes text — and the streaming-vs-accuracy fork.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ASR Architectures: CTC, RNN-T, Whisper">
+  <meta name="twitter:description" content="How audio becomes text — and the streaming-vs-accuracy fork.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"ASR Architectures: CTC, RNN-T, Whisper","description":"How audio becomes text — and the streaming-vs-accuracy fork.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/voice-asr-architectures"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">VOICE AI</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>ASR Architectures: CTC, RNN-T, Whisper</h1>
+    <p class="desc">How audio becomes text — and the streaming-vs-accuracy fork.</p>
+
+    
+    <section><h2>How It Works</h2><p>Speech recognition is a <strong>sequence-to-sequence</strong> problem with a nasty twist: the input and output aren't aligned.</p>
+<p>Audio arrives as a waveform — thousands of amplitude samples per second. The first job is the <strong>front-end</strong>: chop the waveform into overlapping frames (typically 25ms windows, 10ms hop) and convert each to a <strong>log-mel spectrogram</strong> — a compact picture of which frequencies have energy, warped onto the mel scale that matches human hearing. A 16kHz mono signal becomes ~100 feature frames per second.</p>
+<p><mark>That framing sets up the core difficulty: you have ~100 acoustic frames per second but only a few words per second, and nothing tells you which frames belong to which word.</mark> Every ASR architecture is, at heart, a different answer to that alignment problem.</p>
+<p>The reason 16kHz mono is the default is <strong>information arithmetic</strong>, not tradition.</p>
+<p>By the Nyquist theorem, a sample rate of 16kHz can represent frequencies up to <strong>8kHz</strong> — which covers essentially all the energy that distinguishes phonemes in human speech. Telephone audio historically capped at 8kHz sample rate (4kHz band), which is why phone speech is intelligible but muffled. Going above 16kHz (e.g. 44.1kHz music quality) adds data the acoustic model can't use for recognition — it just inflates compute.</p>
+<p><mark>So the front-end is a deliberate, lossy compression: throw away stereo, throw away frequencies above 8kHz, throw away fine phase — keep only what separates one phoneme from another.</mark></p>
+<p>There are <strong>three dominant architectures</strong>, and they differ by <em>how they handle alignment</em> — which is exactly what determines whether they can stream.</p>
+<p><strong>CTC (Connectionist Temporal Classification)</strong> predicts a label for <em>every frame independently</em>, including a special 'blank' token, then collapses repeats and blanks to get the transcript. It's alignment-free and fast, but because frames are predicted independently it has no built-in language model — it's weak on context.</p>
+<p><strong>RNN-Transducer (RNN-T)</strong> adds a small internal predictor network conditioned on the <em>previous output tokens</em>, so each new token sees both the audio so far and the words emitted so far. <mark>This is the one architecture that is natively streaming AND context-aware — which is why it is the production default for real-time voice.</mark></p>
+<p><strong>Attention encoder-decoder (AED)</strong> — the Whisper family — encodes the <em>whole</em> utterance, then a decoder attends over all of it to generate text. Attending over the full clip gives the highest accuracy, but it fundamentally needs the whole audio first — so it is <strong>offline by construction.</strong></p>
+<div class="illustration"><div class="illustration-label">The three architectures by streaming ability and accuracy</div><pre>                  Streaming?     Context-aware?   Rel. accuracy   Latency
+CTC               yes            no (independent)  medium          very low
+RNN-Transducer    yes (NATIVE)   yes (predictor)   high            low
+Whisper (AED)     NO (offline)   yes (full attn)   highest         high (batch)
+Chunked Whisper   partial hack   yes-ish           high            medium
+
+Why the streaming column is the whole story:
+  CTC / RNN-T emit tokens as audio arrives  -&gt; partial hypotheses possible
+  Whisper attends over the WHOLE clip       -&gt; must wait for end-of-speech
+
+Whisper's edge in accuracy is real, but it is bought with &quot;see the entire
+utterance first.&quot; On a live call, that requirement IS the felt latency —
+the assistant literally cannot begin until you stop talking.</pre></div>
+<p>Whisper deserves its own look because it's the model people reach for by default — and the reason it's so good is also why it's <strong>offline-first.</strong></p>
+<p>Whisper was trained on <strong>680,000 hours</strong> of weakly-supervised audio scraped from the web — far more, and far messier, than curated academic corpora. That scale is why it's robust to accents, noise, and domains out of the box. It's <strong>multitask</strong>: the same model transcribes, translates to English, does language ID, and emits timestamps, all selected by special tokens prepended to the decoder (`&lt;|transcribe|&gt;`, `&lt;|translate|&gt;`, `&lt;|en|&gt;`).</p>
+<p>But it's an attention decoder over a fixed <strong>30-second window</strong>, and it was trained on segments that always contain speech. <mark>So on silence or non-speech it doesn't stay quiet — it <em>hallucinates</em> fluent text (often training-caption boilerplate like 'Thanks for watching'), because it was never taught that 'nothing' is a valid output.</mark> That's a signature Whisper failure mode, and it's a direct consequence of the training recipe.</p>
+<p>This is the crux of the scenario. <strong>You cannot ship Whisper-large as-is on a live call.</strong></p>
+<p>Whisper needs the full utterance before it can attend over it, so its architecture forces a wait-then-decode pattern: the assistant stays silent while you speak, and only after you stop does it run a batch decode. That's exactly the 'frozen, then a pause' complaint. Offline benchmarks reward accuracy on complete clips and never measure this, so Whisper looks like the winner right up until it's on a phone line.</p>
+<p>The fixes are all compromises. <strong>Chunked / streaming Whisper</strong> runs the decoder on rolling windows to emit partial text sooner — but re-decoding overlapping chunks costs compute and can flip earlier words. <strong>RNN-T</strong> sidesteps the problem entirely by being streaming-native: it emits tokens as frames arrive. <mark>The healthcare intake line wants RNN-T (or a streaming API); Whisper belongs on the post-call transcription and dictation paths where latency doesn't matter and accuracy does.</mark></p>
+<p>Two more levers finish the picture: <strong>decoding</strong> and <strong>domain adaptation.</strong></p>
+<p>Decoding turns the model's per-step probabilities into text. <strong>Greedy</strong> takes the top token each step — fast, fine for RNN-T on-device. <strong>Beam search</strong> keeps the top-k running hypotheses and can recover from a locally-wrong-but-globally-right choice — higher accuracy, more compute. On top of beam search you can do <strong>shallow fusion</strong>: blend in scores from an external <strong>language model</strong> so the decoder prefers plausible word sequences.</p>
+<p>That external LM is the standard tool for <strong>domain jargon.</strong> A general ASR model will mis-hear 'metoprolol' or 'Xarelto' because those words are rare in its training. <mark>You don't retrain the acoustic model — you bias decoding toward a domain vocabulary/LM (or use word boosting / contextual biasing), so the medical terms win the beam even when they sound close to common words.</mark></p>
+<p>Zooming out, the stack choice is a <strong>three-way tradeoff</strong> — accuracy, latency, cost — and 'best WER' is a trap.</p>
+<p>A <strong>managed API</strong> (Deepgram, Google, AssemblyAI, etc.) gives you streaming RNN-T-class quality with no infra, priced per audio-minute — the fastest path to a live product. <strong>Self-hosted RNN-T</strong> wins on unit cost at scale and on data residency (important for healthcare/HIPAA) but you own the GPUs and the ops. <strong>Self-hosted Whisper</strong> is the right tool for the <em>offline</em> jobs — bulk transcription, dictation, captions — where its accuracy pays off and its latency doesn't hurt.</p>
+<p>The interview lesson under all of it: <mark>pick the architecture from the <em>deployment constraint</em> (does it need to stream?), not from a leaderboard WER — the most accurate offline model can be the wrong product.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>ASR is unaligned sequence-to-sequence.</strong> A 16kHz mono waveform becomes ~100 log-mel frames/sec, but there are only a few words/sec — the architecture's job is to solve which frames map to which words. 16kHz is chosen because Nyquist gives 8kHz bandwidth, covering all phoneme-distinguishing energy.</li><li><strong>Three architectures split on alignment, which decides streaming.</strong> CTC: per-frame independent, fast, no context. RNN-T: adds a predictor over prior tokens — streaming-native AND context-aware, the real-time default. Whisper/AED: attends over the whole clip — highest accuracy but offline by construction.</li><li><strong>Whisper's strength and its failure share one cause.</strong> 680k hours of weak supervision make it robust and multitask (transcribe/translate/langID/timestamps via special tokens), but training only on speech-containing 30s windows makes it hallucinate fluent text on silence.</li><li><strong>You cannot stream Whisper-large as-is.</strong> Its full-utterance attention forces wait-then-decode, which feels frozen on a live call. Chunked Whisper is a compromise (recompute cost, word flips); RNN-T or a streaming API is the correct choice for real-time.</li><li><strong>Domain jargon is fixed at decode time, not by retraining.</strong> Beam search plus shallow fusion with a domain language model — or contextual biasing / word boosting — makes rare terms like drug names win the beam over common-sounding words.</li><li><strong>Choose the stack from the deployment constraint, not the leaderboard.</strong> Does it need to stream? That single question rules out offline Whisper for live calls regardless of its offline WER. Managed API vs self-hosted RNN-T vs self-hosted Whisper is an accuracy/latency/cost/residency tradeoff.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your team is building a voice assistant for a healthcare intake line. You need to pick an ASR (automatic speech recognition) stack — Whisper vs a streaming CTC/RNN-T model vs a managed API — and defend the choice on accuracy, latency, and cost. In a design review, an engineer proposes running Whisper-large on the live call because 'it has the lowest word error rate in our offline tests.' It benchmarks beautifully on recorded clips, so it ships to a pilot. Callers immediately complain the assistant feels frozen — it says nothing until they stop talking, then pauses for a second. You need to understand ASR deeply enough to know why the most accurate model made the worst product, and which architecture the live call actually needs.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>ASR turns ~100 log-mel frames/sec into a few words/sec by solving alignment, and how each architecture solves it decides whether it can stream: CTC (fast, no context), RNN-T (streaming-native and context-aware — the real-time default), and Whisper/AED (most accurate but offline because it attends over the whole clip). The scenario's failure is picking on offline WER: Whisper's full-utterance attention forces wait-then-decode and feels frozen on a live call, so a live intake line needs RNN-T or a streaming API while Whisper belongs on transcription. Fix domain jargon at decode time with a domain LM or word boosting, and choose the whole stack from the deployment constraint (does it need to stream?), not from a leaderboard.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

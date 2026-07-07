@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KV Cache: Inference Memory Optimization | GenAI Systems Lab</title>
+  <meta name="description" content="Why the transformer doesn't recompute past tokens on every step.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/kv-cache">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/kv-cache">
+  <meta property="og:title" content="KV Cache: Inference Memory Optimization | GenAI Systems Lab">
+  <meta property="og:description" content="Why the transformer doesn't recompute past tokens on every step.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="KV Cache: Inference Memory Optimization">
+  <meta name="twitter:description" content="Why the transformer doesn't recompute past tokens on every step.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"KV Cache: Inference Memory Optimization","description":"Why the transformer doesn't recompute past tokens on every step.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/kv-cache"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">MEMORY</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>KV Cache: Inference Memory Optimization</h1>
+    <p class="desc">Why the transformer doesn't recompute past tokens on every step.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with how a model actually writes a sentence, because one small fact about it drives everything here. A model generates <em>one token at a time</em>, and to produce each new token, attention makes it look back over <em>every</em> token that came before. So to write word 1,000, it has to consult words 1 through 999.</p>
+<p>Here's the question that should nag at you, and it's the seed of the whole module. When the model moves on to word 1,001, does it really need to re-read and re-process all 1,000 earlier words <em>from scratch</em>? That would mean redoing almost the same enormous computation at every single step — recomputing the first 999 words' work 999 times over. That's wildly wasteful, and there's an obvious escape: what if the model just <em>saved</em> the earlier work and reused it? That saved work is the <strong>KV cache</strong>.</p>
+<p>But — and this is the tension the whole module lives in — saving that work costs <em>memory</em>, and the amount grows with every token. So we've traded a compute problem for a memory problem. We'll build up exactly what gets stored, how fast the memory grows, why it quietly throttles how many users you can serve at once, and the ladder of fixes from architecture down to serving tricks. Take your time; the payoff is being able to look at a mysterious throughput cliff and name the cause in one line.</p></section>
+    <section><h2>How It Works</h2><p>Attention requires every token to query over <strong>all previous tokens</strong> — that's what makes long-range dependencies possible. At inference, generation is <strong>autoregressive</strong>: one token at a time.</p>
+<p>Without caching, producing token N means rerunning the full attention computation from scratch over tokens 1…N-1 at every layer, for every new token. <mark>Identical work, repeated every step — a 1,000-token conversation would recompute the first 999 tokens' attention 999 times.</mark></p>
+<p>The <strong>KV cache</strong> eliminates this redundancy by storing the key and value tensors from each prior position so they can be reused.</p>
+<p>When the model generates token N, it computes one new Q, K, V for that position, attends its new Q against all <strong>cached K</strong> tensors, and forms its representation as the weighted sum over all <strong>cached V</strong> tensors. The prior tokens' K and V are never recomputed — they're read from the cache.</p>
+<p><mark>Computation that was `O(N²)` in a naive implementation becomes `O(N)` per new token.</mark></p>
+<p>The memory cost is the <strong>other side of the trade</strong>. The cache stores K and V for every token, across every layer and every head:</p>
+<p>`2 × num_layers × num_heads × head_dim × seq_length × bytes_per_element`</p>
+<p>For a 70B model in fp16 (80 layers, 64 heads, 128 head_dim): `2 × 80 × 64 × 128 × 2 bytes = 2.6MB per token`. <mark>Each additional token adds another 2.6MB across the full layer stack — linear in conversation length.</mark></p>
+<div class="illustration"><div class="illustration-label">KV cache memory at scale (70B model, fp16)</div><pre>KV Cache Memory for 70B model (fp16, 80 layers, 64 heads, 128 head_dim):
+
+  Per token:  2 × 80 × 64 × 128 × 2 bytes  =  2.6 MB
+
+  Conversation length:
+    1K tokens   →    2.6 GB
+    4K tokens   →   10.4 GB
+    16K tokens  →   41.6 GB
+
+  With 50 concurrent users at 4K avg conversation length:
+    50 × 10.4 GB  =  520 GB  →  saturates A100 80GB cluster
+
+  Adding 1 more user (→ 51 users):
+    Memory pressure forces shorter effective context windows for all users
+    Batching capacity drops  →  throughput drops for everyone
+    Not just the new user — all existing users lose KV headroom
+
+  This is the exact mechanism in the scenario.</pre></div>
+<p>Modern architectures address KV cache size at the <strong>model-design level</strong>, before any inference-time optimization.</p>
+<p><strong>Multi-Head Attention (MHA)</strong> keeps one K/V head per Q head — 64 KV heads in a typical 70B model. <strong>Multi-Query Attention (MQA</strong>, Falcon/early Gemma) shares a <em>single</em> K/V head across all Q heads: <strong>64× smaller</strong> KV cache, at slight quality cost. <strong>Grouped-Query Attention (GQA</strong>, Llama 2/3, Mistral) is the production compromise — G groups of Q heads each share one K/V head, cutting cache <strong>4–8×</strong> with minimal quality loss.</p>
+<p><mark>These are architectural decisions baked in before training — they cannot be changed at inference time.</mark></p>
+<p>For <strong>already-deployed</strong> models with fixed architectures, inference-time mitigations:</p>
+<p>- <strong>PagedAttention</strong> (vLLM) manages the cache in fixed-size pages like OS virtual memory — eliminating fragmentation and enabling fine-grained sharing across users.&lt;br&gt;- <strong>KV quantization</strong> (INT8/INT4) cuts memory 2–4× with small quality loss.&lt;br&gt;- <strong>Sliding-window attention</strong> caps KV at the most recent W tokens regardless of conversation length.&lt;br&gt;- <strong>Prompt caching</strong> reuses KV for stable system-prompt prefixes across requests.</p>
+<p><mark>So the fix for a memory-bound server is a stack, not a single lever: PagedAttention serving to remove fragmentation, KV quantization to shrink bytes per token, and a max-context cap to bound each user's footprint.</mark> The interactive just below lets you dial conversation length and concurrent users and watch the cache saturate the memory pool, and the production case waiting at the end is exactly this — one extra user collapsing throughput for everyone, and why the KV cache is the culprit.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>The KV cache trades recomputation for memory.</strong> It stores prior K/V so each new token attends without rerunning attention over the whole prefix — `O(N²)` recompute becomes `O(N)` per token.</li><li><strong>Memory is linear in conversation length</strong> — `2 × layers × heads × head_dim × seq_len × bytes` (~2.6MB/token for a 70B fp16 model) — and it grows every token.</li><li><strong>It's the binding constraint on concurrency.</strong> The cache competes for a fixed GPU memory pool, so admitting one user shrinks batching capacity and effective context for <em>everyone</em>.</li><li><strong>Architectural fixes shrink it before training:</strong> MQA (single shared K/V head, ~64×) and GQA (grouped, 4–8×) — but they're baked in and can't change at inference time.</li><li><strong>Inference-time fixes work on deployed models:</strong> PagedAttention (paged, no fragmentation), KV quantization (INT8/INT4, 2–4×), sliding window, prompt caching.</li><li><strong>The scenario fix is a stack:</strong> PagedAttention serving + KV quantization + a max-context cap to bound per-user memory.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your inference team reports something that sounds impossible: adding <em>one</em> more user to a shared server drops throughput for <em>all</em> existing users, not just the newcomer — and memory per request keeps climbing with conversation length. An engineer blames the KV cache. Take a moment before reading on: is that diagnosis right, and what's the fix? Here's the reasoning, step by step. The cache stores K and V for every token across every layer and head, so memory grows <em>linearly</em> with conversation length — about 2.6MB per token for a 70B fp16 model. That cache draws from one <em>fixed</em> GPU memory pool shared by every request, so a new user's growing cache eats headroom the server was using to batch everyone else — which is exactly why <em>all</em> users lose throughput, not just the new one. The engineer is right. And the fix is a stack that attacks the memory footprint without retraining: PagedAttention-based serving to kill fragmentation and share pages, KV quantization (INT8/INT4) to shrink bytes per token, and a max-context cap to bound each user's footprint.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>KV cache trades recomputation for memory — ~2.6MB per token per request for a 70B model. It's the binding memory constraint on concurrent request capacity. Adding one user reduces everyone else's effective context window. Understanding KV cache memory math is prerequisite to any inference capacity planning.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

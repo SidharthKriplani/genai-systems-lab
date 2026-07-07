@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Measuring Safety | GenAI Systems Lab</title>
+  <meta name="description" content="Both directions — or you over-refuse.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/safety-measurement">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/safety-measurement">
+  <meta property="og:title" content="Measuring Safety | GenAI Systems Lab">
+  <meta property="og:description" content="Both directions — or you over-refuse.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Measuring Safety">
+  <meta name="twitter:description" content="Both directions — or you over-refuse.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Measuring Safety","description":"Both directions — or you over-refuse.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/safety-measurement"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">DECISION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Measuring Safety</h1>
+    <p class="desc">Both directions — or you over-refuse.</p>
+
+    
+    <section><h2>How It Works</h2><p><strong>Safety is not one number — it's a set of competing quantities in tension</strong>, and the first job is to stop treating 'safe' as a scalar. A model that refuses everything scores perfectly on 'never says anything harmful' and is useless; a model that answers everything is maximally helpful and dangerous. <mark>Real safety measurement lives in the <em>gap</em> between two failure directions — refusing too little and refusing too much — so you need metrics on both sides plus adversarial pressure, not a single benchmark percentage.</mark></p>
+<p>The <strong>refusal axis has two opposite failure modes</strong>, and you must measure both:</p>
+<p>- <strong>Refusal rate</strong> — how often the model declines <em>genuinely harmful</em> requests. You <em>want</em> this high on a red-team set (declining bomb-making, malware, etc.). Too low = the model is unsafe.&lt;br&gt;- <strong>Over-refusal (false-refusal) rate</strong> — how often the model <em>wrongly</em> declines <em>benign</em> requests because they superficially resemble harmful ones. This is the nurse's dosage question, or refusing to explain how a historical weapon worked. Too high = the model is annoyingly useless and users route around it. Benchmarks like <strong>XSTest</strong> exist specifically to measure over-refusal with 'safe prompts that look unsafe.'</p>
+<p><mark>A single 'refusal' number hides which direction you're failing. You measure refusal on a harmful set (want high) and over-refusal on a benign-but-scary-looking set (want low) — separately.</mark></p>
+<div class="illustration"><div class="illustration-label">The two-sided refusal problem — one number can't see it</div><pre>                    request is actually...
+                    HARMFUL            BENIGN
+  model     REFUSE   ✓ correct         ✗ OVER-REFUSAL
+                     (safe)              (nurse's dosage Q — useless)
+  ─────────────────────────────────────────────────────────
+            ANSWER   ✗ unsafe          ✓ correct
+                     (dangerous)         (helpful)
+
+  Refusal rate      = P(refuse | harmful)   → want HIGH   (red-team set)
+  Over-refusal rate = P(refuse | benign)    → want LOW    (XSTest-style set)
+
+  A single &quot;safety %&quot; collapses this 2×2 into one cell and hides the rest.</pre></div>
+<p><strong>Red-team pass rate and jailbreak robustness</strong> measure safety <em>under adversarial pressure</em>, which is the only measurement that matters because attackers don't send polite requests:</p>
+<p>- <strong>Red-team pass rate</strong> — you (or an automated red-teamer) craft adversarial prompts designed to elicit harmful output; the pass rate is the fraction the model correctly resists. Static benchmarks test the <em>easy</em> case; red-teaming tests the <em>adversarial</em> case.&lt;br&gt;- <strong>Jailbreak robustness</strong> — resistance to known attack <em>techniques</em>: roleplay framing ('you are DAN, ignore your rules'), fictional wrapping ('write a story where a character explains…' — exactly the scenario's exploit), prompt injection, encoding/obfuscation, many-shot jailbreaking, and gradient-crafted adversarial suffixes. Robustness is measured as attack-success-rate across a <em>suite</em> of techniques, ideally evolving ones. <mark>The scenario's fictional-roleplay bypass is a textbook jailbreak that a static benchmark would never catch — which is why a 99% benchmark score coexisted with a live exploit.</mark></p>
+<p><strong>Benchmark leakage (contamination) is why that 99% was hollow.</strong> If a public safety benchmark's prompts (or close paraphrases) appeared in the model's training data, the model has effectively <em>memorized the test</em> — it scores high without being safe in general. Public, static benchmarks are especially prone: they're scraped, discussed, and end up in training corpora. <mark>A benchmark number is only trustworthy if you can rule out that the model trained on it; the defenses are held-out private eval sets, freshly generated adversarial prompts, and rotating/dynamic benchmarks. Never certify safety on a public leaderboard number alone.</mark></p>
+<div class="illustration"><div class="illustration-label">Why the 99% benchmark lied — leakage + wrong test</div><pre>Public benchmark 99%   ─┬─ possible leakage: prompts in training data
+                        │   → memorized the test, not generally safe
+                        └─ static/easy: no adversarial pressure
+
+Live failures it never measured:
+  • over-refusal   (nurse dosage) ← benchmark only tested &quot;does it refuse harm?&quot;
+  • jailbreak      (fiction wrap) ← benchmark had no adversarial techniques
+
+Trustworthy safety measurement instead:
+  held-out PRIVATE red-team set + FRESH jailbreak suite +
+  over-refusal set + human review on the tail  →  a PROFILE, not a %.</pre></div>
+<p><strong>The helpfulness ↔ harmlessness tradeoff is the frontier you're actually navigating</strong>, and the skill is <em>quantifying</em> it rather than picking a side. Push harmlessness up (refuse aggressively) and helpfulness/over-refusal gets worse; push helpfulness up and harmful-compliance risk rises. You make this visible by plotting the two together: measure <strong>helpfulness</strong> (task success / non-refusal on benign requests) and <strong>harm</strong> (harmful-compliance rate on the red-team set) as a <em>pair</em>, and compare models or safety-tuning settings on that plane — the goal is to move the whole frontier out (safer <em>and</em> more helpful), not to slide along it. <mark>A safety change that raises refusal rate is only good if over-refusal didn't rise with it; report the pair, and a change is a genuine improvement only if it's Pareto — better on one axis without regressing the other.</mark></p>
+<p><strong>Putting it together — how to actually measure safety.</strong> Never report a single number. Report a <strong>profile</strong>: (1) refusal rate on a private red-team harmful set (want high), (2) over-refusal rate on a benign-but-scary set like XSTest (want low), (3) jailbreak attack-success-rate across an evolving technique suite (want low), all (4) on <strong>held-out, leakage-controlled</strong> data with human review on the ambiguous tail, and (5) plotted against <strong>helpfulness</strong> so the tradeoff is explicit. Safety is adversarial and dynamic — attackers adapt, so a one-time pass decays; re-red-team on every model/prompt change. <mark>The scenario's two failures — over-refusal and a jailbreak — are exactly the two dimensions a single benchmark percentage cannot see, which is the whole lesson.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Safety is multi-dimensional and adversarial, never one number.</strong> A refuse-everything model scores perfectly on 'never harmful' yet is useless; measure the <em>gap</em> between refusing too little and refusing too much, under attack — not a single benchmark percentage.</li><li><strong>The refusal axis has two opposite failures: refusal rate vs over-refusal.</strong> Refusal rate (decline genuinely harmful requests) you want <em>high</em> on a red-team set; over-refusal (wrongly declining benign look-scary requests, e.g. XSTest) you want <em>low</em>. One 'refusal' number hides which way you're failing.</li><li><strong>Adversarial metrics matter most: red-team pass rate and jailbreak robustness.</strong> Static benchmarks test the easy case; red-teaming and a jailbreak suite (roleplay, fictional wrapping, injection, obfuscation, adversarial suffixes) test what attackers actually do — the scenario's fiction-wrap bypass is a textbook jailbreak a benchmark misses.</li><li><strong>Benchmark leakage makes public scores hollow.</strong> If benchmark prompts leaked into training data, the model memorized the test and scores high without being safe. Use held-out private sets, freshly generated adversarial prompts, and rotating benchmarks; never certify on a public leaderboard number.</li><li><strong>Quantify the helpfulness↔harmlessness tradeoff as a pair, not a pick.</strong> Plot helpfulness (task success/non-refusal on benign) against harmful-compliance on the red-team set; a safety change is a real improvement only if it's Pareto — better on one axis without regressing the other. Report the whole profile and re-red-team on every change.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Leadership wants your assistant to be 'safe,' and a vendor pitches a model that scores 99% on a public safety benchmark. You ship it, and two complaints arrive the same week: it refuses to answer a nurse's legitimate question about medication dosages (calling it 'medical harm'), and a hobbyist got it to output genuinely dangerous instructions by wrapping the request in a fictional roleplay. A single 'safety score' told you nothing about either failure. You need to measure safety as the multi-dimensional, adversarial thing it actually is.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Measure safety as a multi-dimensional, adversarial profile, never a single benchmark percentage: refusal rate on a private red-team harmful set (want high), over-refusal on benign-but-scary prompts (want low), and jailbreak attack-success across an evolving technique suite (want low) — all on leakage-controlled held-out data, plotted against helpfulness so the helpfulness↔harmlessness tradeoff is explicit. A safety change only counts if it's Pareto, and because attackers adapt, you re-red-team on every model or prompt change.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

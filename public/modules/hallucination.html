@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hallucination: Why Models Confabulate | GenAI Systems Lab</title>
+  <meta name="description" content="The generation mechanism that produces confident wrong answers — and the three levers that reduce it.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/hallucination">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/hallucination">
+  <meta property="og:title" content="Hallucination: Why Models Confabulate | GenAI Systems Lab">
+  <meta property="og:description" content="The generation mechanism that produces confident wrong answers — and the three levers that reduce it.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Hallucination: Why Models Confabulate">
+  <meta name="twitter:description" content="The generation mechanism that produces confident wrong answers — and the three levers that reduce it.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Hallucination: Why Models Confabulate","description":"The generation mechanism that produces confident wrong answers — and the three levers that reduce it.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/hallucination"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LLM</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Hallucination: Why Models Confabulate</h1>
+    <p class="desc">The generation mechanism that produces confident wrong answers — and the three levers that reduce it.</p>
+
+    <section><h2>Start Here</h2><p>Let's start by gently correcting the word itself. When a language model states something false with total confidence, we call it a &quot;hallucination&quot; — and the word makes it sound like a <em>glitch</em>, a bug that slipped in, something that could be patched out. Here's the reframe this whole module rests on: it isn't a glitch at all. It's the model doing exactly what it was built to do.</p>
+<p>Remember what a model actually does at each step — it doesn't <em>look up</em> a fact in some internal database, it <em>predicts a plausible next word</em> from patterns it absorbed in training. So when it has seen thousands of confident, authoritative policy documents, a phrase like &quot;requires quarterly audits&quot; is simply a <em>statistically likely</em> continuation — whether or not it's true, and whether or not it appears in the document you handed it. The model has no inner sense of &quot;I know this&quot; versus &quot;I'm making this up.&quot; Both feel identical from the inside; both come out equally confident.</p>
+<p>So we'll build up <em>why</em> that's structural and unavoidable, then sort hallucinations into their distinct types (some far more dangerous than others), and finally look at the checks you bolt on at the application layer to catch them. Take your time — the goal is to answer a client's panicked &quot;is this a bug?&quot; with a calm, precise <em>no, and here's how we screen for it.</em></p></section>
+    <section><h2>How It Works</h2><p>Hallucination is <strong>not a malfunction</strong> — it's a predictable consequence of how language models generate text. The model doesn't retrieve facts from a database; it generates tokens by <strong>sampling from a probability distribution</strong> conditioned on everything before it.</p>
+<p>When the model saw confident, authoritative text about quarterly audits in similar policy contexts during pretraining, 'quarterly audits' has high conditional probability following 'this policy requires' — regardless of whether the retrieved documents contain that claim.</p>
+<p><mark>The model has no mechanism to distinguish 'I'm generating this because it's in the retrieved context' from 'I'm generating this because it appeared frequently in training' — both produce the same token distribution.</mark></p>
+<p>So the instinct to sort a false statement into 'a model bug' or 'a data problem' is a <strong>false dichotomy</strong> — it's neither. <mark>It's an <em>architectural property</em>: the generation mechanism produces what is statistically plausible, not what is factually grounded.</mark> This holds for every language model, not a defect specific to any one instance — which means the response can't be to <em>patch</em> it out, only to <em>screen</em> for it.</p>
+<p><strong>Three hallucination types:</strong></p>
+<p>- <strong>Closed-domain</strong> — the right document <em>was</em> retrieved but the model ignored it and answered from parametric memory. Fixable with faithfulness prompting and output validation.&lt;br&gt;- <strong>Confabulation</strong> — plausible-sounding but <em>invented</em> specific details (dates, numbers, names) when the correct answer is absent or uncertain. <mark>Most dangerous, because it sounds authoritative and passes casual review.</mark>&lt;br&gt;- <strong>Open-domain</strong> — asked about something outside training and retrieved context, the model generates a confident invented answer. Fixable with abstention training.</p>
+<p>The pattern to watch for is confabulation: a specific invented detail — a date, a number, a requirement — slotted in exactly where the retrieved signal ran thin.</p>
+<p>Where this sits relative to <strong>training-signal</strong>: that module explains <em>why</em> the confidence exists (next-token prediction rewards fluent, assertive continuations regardless of truth — no calibrated know/don't-know signal).</p>
+<p>This module is the <strong>downstream view</strong> — the <em>taxonomy</em> of how that miscalibration surfaces (closed-domain, confabulation, open-domain) and the <em>detection</em> methods you bolt on at the application layer. <mark>Same root cause, different job: one explains the disease, this one classifies the symptoms and screens for them.</mark></p>
+<p><strong>Faithfulness scoring</strong> checks whether every factual claim can be traced to a specific span in the retrieved documents — any claim with no grounding source gets flagged or removed.</p>
+<p><strong>Self-consistency sampling</strong> runs the same query multiple times and flags responses where the model gives <em>different</em> specific details. Concretely: ask 'When was the policy last updated?' three times at nonzero temperature and get 'March 2023,' 'January 2022,' 'sometime in 2023' — the disagreement on a supposedly-factual date is the tell. <mark>A grounded fact comes back identically every run; a confabulated one <em>wanders</em>, because the model is sampling from 'what a plausible date sounds like' rather than reading a fixed source.</mark></p>
+<p>Both defenses share one property worth underlining: they live entirely at the <strong>application layer</strong> — no retraining, just a check between the model and the user. The interactive lets you run the same query repeatedly and watch a confabulated detail wander while a grounded one holds. <mark>Then the closing scenario hands you a confident, unsourced claim and a client asking 'is this a bug?' — decide how you'd answer, and which check would have caught it, before the reasoning walks you through it.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Hallucination is architectural, not a bug.</strong> The model samples statistically-plausible tokens; it can't tell 'grounded in retrieved context' from 'frequent in training' — both yield the same distribution.</li><li><strong>'AI error vs data problem' is a false dichotomy</strong> — the generation mechanism produces plausible, not grounded, text, and this holds for every language model.</li><li><strong>Three types:</strong> closed-domain (ignored a retrieved doc), confabulation (invented specific details), open-domain (invented answer with no source). The scenario's date is confabulation.</li><li><strong>Confabulation is the most dangerous type</strong> because invented dates/numbers/names sound authoritative and pass casual review.</li><li><strong>Faithfulness scoring traces each claim to a retrieved span</strong> and flags/removes anything unsourced — the primary application-layer defense.</li><li><strong>Self-consistency sampling exposes confabulation:</strong> grounded facts repeat identically across runs; invented ones wander, so disagreement across repeated queries is the tell.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A RAG-powered Q&amp;A tool confidently tells a client that <em>&quot;the policy was updated in March 2023 and requires quarterly audits&quot;</em> — yet no such requirement exists in any retrieved document. The client asks the natural question: <em>&quot;Is this an AI error or a data problem?&quot;</em> Take a moment before reading on: notice the question itself contains a trap. Here's the precise answer, step by step. It's a false dichotomy — neither a bug in your instance nor bad data, but an <em>architectural property</em>: the model generates what is statistically plausible, not what is grounded, and every language model does this. The specific flavor here is <em>confabulation</em> — an invented specific detail (a date, a requirement) slotted in exactly where the retrieved signal ran thin, and the most dangerous type precisely because it sounds authoritative and sails through casual review. And notice what could have caught it, all at the application layer, no retraining: faithfulness scoring would flag &quot;March 2023&quot; and &quot;quarterly audits&quot; as claims that trace to no retrieved span, and self-consistency sampling would expose them by asking three times and watching the date <em>wander</em> — a grounded fact repeats identically; a confabulated one drifts.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Hallucination is not an error — it's the generation mechanism producing statistically plausible text without grounding checks. Confabulation (invented specific details) is the most dangerous type because it sounds authoritative. In production RAG systems, add faithfulness scoring: verify every specific claim traces to a retrieved document span. Unsourced claims should be flagged or removed before delivery.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

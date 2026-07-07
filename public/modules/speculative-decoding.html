@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speculative Decoding: Draft-and-Verify | GenAI Systems Lab</title>
+  <meta name="description" content="A draft model proposes k tokens; the target verifies in one pass — lossless speedup.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/speculative-decoding">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/speculative-decoding">
+  <meta property="og:title" content="Speculative Decoding: Draft-and-Verify | GenAI Systems Lab">
+  <meta property="og:description" content="A draft model proposes k tokens; the target verifies in one pass — lossless speedup.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Speculative Decoding: Draft-and-Verify">
+  <meta name="twitter:description" content="A draft model proposes k tokens; the target verifies in one pass — lossless speedup.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Speculative Decoding: Draft-and-Verify","description":"A draft model proposes k tokens; the target verifies in one pass — lossless speedup.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/speculative-decoding"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 3</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Speculative Decoding: Draft-and-Verify</h1>
+    <p class="desc">A draft model proposes k tokens; the target verifies in one pass — lossless speedup.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with the thing you watch every time a model streams an answer: tokens appear one after another, never all at once. That ordering isn't a UI choice — it's forced by how the model generates. And once you see <em>why</em> it's forced, a surprising opportunity opens up.</p>
+<p>Here's the puzzle this module cracks. Generation feels slow, and the obvious fix — throw more GPUs at it — doesn't help a single stream at all. Stranger still, while the model grinds out one token at a time, the expensive hardware is mostly sitting <em>idle</em>. There's spare capacity right there, unused, every single step. What if you could spend it to produce several tokens for the price of one — without changing a single word the model would have said?</p>
+<p>That's exactly what speculative decoding does, and it sounds impossible, so we'll earn it slowly. First we'll see why one token per step is forced and why that leaves the GPU idle, then the split between <em>proposing</em> tokens cheaply and <em>verifying</em> them in parallel, then the little piece of accept/reject math that makes it provably lossless — and finally when it gives you nothing at all.</p></section>
+    <section><h2>How It Works</h2><p>Start with why decode is slow in the first place. Autoregressive generation is <strong>sequential by construction</strong>: token N cannot be computed until token N-1 exists, because N-1 is part of the input that produces N. So you run one full forward pass through the entire model — all the layers, all the weights — to produce <strong>exactly one token</strong>, then repeat.</p>
+<p>The bottleneck is not arithmetic. On modern GPUs a single-stream decode step is <strong>memory-bandwidth-bound</strong>: the expensive part is streaming the model's weight matrices (and the KV cache) from HBM into the compute units. <mark>Producing one token touches roughly the same weights as producing a hundred would</mark> — the tensor cores are mostly idle, waiting on memory.</p>
+<p>This is the root fact that makes speculative decoding possible: <strong>there is spare compute sitting there per step.</strong></p>
+<p>The insight: <strong>separate proposing tokens from verifying them.</strong> Keep a small, cheap DRAFT model (say a 1B model of the same family) alongside the big TARGET model (the 70B you actually want to sample from). Each round, let the draft model autoregressively generate k candidate tokens — cheaply, because it is tiny.</p>
+<p>Now the k proposed tokens are <strong>already known strings of text</strong>. That lets the target model process all k positions in ONE forward pass: feed the current context plus the k drafted tokens as a single sequence, and the target produces its next-token distribution at every one of those k positions <strong>in parallel</strong>.</p>
+<p>This is the same reason training and prefill are fast — when the tokens are already fixed, attention over a whole span is one batched matmul, not k sequential steps. <mark>Verification is parallel precisely because the tokens being verified are already committed.</mark></p>
+<p>Now the accept/reject rule, and why it is <strong>LOSSLESS — not an approximation</strong>. Walk left to right through the k drafted positions. At each position you have the draft's probability q(x) for the token it proposed and the target's probability p(x) for that same token. <strong>Accept the drafted token with probability min(1, p(x)/q(x)).</strong> If it is accepted, move to the next position.</p>
+<p>On the FIRST rejection, you stop, throw away all remaining drafted tokens, and resample that one position from the corrected distribution — a renormalized (p − q)⁺ — which is exactly the target's distribution conditioned on 'not the rejected draft.' This is modified rejection sampling, and <mark>the math guarantees the emitted token at every position is drawn from exactly p, the target model's distribution.</mark></p>
+<p>The draft never gets to inject a token the target wouldn't have sampled: where the draft is over-confident (q &gt; p) it gets down-weighted, and where it disagrees the correction resamples from the target. Net effect: the sequence of tokens you emit is distributionally identical to plain autoregressive sampling from the target — <strong>speculative decoding changes SPEED, not WHAT the model would have produced</strong>. (Contrast this with the sampling module's temperature/top-p, which deliberately change the output distribution — speculative decoding is the opposite: it holds the distribution fixed.)</p>
+<div class="illustration"><div class="illustration-label">One speculative round (k=4), and where the speedup comes from</div><pre>Context: &quot;def add(a, b):\n    return&quot;
+
+Draft model proposes k=4 tokens (4 cheap draft passes):
+    [ a  +  b  \n ]
+
+Target model verifies ALL 4 in ONE forward pass:
+    pos1  q(a)=0.7  p(a)=0.9   accept  (p&gt;q, keep)
+    pos2  q(+)=0.6  p(+)=0.8   accept
+    pos3  q(b)=0.8  p(b)=0.5   accept w.p. min(1, 0.5/0.8)=0.625 -&gt; REJECT
+    pos4  ...discarded (never verified)
+
+  Accepted this round: 2 tokens (a, +)
+  Position 3 resampled from corrected target dist (p - q)+  -&gt; e.g. &quot;c&quot;
+  Emitted: a  +  c        (all drawn from the TARGET's distribution)
+
+Cost of the round: 1 target forward pass (+ 4 cheap draft passes)
+Tokens produced:    3   (2 accepted + 1 resampled)
+
+  Naive decode:  3 tokens = 3 target forward passes
+  Speculative:   3 tokens = 1 target forward pass
+  -&gt; ~3x fewer target passes THIS round.
+
+The target forward pass is the expensive, memory-bound step.
+Every accepted draft token is one target pass you did NOT have to run.</pre></div>
+<p>The economics: <strong>the speedup is governed by the acceptance rate α</strong> — how often the draft agrees with the target. Each round costs one target forward pass regardless of how many tokens it verifies (that is the whole point — the target pass is nearly free per extra position, because it is memory-bound). So the win is the <strong>expected number of tokens emitted per target pass</strong>.</p>
+<p>With per-token acceptance probability α and a proposal length of k, the expected accepted-run length before the first rejection is roughly (1 − α^(k+1)) / (1 − α), plus the one guaranteed resampled token. Concretely: propose k=4, and if α ≈ 0.75 you accept ~2.5 tokens on average, so you emit ~3.5 tokens per target pass instead of 1 — <strong>call it a 2.5–3× wall-clock speedup</strong> after draft overhead. If α ≈ 0.4, you accept well under one token per round on average, the draft passes are pure overhead, and <mark>you can end up NET NEUTRAL OR SLOWER than plain decoding.</mark></p>
+<p>So α is everything, and α depends on <strong>draft–target ALIGNMENT</strong>: the draft must predict what the target would predict. That is why the best drafts are small models distilled from (or in the same family as) the target — a random 1B model paired with a 70B produces low α and no speedup. There is also a <strong>k tradeoff</strong>: bigger k means more tokens per accepted round but more wasted draft work when an early rejection discards the tail.</p>
+<p>When it helps vs. when it does not. Speculative decoding <strong>buys back the idle compute of a memory-bandwidth-bound step</strong>. That describes single-stream, latency-sensitive, <strong>LOW-BATCH decode</strong> — one user watching tokens stream, batch size 1. There, the GPU has spare compute and speculative decoding converts it into throughput: <strong>big win</strong>.</p>
+<p>But in already-saturated, <strong>HIGH-THROUGHPUT batched serving</strong>, many independent requests are already packed into each forward pass — the GPU's compute is BUSY, the step is no longer memory-bound, and <mark>the 'free' parallelism speculative decoding relies on is already consumed by the batch.</mark> Adding speculation there mostly adds draft overhead and rejected-token waste for little gain, and can reduce total throughput even as it might still trim single-request latency. So the same technique helps enormously at batch-1 and barely at all under a compute-saturated batch — the regime <em>is</em> the diagnosis.</p>
+<p><strong>Variants relax the two-model requirement:</strong> self-speculative decoding drafts using the target's own early layers or skipped layers; Medusa adds extra decoding heads to the target so it proposes multiple future tokens itself; EAGLE drafts in feature space for higher α. All keep the same lossless verify-and-accept core — they only change how the k proposals are produced.</p>
+<p>The interactive lets you turn the acceptance rate α and the proposal length k and watch tokens-per-target-pass rise, then collapse to net-neutral when the draft falls out of alignment. Then the closing scenario puts it to work on a 70B assistant that's fast enough for batch but too slow live — see if you can confirm the 2–3× claim, size it, and call where it does nothing before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Single-stream decode is memory-bandwidth-bound, not compute-bound.</strong> One forward pass streams all the weights from HBM to produce just one token — the tensor cores sit idle, leaving spare compute to exploit.</li><li><strong>Draft proposes, target verifies in parallel.</strong> A tiny draft model autoregressively generates k tokens; because those tokens are already fixed, the target scores all k positions in ONE batched forward pass — same parallelism as prefill/training.</li><li><strong>The accept/reject rule is provably lossless.</strong> Accept each drafted token with prob min(1, p/q); on first rejection resample from the corrected (p−q)⁺ distribution. Every emitted token comes from exactly the target's distribution — speed changes, output doesn't.</li><li><strong>Speedup is set by the acceptance rate α = draft–target alignment.</strong> High α (well-aligned/distilled draft) → 2.5–3×; low α (α≈0.4) → draft passes become pure overhead, net-neutral or slower.</li><li><strong>Biggest wins are low-batch, latency-sensitive decode.</strong> Under high-throughput batched serving the GPU is already compute-saturated, the free parallelism is consumed by the batch, and speculation barely helps.</li><li><strong>Variants change only how proposals are made:</strong> self-speculative (early/skipped layers), Medusa (extra decoding heads), EAGLE (feature-space drafting) — all keep the same lossless verify-and-accept core.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your inference team ships a 70B model that generates at 30 tokens/sec on a single stream — fast enough for batch jobs, too slow for the live coding assistant where users watch every token appear. Buying more GPUs doesn't help: one stream can't be split across cards, and the GPU sits mostly idle during decode. A senior engineer proposes speculative decoding to 'make it 2–3× faster without changing the answers.' Take a moment before reading on: given everything above, is that claim believable, what sizes the speedup, and where will it do nothing? Here's the reasoning, step by step. The claim holds because single-stream decode is memory-bandwidth-bound — the GPU streams the weights to make one token while compute sits idle, so a cheap draft can propose several tokens the big model verifies in one parallel pass, and the accept/reject rule keeps every emitted token drawn from exactly the target's distribution (lossless — speed changes, answers don't). The size of the win is set by the acceptance rate α (draft–target alignment): a well-aligned draft gives ~2.5–3×, a poorly aligned one collapses to net-neutral. And it does nothing where the GPU is already busy: under high-throughput batched serving the batch already consumes the free parallelism, so the live batch-1 assistant benefits a lot while the nightly compute-saturated batch job barely moves.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Autoregressive decode is sequential and memory-bandwidth-bound — one target forward pass per token with the GPU mostly idle. Speculative decoding has a cheap draft model propose k tokens that the target verifies in a single parallel pass, keeping accepted tokens and resampling on the first rejection; the accept/reject math makes it LOSSLESS — exactly the target's distribution, faster, not different. Speedup is set by the acceptance rate α (draft–target alignment); it wins big on low-batch single-stream latency and barely helps under already-saturated high-throughput batched serving.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

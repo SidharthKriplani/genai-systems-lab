@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Reliability | GenAI Systems Lab</title>
+  <meta name="description" content="Retries, guardrails, and the reliability budget for agents.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-reliability">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-reliability">
+  <meta property="og:title" content="Agentic Reliability | GenAI Systems Lab">
+  <meta property="og:description" content="Retries, guardrails, and the reliability budget for agents.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agentic Reliability">
+  <meta name="twitter:description" content="Retries, guardrails, and the reliability budget for agents.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agentic Reliability","description":"Retries, guardrails, and the reliability budget for agents.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-reliability"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Agentic Reliability</h1>
+    <p class="desc">Retries, guardrails, and the reliability budget for agents.</p>
+
+    <section><h2>Start Here</h2><p>Every engineer learns one reliability reflex so early it becomes muscle memory: <em>if a request fails, retry it.</em> The network blipped, the server was busy — try again, and it works. This reflex is correct so universally that we stop thinking of it as a choice. And it is exactly the reflex that will make an agent refund a customer twice.</p>
+<p>Here's the uncomfortable idea at the heart of this module. Retrying is safe when the thing you're retrying only <em>reads</em> — asking for a user's profile twice just gives you the profile twice. But an agent doesn't only read; it <em>acts</em>. It refunds money, writes files, mutates databases. And when the action already happened but the confirmation got lost on the way back, retrying doesn't repeat a harmless question — it fires a second, real, irreversible effect. The single safest habit in ordinary software becomes a liability the moment your program can change the world.</p>
+<p>That one inversion — retry-safety flips for actions — is the seed the entire discipline of agent reliability grows from. Once you feel it, a whole toolkit follows as a <em>consequence</em>: idempotency keys, step budgets, rollback logs, human-in-the-loop gates. We'll build them up from that first principle, and along the way you'll see why 'just make the agent more autonomous' is exactly backwards — more autonomy without this stack doesn't reduce incidents, it <em>multiplies</em> them.</p></section>
+    <section><h2>How It Works</h2><p>Begin from a single asymmetry that separates agent reliability from ordinary software reliability, because the entire discipline unspools from it. In conventional software, operations are dominated by <em>reads</em>, and a read is <strong>idempotent</strong> — running it twice yields the same result as running it once — so retrying a failed request is always safe. <strong>But</strong> an agent does not only read; it <em>acts</em>, and an action has side effects on the world. <strong>Which means</strong> retrying a failed <em>action</em> is not a harmless repeat: a timed-out `process_refund` retried charges twice, a partially-completed file write retried creates duplicates, a database mutation retried corrupts state. <strong>So</strong> the retry semantics that are correct everywhere else become <em>dangerous</em> here, and <mark>that one inversion — retry-safety flips the moment an operation has side effects — drives most of the discipline that follows.</mark> This is the direct sequel to the failure-modes module: those named <em>how</em> agents fail; this names the engineering that stops them.</p>
+<p>The interactive organizes it into four tabs, and the first is the <strong>failure taxonomy</strong> — the six that repeat in production, each with detection signals and a fix pattern. <strong>Infinite loop</strong> (same tool 3+ times, step count without new info → step-limit). <strong>Tool cascade failure</strong> (error → misinterpret → worse action → chain; errors piling up in context → circuit-breaker: classify retriable vs. fatal, surface fatal to a human, never let errors pile past 3). <strong>Scope creep</strong> (tool calls on resources outside the task, especially write/delete → least-privilege: read-only by default, allow-list resources). <strong>Tool-output confabulation</strong> (agent mis-remembers a tool result, worse after step 10+ → grounding: quote results verbatim, keep context under ~50K tokens). <strong>Premature termination</strong> (stops with only part of the request done → checklist). <strong>Hallucinated tool calls</strong> (off-schema args → validation).</p>
+<p>The second tab is the <strong>reliability pattern kit</strong>, and these are the load-bearing ones to be able to name and justify. <mark><strong>Idempotency keys</strong> are the direct antidote to the scenario's double-refund:</mark> design each tool so calling it twice has the same effect as once (use PUT not POST, include an idempotency key, check-before-write) — now a retry after a timeout is <em>safe</em> rather than a second charge. <strong>Step budget:</strong> a hard ceiling (default ~20) that, when hit, surfaces state to a human instead of grinding on. <strong>Duplicate detection:</strong> hash (tool_name, args) in a sliding window; seen twice → inject a loop-break prompt. <strong>Rollback / compensation:</strong> for every irreversible action, define a compensating action and keep an action log, so on failure you replay compensations in reverse. <strong>Context pruning:</strong> summarize raw tool outputs after ~3 steps to keep the agent grounded and under budget. <strong>Self-critique loop:</strong> every ~5 steps ask 'have I made real progress? what's blocking me?' and escalate on stagnation.</p>
+<div class="illustration"><div class="illustration-label">Why retry-safety inverts — and the pattern that fixes it</div><pre>CONVENTIONAL API                     AGENT ACTION
+──────────────────────────────────────────────────────────────────────
+GET /user  → timeout → retry  = SAFE  process_refund → timeout → retry = DOUBLE CHARGE
+(reads are idempotent)                (side-effecting action is NOT)
+
+THE FIX — idempotency key makes the retry safe:
+
+  process_refund(order=123, idem_key=&quot;refund-123-req-a7f&quot;)
+     first call   → performs refund, records idem_key
+     retry (same key) → sees key already processed → returns cached result, NO second charge
+
+RELIABILITY STACK (bound autonomy at every layer):
+  loop     → hard step budget (~20) + duplicate (tool,args) detection → loop-break / escalate
+  cascade  → circuit breaker: classify retriable vs FATAL; never let errors pile past 3
+  writes   → idempotency keys + rollback/compensation log (undo in reverse on failure)
+  scope    → least-privilege: read-only default, resource allow-list per task
+  drift    → context pruning (summarize tool output after ~3 steps) + self-critique every 5
+  gate     → HITL on irreversible actions: confirm / escalate-on-low-confidence / checkpoint
+
+MORE AUTONOMY WITHOUT THIS STACK = MORE SURFACE FOR ALL SIX FAILURES.</pre></div>
+<p>The third tab is <strong>human-in-the-loop (HITL)</strong> — keeping a human in the loop <em>without</em> killing the automation value, which is the balance interviews probe. Four patterns: <strong>Confirmation gate</strong> (before any irreversible action — delete, send, publish, purchase — pause, present the plan, wait for explicit approval with an SLA). <strong>Escalation threshold</strong> (the agent rates its own confidence; below ~0.7, or a high-risk action type, or 2+ consecutive errors → route to a human, else proceed). <strong>Checkpoint review</strong> (for long/multi-day tasks, save state and a progress summary at defined checkpoints; a human approves before the next phase, with rollback if not). <strong>Ambiguity surfacing</strong> (on unclear instructions, stop and ask <em>one</em> targeted question rather than guessing). The design principle: <mark>gate the irreversible and the uncertain; let the reversible and the confident run autonomously.</mark></p>
+<p>This is also where <strong>verification/critic loops and eval harnesses</strong> live. A verifier is a second check on the agent's output — a critic model, a schema validator, a rule ('did the refund amount match the order?') — that catches errors <em>before</em> they ship, the same instinct as Reflection but wired into the control loop rather than the prompt. And you cannot manage what you cannot measure: an <strong>eval harness</strong> with replayable traces (LangSmith / OpenTelemetry) lets you reproduce any run from logs, alert on loop/cascade/step-limit events, and regression-test reliability changes. The fourth tab, the <strong>production checklist</strong>, is the operationalization: loop control, tool safety, HITL, state management, observability — the gap between a demo and a system.</p>
+<p>Now the scenario's core argument, stated cleanly: <mark>autonomy and reliability engineering are coupled, not independent.</mark> Every increment of autonomy — more tools, more steps, fewer confirmation gates — <em>widens the surface</em> for all six failure modes. 'Bounding autonomy' is not the opposite of a capable agent; it is what <em>makes</em> a capable agent shippable: step budgets bound loops, least-privilege bounds scope creep, idempotency + HITL gates bound the blast radius of irreversible actions. You 10x autonomy <em>by</em> building the reliability stack that makes each additional degree of freedom safe, not by removing the guardrails.</p>
+<p>The interview-grade close: agents invert retry-safety (the double-refund is the canonical example), so reliability is engineered — idempotency keys, step budgets, circuit breakers, rollback/compensation, context pruning, verifier loops, HITL gates on the irreversible and uncertain, and an eval harness with replayable traces. <mark>Name the retry asymmetry, name idempotency as its fix, and frame bounded autonomy as the enabler of autonomy, not its enemy</mark> — that is the answer that separates someone who has run agents in production from someone who has only demoed them.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Agents invert retry-safety.</strong> Retrying a failed <em>read</em> is always safe; retrying a failed <em>action</em> (refund, write, mutation) can double-charge or corrupt state. This one asymmetry drives the whole discipline — and 'just retry' is the wrong reflex.</li><li><strong>Idempotency keys are the antidote to the double-refund:</strong> design tools so calling twice equals once (PUT not POST, idempotency key, check-before-write). Now a post-timeout retry is safe. Pair with rollback/compensation logs for irreversible actions.</li><li><strong>Bound the loop:</strong> hard step budget (~20) that escalates to a human when hit, plus duplicate (tool, args) detection in a sliding window → loop-break prompt. Bound cascades with a circuit breaker (classify retriable vs. fatal; never let errors pile past 3).</li><li><strong>Bound scope and drift:</strong> least-privilege (read-only default, per-task resource allow-list) stops scope creep; context pruning (summarize tool output after ~3 steps) + periodic self-critique keep the agent grounded and prevent confabulation past step 10.</li><li><strong>HITL gates the irreversible and the uncertain, not everything:</strong> confirmation gate (delete/send/publish/purchase), escalation threshold (confidence &lt; ~0.7 / high-risk / 2+ errors), checkpoint review (long tasks), ambiguity surfacing (one question). Verifier/critic loops catch errors before they ship.</li><li><strong>Autonomy and reliability are coupled:</strong> every degree of autonomy widens the surface for all six failure modes. Bounded autonomy (step budgets, least-privilege, idempotency + gates) is what <em>makes</em> a capable agent shippable — plus an eval harness with replayable traces to measure and regression-test it.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your agent handles refunds. On a slow day a `process_refund` call times out; the agent, seeing no confirmation, retries — and the customer is refunded twice. The same week a different agent loops 40 steps on a stuck task and racks up a bill, and a third writes to a database table nobody asked it to touch. Leadership wants to '10x autonomy.' Take a moment before reading on: what single principle explains the double refund, and why does <em>more</em> autonomy make all three incidents likelier, not rarer? Here's the reasoning, step by step. The double refund is the retry-safety inversion in the flesh: the refund <em>did</em> go through, only the confirmation was lost, so the 'safe' retry fired a second real charge — the fix is an <strong>idempotency key</strong> so the retried call recognizes the operation was already done and returns the prior result instead of charging again. The 40-step loop is an unbounded control loop with no step budget; the rogue write is missing least-privilege scoping. Now the autonomy argument falls out cleanly: more tools, more steps, and fewer confirmation gates each <em>widen the surface</em> for these same failures — so you don't 10x autonomy by removing guardrails, you 10x it by building the reliability stack (idempotency, step budgets, least-privilege, HITL gates) that makes each new degree of freedom safe.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Agent reliability starts from an inversion: retrying a failed action (unlike a failed read) can double-charge or corrupt state, so reliability is engineered — idempotency keys, step budgets, circuit breakers, rollback/compensation, context pruning, verifier loops, HITL gates on the irreversible and uncertain, and an eval harness with replayable traces. Frame bounded autonomy as the enabler of autonomy: each new degree of freedom widens the failure surface, so guardrails are what make a capable agent shippable.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

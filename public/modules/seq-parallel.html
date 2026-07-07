@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sequential vs Parallel: Why the Transformer Exists | GenAI Systems Lab</title>
+  <meta name="description" content="Step through an RNN one token at a time. Watch the Transformer do it in one step. See why this determines what scale is possible.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/seq-parallel">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/seq-parallel">
+  <meta property="og:title" content="Sequential vs Parallel: Why the Transformer Exists | GenAI Systems Lab">
+  <meta property="og:description" content="Step through an RNN one token at a time. Watch the Transformer do it in one step. See why this determines what scale is possible.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sequential vs Parallel: Why the Transformer Exists">
+  <meta name="twitter:description" content="Step through an RNN one token at a time. Watch the Transformer do it in one step. See why this determines what scale is possible.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Sequential vs Parallel: Why the Transformer Exists","description":"Step through an RNN one token at a time. Watch the Transformer do it in one step. See why this determines what scale is possible.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/seq-parallel"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">ARCH</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Sequential vs Parallel: Why the Transformer Exists</h1>
+    <p class="desc">Step through an RNN one token at a time. Watch the Transformer do it in one step. See why this determines what scale is possible.</p>
+
+    
+    <section><h2>How It Works</h2><p>At training time, <strong>every intermediate activation must be stored</strong> for the backward pass. That's what makes training more memory-intensive than inference — <mark>it's not the weights, it's the activations.</mark></p>
+<p>For attention specifically, activation memory scales with the <strong>square of sequence length</strong>: the attention score matrix alone is `N×N`. At 32K tokens that's 32,768 × 32,768 values <em>per layer per head</em>.</p>
+<p>You've already enabled <strong>gradient checkpointing</strong> (recompute activations in the backward pass instead of storing them) and <strong>bf16</strong> (halve the bytes per activation). Both help. <strong>Neither is enough.</strong></p>
+<p>The first instinct is <strong>data parallelism</strong>: spread the load across 8 GPUs. Data parallelism replicates the full model on each GPU, each processing a different <em>batch item</em>.</p>
+<p>This doesn't help here. Each batch item is a 32K-token document, and the OOM is happening on a <strong>single sequence</strong> — the activation memory for that one document exceeds what one GPU can hold.</p>
+<p><mark>Distributing to 8 GPUs gives you 8 copies of the same OOM</mark> — each device still processes the full 32K-token sequence independently.</p>
+<p><strong>Gradient checkpointing</strong> is already enabled. It helps by recomputing rather than storing activations — trading memory for extra compute.</p>
+<p>But for a 32K-token sequence in a 13B model, even the checkpointing scheme cannot bring per-device usage below the A100's ceiling. <mark>The binding constraint is simply not solvable by checkpointing alone at this sequence length.</mark></p>
+<p><strong>Sequence parallelism</strong> takes a different approach: instead of splitting the <em>batch</em> across devices, split the <strong>sequence</strong>.</p>
+<p>8 GPUs, 32K tokens → each GPU receives <strong>4K tokens</strong>. Per-device activation memory drops by <strong>8×</strong>.</p>
+<p><mark>The sequence length is the constraint — so the solution is to distribute the sequence itself.</mark></p>
+<p>The engineering challenge is <strong>attention</strong>: each token must attend to all prior tokens, and when those prior tokens live on <em>different devices</em>, the key and value tensors have to travel.</p>
+<p><strong>Ring-Attention</strong> solves this. Devices are arranged in a ring: each computes its local attention slice, passes its KV chunk to the next device and receives one from the previous, then computes the next slice — repeating until every device has seen all KV chunks and produced its complete output.</p>
+<p><mark>Communication volume is `O(N)` — linear in sequence length — not the quadratic cost of the attention matrix itself.</mark></p>
+<div class="illustration"><div class="illustration-label">Data parallelism vs sequence parallelism memory comparison</div><pre>Data Parallelism (fails for long sequences):
+  GPU 0: full 32K sequence → ~48GB activations → OOM
+  GPU 1: full 32K sequence → ~48GB activations → OOM
+  ...
+  Each GPU: same problem. More GPUs = more OOMs.
+
+Sequence Parallelism (solves it):
+  GPU 0: tokens    1– 4K → ~6GB activations ✓
+  GPU 1: tokens  4K– 8K → ~6GB activations ✓  (+ ring communication)
+  GPU 2: tokens  8K–12K → ~6GB activations ✓
+  GPU 3: tokens 12K–16K → ~6GB activations ✓
+  GPU 4: tokens 16K–20K → ~6GB activations ✓
+  GPU 5: tokens 20K–24K → ~6GB activations ✓
+  GPU 6: tokens 24K–28K → ~6GB activations ✓
+  GPU 7: tokens 28K–32K → ~6GB activations ✓
+
+  Communication overhead: O(N) per ring pass — linear, not quadratic
+  Each GPU passes its 4K KV chunk around the ring (8 passes total)</pre></div>
+<p>The infrastructure cost is <strong>real</strong>. Sequence parallelism requires framework-level support — Megatron-LM, DeepSpeed, or JAX pjit — adds per-step communication latency, and makes distributed training harder to debug.</p>
+<p>The resolution hierarchy for the scenario: <strong>gradient checkpointing + bf16 first</strong> (already done); then a <strong>per-device memory upgrade</strong> (A100 40GB → 80GB or H100, which often resolves 32K-token OOM with no parallelism change at all); then <strong>sequence parallelism as the last resort</strong> once hardware upgrades are exhausted.</p>
+<p><mark>The payoff only becomes meaningful above roughly 16K tokens at production fine-tuning scale on fixed hardware.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Training OOM is about activations, not weights.</strong> Every intermediate must be stored for the backward pass, and attention's `N×N` score matrix makes activation memory scale with the square of sequence length.</li><li><strong>Data parallelism can't fix a single-sequence OOM.</strong> It replicates the model per GPU and splits the batch — but the 32K-token document still runs whole on each device, so you get 8 copies of the same OOM.</li><li><strong>Sequence parallelism splits the sequence, not the batch.</strong> 32K tokens across 8 GPUs = 4K each, cutting per-device activation memory ~8× — it directly attacks the constraint (sequence length).</li><li><strong>Ring-Attention keeps cross-device attention affordable.</strong> Devices pass KV chunks around a ring; communication is `O(N)` (linear), never materializing the quadratic attention matrix across devices.</li><li><strong>It's a last resort, not a first move.</strong> Order: gradient checkpointing + bf16 → per-device memory upgrade (80GB/H100) → sequence parallelism, because of real framework and debugging complexity.</li><li><strong>The payoff appears above ~16K tokens</strong> at production fine-tuning scale on fixed hardware — below that, cheaper mitigations usually suffice.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your team is fine-tuning a 13B model on 32K-token legal documents. Training crashes with OOM on your 8×A100 cluster. You've already enabled gradient checkpointing and bf16 — the standard memory mitigations. An engineer says 'just sequence parallelism.' You need to understand what it actually does before approving the infrastructure change.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Sequence parallelism solves per-device activation memory for long sequences by distributing the token sequence — not model copies — across devices. It's the last resort after gradient checkpointing and hardware upgrades because of real infrastructure complexity. The payoff only materializes above ~16K tokens at production fine-tuning scale.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

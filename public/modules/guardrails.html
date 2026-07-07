@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guardrail Pipeline | GenAI Systems Lab</title>
+  <meta name="description" content="Input Classifier → LLM → Output Validator. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/guardrails">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/guardrails">
+  <meta property="og:title" content="Guardrail Pipeline | GenAI Systems Lab">
+  <meta property="og:description" content="Input Classifier → LLM → Output Validator. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Guardrail Pipeline">
+  <meta name="twitter:description" content="Input Classifier → LLM → Output Validator. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Guardrail Pipeline","description":"Input Classifier → LLM → Output Validator. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/guardrails"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 9</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Guardrail Pipeline</h1>
+    <p class="desc">Input Classifier → LLM → Output Validator. Try injections, jailbreaks, PII, hallucinations — see exactly where each gets caught.</p>
+
+    
+    <section><h2>How It Works</h2><p>A system prompt saying 'only answer HR policy questions' is text the model processes as input. It competes with the model's helpfulness prior and its learned sense of what assistance looks like in context. Instructions can guide the typical case. They don't constrain boundary cases — because the constraint exists in the prompt, not in the weights that determine generation probability across all contexts.</p>
+<p>'Draft a termination letter template' is an HR-adjacent documentation request. From the model's perspective, this is professionally appropriate assistance in a professional HR context — close enough to the allowed category that its instruction-following prior doesn't reliably distinguish it from a permitted policy question. The failure isn't a jailbreak; it's distributional. The model learned from pre-training that assisting with HR documents is expected behavior for an HR assistant. A soft instruction inside the model's context can't override a strong learned prior for a request that plausibly fits the category.</p>
+<p>Reliable restriction requires enforcement before the main model sees the input. An input classifier — a small, fast LLM call or a fine-tuned classification model — categorizes requests into: allowed (benefits, policy lookup, procedural), review (performance management, disciplinary questions with legal context), and blocked (draft legal documents, advise on specific employee cases). The classifier runs before the main LLM call. 'Review' category requests route to an HR representative rather than auto-refusing — serves the user while managing liability. Output guardrails add a second layer.</p>
+<p>The principle: restrict at the layer furthest upstream from the model's generation decision, not inside the model's context. The system prompt failed because it was a restriction inside the input the model was generating a response to. The input classifier succeeds because it runs before the main model ever processes the request.</p></section>
+    
+    <section><h2>In Production — Apply It</h2><p>An HR chatbot deployed for benefits questions is drafting termination letters and advising on specific disciplinary cases. The system prompt says 'only answer HR policy questions.' Legal flags it as a liability. You need to implement guardrails without breaking legitimate HR queries — and the system prompt restriction is clearly not working.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>System prompts are soft constraints, not hard guardrails. For liability-sensitive applications, add a dedicated input classifier before the main LLM and route high-risk request categories to human review. Layered defenses — input classification, constrained system prompt, output review — are more reliable than trusting the model to refuse itself.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

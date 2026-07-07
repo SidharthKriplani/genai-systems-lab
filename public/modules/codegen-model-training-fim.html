@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Models &amp; Fill-in-the-Middle | GenAI Systems Lab</title>
+  <meta name="description" content="Why code models train with FIM — the basis of autocomplete.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/codegen-model-training-fim">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/codegen-model-training-fim">
+  <meta property="og:title" content="Code Models &amp; Fill-in-the-Middle | GenAI Systems Lab">
+  <meta property="og:description" content="Why code models train with FIM — the basis of autocomplete.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Code Models &amp; Fill-in-the-Middle">
+  <meta name="twitter:description" content="Why code models train with FIM — the basis of autocomplete.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Code Models & Fill-in-the-Middle","description":"Why code models train with FIM — the basis of autocomplete.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/codegen-model-training-fim"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">CODE-GEN</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Code Models &amp; Fill-in-the-Middle</h1>
+    <p class="desc">Why code models train with FIM — the basis of autocomplete.</p>
+
+    
+    <section><h2>How It Works</h2><p>A chat model is trained with one objective: <strong>predict the next token given everything to the left.</strong> That is left-to-right (causal) language modeling, and it's a perfect match for chat, because a conversation only ever grows to the right — you're always generating the <em>continuation</em>.</p>
+<p>Code in an editor breaks that assumption. When you place your cursor in the <strong>middle of a function</strong> and start typing, there is code on <strong>both sides</strong> of the cursor: a prefix above and a suffix below. The single most useful thing an assistant can do — infill the hole between them — is exactly the thing a pure left-to-right model was never trained to do. <mark>Autocomplete is an infilling problem, but next-token prediction only ever learned continuation.</mark></p>
+<p>You could imagine training a bidirectional (masked) model instead — like BERT — which sees both sides by construction. But masked models are <strong>poor generators</strong>: they're trained to fill single masked tokens, not to emit long, coherent, syntactically valid spans. Code generation needs fluent multi-token output <em>and</em> two-sided context at once.</p>
+<p><strong>Fill-in-the-Middle (FIM)</strong> resolves the tension with a data trick rather than an architecture change. You keep the ordinary left-to-right decoder — so it stays a strong generator — but you <strong>transform a fraction of the training documents</strong> so the model learns to treat 'the middle' as the thing to generate, conditioned on prefix <em>and</em> suffix. <mark>FIM buys two-sided conditioning without giving up the generative strength of a causal LM.</mark></p>
+<p>The transform is mechanical. Take a document, split it at two random points into `prefix / middle / suffix`, then <strong>reorder</strong> it into a single sequence using sentinel tokens the model learns to recognize.</p>
+<p>The common ordering is <strong>PSM</strong> — Prefix, Suffix, Middle:</p>
+<p>`&lt;PRE&gt; prefix &lt;SUF&gt; suffix &lt;MID&gt; middle`</p>
+<p>At training time the model still just predicts the next token left-to-right over that reordered stream. But because `middle` now appears <em>after</em> both prefix and suffix, predicting it forces the model to condition on both sides. At inference you feed `&lt;PRE&gt; {code above cursor} &lt;SUF&gt; {code below cursor} &lt;MID&gt;` and let it generate the middle. <mark>The model never changed — only the order of the bytes it read during training did.</mark></p>
+<div class="illustration"><div class="illustration-label">The FIM transform — same causal objective, reordered document</div><pre>ORIGINAL FILE (what's in the editor):
+    def total(items):
+        subtotal = sum(i.price for i in items)      &lt;- prefix (above cursor)
+        ____________________________________         &lt;- MIDDLE (the hole to fill)
+        return subtotal + tax                        &lt;- suffix (below cursor)
+
+CAUSAL LM (chat-style) sees only:
+    &lt;prefix&gt;  -&gt;  predict next token  -&gt;  continues DOWNWARD, ignores the suffix
+    result: may re-declare 'return', never computes 'tax' the suffix needs
+
+FIM training document (PSM ordering):
+    &lt;PRE&gt; subtotal = sum(...)  &lt;SUF&gt; return subtotal + tax  &lt;MID&gt; tax = subtotal * 0.08
+
+The model predicts the MIDDLE token-by-token, having ALREADY read the suffix
+'return subtotal + tax' — so it knows a variable named 'tax' must exist and
+generates 'tax = subtotal * 0.08'. That is exactly what editor infill requires.
+
+Typical recipe: apply FIM to ~50-90% of documents; keep the rest plain
+left-to-right so the model retains normal continuation ability.</pre></div>
+<p>The FIM objective is necessary but <strong>not what dominates code-model quality — data does.</strong> Public code corpora (e.g. The Stack, built from permissively-licensed GitHub) are enormous and filthy: near-duplicate files, auto-generated code, minified blobs, secrets, and non-permissive licenses.</p>
+<p>Three pipeline steps matter most. <strong>Exact and near-duplicate removal</strong> (MinHash/LSH): duplicated code is over-represented, wastes the training budget, and inflates memorization — deduping The Stack removes a large fraction of files and <em>improves</em> downstream quality. <strong>License filtering</strong>: keep only permissive licenses (MIT/Apache/BSD) so you don't train on and regurgitate copyleft code. <strong>Quality/heuristic filtering</strong>: drop minified files, huge line lengths, low alphanumeric ratio, and auto-generated boilerplate. <mark>Below the FIM objective sits an unglamorous truth: dedup + license + quality filtering move the needle more than most modeling tricks.</mark></p>
+<p><strong>Tokenization</strong> is the last code-specific piece. Prose tokenizers are tuned for words; code is dominated by <strong>indentation, punctuation, and identifiers</strong>. A naive tokenizer that spends one token per space turns a deeply-indented Python function into a token-count disaster and wastes context.</p>
+<p>Code models use <strong>byte-level BPE</strong> (so any byte sequence is representable — no `&lt;UNK&gt;` on an unusual identifier or Unicode) plus <strong>special whitespace tokens</strong> that encode runs of spaces/tabs compactly (e.g. a single token for '4 spaces'). They also reserve the <strong>FIM sentinel tokens</strong> (`&lt;PRE&gt;/&lt;SUF&gt;/&lt;MID&gt;`) and an <strong>end-of-document</strong> token so the model knows a file boundary. <mark>Efficient whitespace tokenization isn't cosmetic — it's what lets a whole function fit in the window that autocomplete has to reason over.</mark></p>
+<p>Finally, a base code model is a completion engine, not an assistant. Turning it into one that <strong>follows edit instructions</strong> ('rename this variable', 'add error handling') requires <strong>instruction fine-tuning</strong> on (instruction, code-before, code-after) triples, often distilled from a stronger model or mined from real commit/diff data.</p>
+<p>Repo-aware fine-tuning goes further: pack <em>related files from the same repository</em> into the training context so the model learns to use cross-file signals (imports, sibling modules) rather than treating each file as an island. This is the bridge to the next module — repo-level context — because the model has to <em>learn</em> to use retrieved context, not just be handed it. <mark>Pretraining gives fluency and infilling; instruction + repo-aware fine-tuning give an assistant that edits real code on request.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Editor autocomplete is infilling, not continuation.</strong> A pure left-to-right (causal) LM only predicts tokens to the right of the cursor, so it ignores the code below where you're typing — exactly the code you need when editing the middle of a function.</li><li><strong>FIM adds two-sided context without changing the architecture.</strong> You keep a causal decoder (a strong generator) but reorder a fraction of training documents into `&lt;PRE&gt; prefix &lt;SUF&gt; suffix &lt;MID&gt; middle` (PSM), so predicting the middle forces conditioning on both sides.</li><li><strong>Masked (BERT-style) bidirectional models see both sides but generate poorly</strong> — they fill single tokens, not long coherent spans. FIM is the data-only trick that gets bidirectional conditioning while keeping generative strength.</li><li><strong>Data quality dominates the FIM objective.</strong> Near-dup removal (MinHash/LSH), permissive-license filtering, and quality heuristics (drop minified/auto-generated) move quality more than modeling tricks; deduping corpora like The Stack both saves budget and improves downstream results.</li><li><strong>Code tokenization is its own problem.</strong> Byte-level BPE (no `&lt;UNK&gt;` on odd identifiers) plus compact whitespace tokens keep indentation-heavy code from blowing the context budget; sentinel tokens (`&lt;PRE&gt;/&lt;SUF&gt;/&lt;MID&gt;`) and EOD markers are reserved.</li><li><strong>A base code model isn't an assistant.</strong> Instruction fine-tuning on (instruction, before, after) triples and repo-aware packing teach it to follow edit requests and use cross-file signals — the bridge to repo-level retrieval.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You're interviewing for an applied AI role at a company building a coding assistant. The autocomplete is bad: it only ever continues the line to the right of the cursor and ignores the twenty lines of code that already exist BELOW where you're typing — so when you edit the middle of a function it completes as if the rest of the file weren't there. The interviewer asks: why can't a coding model just use next-token prediction like a chat model? Explain how code models are actually trained, why fill-in-the-middle (FIM) is the fix for editor autocomplete, and what dominates code-model quality besides the objective.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Chat models predict next-token left-to-right, which is continuation — but editor autocomplete is infilling, where code exists on both sides of the cursor. Fill-in-the-Middle solves this with a pure data trick: reorder a large fraction of training documents into `&lt;PRE&gt; prefix &lt;SUF&gt; suffix &lt;MID&gt; middle` (PSM) so a strong causal decoder learns to condition on prefix AND suffix, without degrading into a weak masked model. But the objective is second-order — near-duplicate removal, license filtering, and quality heuristics dominate quality, byte-level BPE plus compact whitespace tokens keep indentation-heavy code in the window, and instruction plus repo-aware fine-tuning turn a completion engine into an assistant that edits real code.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

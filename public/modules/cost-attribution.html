@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cost Attribution by Feature | GenAI Systems Lab</title>
+  <meta name="description" content="Turn the bill into a fix.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/cost-attribution">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/cost-attribution">
+  <meta property="og:title" content="Cost Attribution by Feature | GenAI Systems Lab">
+  <meta property="og:description" content="Turn the bill into a fix.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cost Attribution by Feature">
+  <meta name="twitter:description" content="Turn the bill into a fix.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Cost Attribution by Feature","description":"Turn the bill into a fix.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/cost-attribution"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">OPS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Cost Attribution by Feature</h1>
+    <p class="desc">Turn the bill into a fix.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a bill and a simple question that turns out to be surprisingly hard to answer. Your company spends a large sum on AI each month — one number, one line item. Someone asks: <em>which team is that? Which feature?</em> And you realize you have no idea. All the requests went through one API key, so the bill is a single undifferentiated total. You know the total; you can't split it.</p>
+<p>Here's why that matters, and it's the heart of this module. You can't optimize what you can't attribute. Almost every big inference bill is <em>lopsided</em> — a small slice of requests drives most of the cost — but a flat total hides that completely. Without knowing which requests are the expensive ones, every optimization is a guess, and you'll spend effort shaving costs off requests that were never the problem.</p>
+<p>So we'll build up why attribution has to be <em>added before the bill arrives, not reconstructed after</em>, exactly what to tag on each request, and how that turns one scary number into a ranked list you can act on. Take your time — the mechanism is genuinely cheap once you see it, which is what makes doing it late so painful.</p></section>
+    <section><h2>How It Works</h2><p>Start from the limit of the cost equation you already have: token count times per-token rate tells you <em>why</em> a bill is $180K, <strong>but</strong> it says nothing about <em>who</em> or <em>what</em> drove it there. <strong>This means</strong> a single API key produces a single flat number — accurate, and useless for action. <strong>Because</strong> you can't act on an aggregate, the missing capability is <em>attribution</em>: mapping cost back onto the teams, products, and feature decisions that produced it. <strong>And without it</strong> you can't find the 20% of requests driving 80% of the bill, so every optimization is blind.</p>
+<p><strong>So</strong> the core mechanism is to tag every inference request <em>at the time of the call</em> — <strong>because</strong> attribution that isn't captured at request time is expensive and often impossible to reconstruct afterward. Most providers expose user and metadata fields in the API request that flow straight into billing exports, so instrument them: <strong>team</strong> (which group owns the request), <strong>use_case</strong> (summarization, extraction, chat, eval), <strong>environment</strong> (production vs. staging vs. eval runs), <strong>user_tier</strong> (free vs. paid). This is hours of work, not an infrastructure project, <strong>and</strong> it produces full attribution data within a single billing cycle.</p>
+<p><strong>And</strong> to convert those tagged requests into dollars you need one more field: the <strong>model name</strong> per request, <strong>because</strong> different models on the same account carry different per-token rates, so token counts alone can't be priced without knowing which model ran. <strong>This matters</strong> because large inference bills are almost always heavy-tailed — 20% of requests account for 60–80% of the total — so identifying those requests first yields far more savings than broadly optimizing everything. <strong>Which is exactly what</strong> attribution buys you: '$180K on AI' resolves into '$72K on document summarization, $45K on the search assistant, $63K on internal evals,' each with its own optimization path.</p>
+<p><strong>And</strong> each of those resolved lines exposes a decision that was invisible before. If the Eval team is running a flagship model where a mini model would cost 1/50th with no quality loss, attribution surfaces it. If one feature is 40% of cost but 10% of engagement, that's a build-vs-optimize conversation you can now actually have. The interactive lets you tag a stream of requests and watch a flat total split into a ranked, per-team breakdown — and the closing scenario is exactly this: a $180K bill, one API key, and two weeks to make it legible.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Token-cost math tells you why; attribution tells you which team.</strong> A single-key $180K bill is a flat number until you can trace it to the team, product, or feature that drove it.</li><li><strong>Tag every request at call time.</strong> Most providers expose user/metadata fields in billing exports — instrument team, use_case, environment, and user_tier.</li><li><strong>Track the model name per request.</strong> Different models on the same account have different per-token rates, so token counts alone can't be converted to cost.</li><li><strong>Large bills follow a heavy tail.</strong> Roughly 20% of requests drive 60–80% of cost; identifying them beats broadly optimizing everything.</li><li><strong>Attribution turns one number into optimization paths.</strong> '$180K on AI' becomes '$72K summarization, $45K search, $63K evals' — each with a distinct fix.</li><li><strong>Instrumentation is cheap and fast.</strong> It takes hours to add and produces full attribution within one billing cycle; without it you optimize blind.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your company's monthly inference bill is $180K, the CFO wants a breakdown by product team and use case, all requests go through one API key, you have no attribution, and budget season is two weeks out. Take a moment before reading on: what's the <em>fastest</em> path to a real breakdown from a standing start? Here's the reasoning, step by step. Don't try to reconstruct the past — retroactive content analysis is expensive, ambiguous, and won't finish in time. Instead, instrument going forward: add metadata tags to every API call (team, use_case, environment, user_tier), which most providers surface in billing exports. That's hours of work, not infrastructure, and it produces full attribution within one billing cycle. Track the model name per request too, since different models carry different per-token rates and token counts alone can't be priced without it. The payoff is the reframe: '$180K on AI' becomes '$72K on summarization, $45K on the search assistant, $63K on internal evals' — and now the heavy tail is visible, so you optimize the 20% of requests driving 80% of the cost instead of guessing.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Cost attribution requires instrumentation before the bill. Tag every API request with team and use_case. This takes hours to instrument and produces full attribution data within one billing cycle. Without it, you're optimizing blind. With it, you can identify the 20% of requests driving 80% of the bill and target optimization where it has actual impact.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

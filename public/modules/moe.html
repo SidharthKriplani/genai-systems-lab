@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mixture-of-Experts: Sparse Scaling | GenAI Systems Lab</title>
+  <meta name="description" content="Router + top-k gating; active vs total params; the load-balancing loss.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/moe">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/moe">
+  <meta property="og:title" content="Mixture-of-Experts: Sparse Scaling | GenAI Systems Lab">
+  <meta property="og:description" content="Router + top-k gating; active vs total params; the load-balancing loss.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Mixture-of-Experts: Sparse Scaling">
+  <meta name="twitter:description" content="Router + top-k gating; active vs total params; the load-balancing loss.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Mixture-of-Experts: Sparse Scaling","description":"Router + top-k gating; active vs total params; the load-balancing loss.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/moe"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">FOUNDATIONS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Mixture-of-Experts: Sparse Scaling</h1>
+    <p class="desc">Router + top-k gating; active vs total params; the load-balancing loss.</p>
+
+    <section><h2>Start Here</h2><p>Here's a tension that sits at the heart of scaling models, and it's worth feeling it before we resolve it. Bigger models know more — more parameters, more capacity, better answers. But bigger models also <em>cost</em> more to run, because in an ordinary model every single parameter has to do arithmetic on every single token that passes through. More knowledge, more compute. They rise together, and that coupling is what makes big models expensive.</p>
+<p>So let's ask the obvious question: what if you could add knowledge <em>without</em> adding compute? What if the model held far more parameters, but each token only ever touched a small slice of them? You'd get the wisdom of a huge model at the running cost of a small one. It sounds almost too good — and the interesting part is that it's real, but the bill doesn't vanish, it just moves to a different column.</p>
+<p>No rush here. We'll build the idea from a single, surgical change to one part of the Transformer, watch two numbers that were always equal suddenly split apart, and follow that split all the way to a very practical surprise: why a model that <em>computes</em> like a small one can refuse to <em>fit</em> like one.</p></section>
+    <section><h2>How It Works</h2><p>In a standard Transformer block, every token passes through the same <strong>Feed-Forward Network (FFN)</strong> — a single dense two-layer MLP at ~4× the hidden dimension, and the place where most of the model's parametric knowledge lives. Every token, no matter what it is, activates every FFN parameter.</p>
+<p><strong>Mixture-of-Experts changes exactly one thing:</strong> it replaces that single FFN with N independent expert FFNs plus a small <strong>router</strong> (the gating network). The router looks at each token's representation and sends it to only the <strong>top-k experts</strong> — usually k=1 or k=2. The other experts sit idle for that token. Attention, layer norm, embeddings, and residual paths are untouched; only the FFN sublayer is split into experts.</p>
+<p><mark>That single substitution is the entire idea, and it forces apart two numbers that are identical in a dense model.</mark></p>
+<p>Those two numbers are <strong>TOTAL parameters</strong> and <strong>ACTIVE parameters</strong>. Total is every weight that must exist. Active is the subset that actually runs for a given token. In a dense model they are equal — every parameter runs on every token. In an MoE they diverge, and the whole engineering profile of the model follows from that gap.</p>
+<p><strong>Compute (FLOPs, and therefore latency) scales with ACTIVE parameters</strong>, because only the selected experts do arithmetic. <strong>Memory scales with TOTAL parameters</strong>, because you must hold every expert resident in VRAM — the router might send the very next token to any of them, so you cannot leave any expert on disk.</p>
+<p><mark>Cheap to compute, expensive to hold. That is the trade in one line.</mark></p>
+<p>The Mixtral 8x7B numbers make the gap concrete, and the naming is a <strong>trap</strong>. '8x7B' does not mean 8 × 7B = 56B. Each block has 8 expert FFNs, but attention, embeddings, and layer norms are <strong>shared</strong> across all experts — only the FFN experts multiply, not the whole model. Sum the shared attention/embedding parameters plus 8 copies of only the FFN experts and you land at <strong>~47B TOTAL</strong>, not 56B.</p>
+<p>At inference the router picks top-2 of the 8 experts per token, so per token you run the shared attention plus 2 expert FFNs — about <strong>~13B ACTIVE</strong> parameters. That is why it benchmarks like a 13B on latency: it does 13B worth of arithmetic per token.</p>
+<p>And it is also why it OOMs where a 13B fits: all ~47B parameters must be resident in VRAM the whole time, because token-to-token the router can select any expert. <mark>The scenario's surprise is this exact split — compute profile of a 13B, memory profile of a 47B.</mark></p>
+<div class="illustration"><div class="illustration-label">Mixtral 8x7B — active vs total parameters</div><pre>Mixtral 8x7B — the 8x7B naming trap:
+
+  8 × 7B = 56B   ← WRONG (assumes the whole model is copied 8×)
+  ~47B TOTAL     ← RIGHT (only FFN experts ×8; attention/embeddings shared once)
+
+Per-token routing (top-2 of 8 experts):
+  shared attention + embeddings ........ runs for EVERY token
+  + 2 selected expert FFNs (of 8) ...... runs for THIS token
+  + 6 idle expert FFNs ................. resident in VRAM, do no work
+  ─────────────────────────────────────────────────────────────
+  ACTIVE per token:  ~13B   → drives FLOPs / latency  (benchmarks like a 13B)
+  TOTAL resident:    ~47B   → drives VRAM footprint    (OOMs like a 47B)
+
+  Dense 13B:  ACTIVE = TOTAL = 13B   (fits the 2×A100-40GB box)
+  Mixtral:    ACTIVE 13B, TOTAL 47B  → same latency, ~3.6× the memory</pre></div>
+<p>The router is a <strong>tiny learned linear layer</strong> that produces a score per expert, softmax-normalized, and it routes <strong>TOKENS, not sequences</strong>. This is the detail people miss: within a single sequence, different tokens hit different experts. The token 'def' in a code prompt and the token 'the' two positions later can be dispatched to entirely different expert pairs.</p>
+<p>There is no notion of 'this request uses expert 3' — routing is <strong>per-token, recomputed at every layer</strong>, so a single forward pass touches many experts overall even though each individual token only touches k of them. <mark>That is precisely why every expert must stay resident: you cannot predict, and cannot pre-load, which experts an incoming stream of tokens will demand.</mark></p>
+<p>Left alone, the router <strong>misbehaves</strong>. Nothing in the top-k objective encourages using all experts, so training tends to <strong>collapse onto a few favored experts</strong> — a rich-get-richer loop where popular experts get more tokens, train faster, look better to the router, and get still more tokens, while the rest starve and stay under-trained. You end up paying to store N experts but effectively running a handful, wasting the capacity that was the entire point of going MoE.</p>
+<p>The fix is an <strong>auxiliary load-balancing loss</strong> added during training that penalizes uneven token distribution and pushes the router to spread tokens roughly evenly across experts. Related machinery: each expert has a fixed <strong>capacity</strong> (a cap on tokens per batch); when balancing is imperfect and an expert overflows, excess tokens are <strong>dropped</strong> — they skip the FFN via the residual path — which is why a badly balanced MoE both under-uses experts and silently degrades quality.</p>
+<p><mark>If your MoE underperforms a dense model of the same active size, a collapsed router with no balancing loss is the first suspect.</mark></p>
+<p>So why build MoE at all? Because it <strong>bends the scaling curve</strong>. More total parameters means more knowledge capacity — but with top-k routing you add that capacity at <strong>nearly constant compute per token</strong>, since active params stay fixed as you add experts. <mark>You buy the quality of a much larger model at the FLOPs (and latency) of a small one.</mark></p>
+<p>The bills come due in two other columns: <strong>memory</strong>, because all experts must be resident, and <strong>training stability</strong>, because routing is discrete and prone to the collapse above. Serving inherits both: production MoE typically uses <strong>expert-parallelism</strong> (experts sharded across devices, tokens dispatched over the network to wherever their expert lives), all experts must be loaded before you serve a single token, and batching interacts awkwardly with routing — tokens in a batch scatter unevenly across experts, so effective per-expert batch sizes are lumpy and utilization is harder to keep high than in a dense model.</p>
+<p>Named families in this space: Mixtral (8x7B, 8x22B), DeepSeek-MoE, xAI's Grok, and GPT-4 is widely rumored to be an MoE. The recurring interview trap across all of them is the same: <strong>pricing or provisioning an MoE by its active parameter count and then being surprised by the total-parameter memory bill.</strong></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>MoE replaces the dense FFN with N expert FFNs plus a top-k router.</strong> Only k experts (usually 1–2) run per token; attention, embeddings, and residual paths are untouched. That one swap forces apart two numbers dense models keep equal.</li><li><strong>Compute scales with ACTIVE params; memory scales with TOTAL params.</strong> Only selected experts do arithmetic (latency), but every expert must stay resident in VRAM (footprint). Cheap to compute, expensive to hold.</li><li><strong>'8x7B' is a naming trap.</strong> Attention/embeddings are shared, only FFN experts multiply → ~47B total, not 56B. Top-2 routing → ~13B active. Computes like a 13B, OOMs like a 47B.</li><li><strong>Routing is per-token, recomputed every layer</strong> — not per-request. Any expert can be needed next, so none can be left on disk; all must be pre-loaded.</li><li><strong>Without an auxiliary load-balancing loss the router collapses</strong> onto a few experts (rich-get-richer), leaving most under-trained. Overflowed experts drop tokens via the residual path, silently degrading quality.</li><li><strong>MoE adds knowledge capacity at near-constant compute</strong> but costs more memory + training instability. Provision by TOTAL params, never active. Families: Mixtral, DeepSeek-MoE, Grok, (rumored) GPT-4.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A team wants to upgrade from a 13B dense model to Mixtral 8x7B for better quality at 'roughly the same cost.' A benchmark confirms latency is barely higher than the 13B — but on the first deploy the model OOMs on the exact 2×A100-40GB box that ran the 13B comfortably, and it OOMs at a batch size the 13B never struggled with.</p>
+<p>Take a moment before reading on — how can a model <em>compute</em> like a 13B on the benchmark yet refuse to <em>fit</em> like one on the same box? Here's the reasoning, step by step. We just watched MoE force apart the two numbers a dense model keeps equal. The router sends each token through only the top-2 of 8 experts plus shared attention, so per token it does about <strong>~13B worth of arithmetic</strong> — that's the ACTIVE count, and it's why latency tracks a 13B. But routing is per-token and recomputed at every layer, so the very next token could demand any of the 8 experts; you can't leave any on disk. That forces <strong>all ~47B TOTAL parameters resident in VRAM</strong> the whole time. Notice how cleanly that explains both symptoms: the benchmark measured compute (active → 13B), the box ran out of memory (total → 47B, ~3.6× the footprint). The lesson follows directly — provision an MoE by its <strong>total</strong> parameter count, never its active one, before you approve the hardware.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>MoE replaces the dense FFN with N experts plus a top-k router, splitting apart ACTIVE and TOTAL parameters: compute (latency) tracks active params, memory tracks total params — so Mixtral 8x7B computes like a 13B (~13B active) but must be held in VRAM like a 47B (all experts resident). Provision by total parameters, not active, and never ship without a load-balancing loss.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

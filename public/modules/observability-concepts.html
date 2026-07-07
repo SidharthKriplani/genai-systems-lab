@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Observability: What Standard APM Misses | GenAI Systems Lab</title>
+  <meta name="description" content="The 4 pillars of LLM observability and why Datadog alone cannot tell you if your model is correct.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/observability-concepts">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/observability-concepts">
+  <meta property="og:title" content="LLM Observability: What Standard APM Misses | GenAI Systems Lab">
+  <meta property="og:description" content="The 4 pillars of LLM observability and why Datadog alone cannot tell you if your model is correct.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LLM Observability: What Standard APM Misses">
+  <meta name="twitter:description" content="The 4 pillars of LLM observability and why Datadog alone cannot tell you if your model is correct.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"LLM Observability: What Standard APM Misses","description":"The 4 pillars of LLM observability and why Datadog alone cannot tell you if your model is correct.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/observability-concepts"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROD</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>LLM Observability: What Standard APM Misses</h1>
+    <p class="desc">The 4 pillars of LLM observability and why Datadog alone cannot tell you if your model is correct.</p>
+
+    
+    <section><h2>How It Works</h2><p>Start with why the green dashboards lied to you. From the eval loop you know how to catch <em>known</em> failure modes — score against a fixed dataset and watch for regressions. But that leaves two gaps. Between eval runs you're flying blind, and evals only ever catch the failures you thought to write a test for.</p>
+<p>Now picture the actual failure here. The model returns an HTTP 200. The answer is fluent, confident, well-formatted — and completely wrong. To your error-rate monitor, that response is <em>indistinguishable</em> from a perfect one. <mark>Error rate measures whether the request failed. It says nothing about whether the answer was true.</mark> That is the whole trap: a status code is cheap to check and a correct answer is not, because judging correctness needs a human or a model, not an HTTP status.</p>
+<p>So sit with the uncomfortable implication before we fix it: <strong>zero errors and normal latency can still mean a system that is confidently, silently wrong.</strong> Nothing crashed. Nothing timed out. The pipeline did exactly what it was told and returned junk with a straight face. This is why 'is it up?' and 'is it correct?' are different questions for LLM systems in a way they never were for a traditional CRUD service — and why leaning on error rate as your primary quality signal will let a regression run for weeks behind a wall of green.</p>
+<p>Given that no code changed, what could have shifted underneath you? There's a short list of usual causes. <strong>Silent model version update</strong> — providers refresh weights behind a stable endpoint name, often with no announcement, so 'the same API' quietly became a different model. <strong>Data drift</strong> — your indexed documents went stale; products, policies, or facts changed but the vector index was never re-embedded. <strong>Traffic distribution shift</strong> — a new cohort arrived asking questions unlike anything the system was tuned for. <strong>Third-party dependency drift</strong> — an embedding API or reranker changed its behavior beneath you. Good observability doesn't just tell you quality dropped; it tells you <em>which</em> of these four is responsible.</p>
+<p>Here are the signals that actually earn their place. <strong>Retrieval-quality indicators:</strong> the distribution of retrieval scores, and the share of queries whose top-k chunk even contains a keyword from the question — when retrieval starts missing, this moves first. <strong>Answer-quality proxies:</strong> answer-length distribution, response-format compliance, citation completeness — cheap structural tells that something shifted. <strong>Downstream behavior:</strong> thumbs-up/down rate, follow-up-question rate, session abandonment right after a response — your users voting with their clicks. And plainly, <strong>the model version pulled straight from the API response headers</strong>, so a silent swap can't hide from you.</p>
+<div class="illustration"><div class="illustration-label">Minimum viable observability stack</div><pre>LOG on every request:
+  input tokens · output tokens · retrieval scores · model name (from headers) · latency
+
+SAMPLE:
+  ~5% of responses → lightweight LLM-as-judge quality score
+
+ALERT when:
+  answer-length distribution Z-score          &gt; 2
+  retrieval-score mean shift                  &gt; 10%
+  user-feedback (👍) rate, week-over-week      drops &gt; 10%
+  model version in API headers                ≠ expected
+
+Result: the 2-week silent regression surfaces as a retrieval-score shift or
+answer-length change within HOURS — not after weeks of support tickets.</pre></div>
+<p>Notice what this stack buys you. The regression that took two weeks and a customer complaint to surface would instead have tripped an alert within hours — most likely a retrieval-score mean shift (pointing at data drift) or a model-version header mismatch (pointing at a silent update). You'd walk in already knowing <em>which</em> of the four causes to chase. <mark>The lesson to carry out of this: silence from your error monitor is not evidence that quality is healthy — it's just evidence that nothing crashed. Instrument quality directly, or you'll keep learning about regressions from your customers.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Error rate is the wrong primary metric for LLM quality.</strong> A confident, fluent, completely wrong answer returns HTTP 200 and looks identical to a correct one. Error rate measures <em>failure</em>, not <em>truth</em>.</li><li><strong>Zero errors + normal latency ≠ correct.</strong> LLM systems degrade silently — nothing crashes — so quality must be instrumented directly, not inferred from uptime.</li><li><strong>Four common causes of no-code-change regression:</strong> silent model version update, data drift (stale index), traffic distribution shift, third-party dependency drift. Observability tells you <em>which</em>.</li><li><strong>Signals worth logging:</strong> retrieval-score distribution, top-k keyword-match rate, answer-length distribution, format/citation compliance, user feedback, and the model version from API headers.</li><li><strong>Minimum viable stack:</strong> log tokens + retrieval scores + model header + latency on every request; sample ~5% for LLM-as-judge scoring; alert on distribution shifts and header mismatches.</li><li><strong>Silence from error monitoring is not proof of health.</strong> Instrument quality directly, and a silent regression surfaces in hours instead of weeks.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your RAG pipeline for B2B analytics has been humming along for three months. Then customer success forwards a note: answers 'seem worse' over the last couple of weeks. You check the obvious things first. No code deployed. Error rate is flat at 0.1%. Request volume is steady. Every dashboard you own is green. And yet the customers are right — something has quietly gotten worse, and none of your monitoring caught it. Your job now is two-fold: design the minimal observability stack that <em>would</em> have caught this automatically, and be ready to explain why the metric everyone trusts — error rate — is the wrong one to lead with for an LLM system.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>LLM systems degrade silently: zero errors and normal latency can still mean confidently wrong answers, because error rate measures failure, not truth. Instrument quality directly — log retrieval scores, answer-length distributions, and model-version headers, and sample responses for lightweight judge scoring — and a silent regression surfaces in hours instead of weeks of support tickets.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

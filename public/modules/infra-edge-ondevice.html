@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>On-Device &amp; Edge LLM Inference | GenAI Systems Lab</title>
+  <meta name="description" content="int4 quantization + small models + llama.cpp/MLX to run offline.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/infra-edge-ondevice">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/infra-edge-ondevice">
+  <meta property="og:title" content="On-Device &amp; Edge LLM Inference | GenAI Systems Lab">
+  <meta property="og:description" content="int4 quantization + small models + llama.cpp/MLX to run offline.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="On-Device &amp; Edge LLM Inference">
+  <meta name="twitter:description" content="int4 quantization + small models + llama.cpp/MLX to run offline.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"On-Device & Edge LLM Inference","description":"int4 quantization + small models + llama.cpp/MLX to run offline.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/infra-edge-ondevice"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">INFERENCE</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>On-Device &amp; Edge LLM Inference</h1>
+    <p class="desc">int4 quantization + small models + llama.cpp/MLX to run offline.</p>
+
+    
+    <section><h2>How It Works</h2><p>The first thing to internalize is that <strong>the datacenter recipe does not transport to a phone.</strong> Everything the previous modules assumed is gone: there's no 80GB HBM, no A100, no NVLink, and — most importantly — a brutal <strong>memory and bandwidth budget.</strong> A phone has ~8GB of <em>unified</em> RAM shared between the OS, the app, and the model, with memory bandwidth an order of magnitude below a datacenter GPU, plus <strong>thermal and battery</strong> ceilings that throttle sustained compute. <mark>On the edge, memory is the wall and quantization is the ladder over it — it's not an optimization, it's the enabling technology.</mark></p>
+<p>Recall the same phase physics: decode is memory-bandwidth-bound. On a phone the bandwidth is low, so tokens-per-second is directly limited by how fast you can stream the (quantized) weights from RAM. Smaller weights don't just fit — they generate <em>faster</em>.</p>
+<p>The core arithmetic is the same `params × bytes_per_param` from the Quantization module, and it decides everything on-device.</p>
+<p>A 7B model at fp16 is `7e9 × 2 = 14GB` of weights — larger than the entire 8GB device, so it can't load (that's the crash). <mark>Edge inference is therefore a quantization problem first:</mark> `int8 → 7GB` (technically fits but leaves no headroom for the OS, the app, or the KV cache), and `int4 → ~3.5GB` (fits with room to spare for KV cache and the application). This is why on-device work standardizes on <strong>int4</strong> — often 4-bit with tricks like the NF4 non-uniform grid or k-quant mixed-bit schemes — as the sweet spot: aggressive enough to fit and stream fast, careful enough (via outlier-aware methods) to hold quality.</p>
+<div class="illustration"><div class="illustration-label">The on-device memory budget: what actually fits in 8GB</div><pre>Phone: 8 GB unified RAM (OS + app + model share it). Usable for model ≈ 5-6 GB.
+
+7B model weights by precision:
+  fp16 (2 B/param)   → 14.0 GB  ✗ exceeds the whole device — crash on load
+  int8 (1 B/param)   →  7.0 GB  ✗ fits weights but no room for OS/app/KV → unstable
+  int4 (0.5 B/param) →  3.5 GB  ✓ fits with ~2 GB left for KV cache + app
+
+Match the MODEL to the budget instead of forcing a 7B:
+  3B int4  → ~1.5 GB   comfortable, fast, good for on-device assistants
+  1B int4  → ~0.5 GB   very fast, tight quality — routing / simple tasks
+  8B int4  → ~4.0 GB   near the ceiling; viable on 8-12 GB devices
+
+Edge inference = (int4 quantization) + (small/distilled model) + (edge runtime).</pre></div>
+<p>Beyond weight bits, <strong>model selection and distillation</strong> are the other half of fitting the budget. Rather than force a 7B down to a marginal size, you often pick a <strong>small but capable</strong> model in the 1–8B range purpose-built for edge, or a <strong>distilled</strong> model — a small student trained to mimic a large teacher (the foundations Distillation module) — which packs more capability per parameter than an equally-small model trained from scratch. <mark>The edge design question is 'what's the smallest model that clears the quality bar for THIS task,' not 'how small can I squeeze the big model.'</mark> Task-specific fine-tunes of a small base frequently beat a heavily-quantized giant on the actual on-device workload while fitting comfortably.</p>
+<p>You also need an <strong>edge runtime</strong> — datacenter stacks (vLLM/TensorRT-LLM) don't run here. The canonical ones:</p>
+<p><strong>llama.cpp / GGUF:</strong> a portable C/C++ inference engine and its quantized model format (GGUF), with a family of 'k-quant' schemes (Q4_K_M, etc.). It runs on CPU, mobile, and consumer GPUs, and is the de-facto standard for local LLMs. <strong>MLX</strong> is Apple's framework tuned for <strong>Apple Silicon's unified memory</strong>, exploiting the shared CPU/GPU/Neural-Engine memory so weights aren't copied across a PCIe bus. <strong>ONNX Runtime</strong> and vendor stacks (Qualcomm, MediaTek) target mobile <strong>NPUs</strong> — dedicated neural accelerators that do quantized matmuls at far better performance-per-watt than the CPU, which matters for battery and thermals. <mark>The runtime's job is to map quantized weights onto whatever accelerator the device has (NPU &gt; GPU &gt; CPU) and to keep everything in unified memory to avoid copies.</mark></p>
+<p>Finally, the honest architecture is usually <strong>hybrid, not purely local.</strong> On-device inference is <em>cheaper, private, and offline</em>, but a 1–8B int4 model genuinely can't match a frontier cloud model on hard reasoning, long context, or breadth. The production pattern is a <strong>router</strong>: run the small on-device model for the common, simple, privacy-sensitive, or offline cases, and <strong>escalate to the cloud</strong> for queries it can't handle well. <mark>You decide per-query where to run based on difficulty, privacy, connectivity, and cost.</mark> The routing signal can be a confidence estimate, a small classifier, or explicit task type. This gives you the privacy/latency/cost wins of on-device for the bulk of traffic while preserving frontier quality for the tail — and it's the same build-vs-buy tradeoff from the Production track, just resolved <em>per request</em> instead of once for the whole product.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>On the edge, memory is the wall and quantization is the enabling technology, not an optimization.</strong> A phone has ~8GB shared unified RAM, low bandwidth, and thermal/battery limits — so weight size decides both what fits and how fast it decodes.</li><li><strong>The `params × bytes` math forces int4.</strong> 7B fp16 = 14GB (crashes an 8GB device); int8 = 7GB (fits but no headroom for OS/app/KV); int4 = ~3.5GB (fits with room for KV cache) — which is why on-device standardizes on 4-bit (NF4/k-quant) with outlier-aware methods to hold quality.</li><li><strong>Match the model to the budget instead of squeezing a giant.</strong> Pick a small capable model (1–8B) or a distilled student that packs more capability per parameter; the question is the smallest model that clears the task's quality bar, not how small you can crush the big one.</li><li><strong>Edge runtimes map quantized weights onto device accelerators.</strong> llama.cpp/GGUF (portable, de-facto standard), MLX (Apple Silicon unified memory), ONNX Runtime / vendor NPU stacks — preferring NPU &gt; GPU &gt; CPU for performance-per-watt and keeping weights in unified memory to avoid copies.</li><li><strong>The real architecture is hybrid with a router.</strong> Run the small local model for common/simple/private/offline queries and escalate hard ones to a frontier cloud model; decide per-query on difficulty, privacy, connectivity, and cost — build-vs-buy resolved per request rather than once.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Product wants an LLM assistant that runs fully ON-DEVICE — a phone or laptop, no server round-trip — for privacy (data never leaves the device), offline use, and zero per-query cost. The target hardware is a phone with 8GB of unified RAM and no datacenter GPU. Someone tries to load a 7B model at fp16 and the app crashes on launch. The interviewer wants you to explain how on-device LLM inference is even possible under these constraints, quantify what fits, and defend when to run locally versus escalate to the cloud.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>On-device LLM inference is fundamentally a memory problem, and the datacenter recipe doesn't transport: an 8GB phone has shared unified RAM, low bandwidth, and thermal limits, so weight size dictates both what fits and how fast it decodes. The `params × bytes` math forces int4 (7B fp16 = 14GB crashes; int4 = ~3.5GB fits) with outlier-aware 4-bit schemes to hold quality, paired with picking the smallest model — often a distilled student — that clears the task bar, run on an edge runtime (llama.cpp/GGUF, MLX, ONNX/NPU) that maps quantized weights onto the device's best accelerator in unified memory. The honest architecture is hybrid: a router keeps common, private, offline queries local and escalates the hard tail to a frontier cloud model — build-vs-buy resolved per request.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

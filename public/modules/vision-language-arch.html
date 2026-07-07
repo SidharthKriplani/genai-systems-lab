@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vision-Language Model Architecture | GenAI Systems Lab</title>
+  <meta name="description" content="Encoder, projector, LLM.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/vision-language-arch">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/vision-language-arch">
+  <meta property="og:title" content="Vision-Language Model Architecture | GenAI Systems Lab">
+  <meta property="og:description" content="Encoder, projector, LLM.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vision-Language Model Architecture">
+  <meta name="twitter:description" content="Encoder, projector, LLM.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Vision-Language Model Architecture","description":"Encoder, projector, LLM.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/vision-language-arch"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">MULTIMODAL</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Vision-Language Model Architecture</h1>
+    <p class="desc">Encoder, projector, LLM.</p>
+
+    
+    <section><h2>How It Works</h2><p>RAG established how to retrieve relevant text chunks and use them as generation context. The failure it left: RAG is blind to information stored in images. Text extraction from PDFs captures the text layer; scanned documents with no text layer require a different path. VLMs bridge this gap by combining a visual encoder with a language model backbone. The architecture: the image is divided into fixed-size patches (typically 14×14 pixels); each patch is projected into an embedding vector. A Vision Transformer (ViT) processes these patch embeddings, producing one visual token per patch. A projection layer maps visual token dimensions to the language model's embedding space. The projected visual tokens are prepended to text tokens, and the language model generates text conditioned on both.</p>
+<p>The visual encoder's training distribution determines what visual understanding the model has. General-purpose VLMs (those using CLIP-style pretraining — trained on natural image-text pairs from the internet) learn object recognition and natural image semantics. Fine-grained character recognition in document images requires either a document-specialized model (LayoutLM, Donut, PaddleOCR) or a VLM specifically fine-tuned on document images. General-purpose VLMs handle invoices reasonably well for clean, high-resolution scans but fail more often on unusual fonts, dense tables, or low-DPI scans — because those visual patterns were underrepresented in training.</p>
+<p>Three failure modes for invoice extraction: (1) Resolution sensitivity — the ViT's fixed patch size means a 100-DPI scan loses character detail within each 14×14 patch, causing digit misreads. Minimum 200 DPI for reliable character-level extraction. (2) Spatial layout — invoice line items are grid-structured; models trained primarily on natural images may not reliably maintain row-column relationships. (3) Numeric hallucination — when OCR is ambiguous, the model generates plausible-looking numbers from its prior rather than refusing to answer. For financial data, validate every extracted numeric against business rules: do line item amounts sum to the extracted total? If not, flag for human review.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>VLMs bridge RAG's blindness to images</strong> — a visual encoder feeds a language-model backbone.</li><li><strong>The pipeline: patches → ViT → projection → prepend</strong> — the image splits into ~14×14 patches, a ViT emits one visual token per patch, a projection layer maps them into the LM's embedding space, and they're prepended to the text tokens.</li><li><strong>The visual encoder's training distribution sets the ceiling</strong> — CLIP-style natural-image pretraining underrepresents unusual fonts, dense tables, and low-DPI scans, so those fail more.</li><li><strong>Resolution sensitivity</strong> — a fixed patch size means low-DPI scans lose per-character detail; use ≥200 DPI for reliable character extraction.</li><li><strong>Spatial layout is fragile</strong> — models trained on natural images may not hold invoice row-column relationships.</li><li><strong>Numeric hallucination</strong> — on ambiguous OCR the model emits a plausible number from its prior; validate every numeric against business rules (do line items sum to total?).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your team is evaluating whether to use a VLM (GPT-4V or LLaVA) for automating invoice data extraction from scanned PDFs. The model needs to extract line items, totals, dates, and vendor names. Before selecting a model, you want to understand the architecture well enough to anticipate where extraction failures will occur.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>VLMs are trained for broad visual understanding, not precision document OCR. For financial document extraction, validate every numeric against business rules (do line items sum to total?), ensure scan resolution is ≥200 DPI, and compare against document-specialized models (Donut, LayoutLM) for high-accuracy pipelines.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

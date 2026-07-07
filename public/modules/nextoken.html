@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Predict the Next Token | GenAI Systems Lab</title>
+  <meta name="description" content="Five prompts. Guess the highest-probability next token. See the full probability distribution and understand why it has that shape.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nextoken">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nextoken">
+  <meta property="og:title" content="Predict the Next Token | GenAI Systems Lab">
+  <meta property="og:description" content="Five prompts. Guess the highest-probability next token. See the full probability distribution and understand why it has that shape.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Predict the Next Token">
+  <meta name="twitter:description" content="Five prompts. Guess the highest-probability next token. See the full probability distribution and understand why it has that shape.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Predict the Next Token","description":"Five prompts. Guess the highest-probability next token. See the full probability distribution and understand why it has that shape.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nextoken"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">GAME</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Predict the Next Token</h1>
+    <p class="desc">Five prompts. Guess the highest-probability next token. See the full probability distribution and understand why it has that shape.</p>
+
+    
+    <section><h2>How It Works</h2><p>Start at the <strong>single step</strong> — the whole story is built from it. The model reads a sequence of tokens and its forward pass emits <strong>logits</strong>: one raw, unbounded score per token in the vocabulary (50K+ entries). Logits are <em>not</em> probabilities — just scores.</p>
+<p><strong>Softmax</strong> turns them into a probability distribution: exponentiate every logit, divide by the sum, and you get a number in `[0,1]` for every possible next token, all summing to 1.</p>
+<p><mark>That distribution is the model's entire answer at this position — 'given everything so far, here is how likely each token is to come next.'</mark> Nothing else is predicted. One distribution, one step.</p>
+<p>Now training needs a way to say <em>how wrong</em> that distribution was — that's <strong>cross-entropy loss</strong>. The corpus already contains the true next token (a human wrote it), and cross-entropy looks only at the probability the model assigned to <em>that one true token</em>, taking its negative log: `loss = −log(p_true)`.</p>
+<p>- `p_true = 0.9` → `−log(0.9) ≈ 0.11` — tiny, barely nudge the weights.&lt;br&gt;- `p_true = 0.05` → `−log(0.05) ≈ 3.0` — huge gradient, big correction.</p>
+<p><mark>The negative log makes confident-and-wrong catastrophic and confident-and-right nearly free.</mark></p>
+<p>Every token becomes one labeled example — and the label was <strong>free</strong>: it's just the next token the human already wrote. That is why this objective scaled to trillions of tokens with <strong>no human annotation</strong>.</p>
+<div class="illustration"><div class="illustration-label">Cross-entropy on one prediction</div><pre>Vocabulary (toy, 3 tokens):     [&quot;cat&quot;, &quot;dog&quot;, &quot;the&quot;]
+True next token:                 class 0  →  &quot;cat&quot;
+
+Model's softmax output:          [ 0.6,  0.3,  0.1 ]
+                                   cat    dog   the
+
+Cross-entropy = −log( p assigned to the TRUE token )
+              = −log( 0.6 )
+              ≈ 0.51
+
+  Compare against other guesses for the SAME true token:
+    p_true = 0.90  →  −log(0.90) ≈ 0.11   (confident + right → tiny loss)
+    p_true = 0.60  →  −log(0.60) ≈ 0.51   (this example)
+    p_true = 0.05  →  −log(0.05) ≈ 3.00   (confident + WRONG → huge loss)
+
+The gradient from this one number flows back through every weight,
+nudging them to raise p(&quot;cat&quot;) a little next time this context appears.</pre></div>
+<p>One subtlety decides whether training is even <strong>stable</strong>: what do you feed the model at step N+1?</p>
+<p>The tempting answer — 'its own prediction from step N' — fails, because early in training that prediction is garbage, and feeding garbage back in compounds error until the sequence is nonsense and the gradients are useless.</p>
+<p><strong>Teacher forcing</strong> is the fix: during training you always feed the <strong>ground-truth</strong> next token from the corpus, not the model's guess. So every position is predicted from a correct prefix, every position gets a clean gradient, and <mark>the whole sequence's positions train in parallel in one forward pass.</mark></p>
+<p>(This is also why training and inference differ: at inference there's no ground truth to feed, so the model consumes its own outputs — and small errors now accumulate, one root of drift and repetition.)</p>
+<p>Aggregate over the corpus and you need <strong>one number</strong> to track. Average the per-token cross-entropy, then report <strong>perplexity = exp(average loss)</strong>.</p>
+<p><mark>Perplexity is the loss re-expressed as an effective <em>branching factor</em>:</mark> 'on average, how many equally-likely tokens is the model choosing among at each step?' Perplexity <strong>1</strong> = perfect certainty (always the right token). Perplexity <strong>50,000</strong> = no better than uniform guessing over the whole vocabulary.</p>
+<p>A model dropping from perplexity 20 to 8 is narrowing from ~20 plausible continuations to ~8 at every position — it has <strong>genuinely learned structure</strong>. Perplexity is just `exp` of the same cross-entropy loss, made interpretable.</p>
+<p>Here is the payoff — the answer to the interview question. There is only <strong>one objective</strong> — minimize next-token cross-entropy — and gradient descent will do <em>anything</em> to the weights that lowers it.</p>
+<p>- Predict the next token in 'The capital of France is ___' → you must <strong>encode a fact</strong>.&lt;br&gt;- Predict the closing bracket in a code block → you must <strong>track scope</strong>.&lt;br&gt;- Predict the next step in a proof → you must <strong>represent prior logic</strong>.&lt;br&gt;- Predict the English word rendering a French sentence → you must <strong>align two languages</strong>.</p>
+<p>None were separate training tasks — they're all just 'reduce next-token loss on this corpus,' and <mark>at sufficient scale and diversity the cheapest way to reduce that loss is to build world-knowledge, reasoning, and translation into the weights.</mark> Capability is not designed; it's a by-product of relentlessly minimizing this single number.</p>
+<p>And that's the <strong>sting</strong>: the same objective that forces knowledge into the weights (see training-signal) also rewards fluent, confident continuations regardless of truth — which is exactly why the model produces confident, wrong answers on things it never had signal for (see hallucination). <strong>One objective, both the capability and the failure mode.</strong></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>One step = logits → softmax → a distribution over the vocabulary.</strong> That distribution is the model's entire answer at each position — nothing else is predicted.</li><li><strong>Cross-entropy `= −log(p_true)` scores only the true token.</strong> The negative log makes confident-and-wrong catastrophic (≈3.0) and confident-and-right nearly free (≈0.11).</li><li><strong>The label is free</strong> — it's just the next token the human already wrote — which is why the objective scaled to trillions of tokens with zero annotation.</li><li><strong>Teacher forcing feeds ground truth during training</strong>, not the model's own guess, giving every position a clean gradient and letting the whole sequence train in parallel.</li><li><strong>Perplexity = exp(loss) = effective branching factor</strong> — how many equally-likely tokens the model chooses among per step; 20 → 8 means it genuinely learned structure.</li><li><strong>One objective yields both capability and hallucination.</strong> Minimizing next-token loss forces facts/reasoning/translation into the weights — and the same pressure rewards confident continuations regardless of truth.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>In an interview, someone asks you to defend a claim that sounds absurd on its face: 'This model was only ever trained to guess the next word. Yet it translates French, writes working code, and reasons through multi-step math. How does guessing the next token turn into any of that?' You need to walk the mechanism from a single prediction to emergent capability — without hand-waving 'it's magic at scale.'</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>One step: logits → softmax → a probability distribution over the vocabulary, scored against the true next token by cross-entropy (−log p_true), with teacher forcing feeding ground truth during training. Aggregate to perplexity = exp(loss) as the metric. The punchline: there is only ONE objective, and the cheapest way to minimize it at scale is to encode facts, reasoning, and translation into the weights — so next-token prediction is the source of both emergent capability and confident hallucination.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

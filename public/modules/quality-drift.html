@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quality Drift in Production | GenAI Systems Lab</title>
+  <meta name="description" content="Worse with no deploy.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/quality-drift">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/quality-drift">
+  <meta property="og:title" content="Quality Drift in Production | GenAI Systems Lab">
+  <meta property="og:description" content="Worse with no deploy.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Quality Drift in Production">
+  <meta name="twitter:description" content="Worse with no deploy.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Quality Drift in Production","description":"Worse with no deploy.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/quality-drift"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">OPS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Quality Drift in Production</h1>
+    <p class="desc">Worse with no deploy.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with three words that should always make you suspicious: <em>nothing changed.</em> A system that was good is now worse, the team swears they didn't touch it, and everyone shrugs at the mystery. But sit with that phrase for a second — in a normal program, if nothing changed, the behavior <em>can't</em> change. Same inputs, same code, same outputs. So how can an LLM system quietly get worse while genuinely nobody deployed a thing?</p>
+<p>Here's the resolution, and it's the spine of this module. &quot;Nothing changed&quot; never means <em>nothing</em> changed — it means nothing <em>you control</em> changed. And an LLM system, unlike a self-contained program, leans on a stack of things you <em>don't</em> control: a model checkpoint that lives on someone else's servers, a knowledge base that ages as the world moves on, a stream of users whose questions shift over time. Any of those can move under your feet.</p>
+<p>So we'll build up the handful of external things that drift on their own, a clean way to diagnose <em>which</em> one moved, and the few cheap instruments that catch drift before it costs you two months of degraded quality. Take your time — the reframe from &quot;nothing changed&quot; to &quot;nothing <em>I</em> changed&quot; is the whole unlock.</p></section>
+    <section><h2>How It Works</h2><p>Start from what makes an ordinary program predictable: it is <em>self-contained</em>, so if its code and inputs are fixed, its behavior is fixed too. <strong>But</strong> an LLM system is not self-contained — it depends on components that live outside your control and can change without any action from you. <strong>This means</strong> the sentence 'nothing changed' has to be read precisely: it means nothing <em>you control</em> changed, which leaves every external dependency free to have drifted. <strong>So</strong> unexplained quality decline is not a paradox; it's the expected consequence of building on moving parts you don't own.</p>
+<p><strong>And</strong> those moving parts come in four recognizable kinds. (1) <strong>Silent model version update</strong> — providers update weights behind a stable endpoint name; 'GPT-4-turbo' today is not the checkpoint it was six months ago, and the change ships for safety, capability, or efficiency without renaming the endpoint or noting it in your logs. (2) <strong>Knowledge-base staleness</strong> — indexed documents age, so users asking about policies or products that changed after the last rebuild get stale retrievals and wrong answers. (3) <strong>User distribution shift</strong> — a new cohort arrives with query patterns the model handles worse, even though it still performs well on the original distribution. (4) <strong>Third-party dependency change</strong> — an embedding API or reranker silently alters its behavior. Each degrades quality through a different pathway.</p>
+<p><strong>Because</strong> they degrade through different pathways, they can be told apart by a structured diagnosis that isolates one variable at a time. (1) Run your fixed eval set against the current system — if scores fell below launch, quality genuinely moved. (2) Check the model version in API response metadata. (3) Compare the embedding-index rebuild timestamp against source-document update times. (4) Segment quality ratings by user cohort and query category — <strong>and here's the discriminating test:</strong> if long-established users on established query types are <em>also</em> rating lower, it <em>can't</em> be distribution shift, because that shift acts only on the new cohort.</p>
+<p><strong>Therefore</strong> prevention targets exactly the dependencies that drift: pin model versions when the provider allows it; set an automated alert when source documents were updated more recently than the last index rebuild; and run weekly regression evals on a fixed golden set of 50 questions — <strong>because</strong> holding the inputs constant means a silent model change can only reveal itself as a score movement, and one weekly run is enough to surface it. The interactive lets you trigger each drift source and watch the corresponding diagnostic light up — and the closing scenario is the eight-week 4.2-to-3.6 slide with a team insisting nothing changed.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>'Nothing changed' means nothing you control changed.</strong> LLM systems have external dependencies that shift independently of your code and config.</li><li><strong>Silent model version updates are the most common cause.</strong> Providers update weights behind a stable endpoint name for safety, capability, and efficiency without notice.</li><li><strong>Knowledge-base staleness produces wrong answers.</strong> Indexed documents go out of date; queries about changed policies or products get stale retrievals.</li><li><strong>User distribution shift degrades quality for new cohorts.</strong> A model strong on the original query distribution performs worse on new patterns.</li><li><strong>Diagnose by segmenting.</strong> If the same established users on established query types also rate lower, it's not distribution shift — the cause is systemic (model, index, or dependency).</li><li><strong>Prevent with three instruments.</strong> Pin model versions when supported, alert when source docs are newer than the last index rebuild, and run weekly regression evals on a fixed golden set.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. An enterprise AI writing assistant has been in production six months with no major deployments, yet average quality ratings slid from 4.2 to 3.6 over eight weeks. The team says 'nothing changed.' Take a moment before reading on: what does 'nothing changed' actually mean here, and how would you find the real cause? Here's the reasoning, step by step. Translate the phrase first — nothing <em>the team controls</em> changed, which leaves the external dependencies free to have moved. Then run the structured check: rerun the fixed eval set to confirm quality genuinely fell; read the model version from API metadata (the 'GPT-4-turbo' behind the endpoint is not the six-month-old checkpoint); compare the index rebuild timestamp against source-document update times; and segment ratings by cohort and query type — if long-established users on established queries are <em>also</em> rating lower, distribution shift is ruled out and a silent model or dependency change is the likely culprit. The prevention falls straight out: pin versions, alert on index staleness, and run a weekly 50-question regression eval that would have caught this within one run.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>'Nothing changed' never means nothing changed in an LLM system. Pin model versions, monitor index freshness, and run weekly regression evals on a fixed golden set. These three instruments catch the four most common sources of silent quality drift before they accumulate 8 weeks of user impact.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

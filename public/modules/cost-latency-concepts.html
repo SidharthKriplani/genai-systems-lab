@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cost, Latency, and the Token Budget Formula | GenAI Systems Lab</title>
+  <meta name="description" content="Set context limit, output size, system prompt length. See what's left for actual content. Understand TTFT vs TBT vs E2E.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/cost-latency-concepts">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/cost-latency-concepts">
+  <meta property="og:title" content="Cost, Latency, and the Token Budget Formula | GenAI Systems Lab">
+  <meta property="og:description" content="Set context limit, output size, system prompt length. See what's left for actual content. Understand TTFT vs TBT vs E2E.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cost, Latency, and the Token Budget Formula">
+  <meta name="twitter:description" content="Set context limit, output size, system prompt length. See what's left for actual content. Understand TTFT vs TBT vs E2E.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Cost, Latency, and the Token Budget Formula","description":"Set context limit, output size, system prompt length. See what's left for actual content. Understand TTFT vs TBT vs E2E.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/cost-latency-concepts"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROD</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Cost, Latency, and the Token Budget Formula</h1>
+    <p class="desc">Set context limit, output size, system prompt length. See what's left for actual content. Understand TTFT vs TBT vs E2E.</p>
+
+    
+    <section><h2>How It Works</h2><p>You already know from KV cache that token count is what drives inference memory. Here's the thing to sit with: the <em>same</em> token count drives cost too, just through a different door. LLM billing has two meters running at once. Input tokens tick over at one rate — typically <strong>$2.50–5.00 per million</strong>. Output tokens tick over at a much steeper rate — typically <strong>$10–15 per million</strong>. So the naive reading is 'output is the expensive one, watch the output.' And that reading is exactly what will mislead you here.</p>
+<p><mark>The rate per token and the share of the bill are two different things, and in a long-prompt application they point in opposite directions.</mark></p>
+<p>Let me show you why, because the arithmetic is more persuasive than any slogan. Take one request the old way: 800 input tokens at $2.50/1M is $0.0020, plus 150 output tokens at $10/1M is $0.0015. Total $0.0035. Now run the same request after the input grew: 3,200 input tokens at $2.50/1M is $0.0080, plus the <em>unchanged</em> 150 output tokens at $0.0015. Total $0.0095.</p>
+<p>Notice what happened. The expensive-per-token output line never moved — it's still $0.0015 on both invoices. The cheap-per-token input line quadrupled, from $0.0020 to $0.0080, and <em>that</em> is what dragged the per-request cost up 2.7×. Layer the 20% volume growth on top of that 2.7×, and you land right at the ~4× bill you're staring at. <mark>The cheap tokens drove the whole thing, precisely because there were so many more of them.</mark></p>
+<div class="illustration"><div class="illustration-label">Cost per request — old vs. new</div><pre>Cost per request breakdown:
+                    OLD (800 input)       NEW (3,200 input)
+  Input cost:       $0.0020               $0.0080   (+4×)
+  Output cost:      $0.0015               $0.0015   (unchanged)
+  ─────────────────────────────────────────────────────────
+  Total:            $0.0035               $0.0095   (+2.7× per request)
+
+  Volume growth:    +20%
+  Monthly bill:     $8K  →  $34K          (~4.25×)
+
+Input is only $2.50/1M vs $10/1M for output — yet input owns the bill,
+because a long-prompt app carries 10–50× more input tokens than output tokens.
+Per-token price is not per-request share.</pre></div>
+<p>Now hold cost in one hand and pick up latency in the other, because they do <em>not</em> have the same shape and interviewers love catching people who assume they do. The equation is <strong>total latency = TTFT + (output_tokens × TPOT)</strong>. <strong>TTFT</strong> is Time To First Token — the wait before anything appears — and it scales with how long your input is and how backed-up the queue is. <strong>TPOT</strong> is Time Per Output Token — the steady drip of generation — and at a fixed model size it's roughly constant per token.</p>
+<p>So trace the 3,200-token request through it. The output didn't change, so the `output_tokens × TPOT` term didn't change — generation takes the same wall-clock time it always did. But TTFT climbed roughly in proportion to the input, call it ~4× higher than at 800 tokens on the same hardware. <mark>Input growth is quiet on the generation clock and loud on the first-token clock.</mark></p>
+<p>Here's the part that catches people in a streaming UI. Because generation time is unchanged, a glance at total latency might say 'we're fine.' But users don't feel total latency — they feel TTFT, the beat before the first token lands. A bigger prompt makes that opening pause longer, so the product feels sluggish to a real person even when your dashboard's end-to-end number barely twitched. Cost got worse <em>and</em> perceived responsiveness got worse, both from the same input inflation, and one of them is invisible on the metric most teams watch.</p>
+<p>So where does prompt inflation actually come from? This is the audit, and it's almost always one of four culprits. <strong>The system prompt</strong> — did a product change quietly bolt on more instructions or context? <strong>Few-shot examples</strong> — did someone add demonstrations to nudge quality? <strong>Retrieved context</strong> — did the RAG pipeline start returning more chunks, or longer ones? <strong>Conversation history</strong> — are you replaying every prior turn, letting the prompt grow without any ceiling? At the 4× scale you're seeing, the smart money is on retrieved context or unbounded history. You have to name the guilty component <em>first</em>, because the fix depends entirely on which one it is.</p>
+<p>And once you've named it, work the fixes in order of leverage. <strong>Prompt caching</strong> comes first — a stable system-prompt prefix can be cached for a <strong>50–90% discount</strong> on those repeated tokens, and it costs you almost nothing to turn on. <strong>Prompt compression</strong> comes next — run retrieved context through a reranker and trim the low-information tokens before they ever hit the model. <strong>Right-sizing the model</strong> comes last — hand the sub-tasks that don't need flagship capability to a smaller, cheaper model. <mark>Cheapest, least-invasive lever first; model surgery only when the token diet isn't enough.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Two billing meters run at once:</strong> input (~$2.50–5.00/1M) and output (~$10–15/1M). Output costs more <em>per token</em>, but that is not the same as owning more of the <em>bill</em>.</li><li><strong>In long-prompt, short-output apps, input dominates total cost</strong> — there are simply 10–50× more input tokens. The scenario's 4× input growth drove a 2.7× per-request cost while the pricier output line never moved.</li><li><strong>Latency has a different shape than cost:</strong> total = TTFT + (output × TPOT). Input growth inflates TTFT (first-token wait) but leaves generation time untouched.</li><li><strong>Streaming UIs are felt through TTFT, not total latency</strong> — bigger prompts make the product feel slow even when your end-to-end number looks stable.</li><li><strong>Prompt inflation has four usual suspects:</strong> system prompt, few-shot examples, retrieved context, conversation history. Identify which one grew before proposing any fix.</li><li><strong>Fix hierarchy, cheapest first:</strong> prompt caching (50–90% off stable prefixes) → prompt compression (rerank + trim context) → right-size the model for sub-tasks.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You open the monthly inference invoice expecting the usual $8K, and instead it reads $34K. Nothing shipped that should have done this — no new feature, no model swap, no traffic spike worth panicking over. Request volume is up a modest 20%. Average output length hasn't moved at all. The only number that changed is average input tokens per request, which crept from 800 up to 3,200. Before you can propose a single fix, someone in the room is going to ask the obvious question: why did a 4× jump in <em>input</em> tokens — the tokens that are supposed to be the cheap ones — nearly quadruple the bill? Let's answer that properly.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>In long-prompt, short-output apps, input tokens dominate the bill even though they cost less per token — because there are far more of them. Cost and latency diverge: input growth inflates both the bill and TTFT (the first-token wait users actually feel) while leaving generation time untouched. So audit which prompt component grew, then apply prompt caching → compression → right-sizing in that order.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

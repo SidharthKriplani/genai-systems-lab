@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Positional Encoding | GenAI Systems Lab</title>
+  <meta name="description" content="How transformers know where tokens are without recurrence.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/positional-encoding">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/positional-encoding">
+  <meta property="og:title" content="Positional Encoding | GenAI Systems Lab">
+  <meta property="og:description" content="How transformers know where tokens are without recurrence.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Positional Encoding">
+  <meta name="twitter:description" content="How transformers know where tokens are without recurrence.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Positional Encoding","description":"How transformers know where tokens are without recurrence.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/positional-encoding"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Positional Encoding</h1>
+    <p class="desc">How transformers know where tokens are without recurrence.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a sentence and a strange fact about how a model reads it. Take &quot;the cat sat on the mat.&quot; You and I know the <em>order</em> of those words is the whole meaning — swap two of them and &quot;the mat sat on the cat&quot; is a different (and sillier) claim. But here's the surprise: the attention mechanism, left to itself, sees a sentence the way you'd see a <em>bag</em> of words tipped onto a table. It knows which words are present and how they relate in pairs, but it has <em>no idea which one came first</em>.</p>
+<p>So something has to <em>tell</em> the model about order, and that something is <strong>positional encoding</strong> — a way of stamping &quot;you are word number 3&quot; onto each token before attention runs. That much sounds simple. The interesting part, and the reason this module exists, is that <em>how</em> you stamp position turns out to decide something huge: whether a model trained on short documents can later read very long ones at all.</p>
+<p>We'll build it up gently — first why order is invisible without help, then the naive fix and exactly where it breaks, then the clever rotation trick (RoPE) everyone reaches for, and finally why &quot;just use RoPE for long documents&quot; is a trap. Take your time; by the end you'll be able to hear that claim and know precisely what it's missing.</p></section>
+    <section><h2>How It Works</h2><p>Attention gives every token selective access to every other token. But it is a <strong>set operation</strong> — it computes relationships between token pairs with no notion of which comes first.</p>
+<p>Without position information, 'the cat sat on the mat' and 'the mat sat on the cat' produce <strong>identical</strong> attention scores. <mark>Word order simply doesn't exist for the mechanism.</mark></p>
+<p><strong>Positional encoding</strong> injects position so the model can reason about sequence structure — and <em>how</em> it's done determines whether long-context generalization works at all.</p>
+<p>The naive approach: add a <strong>fixed position vector</strong> to each token's embedding before the attention stack. Position 1 gets `p_1`, position 2 gets `p_2`, and the model learns to interpret these offsets during training.</p>
+<p>This works for positions <em>seen</em> during training. But for a model trained up to 4K tokens, vector `p_4001` was never generated — it maps to a region of embedding space the weights have never learned to interpret.</p>
+<p><mark>Absolute encodings don't generalize past the training maximum.</mark></p>
+<p><strong>RoPE (Rotary Position Embedding)</strong> takes a different approach: instead of <em>adding</em> a position vector, it <strong>rotates</strong> the query and key vectors by an angle proportional to their absolute position, before the Q·K dot product.</p>
+<p>The result: the attention score between two tokens depends on their <strong>rotational difference</strong>, not their absolute positions. A token at position 47 and one at 52 produce the same difference regardless of where they sit in the sequence.</p>
+<p><mark>This is <em>relative</em> position encoding — the model learns 'this token is 5 positions before that one,' not 'this token is at absolute position 47.'</mark></p>
+<p>RoPE spreads that rotation across dimension pairs at <strong>different frequencies</strong> — and the frequencies are what make context extension hard. Each pair `i` rotates at `θ_i = 10000^(−2i/d)`, where `d` is the head dimension. Low-index pairs rotate <strong>fast</strong> (short-range, fine detail); high-index pairs rotate <strong>very slowly</strong> (long-range, coarse position).</p>
+<p>Worked example (`d=128`): `i=0 → θ₀ = 1.0` (full cycle ~every 6 positions); `i=32 → θ₃₂ = 10000^(−0.5) = 0.01` (full cycle ~every 628 positions); `i=63 → θ₆₃ ≈ 0.00012` (barely rotates across the whole training window).</p>
+<p>During training the model only ever sees the rotation <strong>angles</strong> these frequencies produce up to the training length (`position × θ_i` for positions 0–4095). <mark>Push to position 128K and the slow, long-range pairs reach angles far outside anything seen in training — that's extrapolation, and it fails.</mark></p>
+<p>This frames the <strong>two ways to extend context</strong>.</p>
+<p><strong>Extrapolation</strong> is what naive RoPE does past its window — feed positions beyond training and hope the unseen angles behave. They don't; attention degrades.</p>
+<p><strong>Interpolation</strong> squeezes the longer range back into <em>trained</em> angles. Position interpolation linearly scales indices (position 128K treated as `128K × 4096/128000 ≈ 4096`) so every angle stays in range — but it crushes the fast short-range frequencies and hurts local precision.</p>
+<p><strong>NTK-aware scaling</strong> is the better fix: rather than scaling positions uniformly, it stretches the base θ (10000 → larger) so the <strong>slow</strong> long-range frequencies get interpolated (kept in-range) while the <strong>fast</strong> short-range frequencies stay nearly untouched (local detail preserved). YaRN and LongRoPE build on this with per-frequency schedules.</p>
+<p><mark>The key point: you must remap the frequencies so long positions land on angles the model was trained on — the model cannot invent behavior for angles it never saw.</mark></p>
+<p>A different school drops rotation entirely. <strong>ALiBi (Attention with Linear Biases)</strong> adds <strong>no</strong> positional rotation and <strong>no</strong> learned position parameters — it simply subtracts a distance penalty directly from the raw attention scores: `score(i,j) → score(i,j) − m·(i−j)`, where `m` is a fixed per-head slope. Tokens farther back get a larger linear penalty, so attention naturally decays with distance.</p>
+<p>Because the bias is a simple linear function of distance with no trained embedding, <mark>ALiBi extrapolates to longer sequences <em>by construction</em> — the penalty for distance 100K is just a bigger number of the same form, nothing unseen.</mark></p>
+<p>The tradeoff vs RoPE: ALiBi's recency bias is baked in and less expressive than RoPE's learned rotational relationships — it trades some in-window richness for clean, parameter-free length generalization. RoPE (with NTK-style scaling) dominates most current LLMs; ALiBi is the contrast showing extrapolation can be a <em>design property</em> rather than a patch.</p>
+<div class="illustration"><div class="illustration-label">RoPE frequencies θ_i = 10000^(−2i/d) (d=128) and how extension works</div><pre>θ_i = 10000^(−2i/d),  d = 128  → exponent = −2i/128 = −i/64
+
+  i=0    θ₀   = 10000^0      = 1.0        full cycle every ~6 positions   (FAST, short-range)
+  i=16   θ₁₆  = 10000^(−.25) ≈ 0.100      full cycle every ~63 positions
+  i=32   θ₃₂  = 10000^(−.5)  = 0.010      full cycle every ~628 positions
+  i=48   θ₄₈  = 10000^(−.75) ≈ 0.00178    full cycle every ~3500 positions
+  i=63   θ₆₃  ≈ 10000^(−.98) ≈ 0.00012    barely rotates across 4K window (SLOW, long-range)
+
+Trained on positions 0–4095 → model has only seen angle = position × θ_i in that range.
+
+  Extrapolate to 128K:  slow pairs hit angles far outside training  → attention breaks
+  Interpolate (PI):     scale positions ×(4096/128000) into range   → but squashes fast pairs, hurts local detail
+  NTK-aware:            raise base θ so SLOW pairs interpolate, FAST pairs stay put → best of both (YaRN/LongRoPE)
+
+ALiBi (no rotation):   score −= m·(i−j)   linear distance penalty, no trained params
+                       distance 128K is just a bigger penalty of the same form → extrapolates by construction</pre></div>
+<p>RoPE makes position encoding <strong>inherently relative</strong> — a genuine advantage, since relative distances are more semantically stable than absolute positions. But <mark>it does <em>not</em> solve the extrapolation problem.</mark></p>
+<p>The rotation angles are calibrated to the 4K training window. At position 128K, the rotation corresponds to an angle the weights never encountered, so the Q and K vectors at those rotation values are outside the learned distribution and attention scores become unreliable.</p>
+<p>The relative encoding improves <em>within</em>-training-window generalization; it does <strong>not</strong> extend the training window itself.</p>
+<p>So let's state the conclusion the whole chain has been building toward, because it's the sentence to carry away. RoPE gives you <em>relative</em> position encoding, which genuinely helps <em>within</em> the training window — but it is <strong>not</strong> infinite-range position encoding, and it does not extrapolate for free. Extending a 4K-context model to 128K therefore requires an <strong>explicit context-extension technique</strong> — YaRN or LongRoPE to rescale the rotation frequencies so the full 128K range maps back onto angles the model was trained on — and then a <strong>perplexity check at the target length</strong> to confirm it actually holds. <mark>RoPE is where you start, not where you finish.</mark> The interactive just below lets you rotate Q and K yourself and watch the angles walk out of the trained range as position grows, and the production case waiting at the end is exactly this — a 'just use RoPE' claim, and why spending compute on it blindly would have burned the budget.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Attention is order-blind by itself</strong> — a pure set operation — so 'cat sat on mat' and 'mat sat on cat' score identically without positional encoding.</li><li><strong>Absolute encodings can't generalize past the training length</strong> — position vector `p_4001` was never seen, mapping to embedding space the weights never learned to read.</li><li><strong>RoPE rotates Q and K before the dot product</strong>, so the attention score depends on the <em>relative</em> rotational difference, not absolute position — more stable across the sequence.</li><li><strong>RoPE's multi-frequency rotation is what breaks at long context.</strong> Slow long-range pairs (`θ_i = 10000^(−2i/d)`) hit angles never seen in training; naive extrapolation degrades attention.</li><li><strong>Extend context by remapping frequencies, not by hoping.</strong> Position interpolation squashes local detail; NTK-aware scaling / YaRN / LongRoPE interpolate the slow pairs while sparing the fast ones.</li><li><strong>ALiBi extrapolates by construction</strong> — a parameter-free linear distance penalty — trading in-window expressiveness for clean length generalization; RoPE + NTK scaling still dominates.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You're evaluating whether to fine-tune a 4K-context model to read 128K-token legal documents, and a colleague waves it off: &quot;just use RoPE — it extrapolates automatically.&quot; Take a moment before reading on: is that claim safe to spend compute on? Here's the reasoning, step by step. RoPE encodes position by <em>rotating</em> Q and K by an angle proportional to position, and those rotation angles were only ever calibrated to the 4K training window. Push a token to position 128K and its slow, long-range frequency pairs land on angles the weights never saw in training — so attention there isn't &quot;extrapolated,&quot; it's simply unreliable. That means the claim is wrong on the mechanism: RoPE degrades gracefully <em>within</em> range and unpredictably beyond it. What the jump to 128K actually requires is explicit context extension — YaRN or LongRoPE to rescale the frequencies so the full range maps back onto trained angles — validated by checking perplexity <em>at the target length</em>. RoPE is the starting point, not the conclusion.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>RoPE encodes relative position by rotating Q and K vectors before the dot product — it doesn't add position to embeddings, it bakes it into attention scores. But it doesn't extrapolate beyond training context length without explicit frequency rescaling. 'Just use RoPE' is not the same as 'just extend to 128K.'</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Encoder vs Decoder vs Encoder-Decoder | GenAI Systems Lab</title>
+  <meta name="description" content="BERT/MLM vs GPT/causal vs T5/span-corruption — which objective for which task.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nlp-encoder-decoder-objectives">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nlp-encoder-decoder-objectives">
+  <meta property="og:title" content="Encoder vs Decoder vs Encoder-Decoder | GenAI Systems Lab">
+  <meta property="og:description" content="BERT/MLM vs GPT/causal vs T5/span-corruption — which objective for which task.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Encoder vs Decoder vs Encoder-Decoder">
+  <meta name="twitter:description" content="BERT/MLM vs GPT/causal vs T5/span-corruption — which objective for which task.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Encoder vs Decoder vs Encoder-Decoder","description":"BERT/MLM vs GPT/causal vs T5/span-corruption — which objective for which task.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nlp-encoder-decoder-objectives"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">NLP FOUNDATIONS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Encoder vs Decoder vs Encoder-Decoder</h1>
+    <p class="desc">BERT/MLM vs GPT/causal vs T5/span-corruption — which objective for which task.</p>
+
+    
+    <section><h2>How It Works</h2><p>Every model in the scenario is built from the same transformer block. What makes BERT an <em>understanding</em> model, GPT a <em>generation</em> model, and T5 a <em>translation</em> model is not the block — it's <mark>two coupled choices: (1) which tokens each position is allowed to <em>attend to</em> (the attention mask), and (2) what self-supervised game the model plays during pretraining (the objective).</mark> Get those two right in your head and the entire 'which family?' question answers itself. There are three canonical families, so we take them one at a time.</p>
+<p><strong>Family 1 — encoder-only (BERT).</strong> Every token attends to <em>every other token</em>, both left and right. There is no masking of the future; the attention is fully <strong>bidirectional</strong>. Because a token can see the whole sentence at once, the representation it builds is deeply <em>contextual</em> — the word 'bank' resolves to river-bank or money-bank using words on either side. The pretraining game that this enables is <strong>Masked Language Modeling (MLM)</strong>: randomly hide ~15% of the tokens and train the model to predict each hidden token <em>from both sides at once</em>. \n\nThat bidirectionality is exactly why BERT is superb at <em>understanding</em> tasks — classification, named-entity recognition, sentence-pair scoring, and producing embeddings for retrieval — and exactly why it <mark>cannot naturally generate text</mark>. To generate, you must produce token 1, then token 2 given token 1, and so on left-to-right; but BERT was trained assuming it always gets to peek at the right-hand context, which during generation does not yet exist. The support-ticket classifier worked; asking it to <em>write</em> the reply is asking the wrong architecture to do a job its training forbids.</p>
+<div class="illustration"><div class="illustration-label">Attention masks: who can each token see?</div><pre>Sentence tokens:   [ the ][ cat ][ sat ][ on ][ mat ]
+                     t0     t1     t2    t3    t4
+
+ENCODER (BERT) — bidirectional, no mask
+  every token sees every token
+     t0 t1 t2 t3 t4
+  t0  x  x  x  x  x     x = allowed to attend
+  t1  x  x  x  x  x
+  t2  x  x  x  x  x     (full square: past AND future visible)
+  t3  x  x  x  x  x
+  t4  x  x  x  x  x
+
+DECODER (GPT) — causal mask, look LEFT only
+     t0 t1 t2 t3 t4
+  t0  x  .  .  .  .     . = blocked (cannot see the future)
+  t1  x  x  .  .  .
+  t2  x  x  x  .  .     (lower triangle: only past + self)
+  t3  x  x  x  x  .
+  t4  x  x  x  x  x
+
+  The mask IS the architecture difference. Same block, different
+  triangle of visibility -&gt; different capabilities.</pre></div>
+<p><strong>Family 2 — decoder-only (GPT).</strong> Here the attention is <strong>causal</strong> (also called autoregressive): token <em>t</em> may attend only to tokens <em>at or before</em> position <em>t</em> — it looks <em>left</em>, never right. Visually that is the lower-triangular mask above. The pretraining objective is the simplest possible: <strong>next-token prediction</strong> — given everything so far, predict the very next token, sliding across the whole corpus. \n\nThis pairing is <em>natively generative</em>: generation just <em>is</em> repeatedly predicting the next token and appending it, which is precisely what training rehearsed. There is no train/inference mismatch. This is the family that won general-purpose GenAI, and it is worth being crisp about <em>why</em>: (a) the objective is dead-simple and applies to <em>any</em> text, so it <strong>scales</strong> to trillions of tokens with no labeling; (b) at scale these models exhibit <strong>in-context learning</strong> — you can specify a new task purely in the prompt (few-shot or zero-shot) with no fine-tuning; and (c) it collapses the whole zoo into <mark>one model that does everything</mark> — classify, summarize, translate, chat — by phrasing each as 'continue this text.' The GPT chatbot generating fluent replies is this architecture doing exactly what it was born for.</p>
+<p><strong>Family 3 — encoder-decoder (T5, BART).</strong> This is the original 'transformer' shape and it <em>combines</em> both mechanisms. An <strong>encoder</strong> reads the input with full <strong>bidirectional</strong> attention (like BERT) to build a rich understanding of the source. A <strong>decoder</strong> then generates the output left-to-right with <strong>causal self-attention</strong> (like GPT) <em>and</em> — the crucial extra piece — <strong>cross-attention</strong>, in which each decoder position attends back into the <em>encoder's</em> representations of the input. So the decoder writes token by token while continuously consulting the fully-understood source. \n\nThe pretraining objective is a denoising one: <strong>T5 uses span corruption</strong> (mask out contiguous spans, train the model to regenerate them), and <strong>BART uses text infilling / reconstruction</strong> (corrupt the input various ways, train it to rebuild the original). This shape is purpose-built for <strong>sequence-to-sequence</strong> work where a distinct input must be <em>transformed</em> into a distinct output: translation, summarization, grammatical correction. The T5 translator swears by it because translation is the archetypal 'read all of A, then write B while looking back at A' task.</p>
+<div class="illustration"><div class="illustration-label">Encoder-decoder: bidirectional read + causal write + cross-attention</div><pre>             INPUT: &quot;le chat&quot;            OUTPUT: &quot;the cat&quot;
+
+   ENCODER (bidirectional)          DECODER (causal + cross-attn)
+   +----------------------+         +-------------------------+
+   | le  &lt;-&gt;  chat        |         | the -&gt; cat   (causal:   |
+   |  \        /           |  ====&gt;  |   each out token sees   |
+   |  full understanding  | cross-  |   only prior out tokens)|
+   |  of the source       | attn -&gt; |         |               |
+   +----------------------+         |   cross-attention looks |
+                                    |   BACK into encoder repr |
+                                    +-------------------------+
+
+  read the whole source both ways  -&gt;  write target left-to-right,
+  consulting the source at every step.  Ideal for translation/summarize.</pre></div>
+<p>Now map <strong>task -&gt; family</strong>, which is the payoff an interviewer wants. <mark>Understanding / no generation (classification, NER, embeddings, retrieval, reranking) -&gt; encoder-only (BERT).</mark> <mark>Open-ended generation, chat, one-model-for-everything, in-context/few-shot -&gt; decoder-only (GPT).</mark> <mark>Transform a distinct input into a distinct output (translation, summarization, seq2seq) -&gt; encoder-decoder (T5/BART).</mark> The scenario's three prototypes are one of each: the classifier is an encoder job, the chatbot is a decoder job, the translator is an encoder-decoder job. No one was wrong; they each picked the family whose mask + objective matched the task.</p>
+<p>A subtle but important closing point for the interview: <strong>decoder-only became dominant even in territory the other families 'own.'</strong> A big enough GPT can classify (prompt it to output a label), can embed (pool its hidden states or train it as an embedder), and can translate (it's just conditional generation) — all without a separate architecture. The reasons are the three above: frictionless scaling on unlabeled text, in-context learning, and the operational simplicity of maintaining <em>one</em> model. <mark>So the honest framing is: encoder-only and encoder-decoder are still often the <em>better, cheaper, lower-latency</em> tool for their specialty (a fine-tuned BERT classifier is smaller and faster than prompting a 100B decoder), but decoder-only is the <em>general</em> answer, which is why the frontier consolidated there.</mark> That nuance — 'right tool per task, but one tool that can do all tasks won the platform' — is exactly the staff-level answer.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Two choices define the family: the attention mask and the pretraining objective — not the transformer block itself.</strong> Bidirectional-vs-causal masking plus MLM / next-token / denoising is the entire story of why the three families differ.</li><li><strong>Encoder-only (BERT): bidirectional attention + Masked Language Modeling.</strong> Every token sees every token, so representations are deeply contextual — great for classification, NER, embeddings, retrieval. It cannot naturally generate, because generation is left-to-right and MLM trained it to always peek at right-hand context.</li><li><strong>Decoder-only (GPT): causal (left-only) attention + next-token prediction.</strong> Generation is literally the training objective, so there's no train/inference mismatch. It won general-purpose GenAI via effortless scaling on unlabeled text, in-context/few-shot learning, and one-model-does-everything.</li><li><strong>Encoder-decoder (T5/BART): bidirectional encoder + causal decoder + cross-attention, trained with span-corruption/denoising.</strong> The decoder writes left-to-right while cross-attending back into the fully-read source — the natural shape for seq2seq: translation and summarization.</li><li><strong>Task -&gt; family: understanding/embeddings -&gt; encoder; open-ended generation/chat -&gt; decoder; transform input into distinct output -&gt; encoder-decoder.</strong> Decoder-only can do all three at scale, so it dominates — but a fine-tuned encoder is often smaller, faster, and cheaper for its specialty.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You join a team that has three half-finished NLP prototypes and no one can agree on which model to reach for. One engineer fine-tuned BERT for a support-ticket classifier and it works beautifully, but when the PM asked her to make it 'also write the reply,' she couldn't — the model simply has no way to generate text. Another engineer built a chatbot on GPT and it generates fluent replies, but when asked to produce a single dense embedding for retrieval it felt like the wrong tool. A third is translating docs with T5 and swears by it for that but nothing else. In your architecture-review interview, the question lands: <em>why</em> are these three transformers good at different things, when they're all 'just transformers'? The answer is entirely about two design choices — the attention mask and the pretraining objective.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Three transformer families differ by exactly two choices — the attention mask and the pretraining objective: encoder-only (BERT) is bidirectional + MLM and excels at understanding (classification, NER, embeddings) but cannot naturally generate; decoder-only (GPT) is causal + next-token prediction and is natively generative; encoder-decoder (T5/BART) pairs a bidirectional encoder with a causal, cross-attending decoder trained by denoising and owns seq2seq like translation. Map task to family, but remember decoder-only won the platform by scaling on unlabeled text and doing everything in one model — even as fine-tuned encoders stay the smaller, faster specialist.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transfer Learning in NLP | GenAI Systems Lab</title>
+  <meta name="description" content="ELMo → ULMFiT → BERT: pretrain-then-finetune, NLP's ImageNet moment.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nlp-transfer-learning">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nlp-transfer-learning">
+  <meta property="og:title" content="Transfer Learning in NLP | GenAI Systems Lab">
+  <meta property="og:description" content="ELMo → ULMFiT → BERT: pretrain-then-finetune, NLP's ImageNet moment.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Transfer Learning in NLP">
+  <meta name="twitter:description" content="ELMo → ULMFiT → BERT: pretrain-then-finetune, NLP's ImageNet moment.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Transfer Learning in NLP","description":"ELMo → ULMFiT → BERT: pretrain-then-finetune, NLP's ImageNet moment.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nlp-transfer-learning"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">NLP FOUNDATIONS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Transfer Learning in NLP</h1>
+    <p class="desc">ELMo → ULMFiT → BERT: pretrain-then-finetune, NLP's ImageNet moment.</p>
+
+    
+    <section><h2>How It Works</h2><p>For most of NLP's history, the default was: pick a task, gather a <em>labeled</em> dataset for it, and train a model <em>from scratch</em> on those labels. Every new task started from a blank slate and needed its own large labeled corpus — which is exactly why the scenario's from-scratch model plateaued at 71% on 2,000 labels. The paradigm shift is captured in one phrase: <strong>pretrain then adapt.</strong> First <em>pretrain</em> a general model on a <em>massive, unlabeled</em> text corpus using <strong>self-supervision</strong> (an objective that manufactures its own labels from raw text), then <em>fine-tune</em> that pretrained model on your small labeled task set. <mark>The expensive learning — syntax, semantics, world knowledge — happens once, on free unlabeled text; your scarce labeled data only has to teach the model the narrow, final task on top.</mark></p>
+<p><em>Why does pretraining work at all?</em> Because the self-supervised objectives are cleverly chosen so that succeeding at them <em>forces</em> the model to learn genuinely useful structure. Consider masked-language modeling: hide a word and predict it from context. To fill 'the doctor picked up her ___' well, the model must learn grammar, word meaning, co-reference, and even facts about the world. <mark>No human labeled anything — the text itself supplies the answer (the hidden word), so you can train on effectively unlimited data, and the only way to do well is to internalize language.</mark> Those internalized representations <em>transfer</em>: a model that already understands language needs only a light nudge to do sentiment, NER, or QA. That is why fine-tuning reaches high accuracy with far fewer labels — you are not teaching language from scratch, only pointing existing knowledge at a task.</p>
+<div class="illustration"><div class="illustration-label">The paradigm shift: train-from-scratch vs pretrain-then-adapt</div><pre>TRAIN FROM SCRATCH (old default)
+  [ blank model ] --train on YOUR 2k labeled reviews--&gt; classifier
+     must learn language AND the task from 2k labels -&gt; plateaus (71%)
+     every new task starts from zero, needs its own big labeled set
+
+PRETRAIN THEN ADAPT (the shift)
+  step 1 PRETRAIN (once, expensive, self-supervised):
+    [ blank model ] --predict masked words on BILLIONS of
+                      UNLABELED sentences--&gt; general language model
+                      (learned syntax, semantics, world knowledge)
+  step 2 FINE-TUNE (cheap, per task):
+    [ pretrained model ] --train on YOUR 2k labels--&gt; classifier (89%)
+       language already known; 2k labels only teach the final task
+       reaches old 71% with ~200 labels -&gt; data efficiency</pre></div>
+<p>The lineage is worth knowing precisely, because interviewers use it to test whether you understand <em>what changed at each step</em>. <strong>word2vec / GloVe (2013-14)</strong> gave each word a single <em>static</em> vector learned from co-occurrence — a huge step, but 'bank' had one vector whether it meant a riverbank or a financial bank, and these were used as frozen <em>features</em> fed into a task-specific model. <strong>ELMo (2018)</strong> made embeddings <em>deep and contextual</em>: it ran a bidirectional LSTM <em>language model</em> and used its internal states, so 'bank' got a <em>different</em> vector depending on the sentence — context-dependent representations, still largely feature-based. <strong>ULMFiT (2018)</strong> proved you could <strong>fine-tune a full language model</strong> for text classification and introduced the training tricks that made it stable: <strong>discriminative learning rates</strong> (lower layers, which hold general language, get <em>smaller</em> learning rates than task-specific top layers), <strong>gradual unfreezing</strong> (unfreeze layers top-down rather than all at once, to avoid catastrophically destroying pretrained knowledge), and a <strong>slanted triangular learning rate</strong> (warm up fast, then decay). <mark>ULMFiT is the moment 'fine-tune the whole pretrained LM' became the recipe, not just 'use its embeddings as features.'</mark></p>
+<p>Then <strong>BERT and GPT (2018+)</strong> replaced the LSTM with the <strong>Transformer</strong> and split on the pretraining objective. <strong>BERT uses masked-language modeling (MLM)</strong> — mask ~15% of tokens and predict them from <em>both</em> directions — which makes it <em>bidirectional</em> and excellent for <em>understanding</em> tasks (classification, NER, extractive QA). <strong>GPT uses causal (autoregressive) language modeling</strong> — predict the next token from the left context only — which makes it <em>unidirectional</em> and natural for <em>generation</em>. This era is often called <mark>NLP's 'ImageNet moment'</mark>: just as pretraining CNNs on ImageNet and fine-tuning became the default for vision, pretraining a Transformer LM and fine-tuning became the default for NLP. The scenario is a direct instance of that moment.</p>
+<div class="illustration"><div class="illustration-label">The lineage — what changed at each step</div><pre>word2vec / GloVe   static per-word vector, feature-based
+  (2013-14)        &quot;bank&quot; = ONE vector (no context); frozen features
+        |
+        v
+ELMo (2018)        deep CONTEXTUAL embeddings from a biLSTM LM
+                   &quot;bank&quot; varies by sentence; still mostly features
+        |
+        v
+ULMFiT (2018)      FINE-TUNE the whole LM (not just its embeddings)
+                   + discriminative LRs + gradual unfreezing
+                   + slanted triangular LR  -&gt; stable transfer
+        |
+        v
+BERT / GPT (2018+) TRANSFORMER pretraining, split by objective:
+                   BERT = masked-LM  (bidirectional -&gt; understanding)
+                   GPT  = causal-LM  (left-to-right -&gt; generation)
+                   &quot;NLP's ImageNet moment&quot;
+        |
+        v
+foundation models + prompting / PEFT (today)</pre></div>
+<p>A practical fork every practitioner faces: <strong>feature-extraction vs full fine-tuning.</strong> <em>Feature extraction</em> freezes the pretrained model and trains only a small head on top of its output vectors — cheap, fast, low memory, hard to overfit on tiny data, but it can't adapt the deep representations to your domain. <em>Full fine-tuning</em> updates all the weights — higher ceiling, adapts to domain shift, but costs more compute/memory and can overfit or 'catastrophically forget' on small datasets (which is exactly the risk ULMFiT's gradual unfreezing and discriminative LRs were invented to tame). <mark>Rule of thumb: more labeled data and bigger domain shift favor full fine-tuning; very little data or tight compute favors feature extraction.</mark></p>
+<p>This paradigm leads <em>directly</em> into today's world. Once pretraining scaled up, the fine-tune-per-task step itself became expensive and sometimes unnecessary: a large enough pretrained 'foundation model' can be steered by <strong>prompting</strong> (in-context examples, no weight updates at all) or adapted with <strong>parameter-efficient fine-tuning (PEFT)</strong> like LoRA (train a tiny number of extra parameters instead of all of them). The through-line from word2vec to GPT to LoRA is one idea getting more powerful: <mark>learn general capabilities once from unlabeled text, then adapt cheaply.</mark> The scenario's 89%-from-2k-labels is that idea in miniature — the pretrained model already knew language, so your labels only had to teach the last inch.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>The shift: pretrain-then-adapt.</strong> Pretrain a general model on massive <em>unlabeled</em> text via self-supervision (objective that manufactures its own labels), then fine-tune on a <em>small</em> labeled set. Expensive language learning happens once on free text; scarce labels only teach the final task — the source of dramatic data efficiency.</li><li><strong>Why pretraining works:</strong> self-supervised objectives (e.g. masked-LM: predict a hidden word) can only be solved by learning grammar, semantics, co-reference, and world knowledge. Those representations <em>transfer</em>, so fine-tuning needs far fewer labels — you are pointing existing knowledge at a task, not teaching language from scratch.</li><li><strong>The lineage:</strong> word2vec/GloVe (static, feature-based, 'bank' = one vector) -&gt; ELMo (deep contextual embeddings from a biLSTM LM) -&gt; ULMFiT (fine-tune the <em>whole</em> LM; discriminative LRs, gradual unfreezing, slanted triangular LR) -&gt; BERT (masked-LM, bidirectional, understanding) &amp; GPT (causal-LM, left-to-right, generation). This is 'NLP's ImageNet moment.'</li><li><strong>Feature-extraction vs full fine-tuning:</strong> freeze-and-train-a-head is cheap, low-memory, overfit-resistant on tiny data but can't adapt deep representations; full fine-tuning has a higher ceiling and adapts to domain shift but costs more and risks overfitting/catastrophic forgetting (what ULMFiT's tricks tame). More data/bigger shift -&gt; full FT; little data/tight compute -&gt; feature extraction.</li><li><strong>It leads straight into today:</strong> scaled pretraining yields foundation models steerable by prompting (no weight updates) or PEFT/LoRA (train a tiny parameter set). The through-line from word2vec to LoRA is one idea — learn general capability once from unlabeled text, adapt cheaply.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You inherit a sentiment classifier that a previous team trained from scratch on 2,000 labeled reviews, and it plateaus at 71% accuracy. Labeling more data is expensive — a domain expert costs real money per example. In a hallway conversation someone says 'just fine-tune a pretrained model,' and to your surprise a fine-tuned BERT hits 89% on the <em>same</em> 2,000 labels, and reaches your old 71% with only about 200 labels. Nothing about your labeled data changed. You need to explain, from first principles, why a model that never saw your reviews during pretraining is so dramatically more data-efficient on your task — and why this reshaped the entire field.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Transfer learning reshaped NLP by moving from training task-specific models from scratch to pretraining a general model on massive <em>unlabeled</em> text via self-supervision and then fine-tuning on a small labeled set — the expensive language learning happens once, so scarce labels only teach the final task, which is the source of dramatic data efficiency. The lineage word2vec/GloVe -&gt; ELMo -&gt; ULMFiT -&gt; BERT (masked-LM) &amp; GPT (causal-LM) is 'NLP's ImageNet moment,' and it leads straight into today's foundation-model era of prompting and PEFT/LoRA: learn general capability once, adapt cheaply.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Memory · Foundations | GenAI Systems Lab</title>
+  <meta name="description" content="The four memory types every agent juggles.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-memory-foundations">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-memory-foundations">
+  <meta property="og:title" content="Agent Memory · Foundations | GenAI Systems Lab">
+  <meta property="og:description" content="The four memory types every agent juggles.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Memory · Foundations">
+  <meta name="twitter:description" content="The four memory types every agent juggles.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agent Memory · Foundations","description":"The four memory types every agent juggles.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-memory-foundations"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Agent Memory · Foundations</h1>
+    <p class="desc">The four memory types every agent juggles.</p>
+
+    <section><h2>Start Here</h2><p>Here's a fact that sounds impossible the first time you hear it: a language model has <strong>no memory at all</strong>. None. Every time you call it, it wakes up with total amnesia, reads whatever text you handed it <em>this instant</em>, produces a reply, and forgets everything the moment it finishes. The 'conversation' you seem to be having with a chatbot is an illusion your application maintains by quietly re-sending the whole transcript on every single turn.</p>
+<p>Sit with that for a second, because it flips the usual question inside out. The interesting puzzle is not &quot;how does a model remember?&quot; — it <em>can't</em>. The puzzle is: given a thing with no memory, how do you <em>engineer</em> the appearance of one, cheaply enough to run all day and reliably enough that it doesn't contradict itself an hour in? That turns out to have several different answers, each with its own price tag — and the whole art is picking the right one for the right kind of information.</p>
+<p>Don't worry if 'context window', 'retrieval', and 'fine-tuning' currently feel like a jumble of buzzwords. We'll build them up one at a time, starting from that single hard fact — the model is stateless — and everything else will follow as a <em>consequence</em> of working around it. By the end the coding agent that mysteriously starts contradicting itself after twenty turns will look completely inevitable, and you'll know exactly which lever fixes it.</p></section>
+    <section><h2>How It Works</h2><p>Start from the single hard constraint that everything else is a workaround for: a transformer has <strong>no persistent state between calls</strong>. Each forward pass sees only the tokens in the prompt <em>right now</em> and nothing from any previous call. <strong>Because</strong> of that, 'memory' cannot be a property of the model — it has to be an engineering pattern layered on top of a fundamentally stateless function. <strong>This means</strong> the word 'memory' is doing too much work: there are several distinct mechanisms hiding under it, and they differ sharply in capacity, persistence, and cost, so treating them as one thing is the root cause of most scaling failures.</p>
+<p><strong>So</strong> the first and most important split is <strong>working (short-term) memory vs long-term memory</strong>, and it falls straight out of the constraint. Working memory is the one place the model can actually <em>attend</em>: the <strong>context window itself</strong> — the tokens currently in the prompt. It's the scratchpad, everything live this turn. Long-term memory is, by definition, everything that has to <em>outlive</em> a single call — conversation history you re-inject, facts kept in an external store and retrieved on demand, or knowledge baked into the weights. <strong>Which means</strong> long-term memory is never 'live' on its own: to be used at all, it must be pulled back <em>into</em> working memory first.</p>
+<p><strong>The context window is a scratchpad, and scratchpads have three brutal properties.</strong> It is <em>finite</em> (a fixed token budget — 128k, 200k, whatever the model gives you); it is <em>volatile</em> (nothing in it survives once you start a new call unless you re-send it); and it is <em>the most expensive memory you have</em>, because you pay per token, every turn, for everything you keep in it. <mark>The scenario's context-length exception is not a bug — it's the scratchpad filling up, which is the <em>expected</em> behaviour of a finite working memory used as if it were infinite.</mark></p>
+<p>This reframes the coding agent's failures. Contradicting earlier decisions and re-reading files aren't reasoning failures — they're symptoms of important information falling <em>out</em> of the working set (or never being managed within it). The question is never 'why is the model forgetting' but 'how am I managing what stays in the scratchpad.'</p>
+<div class="illustration"><div class="illustration-label">Where 'memory' lives, and the cost/persistence of each</div><pre>                         PERSISTENCE     COST TO USE       CAPACITY
+WORKING (in-context)
+  the prompt tokens        this call only  $$$ per-token      tiny (token budget)
+  = the scratchpad         volatile        EVERY turn        128k-ish, hard cap
+
+LONG-TERM (outlives the context)
+  conversation history     re-injected     $$ (re-send it)   grows unbounded
+  external store + RAG      durable         $ (retrieve k)    effectively infinite
+  weights (fine-tune)      permanent        ~free at infer    fixed, baked in
+
+Reading the table:
+  * Only working memory is 'live' — the model attends to it directly.
+  * Everything long-term must be RE-INJECTED into working memory to be used.
+  * As a session grows you MUST decide what to keep in the scratchpad,
+    what to summarise, and what to push to a store and retrieve on demand.</pre></div>
+<p>Because working memory is finite and expensive, agents that run past a demo need a <strong>context-management strategy</strong> — a policy for what stays raw, what gets compressed, and what gets evicted. The main levers: <strong>truncation</strong> (drop the oldest turns — cheap, but you lose them), <strong>summarization</strong> (compress older turns into a short synopsis and keep the synopsis in context — you preserve the gist at a fraction of the tokens), and <strong>retrieval</strong> (push the full history to an external store and pull back only the k chunks relevant to the current turn). Real systems combine these: keep the last few turns verbatim, a rolling summary of everything before that, and retrieve specifics on demand.</p>
+<p><strong>Summarization is the workhorse and it has a sharp trade-off.</strong> Compressing 30 turns into a 200-token synopsis keeps you under budget, but summarization is <em>lossy</em> — the detail you drop is gone from working memory. If the coding agent summarised away 'we decided NOT to use library X for reason Y,' it will happily re-propose X later. So the skill is choosing <em>what</em> to preserve: decisions, constraints, and commitments are high-value to keep; verbose intermediate output is safe to compress. <mark>A summary is a bet about what future turns will need; a bad summary manifests as an agent that contradicts its own earlier reasoning.</mark></p>
+<p><strong>Retrieval is how you get 'effectively infinite' memory without paying to hold it in context.</strong> You store history/facts in an external store (typically embedded into a vector store), and each turn you embed the current query, pull the top-k most relevant chunks, and inject <em>only those</em> into the scratchpad. This is the pattern that scales: the store grows without bound, but per-turn context stays small and cheap. The failure mode moves, though — now it's a <strong>retrieval</strong> problem: pull the wrong chunks and the model reasons over irrelevant context; pull too few and it's missing the fact it needed. 'The agent gave a wrong answer' becomes 'did working-memory management fail, or did retrieval fetch the wrong thing?' — two different fixes.</p>
+<p>This is why the teammate's 'just fine-tune it' is the wrong lever. <strong>Fine-tuning writes information into the weights — permanent, near-free at inference, but static.</strong> It's right for stable skills and style, catastrophically wrong for information that changes every turn: you cannot fine-tune 'the user just said their name is Priya' into the weights mid-conversation, and you shouldn't fine-tune facts that change frequently because the weights can't be edited per-turn. Session-scoped, fast-changing information belongs in working memory and long-term stores, not in the weights. <mark>Matching the mechanism to the information's change-rate and lifespan is the entire discipline.</mark> The interactive lets you compare each memory type's capacity, persistence, and cost side-by-side — use it to build the reflex of asking 'which memory type is this, and is it the right one' before reaching for any single lever.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Transformers are stateless between calls</strong> — everything an agent 'remembers' is an engineering pattern on top of that. 'Memory' is not one thing; the first split is working (in-context) vs long-term (outlives the context).</li><li><strong>Working memory = the context window = a scratchpad</strong> that is finite (hard token cap), volatile (gone unless re-sent), and the most expensive memory (paid per token, every turn). Context-length errors are the scratchpad filling up, not a bug.</li><li><strong>Long-term memory must be re-injected to be used.</strong> Conversation history, external stores + retrieval, and weights all live outside the live context; only working memory is directly attended to.</li><li><strong>Scaling past a demo requires a context-management strategy:</strong> truncation (drop oldest), summarization (compress older turns into a synopsis), and retrieval (store everything, pull back top-k). Real systems combine all three.</li><li><strong>Summarization is lossy — it's a bet about what future turns need.</strong> Preserve decisions/constraints/commitments; compress verbose intermediate output. A bad summary shows up as an agent contradicting its own earlier reasoning.</li><li><strong>Match the mechanism to the information's change-rate:</strong> fast-changing/session-scoped facts belong in working memory + stores, not the weights. Fine-tuning is for stable skills/style, never for per-turn facts.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your coding agent runs beautifully for 20 turns, then starts contradicting decisions it made earlier <em>in the same session</em>, re-reading files it already read, and finally throws a context-length exception. A teammate shrugs and says 'just fine-tune it on the conversation.' Take a moment before reading on: given what you now know about <em>where</em> memory lives, which layer failed, and why is fine-tuning aimed at the wrong one? Here's the reasoning, step by step. The context-length exception isn't a bug — it's the working-memory scratchpad hitting its hard token cap, the <em>expected</em> behaviour of a finite buffer used as if it were infinite. The contradictions and the re-reads are the same story one level up: important information (an earlier decision, a file already seen) fell <em>out</em> of the live context, or was never managed to stay in it, so on this turn the model simply cannot attend to it. Notice what that rules out: nothing here is a reasoning failure the model could 'try harder' to fix, and nothing is repaired by baking the transcript into weights — the conversation changes every turn, and weights can't be edited per turn. The failure is working-memory <em>management</em>, so the fix lives there: summarize the old turns, retrieve the relevant ones on demand, and keep decisions and constraints inside the scratchpad on purpose.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Transformers are stateless, so all agent memory is layered on: working memory is the context window — a finite, volatile, per-token-expensive scratchpad — and long-term memory (history, external stores, weights) must be re-injected to be used. Scaling past a demo means a context-management strategy (truncate/summarize/retrieve); summaries are lossy bets, so preserve decisions and constraints. Match the mechanism to the info's change-rate: fine-tuning for stable skills, never for per-turn facts.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

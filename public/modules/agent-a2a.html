@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A2A Protocol | GenAI Systems Lab</title>
+  <meta name="description" content="How agents talk to other agents — the agent-to-agent standard.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-a2a">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-a2a">
+  <meta property="og:title" content="A2A Protocol | GenAI Systems Lab">
+  <meta property="og:description" content="How agents talk to other agents — the agent-to-agent standard.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="A2A Protocol">
+  <meta name="twitter:description" content="How agents talk to other agents — the agent-to-agent standard.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"A2A Protocol","description":"How agents talk to other agents — the agent-to-agent standard.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-a2a"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>A2A Protocol</h1>
+    <p class="desc">How agents talk to other agents — the agent-to-agent standard.</p>
+
+    
+    <section><h2>How It Works</h2><p>This is the <strong>N×M problem again — but one layer up</strong>. MCP standardized agent↔tool. <strong>A2A (Agent-to-Agent) standardizes agent↔agent</strong>: how agents built on <em>different frameworks</em> discover each other, authenticate, and exchange units of work. It was introduced by Google (with ADK, ~May 2025) as an open protocol, and it turns N frameworks × M agent services of custom integration into N+M. <mark>A2A and MCP are complementary, not competing: an agent uses MCP to reach its tools, and exposes itself over A2A so other agents can call it.</mark></p>
+<p>The primitive that makes cross-framework discovery work is the <strong>Agent Card</strong> — a JSON manifest each agent publishes (conventionally at a well-known URL) describing <em>what it can do</em> and <em>how to reach it</em>: name, version, a list of <strong>capabilities</strong>, its endpoint, and supported input/output formats. <mark>Discovery starts here: a calling agent fetches the card, reads the advertised capabilities, and decides whether this agent can serve its need — without any prior hand-coded knowledge of the target's internals.</mark> This is the machine-readable contract that replaces 'someone on the pricing team told me the URL and payload shape.'</p>
+<p>Work is exchanged as <strong>Tasks</strong>, not raw function calls, and that distinction is deliberate. A Task has an ID, an input, a context (e.g. session), and an expected-output schema — it is a <em>stateful unit of work with a lifecycle</em> (submitted → working → completed/failed), which is precisely what a function call is not. Because agent work is often slow, A2A treats <strong>long-running tasks as first-class</strong>: instead of blocking on a synchronous response, the caller registers a callback and receives <strong>push notifications</strong> (webhooks / SSE) as the task progresses. <mark>A four-minute pricing computation does not hold a request open — it fires a completion callback when done.</mark> Transport is plain <strong>HTTPS with JSON payloads</strong>, supporting both synchronous request/response and async webhook/SSE — no special runtime required.</p>
+<div class="illustration"><div class="illustration-label">A2A: discovery, delegation, and the message contract</div><pre>DISCOVERY (the Agent Card — published JSON manifest):
+  { &quot;name&quot;: &quot;PricingAgent&quot;, &quot;version&quot;: &quot;1.0&quot;,
+    &quot;capabilities&quot;: [&quot;quote&quot;, &quot;margin_analysis&quot;],
+    &quot;endpoint&quot;: &quot;https://agents.myco.com/pricing&quot;,
+    &quot;inputFormats&quot;: [&quot;json&quot;], &quot;outputFormats&quot;: [&quot;json&quot;] }
+        ▲ caller fetches this, reads capabilities, decides to delegate
+
+DELEGATION (a Task — stateful, not a raw call):
+  research-agent ──POST /tasks──► pricing-agent
+    { &quot;taskId&quot;: &quot;t-8f2a&quot;,
+      &quot;input&quot;: { &quot;sku&quot;: &quot;X-40&quot;, &quot;region&quot;: &quot;EU&quot; },
+      &quot;context&quot;: { &quot;sessionId&quot;: &quot;s-91b2&quot; },
+      &quot;expectedOutput&quot;: { &quot;format&quot;: &quot;json&quot; } }
+  lifecycle:  submitted -&gt; working -&gt; completed | failed
+
+LONG-RUNNING (push notification, not a blocked request):
+  caller registers callbackUrl  ──►  gets async updates via webhook/SSE
+  { &quot;taskId&quot;: &quot;t-8f2a&quot;, &quot;status&quot;: &quot;completed&quot;, &quot;output&quot;: {…} }
+
+A2A (agent ↔ agent)  ⟂  MCP (agent ↔ tool)   — complementary layers
+Transport: HTTPS + JSON, sync request/response OR async webhook/SSE</pre></div>
+<p>Because A2A crosses <strong>team and organizational boundaries</strong>, trust is not an afterthought — it is the design center. Authentication is standard web auth: <strong>OAuth 2.0 / bearer tokens</strong> on the HTTPS transport, so a calling agent proves who it is before a task is accepted. The engineering discipline layers on top: the Agent Card advertises capabilities but the <em>receiving</em> agent must still <strong>authorize</strong> each task (is this caller allowed to invoke this capability?), <strong>validate</strong> the input against the expected schema, and treat cross-org task inputs as <strong>untrusted</strong> — the same prompt-injection surface as any external content, now arriving from another autonomous agent. <mark>Capability advertisement enables delegation; the trust boundary is where you decide which advertised capability a given caller may actually use.</mark></p>
+<p>When is A2A actually the right call? The framework-support interactive above encodes the decision, and the signals are concrete: <strong>(1) multiple agent frameworks involved</strong>, <strong>(2) tasks that run long (&gt;10s, needing async)</strong>, <strong>(3) agent discovery across teams/orgs</strong>. One signal → design your interface to be A2A-compatible but don't activate yet; two → A2A saves real integration work; all three → it is exactly what A2A was built for (the scenario hits all three).</p>
+<p>Accuracy points for the interview: A2A is <strong>young and adoption is uneven</strong> — native in Google ADK, added to CrewAI, on the roadmap for LangGraph/AutoGen, and (as of this writing) not in the OpenAI Agents SDK, which is MCP-first. And the crisp positioning line: <mark>MCP = agent↔tool (function-call, sync, list_tools discovery); A2A = agent↔agent (task-based, async-native, Agent-Card discovery, OAuth).</mark> The trap is conflating them or calling A2A 'MCP for agents' — they solve adjacent problems at different layers and are meant to be used together.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A2A standardizes agent↔agent (the N×M problem one layer above MCP):</strong> how agents on <em>different frameworks</em> discover, authenticate, and delegate to each other. Introduced by Google (~May 2025). Complementary to MCP — an agent uses MCP for tools and exposes itself over A2A.</li><li><strong>Agent Card = the discovery primitive:</strong> a published JSON manifest advertising name, version, capabilities, endpoint, and I/O formats. A caller fetches it, reads capabilities, and decides to delegate — no pre-coded knowledge of the target's internals.</li><li><strong>Work is exchanged as Tasks, not function calls:</strong> stateful units with an ID, input, context, expected-output schema, and a lifecycle (submitted → working → completed/failed) — not a stateless synchronous call.</li><li><strong>Long-running tasks are first-class:</strong> the caller registers a callback and gets push notifications (webhooks/SSE) as the task progresses, so a 4-minute job never holds a request open. Transport is HTTPS + JSON, sync or async.</li><li><strong>Trust is the design center because A2A crosses org boundaries:</strong> OAuth 2.0 / bearer-token auth on HTTPS, plus per-task authorization, input-schema validation, and treating cross-agent inputs as untrusted (prompt-injection surface). Advertisement ≠ authorization.</li><li><strong>Decision signals:</strong> multiple frameworks + long tasks + cross-team discovery → A2A. Adoption is uneven — native in ADK, added to CrewAI, roadmap for LangGraph/AutoGen, absent from the (MCP-first) OpenAI Agents SDK. A2A = agent↔agent; MCP = agent↔tool.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your team's research agent runs on LangGraph. A partner team built a pricing agent on Google ADK; another built a compliance agent on CrewAI. Leadership wants your research agent to delegate a sub-task to the pricing agent and get an async result back — and eventually for any agent in the org to discover and call any other, across framework and team boundaries. Wiring three custom HTTP integrations works today, but N teams × M frameworks of bespoke glue does not scale, and none of it handles a task that takes four minutes to complete.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>A2A is Google's open agent↔agent protocol (HTTPS + JSON) that standardizes cross-framework discovery (Agent Cards), delegation (stateful Tasks with a lifecycle), and long-running work (push notifications) — the N×M problem one layer above MCP, and complementary to it. Because it crosses org boundaries, trust is the design center: OAuth on the transport plus per-task authorization, input validation, and untrusted-input handling. Reach for it when you have multiple frameworks, long tasks, and cross-team discovery.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

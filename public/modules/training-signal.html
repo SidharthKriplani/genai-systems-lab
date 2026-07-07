@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entropy, Cross-Entropy Loss, and KL Divergence | GenAI Systems Lab</title>
+  <meta name="description" content="Drag a probability. See the surprise. Understand why the model learns nothing from confident predictions — and everything from uncertain ones.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/training-signal">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/training-signal">
+  <meta property="og:title" content="Entropy, Cross-Entropy Loss, and KL Divergence | GenAI Systems Lab">
+  <meta property="og:description" content="Drag a probability. See the surprise. Understand why the model learns nothing from confident predictions — and everything from uncertain ones.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Entropy, Cross-Entropy Loss, and KL Divergence">
+  <meta name="twitter:description" content="Drag a probability. See the surprise. Understand why the model learns nothing from confident predictions — and everything from uncertain ones.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Entropy, Cross-Entropy Loss, and KL Divergence","description":"Drag a probability. See the surprise. Understand why the model learns nothing from confident predictions — and everything from uncertain ones.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/training-signal"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">TRAINING</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Entropy, Cross-Entropy Loss, and KL Divergence</h1>
+    <p class="desc">Drag a probability. See the surprise. Understand why the model learns nothing from confident predictions — and everything from uncertain ones.</p>
+
+    
+    <section><h2>How It Works</h2><p>Next-token prediction gave the model the ability to produce fluent text conditioned on any input. The objective optimized for exactly one thing: <strong>statistical accuracy at predicting each next token</strong> in human-written text.</p>
+<p>What it did <em>not</em> produce — what the objective has no signal for — is a <strong>knowing/not-knowing dimension</strong>. <mark>The model's ability to generate confident text and the accuracy of its factual claims are not the same signal — the training objective conflates them entirely.</mark></p>
+<p>The internet is written by humans who <strong>assert rather than hedge</strong>. Published articles, textbooks, regulatory documents, Stack Overflow answers — all in the register of <em>stated knowledge</em>.</p>
+<p>'The Basel III Tier 1 capital ratio requirement is 6%' appears in thousands of sources, stated as fact. 'I believe the Basel III Tier 1 ratio is approximately 6% but this can vary by jurisdiction' is the kind of hedge that gets edited out before publication.</p>
+<p><mark>The model learned the distribution of human <em>claims</em>, not the distribution of human <em>knowledge</em>.</mark> Confident prose isn't evidence of reliable knowledge — it's evidence that humans write confidently, and the model absorbed and reproduces that pattern.</p>
+<p>When the query covers a niche detail that appeared in <strong>2–3 documents</strong> in any corpus, the model has very little signal for what specific tokens should follow. But it has <em>strong</em> signal for what confident-sounding regulatory answers look like in general — specific percentages, regulatory body names, article numbers, enforcement dates.</p>
+<p>The softmax distribution spreads over plausible regulatory language, the model samples from it, and produces a concrete, confident answer. <mark>There is no internal flag for 'this came from sparse signal' versus 'this appeared in millions of consistent examples' — both produce identical-looking outputs.</mark></p>
+<p>This is what 'the model doesn't know what it doesn't know' means <strong>mechanistically</strong>. There is no internal confidence representation that correlates reliably with factual accuracy for rare topics.</p>
+<p><strong>High-frequency facts</strong> — Paris is the capital of France — have tight, consistent distributions built from millions of examples. <strong>Low-frequency facts</strong> have sparse, noisy distributions — the model is essentially sampling from 'what regulatory answers sound like' rather than 'what the correct answer is.'</p>
+<p><mark>Both paths produce the same surface output — a fluent, confident, specific-sounding claim — and the model cannot tell you which case it's in.</mark></p>
+<p>Calibrated uncertainty requires <strong>explicit training signal</strong> the base CLM objective doesn't provide.</p>
+<p><strong>RLHF</strong> teaches the model to hedge appropriately — human preferences explicitly reward 'I'm not certain' over confident hallucination for genuinely uncertain queries. <strong>Retrieval augmentation</strong> replaces parametric memory: instead of generating from training-time statistics, the model conditions on a retrieved document containing the current regulatory text — <mark>converting the problem from <em>recall</em> to <em>reading comprehension</em>.</mark> <strong>Calibration training</strong> on datasets where the model predicts its own correctness can produce probability estimates that correlate with accuracy for high-stakes outputs.</p>
+<p>None of these fully eliminate hallucination — each shifts the failure mode. The root cause remains: <strong>next-token prediction on human text is not the same objective as learning calibrated factual knowledge.</strong></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Confidence and correctness are different signals the objective conflates.</strong> Next-token prediction optimizes fluent continuation, never a know/don't-know dimension.</li><li><strong>The model learned the distribution of human <em>claims</em>, not human <em>knowledge</em>.</strong> Published text asserts rather than hedges, so confident prose reflects a writing style the model absorbed — not reliability.</li><li><strong>Rare facts and common facts produce identical-looking confident output.</strong> High-frequency facts have tight distributions; niche facts (2–3 documents) have sparse ones — but there's no internal flag distinguishing them.</li><li><strong>'Doesn't know what it doesn't know' is mechanistic</strong>, not a metaphor: no confidence representation correlates reliably with accuracy on rare topics.</li><li><strong>Mitigations add the missing signal:</strong> RLHF rewards honest hedging, retrieval converts recall into reading comprehension, calibration training predicts correctness.</li><li><strong>None fully eliminate hallucination — each shifts the failure mode.</strong> Treat model confidence as a stylistic signal, not a factual guarantee.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your model gives highly confident wrong answers on niche financial regulatory questions — specific edge cases from maybe 2–3 documents in any corpus. A colleague says 'the model doesn't know what it doesn't know.' You need to explain the mechanism precisely enough to design a mitigation — not just describe the symptom.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Hallucination is the natural output of a next-token predictor trained on confident human text. High-frequency facts have tight distributions; low-frequency regulatory facts have sparse, noisy distributions — but both produce identical-looking confident outputs. Calibrated uncertainty requires explicit alignment training; without it, treat model confidence as a stylistic signal, not a factual guarantee.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Continuous Batching for Throughput | GenAI Systems Lab</title>
+  <meta name="description" content="In-flight batching swaps sequences per decode step to saturate the GPU.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/infra-batching-throughput">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/infra-batching-throughput">
+  <meta property="og:title" content="Continuous Batching for Throughput | GenAI Systems Lab">
+  <meta property="og:description" content="In-flight batching swaps sequences per decode step to saturate the GPU.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Continuous Batching for Throughput">
+  <meta name="twitter:description" content="In-flight batching swaps sequences per decode step to saturate the GPU.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Continuous Batching for Throughput","description":"In-flight batching swaps sequences per decode step to saturate the GPU.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/infra-batching-throughput"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">INFERENCE</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Continuous Batching for Throughput</h1>
+    <p class="desc">In-flight batching swaps sequences per decode step to saturate the GPU.</p>
+
+    <section><h2>Start Here</h2><p>Let's pick up exactly where the last module left us, because it handed us a gift. We learned that generating tokens one at a time leaves the GPU's math units almost entirely idle — the chip spends its time hauling weights out of memory to produce a single token, and the tensor cores mostly sit and wait. Sit with that for a second: <strong>idle compute is free throughput you already paid for and are throwing on the floor.</strong></p>
+<p>So here's the natural question that runs this whole module. If the expensive part is streaming the weights once, and the cheap part (the actual math) is barely being used, could we make <em>one</em> trip to memory serve <em>many</em> requests at the same time? Give the GPU eight users' next-tokens to compute from the same weight-stream instead of one, and the costly memory trip is suddenly amortized across eight tokens. That idea is <strong>batching</strong>, and it's the single biggest throughput lever in modern serving.</p>
+<p>But — and this is where it gets interesting — the obvious way to batch turns out to be quietly broken for LLMs, in a way that's invisible until you watch a short request get trapped behind a long one. We'll build it up the honest way: start with the naive batch, watch precisely how it fails, and let each fix grow out of the failure before it. No rush. By the end you'll be able to explain, in one sentence, why a five-token answer took twenty seconds.</p></section>
+    <section><h2>How It Works</h2><p>Start from the throughput problem the previous module set up: <strong>single-stream decode is memory-bandwidth-bound with idle compute.</strong> Serving one request at a time streams the entire weight matrix from HBM to produce a single token — you pay the full memory cost for one token of output. The tensor cores are ~90% idle. <mark>That idle compute is free throughput you're throwing away.</mark></p>
+<p>The fix is to make one weight-stream do more work: process <strong>many requests' decode steps in the same forward pass.</strong> If 8 requests each want their next token, you can compute all 8 next-tokens by streaming the weights <em>once</em> and doing 8× the (cheap) matmul work — turning a memory-bound step that produced 1 token into one that produces 8. Throughput rises roughly linearly with batch size until you re-saturate compute or run out of KV-cache memory.</p>
+<p>The naive way to batch is <strong>static batching</strong>: collect N requests, run them together from start to finish, return all N when done. It captures some of the win but has a fatal flaw for LLMs — <strong>variable output length.</strong></p>
+<p>Unlike a fixed-size image classifier, LLM requests finish at different, <em>unknown-in-advance</em> times: one hits its stop token after 5 decode steps, another runs 800. In static batching the whole batch marches lockstep until the <strong>slowest</strong> member finishes. <mark>Every request that finished early keeps occupying its slot — burning GPU cycles on padding and holding KV-cache memory — until the longest generation in the batch completes.</mark> That's classic head-of-line blocking, and it's exactly why the scenario's 5-token answer took 20 seconds behind an essay.</p>
+<p>Static batching also can't admit new requests mid-flight: a request that arrives one step after the batch launches waits for the entire batch to drain.</p>
+<div class="illustration"><div class="illustration-label">Static vs continuous batching over decode steps</div><pre>Four requests. A wants 2 tokens, B wants 5, C wants 3, D wants 2.
+(each cell = one decode step for that slot; · = wasted/padded slot)
+
+STATIC BATCHING (lockstep, batch finishes when slowest B finishes):
+  step:   1  2  3  4  5
+  A:      A  A  ·  ·  ·     A done at step 2, then idles 3 steps
+  B:      B  B  B  B  B
+  C:      C  C  C  ·  ·     C done at step 3, then idles 2 steps
+  D:      D  D  ·  ·  ·     D done at step 2, then idles 3 steps
+  → 8 useful tokens, 20 slot-steps used ⇒ 60% wasted. A/D wait for B.
+
+CONTINUOUS (IN-FLIGHT) BATCHING (finished slots freed, new work admitted):
+  step:   1  2  3  4  5
+  A:      A  A  E  E  E     A finished → E (new request) admitted mid-flight
+  B:      B  B  B  B  B
+  C:      C  C  C  F  F     C finished → F admitted
+  D:      D  D  E' F' ...   D finished → slot reused immediately
+  → no request waits on B; GPU stays saturated; slots never idle.</pre></div>
+<p><strong>Continuous (in-flight) batching</strong> is the fix, and it's the default in vLLM and TGI. The batch is managed at the granularity of a <strong>single decode step</strong>, not a whole request.</p>
+<p>Each step, the scheduler assembles the set of currently-active sequences and runs one decode step for all of them together. When a sequence emits its stop token, it <strong>drops out immediately</strong> and its slot (and KV memory) is freed. When a new request arrives, it can <strong>join the running batch</strong> on the very next step — the batch composition changes continuously. <mark>No request waits for another to finish; the GPU never idles on padding.</mark> This is the single biggest throughput lever in modern LLM serving, often 5–20× over naive single-stream, precisely because it converts decode's idle compute into useful work while eliminating head-of-line blocking.</p>
+<p>Continuous batching creates a scheduling wrinkle: <strong>prefill and decode compete for the GPU.</strong> A newly-admitted request must first run its (compute-heavy) prefill before it can join the (memory-bound) decode loop. If a user submits a 4,000-token prompt, its prefill is a big matmul that, run monolithically, <strong>stalls every in-flight decode</strong> for hundreds of milliseconds — spiking everyone's inter-token latency.</p>
+<p><strong>Chunked prefill</strong> solves this: split the long prompt's prefill into fixed-size chunks and interleave those chunks with ongoing decode steps, so a long prompt makes steady progress without monopolizing the GPU. Combined with <strong>priority scheduling</strong> (e.g. favor decode to protect streaming smoothness, or cap the prefill budget per step), this keeps TTFT for new requests and TPOT for existing ones both bounded. <mark>Continuous batching without chunked prefill still lets one giant prompt wreck tail latency.</mark></p>
+<p>The whole thing is a <strong>throughput-versus-latency dial</strong>, and staff-level judgment is knowing where to set it. Bigger effective batches raise throughput (more tokens/sec, lower cost per token) but push up <strong>tail latency</strong>: more sequences per step means each step does more work and takes longer, so per-token latency creeps up, and admission delays grow when the batch is full.</p>
+<p>The tuning knobs are <strong>max batch size / max num sequences</strong>, <strong>max tokens per step</strong> (the prefill+decode budget), and how aggressively you admit new work versus protect in-flight requests. <mark>For an interactive chat SLA you cap batch size to protect p99 TPOT; for an offline bulk-generation job you crank batch size to the KV-memory limit and don't care about tail latency.</mark> And the ceiling on batch size is almost always <strong>KV-cache memory</strong>, not compute — which is exactly the constraint the next module (PagedAttention) is built to relax.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Batching turns decode's idle compute into throughput.</strong> One HBM weight-stream can produce next-tokens for many requests at once, so a memory-bound step that made 1 token now makes N — throughput rises ~linearly with batch size until compute re-saturates or KV memory runs out.</li><li><strong>Static batching suffers head-of-line blocking.</strong> LLM outputs finish at different, unknown times; a static batch marches lockstep until the slowest member ends, so early finishers idle in padded slots and new requests can't join mid-batch.</li><li><strong>Continuous (in-flight) batching schedules per decode step.</strong> Finished sequences drop out and free their KV memory instantly; new requests join the running batch on the next step. This is the core 5–20× throughput unlock in vLLM/TGI, with no request waiting on another.</li><li><strong>Chunked prefill protects tail latency.</strong> A long prompt's prefill is compute-heavy and can stall all in-flight decode; splitting it into chunks and interleaving with decode keeps both TTFT (new) and TPOT (existing) bounded. Priority scheduling tunes the balance.</li><li><strong>It's a throughput-vs-latency dial capped by KV memory.</strong> Bigger batches mean lower cost/token but higher tail latency; you cap batch size for interactive SLAs and max it for offline jobs. The batch-size ceiling is usually KV-cache memory, not compute.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A team self-hosts a 7B model behind an API. Traffic is bursty and output lengths vary wildly — some users ask a yes/no question (5 tokens out), others want a full essay (800 tokens out). The first implementation serves one request at a time: throughput is a dismal 40 tokens/sec aggregate and the GPU sits at 12% utilization, yet requests still queue and p99 latency is terrible. The second attempt batches 8 requests together statically — and now a user's 5-token answer takes 20 seconds because it's stuck behind an 800-token essay in the same batch. Take a moment before reading on: given what we built, why does each attempt fail, and what fixes both? Here's the reasoning, step by step. Serving one-at-a-time wastes decode's idle compute — that's the 12% utilization and the low throughput. Static batching recovers some of it but marches lockstep until the <em>slowest</em> member finishes, so the 5-token answer is done in 5 steps yet can't be returned for ~795 more — classic head-of-line blocking from variable, unknown output lengths. Notice the fix falls straight out of the diagnosis: continuous (in-flight) batching schedules per decode step, so finished sequences drop out and free their KV memory immediately while new requests join mid-flight — no request waits on another. The cost you pay is a throughput-vs-latency dial (bigger batches raise tail latency) and the need for chunked prefill so one giant prompt doesn't stall everyone, all ultimately capped by KV-cache memory.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Batching converts decode's idle compute into throughput by making one HBM weight-stream serve many requests' next-tokens at once. Static batching wastes most of that gain to head-of-line blocking because LLM outputs finish at different, unknown times. Continuous (in-flight) batching — the vLLM/TGI default — schedules per decode step so finished sequences exit and free KV memory immediately while new requests join mid-flight, delivering the core 5–20× throughput unlock; chunked prefill keeps a long prompt from stalling everyone. It's a throughput-vs-latency dial whose ceiling is almost always KV-cache memory, not compute — which is exactly what PagedAttention exists to relax.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

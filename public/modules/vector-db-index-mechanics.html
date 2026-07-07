@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANN Index Mechanics: HNSW vs IVF | GenAI Systems Lab</title>
+  <meta name="description" content="Graph vs buckets — the recall/latency/memory dial.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/vector-db-index-mechanics">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/vector-db-index-mechanics">
+  <meta property="og:title" content="ANN Index Mechanics: HNSW vs IVF | GenAI Systems Lab">
+  <meta property="og:description" content="Graph vs buckets — the recall/latency/memory dial.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ANN Index Mechanics: HNSW vs IVF">
+  <meta name="twitter:description" content="Graph vs buckets — the recall/latency/memory dial.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"ANN Index Mechanics: HNSW vs IVF","description":"Graph vs buckets — the recall/latency/memory dial.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/vector-db-index-mechanics"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">VECTOR</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>ANN Index Mechanics: HNSW vs IVF</h1>
+    <p class="desc">Graph vs buckets — the recall/latency/memory dial.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with the most honest way to search a pile of vectors — and then watch why nobody can afford it. You have a query vector and a million stored ones, and you want the closest few. The <em>exact</em> answer is easy to describe: measure the distance from your query to <em>every single</em> stored vector and keep the nearest. Perfectly correct. Also, at real scale, hopelessly slow — millions of vectors times a thousand-plus dimensions is billions of arithmetic operations <em>per query.</em></p>
+<p>Here's the bargain the whole module is built on: to go fast, you give up <em>exactness on purpose.</em> Instead of checking all N vectors, you check a cleverly-chosen <em>fraction</em> of them and accept that you'll occasionally miss the true nearest neighbor. That's an <strong>Approximate</strong> Nearest Neighbor index — 'approximate' is the feature, not a bug. It trades a sliver of accuracy for orders-of-magnitude speed.</p>
+<p>But — and this is the part that bites teams in production — the cleverness of <em>which</em> fraction to check depends on knobs, and those knobs are tuned for a particular dataset <em>size.</em> Grow the dataset 100× without re-tuning, and the same knobs quietly start checking too small a slice. We'll build up the two dominant index designs and see exactly how their knobs go stale, so that a search that got 100× slower overnight becomes a diagnosis, not a mystery. Take your time.</p></section>
+    <section><h2>How It Works</h2><p>Start from the exact method, so you can see precisely what the approximation buys. The honest way to find a query's nearest neighbors is <strong>exhaustive search</strong>: compute the distance from the query to <em>every</em> stored vector and return the k closest. It's exact, complete, and correct — but its cost grows linearly with the number of vectors N and the dimension d. At N=10M and d=1,536 that's roughly <strong>15 billion multiply-and-add operations per query</strong>, which turns a fast lookup into a multi-second one. So the fundamental move is unavoidable: <strong>ANN (Approximate Nearest Neighbor)</strong> indexes restrict the search to a <em>relevant subspace</em> rather than all N, trading a small, controllable accuracy loss for orders-of-magnitude speedup. Everything below is two ways to choose that subspace — and how each choice depends on N.</p>
+<p>The first design, <strong>HNSW (Hierarchical Navigable Small World)</strong>, builds a multi-layer graph where each vector links to its approximate nearest neighbors. A query starts at the sparse top layer (long-range hops), navigates greedily toward the target, then descends into denser layers. Two knobs govern it: <strong>M</strong> (connections per node, fixed at build time) and <strong>ef_search</strong> (how many candidate nodes to explore per query). Here's the size dependence that matters: because ef_search is an <em>absolute</em> count, the <em>fraction</em> of the graph it explores shrinks as the graph grows — so a value that explored a sufficient slice at one scale explores a slice 100× too small at 100× the vectors, and recall degrades because the true neighbor sits in a region the search never reaches. The fix is therefore not a new database but a <strong>rebuild with M and ef_search recalibrated to the new scale.</strong></p>
+<p>The second design, <strong>IVF (Inverted File Index)</strong>, takes the opposite approach: cluster the vectors into k-means groups at build time, then at query time search only the members of the <strong>nprobe</strong> nearest cluster centroids. Its knob is <strong>nlist</strong> (number of clusters), with the standard heuristic <strong>nlist ≈ sqrt(N)</strong>. Follow the size dependence again: at N=100K the heuristic gives nlist=316, so ~316 vectors per cluster — but hold that same nlist at N=10M and each cluster balloons to ~31,600 vectors, making every searched cluster 100× more expensive <em>and</em> shrinking the fraction a fixed nprobe covers, so recall collapses and latency spikes. Same remedy: <strong>rebuild with nlist≈3,162 for the new scale, then tune nprobe</strong> to hit acceptable recall. The interactive lets you grow N and watch recall and latency move as you re-tune these knobs; then the closing scenario hands you a search that got 100× slower overnight — decide whether it's a reconfiguration or a migration before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Exact search is O(N·d) and doesn't scale.</strong> Comparing a query to all 10M vectors at d=1,536 is ~15B operations per query — fast at 100K, seconds at 10M.</li><li><strong>ANN indexes trade a little accuracy for orders-of-magnitude speed</strong> by restricting search to a relevant subspace rather than all N.</li><li><strong>HNSW navigates a multi-layer graph.</strong> M (connections per node, build time) and ef_search (candidates explored, query time) must scale with N — a fixed ef_search explores a subgraph 100× too small at 10M.</li><li><strong>IVF searches only the nearest clusters.</strong> With nlist≈sqrt(N), keeping nlist=316 at 10M leaves ~31,600 vectors per cluster — each cluster search is 100× more expensive.</li><li><strong>Parameters set for one scale degrade at another.</strong> A 100× dataset growth with no reconfiguration almost always explains 100× latency degradation.</li><li><strong>The fix is index reconfiguration, not migration.</strong> Rebuild HNSW with scaled M/ef_search, or IVF with nlist≈3,162 then tune nprobe for acceptable recall.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A vector database's query latency jumped from <strong>20ms to 2,000ms</strong> — a clean 100× — right after the index grew from <strong>100K to 10M vectors.</strong> No code changed. A colleague suspects index configuration; before anyone proposes a database migration, you want to reason it out. Take a moment: why would a 100× <em>data</em> increase, with no code change, produce a 100× <em>latency</em> increase? Here's the reasoning, step by step. The index's knobs were calibrated for 100K-vector scale and never rebuilt for 10M — and each design fails the same way. For <strong>HNSW</strong>, the same `ef_search=64` that once explored a sufficient slice of the graph now explores a subgraph <em>100× too small</em> relative to the whole, so the true nearest neighbor sits in a region the search never reaches and recall degrades; the fix is to rebuild with `M` and `ef_search` calibrated to 10M scale. For <strong>IVF</strong>, `nlist≈sqrt(N)` gave 316 clusters of ~316 vectors at 100K, but at 10M those same 316 clusters now hold ~31,600 vectors <em>each</em> — so every searched cluster is 100× more expensive and a fixed `nprobe=64` covers a far smaller fraction, collapsing recall and spiking latency; rebuild with `nlist≈3,162`, then tune `nprobe`. Both point to the same verdict: index reconfiguration, not database migration.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Vector index performance is parameter-dependent, not just database-dependent. HNSW M, ef_search, and IVF nlist, nprobe must all be calibrated to dataset scale. A 100× dataset growth with no index reconfiguration almost always explains 100× latency degradation — rebuild the index before considering a database migration.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

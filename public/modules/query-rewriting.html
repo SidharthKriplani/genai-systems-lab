@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Query Rewriting (HyDE, Step-Back, Expansion) | GenAI Systems Lab</title>
+  <meta name="description" content="Fix under-specified queries before retrieval runs.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/query-rewriting">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/query-rewriting">
+  <meta property="og:title" content="Query Rewriting (HyDE, Step-Back, Expansion) | GenAI Systems Lab">
+  <meta property="og:description" content="Fix under-specified queries before retrieval runs.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Query Rewriting (HyDE, Step-Back, Expansion)">
+  <meta name="twitter:description" content="Fix under-specified queries before retrieval runs.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Query Rewriting (HyDE, Step-Back, Expansion)","description":"Fix under-specified queries before retrieval runs.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/query-rewriting"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">RETRIEVAL</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Query Rewriting (HyDE, Step-Back, Expansion)</h1>
+    <p class="desc">Fix under-specified queries before retrieval runs.</p>
+
+    <section><h2>Start Here</h2><p>Think about how you actually talk to another person versus how you type into a search box. To a colleague you might just say 'refund?' and they know exactly what you mean, because they were in the room a second ago and they fill in everything you left out. A search box has no such memory and no such charity — it takes your three characters <em>literally</em> and hands back whatever happens to contain them.</p>
+<p>So there's a quiet mismatch at the heart of every search system: the words a person <em>types</em> are almost never the best words to actually <em>search with</em>. People are terse. People say 'it' and 'that' and trust you to know what they mean. People phrase things as questions ('how much is Pro?') even though the answer they want is written as a flat statement ('Pro is \$49/month'). The raw query is a lazy, human, context-leaning thing — and the retriever, faithfully, encodes exactly that laziness.</p>
+<p>Here's the reassuring idea we'll build toward: you don't have to make the retriever smarter to fix this. You can just <em>fix the query first</em> — quietly rewrite the sloppy thing the user typed into a clean, self-contained search key <em>before</em> it ever reaches the retriever. That family of before-the-search rewrites is what this module is about, and each technique you'll meet targets one specific way a raw query is a bad key.</p></section>
+    <section><h2>How It Works</h2><p>Start from the definition, because it names the whole idea: <strong>query rewriting</strong> is any transformation applied to the user's query to turn it into a better retrieval key <em>before</em> retrieval runs. That definition only earns its keep if the raw query is genuinely a poor key — so establish <em>why</em> it usually is, from first principles.</p>
+<p>Retrieval works by similarity: the embedder turns the query into a vector and pulls the documents whose vectors sit closest. This means the query vector <em>is</em> the search — whatever the query encodes is exactly what gets matched. <strong>But</strong> real user queries are under-specified, conversational, and context-dependent — a bare word, a dangling pronoun, a vague 'why isn't this working' — and the embedder has no charity: it faithfully encodes <em>exactly what was typed</em>, ambiguity and all. <strong>Therefore</strong> the retriever isn't broken when it fails on these; it's being handed a bad key and matching it honestly. <mark>The retriever isn't broken; it's being fed a bad search key. Query rewriting fixes the key before it reaches the retriever.</mark></p>
+<p>This reframing is what unlocks every technique below: instead of trying to make retrieval tolerate a bad key, spend a little compute up front <em>reshaping the query</em> to match how the answer is actually written in your corpus. Each of the four techniques you'll meet targets one specific way a raw query goes wrong.</p>
+<p><strong>Technique 1 — query expansion.</strong> The user's terse query is enriched with related terms, synonyms, or reformulations before retrieval, widening the net so relevant docs that use <em>different wording</em> still match. 'refund' might expand to 'refund policy, return, money back, cancellation, reimbursement.' This directly attacks vocabulary mismatch (the same weakness sparse retrieval suffers): the doc says 'reimbursement,' the user said 'refund,' and expansion bridges them. It raises <strong>recall</strong> at some risk to precision (a too-aggressive expansion drags in loosely-related noise).</p>
+<p><strong>Technique 2 — HyDE (Hypothetical Document Embeddings), and read this one carefully because the twist is counter-intuitive.</strong> The problem HyDE targets: a <em>question</em> and its <em>answer</em> often don't look alike in embedding space. 'How much does the Pro plan cost?' is phrased as a question; the document that answers it is phrased as a <em>statement</em> ('The Pro plan is \$49/month, billed annually...'). Question-shaped and answer-shaped text can sit surprisingly far apart. HyDE's move: <strong>ask an LLM to generate a <em>hypothetical answer</em> to the query — a fake, possibly-wrong document that just <em>looks like</em> what a real answer would look like — and then embed THAT hypothetical answer, not the original question, and use <em>its</em> vector to retrieve.</strong> <mark>The retrieval key is the embedding of a generated pseudo-answer, not of the user's question. You deliberately search with answer-shaped text because answer-shaped text is what's actually sitting in your corpus.</mark> It doesn't matter that the hypothetical answer might state the wrong price — its <em>shape and vocabulary</em> (talking about plans, pricing, billing) pull the genuinely-correct document close.</p>
+<div class="illustration"><div class="illustration-label">HyDE — embed the hypothetical ANSWER, not the question</div><pre>STANDARD:
+  user question ─► embed ─► retrieve
+    &quot;How much does the Pro plan cost?&quot;  (question-SHAPED vector)
+    ✗ real answer doc &quot;The Pro plan is $49/mo...&quot; is answer-SHAPED,
+      sits far from a question-shaped query → weak match
+
+HyDE:
+  1. LLM generates a HYPOTHETICAL answer (may be factually wrong):
+       &quot;The Pro plan costs $30 per month and includes priority support
+        and advanced analytics, billed annually...&quot;   ← fake, but
+                                                          ANSWER-shaped
+  2. embed the HYPOTHETICAL ANSWER  (not the question)
+  3. retrieve with THAT vector
+     ✓ now the query key looks like a real pricing doc → strong match
+       (the wrong &quot;$30&quot; doesn't matter — shape &amp; vocabulary do the work)
+
+  Key idea: search your corpus with answer-shaped text, because
+            answer-shaped text is what your corpus is made of.</pre></div>
+<p><strong>Technique 3 — step-back prompting.</strong> For a narrow, specific question, first ask the LLM to <em>step back</em> to a more general question, retrieve on <em>that</em>, and use the broader context to ground the specific answer. 'Which specific court handled the 2019 Acme antitrust appeal?' steps back to 'What is the appeals process for antitrust cases?' — retrieving the general principles that frame and support the specific lookup. <mark>Step-back trades a needle-in-haystack specific query for a broader query that reliably retrieves the <em>governing context</em>, then answers the specific question against it.</mark></p>
+<p><strong>Technique 4 — conversational query rewriting, which is the fix for your `it`/`that` problem.</strong> In multi-turn chat, a follow-up is meaningless in isolation: 'does <em>it</em> include SSO' has no retrievable content until 'it' is resolved to 'the Pro plan' using the conversation history. The technique: before retrieving a follow-up, run an LLM pass that <strong>rewrites the query into a standalone, self-contained form</strong> by resolving pronouns and re-inserting the dropped context from prior turns — 'does <em>it</em> include SSO' → 'Does the <strong>Pro plan</strong> include SSO?' Now the retriever gets a query that actually names what it's about. <mark>This is why your bot failed the SSO follow-up: it embedded 'does it include SSO' literally, with no mechanism to carry 'Pro plan' forward. Conversational rewriting is that mechanism — it de-references the conversation into a self-contained query.</mark></p>
+<div class="illustration"><div class="illustration-label">The four techniques, mapped to the failure they fix</div><pre>TECHNIQUE            WHAT IT DOES                       FIXES
+─────────────────────────────────────────────────────────────────
+query expansion      add synonyms/related terms         vocabulary
+                     (&quot;refund&quot;→ +return +reimbursement)  mismatch, thin
+                                                          queries → recall↑
+HyDE                 LLM writes a hypothetical ANSWER,   question≠answer
+                     embed THAT (not the question)        shape gap
+step-back            generalize the query, retrieve      too-narrow /
+                     governing context, then answer       needle queries
+conversational       resolve &quot;it&quot;/&quot;that&quot; from history    multi-turn
+rewrite              into a standalone query              follow-ups
+
+  &quot;does it include SSO&quot;  ──rewrite──►  &quot;does the Pro plan include SSO&quot;
+       (unretrievable)                   (self-contained, retrievable)</pre></div>
+<p><strong>The universal tradeoff — and the reason you don't just turn all of this on everywhere.</strong> Every one of these techniques inserts an <strong>extra LLM call <em>before</em> retrieval</strong> (HyDE generates a document; conversational rewrite resolves references; step-back generalizes). That call costs <strong>latency and money on the critical path of every query</strong>, <em>before</em> the user has seen a single token of the answer. So the real question is always: does the <strong>recall/quality gain justify the added latency</strong>? <mark>On clean, well-specified queries, rewriting can be pure overhead — even mild harm if an over-eager expansion adds noise or HyDE hallucinates in an unhelpful direction. On conversational, terse, or ambiguous queries, it's often the difference between a useful answer and a useless one.</mark> The mature pattern is <em>selective</em>: cheap, always-on rewrites (conversational de-referencing in a chat product is nearly mandatory), and gate the expensive ones (HyDE, step-back) behind a signal that the query needs them — short queries, low first-pass retrieval confidence, or detected ambiguity. Rewrite when the query is a bad key; skip it when the query is already good.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Query rewriting reshapes the user's query into a better retrieval key <em>before</em> retrieval runs.</strong> Real queries are under-specified, conversational, and context-dependent; the embedder faithfully encodes the ambiguity, so the retriever gets a bad key. Rewriting fixes the key, not the retriever.</li><li><strong>Query expansion</strong> adds synonyms/related terms ('refund' → +return +reimbursement +cancellation) to bridge vocabulary mismatch and raise recall — at some precision risk if over-aggressive.</li><li><strong>HyDE embeds a hypothetical <em>answer</em>, not the question.</strong> An LLM writes a fake, possibly-wrong answer-shaped document; you embed THAT and retrieve with its vector — because questions and answers sit far apart in embedding space, and answer-shaped text matches the answer-shaped docs in your corpus. The wrong facts don't matter; the shape/vocabulary does.</li><li><strong>Step-back</strong> generalizes a narrow query, retrieves the governing context, then answers the specific question against it. <strong>Conversational rewriting</strong> resolves 'it'/'that' from chat history into a standalone query ('does it include SSO' → 'does the Pro plan include SSO') — the fix for dangling-pronoun follow-ups.</li><li><strong>Universal tradeoff: every technique adds an LLM call before retrieval</strong> (latency + cost on the critical path, before the user sees any answer). Worth it on terse/ambiguous/conversational queries, pure overhead (or mild harm) on clean ones. Be selective: always-on cheap conversational rewrite; gate HyDE/step-back behind ambiguity/low-confidence signals.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put this to work on a real one. Your RAG support bot is fine on clean, well-formed questions typed into a search box, but in the live <em>chat</em> product it's mediocre. A user asks 'How much does the Pro plan cost?' and the bot answers well. Then the same user follows up: 'And does <em>it</em> include SSO?' — the bot embeds 'does it include SSO,' retrieves generic SSO-setup chunks, and never connects 'it' to the Pro plan. Take a moment before reading on: given everything above, what does that failure tell you? Here's the reasoning, step by step. The bot aced the first question because it was already a good search key, and fumbled the second because 'it' is <em>unretrievable</em> — its meaning lives in the previous turn, not in the words typed, and the embedder faithfully encoded the emptiness. That's the signature of a raw query being handed to the retriever with no before-the-search rewrite. Notice how cleanly the fix falls out once you name it: you don't need a better retriever, you need a conversational rewrite pass that resolves 'it' → 'the Pro plan' <em>before</em> embedding, turning the dangling follow-up into a standalone, retrievable query.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Query rewriting reshapes an under-specified, conversational user query into a better retrieval key before retrieval runs: expansion adds synonyms to bridge vocabulary mismatch, HyDE embeds an LLM-generated hypothetical <em>answer</em> (answer-shaped text matches answer-shaped docs, even if the facts are wrong), step-back generalizes to retrieve governing context, and conversational rewriting resolves 'it'/'that' from history into a standalone query. Every technique adds an LLM call before retrieval, so apply it selectively — near-mandatory for chat follow-ups, but pure overhead on already-clean queries.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Latency Budget Planner | GenAI Systems Lab</title>
+  <meta name="description" content="Allocate a latency budget across the pipeline; meet your SLA.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/latency-planner">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/latency-planner">
+  <meta property="og:title" content="Latency Budget Planner | GenAI Systems Lab">
+  <meta property="og:description" content="Allocate a latency budget across the pipeline; meet your SLA.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Latency Budget Planner">
+  <meta name="twitter:description" content="Allocate a latency budget across the pipeline; meet your SLA.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Latency Budget Planner","description":"Allocate a latency budget across the pipeline; meet your SLA.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/latency-planner"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">BUDGET</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Latency Budget Planner</h1>
+    <p class="desc">Allocate a latency budget across the pipeline; meet your SLA.</p>
+
+    
+    <section><h2>How It Works</h2><p>Carry over the equation from cost-and-latency: <strong>total latency = TTFT + (output_tokens × TPOT)</strong>. Now let the measurements make it concrete. At the median, p50 is 2.8s and retrieval eats 300ms, so the LLM contributes ~2.5s. At p95, total is 5.4s and retrieval is still ~300ms, so the LLM contributes ~5.1s — <em>more than double</em> its own median.</p>
+<p>That doubling is the whole diagnostic, so linger on it. If longer generation were the culprit, p95 would rise only as much as output length rises at the tail — and output doesn't magically double for the 95th-percentile user. <mark>When the LLM's own latency more than doubles but output length doesn't, the extra time isn't generation — it's queuing and throttling on shared infrastructure.</mark></p>
+<p>Now the levers, ordered by how much they typically move the needle. <strong>First, reduce output length</strong> — and check this <em>before</em> anything fancier, because it's the one people skip. If your model writes 300-word essays where an 80-word answer would do, an explicit concision instruction roughly halves the `output_tokens × TPOT` term with zero model change. Pull `TPOT × token_count` from your inference logs and look; it's the most commonly overlooked win sitting in plain sight.</p>
+<p><strong>Second, streaming</strong> — and here's the reframe that changes everything. A 5.4s response that <em>starts</em> rendering in 400ms doesn't feel like a 5.4s wait; it feels like a responsive tool that's actively working. The wall-clock latency is identical. What changed is that TTFT — not total time — became the number the user experiences. <mark>Streaming is almost always the highest-leverage improvement to <em>perceived</em> latency you can make without touching the model.</mark></p>
+<p><strong>Third, reduce input length.</strong> Fewer prompt tokens means a lower TTFT. Trim the system prompt, cut retrieved context from 10 chunks down to 3, and cache the stable system-prompt prefix so you're not re-paying for it every call. <strong>Fourth, reach for a smaller or faster model.</strong> A model that's 3× cheaper is often 2–3× faster on the same hardware tier, and document Q&amp;A rarely needs frontier-level capability — this is a lever you can pull with a clear conscience once the cheaper ones are exhausted.</p>
+<div class="illustration"><div class="illustration-label">Where the latency budget goes — and which lever touches it</div><pre>p50 = 2.8s → LLM ~2.5s   (retrieval ~0.3s)
+p95 = 5.4s → LLM ~5.1s   ← &gt;2× the median LLM time, output NOT doubled
+p99 = 8.2s → LLM ~7.9s   ← another 2.8s jump beyond p95
+
+DIAGNOSIS
+  p50→p95 gap : shared-infra queuing / throttling   (not generation time)
+  p95→p99 gap : infra EVENTS — cold starts, queue spikes, rate throttling
+
+LEVERS (by leverage)
+  1. shorter output      → cuts (output × TPOT)     app-layer, free
+  2. streaming           → TTFT becomes felt time   app-layer, huge on perceived
+  3. shorter input       → lowers TTFT              app-layer
+  4. smaller/faster model→ lowers TPOT &amp; TTFT       swap, mild capability cost
+
+  p99 (8.2s)             → provisioned throughput endpoint  (infra change only)</pre></div>
+<p>Finally, treat p99 as a <em>different animal</em> from p95. The 3.3s gap between p95 (5.4s) and p99 (8.2s) is not longer generation and not bigger prompts — it's infrastructure events: cold starts on serverless endpoints, shared-resource queue spikes, token-rate throttling. No amount of application-layer cleverness reaches these. The mitigations live one layer down: provision a <strong>dedicated throughput endpoint</strong> so you're not sharing a public queue; set a <strong>timeout-plus-retry</strong> that falls back to a smaller model past 4s (3s beats 8s for Q&amp;A every time); or push the slowest requests to <strong>async with a callback</strong> so they leave the perceived-latency bucket entirely. <mark>Getting p95 to ≤3s is a streaming-plus-shorter-output job; getting p99 down is a serving-infrastructure job. Don't confuse the two.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Decompose the budget first:</strong> total = retrieval + TTFT + (output × TPOT). Subtracting the ~300ms retrieval shows the LLM owns ~2.5s at p50 and ~5.1s at p95.</li><li><strong>A &gt;2× jump in LLM latency with unchanged output length = queuing/throttling, not generation.</strong> That's the diagnostic that tells you where the time actually went.</li><li><strong>Cheapest lever first — output length.</strong> A concision instruction roughly halves the (output × TPOT) term with no model change; it's the most overlooked win.</li><li><strong>Streaming attacks <em>perceived</em> latency:</strong> a 5.4s response that starts in 400ms feels fast because the user experiences TTFT, not wall-clock total. Highest-leverage UX fix without a model swap.</li><li><strong>Then shorter input (lowers TTFT) and a smaller/faster model (2–3× faster, mild capability cost)</strong> — Q&amp;A rarely needs a frontier model.</li><li><strong>p99 is a different failure mode:</strong> cold starts, queue spikes, and throttling are infra events no app-layer change fixes. Use provisioned throughput, timeout-plus-retry, or async callbacks.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You own a document Q&amp;A tool with a hard promise: respond in under 3 seconds. The reality on your dashboard is less kind — p50 is 2.8s, p95 is 5.4s, p99 is 8.2s. Retrieval accounts for about 300ms of that; the LLM call is the rest. The target handed to you is p95 ≤ 3s. Before you touch a single knob, you want to know exactly which levers exist and, more importantly, what each one actually moves — because tuning the wrong one is how a week disappears with the p95 unchanged.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Decompose the budget (retrieval + TTFT + output×TPOT) before tuning, and read the tail: an LLM-latency jump without an output-length jump means queuing, not generation. Optimize perceived latency first — streaming makes a 5.4s response feel fast by exposing TTFT instead of wall-clock time — then cut output and input length before swapping models. And keep p95 and p99 separate: p95≤3s is an app-layer job; p99 requires a serving-infrastructure change no application tweak can deliver.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planning Patterns | GenAI Systems Lab</title>
+  <meta name="description" content="ToT, GoT, LATS — structured search over an agent's actions.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-planning-patterns">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-planning-patterns">
+  <meta property="og:title" content="Planning Patterns | GenAI Systems Lab">
+  <meta property="og:description" content="ToT, GoT, LATS — structured search over an agent's actions.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Planning Patterns">
+  <meta name="twitter:description" content="ToT, GoT, LATS — structured search over an agent's actions.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Planning Patterns","description":"ToT, GoT, LATS — structured search over an agent's actions.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-planning-patterns"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Planning Patterns</h1>
+    <p class="desc">ToT, GoT, LATS — structured search over an agent's actions.</p>
+
+    <section><h2>Start Here</h2><p>Give a model a hard, multi-step task and it faces a choice you make yourself every day without noticing: how much should I <em>think</em> before I act? Blurt out the first move and you're fast but you might charge down a dead end. Sit and deliberate over every branch and you're careful but slow — and sometimes the deliberation costs more than the mistake would have. There's no free lunch here, only a dial.</p>
+<p>That dial is what 'planning patterns' are really about. They're not a menu of clever tricks to show off; they're settings on a single knob labelled <em>how much deliberation does this task actually warrant?</em> Turn it too low and the agent commits to a wrong path and rationalizes its way down it. Turn it too high and you pay double, triple, sometimes tenfold in tokens and latency for a task that never needed it. Both directions have a real, measurable cost.</p>
+<p>So the skill this module builds is not 'know the fanciest method' — it's <em>calibration</em>. We'll lay the patterns out as a cost ladder, cheapest first, and for each rung answer two questions plainly: what capability does it buy, and what multiplier does it cost? Then you'll always start at the bottom and only climb when you have <em>evidence</em> the cheaper rung genuinely wasn't enough. Sophistication, you'll see, is a cost to justify — never a virtue to display.</p></section>
+    <section><h2>How It Works</h2><p>Begin from what planning even <em>is</em>: it is simply <em>how much an agent thinks before it acts</em> — the amount of deliberation spent choosing a move relative to just making one. <strong>Because</strong> that deliberation is not free — every extra reasoning pass costs tokens and latency — planning is fundamentally an economic choice, not a quality knob you turn to maximum. <strong>This means</strong> the core discipline is calibration: <mark>start with the cheapest pattern that works and upgrade only when you have evidence the cheaper one is genuinely insufficient.</mark> In interviews the temptation is to reach for the most sophisticated-sounding method; the staff-level answer reaches for the <em>right</em> one and can price the difference. <strong>So</strong> it helps to lay the main patterns out as a cost ladder — Chain-of-Thought, Reflection, Tree-of-Thought — where each rung buys a specific capability at a specific multiplier, and you climb only when forced.</p>
+<p><strong>Chain-of-Thought (CoT)</strong> is your default: a single linear reasoning trace, 'step 1 → step 2 → step 3 → answer,' written before the model commits. It dramatically improves accuracy on multi-step problems, makes reasoning <em>auditable</em> (you can find exactly where it went wrong), and costs essentially nothing — it's prompt engineering only. Its weakness is structural: <mark>it's linear, so it can't backtrack.</mark> The model can commit to a wrong path early and then rationalize its way forward — which is precisely the scenario's nine-wasted-steps failure.</p>
+<p>There's a deeper axis the two families sit on: <strong>plan-then-execute vs. ReAct.</strong> Plan-then-execute writes the whole plan up front, then executes it — cheap, predictable, and interpretable, but brittle when reality diverges from the plan (a tool returns something the plan didn't anticipate). <strong>ReAct</strong> interleaves reasoning and acting (`Thought → Action → Observation → Thought → ...`), so the agent <em>replans</em> on every observation — adaptive and robust to surprises, but prone to drifting or looping without a step budget. Most production agents are ReAct-flavored precisely because tool outputs are unpredictable; the discipline is bounding the loop so adaptivity doesn't become wandering.</p>
+<div class="illustration"><div class="illustration-label">The planning cost ladder — capability bought per multiplier</div><pre>PATTERN            SHAPE                                   COST        BUYS YOU                         UPGRADE WHEN
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Chain-of-Thought   step1 → step2 → step3 → answer          ~1× (prompt) auditable linear reasoning       DEFAULT — start here
+Reflection         draft → critique(&quot;what's wrong?&quot;) →      ~2×          catches first-pass errors        accuracy &gt; speed on high-stakes
+                   revise  [optionally repeat]                           (code, facts, compliance)        outputs, budget for a 2nd pass
+Tree-of-Thought    root → [A | B | C] → eval → keep best →   O(branches   backtracking, explores paths     CoT provably insufficient AND
+                   expand → ...                              × depth)     when early choices can be wrong  the task tolerates the latency
+
+DECOMPOSITION (orthogonal): break the goal into sub-goals first, solve each — helps ALL three.
+REPLANNING (ReAct):        re-derive the plan on each new observation — robustness vs. plan-then-execute.
+
+Rule: upgrade the ladder only on EVIDENCE the cheaper rung is insufficient. ToT at scale multiplies
+inference cost by the branching factor; Reflection doubles it. Sophistication is a cost, not a virtue.</pre></div>
+<p><strong>Reflection / self-critique</strong> is the middle rung: generate a draft, then critique it ('what's wrong with this?') and revise — one or more passes. It reliably catches obvious first-pass errors in code, arguments, and factual claims, and it's simple (one extra prompt step). The costs: it <mark>roughly doubles token cost and latency,</mark> and it has a real failure mode — the model can be blind to its own <em>systematic</em> biases, and self-critique sometimes turns sycophantic ('this is fine, actually'). Use it when accuracy outranks speed: code review, fact-checking, compliance outputs.</p>
+<p><strong>Tree-of-Thought (ToT)</strong> is the top rung and the deliberate-search pattern: the model explores multiple reasoning branches, <em>evaluates</em> which are most promising at each step, keeps the best, and expands — with the ability to backtrack from dead ends. This is what directly fixes the scenario's early-commitment problem, because ToT can abandon a bad first move instead of rationalizing it. The cost is steep and non-linear: <mark>O(branches × depth) completions,</mark> many generations plus evaluations per answer, and real implementation complexity (beam search / BFS/DFS logic). Reserve it for strategic planning and complex search where CoT accuracy is <em>demonstrably</em> insufficient and you have the latency budget.</p>
+<p>One orthogonal tool cuts across all three: <strong>decomposition</strong> — breaking the goal into sub-goals before solving, whether via a checklist the agent ticks off or an explicit sub-task tree. Decomposition makes long tasks tractable and legible regardless of which reasoning pattern you run inside each sub-goal, and it's the cheapest reliability win in planning. It's also what makes <em>replanning</em> meaningful: an agent that decomposed the task can notice a sub-goal became infeasible and re-derive just that branch.</p>
+<p>The interview-grade close: name the default (CoT), name the axis (plan-then-execute for predictable pipelines, ReAct for unpredictable tool outputs), and gate every upgrade on evidence. <mark>Tree-of-Thought multiplies inference cost by the branching factor; Reflection doubles it — sophistication is a cost you must justify, not a virtue you display.</mark> A candidate who defaults to ToT 'because it's more powerful' has failed the calibration; a candidate who defaults to CoT and can articulate the exact conditions that warrant climbing the ladder has passed.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Calibration is the whole skill:</strong> start with the cheapest pattern that works, upgrade only on evidence the cheaper rung is insufficient. Sophistication is a cost (ToT multiplies by branching factor, Reflection doubles), not a virtue.</li><li><strong>Chain-of-Thought is the default</strong> — linear step-by-step trace, ~free (prompt only), auditable. Weakness: linear, can't backtrack, so it rationalizes down an early wrong path.</li><li><strong>Plan-then-execute vs. ReAct</strong> is the core axis: plan up-front (cheap, predictable, brittle to surprises) vs. interleave Thought→Action→Observation and replan each step (adaptive, robust, but needs a step budget or it wanders). Most production agents are ReAct-flavored.</li><li><strong>Reflection / self-critique</strong> (~2×): draft → critique → revise. Catches first-pass errors in code/facts/compliance, but is blind to systematic bias and can turn sycophantic. Use when accuracy &gt; speed.</li><li><strong>Tree-of-Thought</strong> (O(branches × depth)): explores and evaluates multiple branches with backtracking — fixes early-commitment, but steep cost and real implementation complexity. Reserve for when CoT is <em>demonstrably</em> insufficient and latency budget exists.</li><li><strong>Decomposition is the orthogonal cheap win:</strong> break the goal into sub-goals (checklist or tree) before solving — makes long tasks tractable and legible under any pattern, and makes targeted replanning possible.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your agent solves multi-step tickets by acting immediately — call a tool, see the result, call the next — and it works fine until it hits a ticket where the <em>first</em> tool call was the wrong move, and it spends nine steps rationalizing its way down that wrong path. A colleague, fresh off a Tree-of-Thought paper, wants to branch-explore every step. Take a moment before reading on: what exactly failed, what's the minimal pattern that fixes it, and what would the colleague's instinct cost? Here's the reasoning, step by step. The failure is the structural weakness of linear reasoning — a Chain-of-Thought trace can't backtrack, so an early wrong commitment gets rationalized instead of abandoned. The pattern that <em>directly</em> addresses that is <strong>Tree-of-Thought</strong>, which branches, evaluates candidates, keeps the best, and backtracks from dead ends — so the colleague's instinct is aimed at the right target. But notice the catch, which is the whole calibration point: ToT costs O(branches × depth) completions and real implementation complexity, so branch-exploring <em>every</em> step is massive overkill. The disciplined move is to confirm the cheaper rungs are genuinely insufficient on <em>this</em> class of ticket first, and reserve ToT for exactly the early-commitment cases where CoT demonstrably fails and the latency budget exists.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Planning is a calibration problem: default to Chain-of-Thought (linear, auditable, ~free), choose ReAct over plan-then-execute when tool outputs are unpredictable (with a step budget to bound wandering), decompose into sub-goals as the cheap universal win, and climb to Reflection (~2×) or Tree-of-Thought (O(branches × depth)) only on evidence the cheaper rung is insufficient — sophistication is a cost to justify, not a virtue to display.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serving Stacks: vLLM, TensorRT-LLM, Triton | GenAI Systems Lab</title>
+  <meta name="description" content="Ease vs latency vs orchestration, plus tensor/pipeline parallelism.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/infra-serving-stacks">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/infra-serving-stacks">
+  <meta property="og:title" content="Serving Stacks: vLLM, TensorRT-LLM, Triton | GenAI Systems Lab">
+  <meta property="og:description" content="Ease vs latency vs orchestration, plus tensor/pipeline parallelism.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Serving Stacks: vLLM, TensorRT-LLM, Triton">
+  <meta name="twitter:description" content="Ease vs latency vs orchestration, plus tensor/pipeline parallelism.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Serving Stacks: vLLM, TensorRT-LLM, Triton","description":"Ease vs latency vs orchestration, plus tensor/pipeline parallelism.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/infra-serving-stacks"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">INFERENCE</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Serving Stacks: vLLM, TensorRT-LLM, Triton</h1>
+    <p class="desc">Ease vs latency vs orchestration, plus tensor/pipeline parallelism.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a constraint you can't argue your way out of. Some models are simply too big for a single GPU — a 70B model at fp16 is 140GB of weights, and the biggest single card holds 80GB. So before you pick any fancy serving software, you face a more basic question: <em>how do you split one model across several GPUs?</em> Everything else in this module is downstream of that answer.</p>
+<p>And it turns out there isn't one way to split — there are three, and they trade off against each other. You can slice each layer's matrices across GPUs, or hand different layers to different GPUs, or (for Mixture-of-Experts) scatter the experts around. Each choice buys you something and costs you something: latency, communication, the ability to scale across machines. Getting this right is most of what separates a real answer from &quot;just use vLLM.&quot;</p>
+<p>We'll build it from the ground up: first the three ways to split a model and when each wins, then what actually distinguishes the serving stacks (it's kernels and operational cost, not features), then the handful of kernel tricks that explain where latency really comes from, and finally the infrastructure realities — cold starts, autoscaling, build-vs-buy — that decide whether the thing survives contact with 500 concurrent users. Take your time; by the end you'll be able to defend a whole serving architecture on a whiteboard, mechanics and all.</p></section>
+    <section><h2>How It Works</h2><p>First, the model doesn't fit on one card, so the foundational decision is <strong>parallelism</strong> — <em>how</em> you split a 70B model across GPUs. There are three axes and they compose.</p>
+<p><strong>Tensor parallelism (TP):</strong> split each layer's weight matrices <em>across</em> GPUs — every GPU holds a slice of every layer and they collaborate on each matmul. This is the go-to for fitting a model that's too big for one card and for cutting latency, because all GPUs work on the <em>same</em> token simultaneously. The cost: an <strong>all-reduce communication</strong> across GPUs on every layer, so TP wants fast interconnect (NVLink) and usually stays within one node (TP=8 across 8 GPUs). <mark>TP reduces latency but is communication-heavy — it lives inside a node.</mark></p>
+<p><strong>Pipeline parallelism (PP):</strong> split the model's <em>layers</em> across GPUs — GPU0 holds layers 1–20, GPU1 holds 21–40, etc. A token flows through the pipeline stage by stage. Communication is cheap (just hand off activations between stages), so PP scales <em>across</em> nodes — but naively it creates a 'pipeline bubble' (idle stages) unless you keep many microbatches in flight. <mark>PP scales across nodes cheaply but adds pipeline latency.</mark></p>
+<p><strong>Expert parallelism (EP)</strong> is the third axis, for <strong>Mixture-of-Experts</strong> models (covered conceptually in the foundations MoE module): distribute the experts across GPUs, and route each token to its selected experts, which may live on other GPUs — an all-to-all communication. It's how you serve a model with a huge total parameter count but a small <em>active</em> count per token.</p>
+<p>The practical recipe for a 70B dense model: <mark>use <strong>tensor parallelism within a node</strong> (TP=8 on 8×A100) to fit it and get low latency; add <strong>pipeline parallelism across nodes</strong> only when the model or context is too big for a single node's aggregate memory.</mark> For the scenario, one 8×A100 node with TP=8 (or TP=4 on 4×H100) comfortably holds a 70B model at fp16/fp8 with room for KV cache, and the tight inter-token SLA favors TP's same-token parallelism over PP's cross-stage handoffs.</p>
+<div class="illustration"><div class="illustration-label">Tensor vs pipeline vs expert parallelism</div><pre>A 70B model, 80 layers, split across GPUs three different ways:
+
+TENSOR PARALLELISM (TP=4): split each layer's matrices across 4 GPUs
+  layer L weights  →  [G0 slice][G1 slice][G2 slice][G3 slice]
+  all 4 GPUs work the SAME token together; all-reduce EVERY layer
+  → best for latency + fitting big models; needs NVLink; stays in-node.
+
+PIPELINE PARALLELISM (PP=4): split the 80 LAYERS across 4 GPUs
+  G0: layers 1-20 → G1: 21-40 → G2: 41-60 → G3: 61-80
+  token flows stage→stage; cheap comms → scales ACROSS nodes
+  → risk: pipeline 'bubble' (idle stages) without enough microbatches.
+
+EXPERT PARALLELISM (EP): for MoE — spread experts across GPUs
+  token routed to its top-k experts (may be on other GPUs); all-to-all comm
+  → serves huge total params with small ACTIVE params per token.
+
+Real 70B recipe: TP within a node (fit + latency), PP across nodes only if needed.</pre></div>
+<p>With the model placed, the <strong>stack choice</strong> is really a choice about <em>kernels and operational cost.</em> All three stacks do continuous batching and PagedAttention-style KV management now; they differ in how hard they push the GPU and how much work they demand of you.</p>
+<p><strong>vLLM:</strong> the pragmatic default. It originated PagedAttention, has excellent continuous batching, wide model coverage, and is easy to stand up. Throughput is excellent; latency is very good but not absolute-best. <mark>Low operational cost — you're serving in an afternoon.</mark></p>
+<p><strong>TensorRT-LLM:</strong> NVIDIA's stack that <strong>compiles</strong> the model into a fused, hardware-specific engine ahead of time. It squeezes the lowest latency of the three by aggressively fusing kernels, using CUDA graphs, and exploiting FP8 on Hopper — but you pay for it: you build an engine per model/precision/GPU/batch-shape, tuning is finicky, and iteration is slow. <mark>Highest performance, highest operational cost.</mark></p>
+<p><strong>Triton Inference Server:</strong> not primarily an LLM kernel engine but an <strong>orchestration layer</strong> — it serves many models (often <em>with</em> a TensorRT-LLM or vLLM backend), handles dynamic batching, versioning, multi-model routing, and ensembles. <mark>You reach for Triton when you're running a fleet of models, not tuning one.</mark></p>
+<p>The kernel-level tricks are <em>why</em> TensorRT-LLM can win on latency, and they're worth naming because they apply everywhere.</p>
+<p><strong>FlashAttention</strong> is the biggest one and it's an <strong>IO-awareness</strong> result, not a math change. Standard attention materializes the full N×N attention-score matrix in HBM — for long sequences that's huge memory traffic, and attention is memory-bound. FlashAttention computes attention in <strong>tiles that stay in fast on-chip SRAM</strong>, never writing the giant score matrix to HBM (it uses an online-softmax trick to accumulate without storing all scores). <mark>Same output, far fewer HBM reads/writes → big speedup and much lower memory, especially at long context.</mark></p>
+<p><strong>Kernel fusion</strong> merges many small ops (e.g. a matmul + bias + activation, or the whole attention block) into one GPU kernel, so intermediate results stay in registers/SRAM instead of round-tripping through HBM — again attacking memory traffic, the real bottleneck. <strong>CUDA graphs</strong> capture a whole repeated decode step as one launchable graph, eliminating per-op CPU launch overhead that otherwise dominates when each op is tiny (which it is in decode). All three exist because decode is memory-and-launch-bound, so cutting HBM traffic and launch overhead is where the latency lives.</p>
+<p>Finally, wrap the stack in the <strong>serving-infra decisions</strong> that determine cost and reliability at 500 concurrent users.</p>
+<p><strong>Autoscaling</strong> is hard for LLMs because of <strong>cold starts</strong>: spinning up a new replica means pulling tens of GB of weights and loading them onto the GPU — tens of seconds to minutes. <mark>So you scale on a leading signal (queue depth / tokens-in-flight, not CPU) and keep warm replicas or a warm pool, because reactive scaling arrives too late for a traffic spike.</mark> You also right-size GPUs to the SLA (H100 for tight latency, A100/L40S for cost), and separate prefill-heavy from decode-heavy traffic when it pays (disaggregated serving splits prefill and decode onto different GPU pools so a burst of long prompts doesn't wreck decode latency).</p>
+<p>And the honest top-level decision — <strong>build vs buy</strong> — belongs to the Production track: a managed API removes all of this operational surface (parallelism, engine builds, autoscaling, cold starts) at a per-token premium; self-hosting wins on cost at high, steady volume, on data control, and when you need a model or configuration no API offers. <mark>Stack selection is an SLA + hardware + team-capability decision, not a 'which is best' decision.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Parallelism has three composable axes.</strong> Tensor parallelism splits each layer's matrices across GPUs (low latency, all-reduce every layer, stays in-node); pipeline parallelism splits layers across GPUs (cheap comms, scales across nodes, risks pipeline bubbles); expert parallelism distributes MoE experts (all-to-all routing).</li><li><strong>The 70B recipe: TP within a node, PP across nodes only if needed.</strong> TP=8 on an 8×A100 node fits a 70B model and gives low inter-token latency because all GPUs work the same token; add PP across nodes only when one node's memory is insufficient.</li><li><strong>Stack choice is about kernels and operational cost, not features.</strong> vLLM = easy, high-throughput default (low ops cost); TensorRT-LLM = compiled fused engine, lowest latency, highest ops cost (per-model engine builds); Triton = multi-model orchestration layer, often fronting a vLLM/TRT-LLM backend.</li><li><strong>Kernel wins are IO-awareness wins.</strong> FlashAttention tiles attention in on-chip SRAM and never writes the N×N score matrix to HBM (same output, far less memory traffic); kernel fusion keeps intermediates off HBM; CUDA graphs remove per-op launch overhead — all attacking decode's memory/launch bottleneck.</li><li><strong>LLM autoscaling is dominated by cold starts.</strong> Loading tens of GB of weights takes tens of seconds, so scale on a leading signal (queue depth/tokens-in-flight) and keep warm replicas; reactive CPU-based scaling arrives too late. Disaggregating prefill and decode protects tail latency under bursty prompts.</li><li><strong>Stack selection is SLA + hardware + team, and build-vs-buy is upstream.</strong> A managed API removes parallelism/engine/autoscaling/cold-start surface at a per-token premium; self-hosting wins on high steady volume, data control, and unavailable configurations (see the Production track).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You must self-host a Llama-3 70B model behind a strict SLA: p99 TTFT under 400ms, p99 inter-token latency under 50ms, at 500 concurrent users. It won't fit on one 80GB GPU at fp16 (140GB of weights). Take a moment before reading on: given what we built, how do you place the model, choose a stack, and defend where the latency comes from? Here's the reasoning, step by step. The model doesn't fit on one card, so parallelism comes first — and because the SLA is tight on inter-token latency, tensor parallelism (TP=8 on an 8×A100 node) is the call: it shards each layer's matrices so the model fits <em>and</em> all 8 GPUs work the same token together, with the per-layer all-reduce cheap over in-node NVLink; you'd add pipeline parallelism across nodes only if one node's memory couldn't hold it. Then the stack choice is really about kernels and ops cost, not features: vLLM if you want the pragmatic high-throughput default, TensorRT-LLM if you need the lowest latency from a compiled fused engine (and can pay the per-model engine-build tax), Triton if you're orchestrating a fleet. The latency itself lives in HBM traffic and launch overhead — which is why FlashAttention, kernel fusion, and CUDA graphs matter. Finally, wrap it in leading-signal autoscaling with warm replicas, because cold starts load tens of GB of weights and reactive scaling arrives too late.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Serving a model too big for one GPU is first a parallelism decision: tensor parallelism (split matrices in a layer, low latency, all-reduce per layer, in-node) fits a 70B model and hits tight inter-token SLAs, with pipeline parallelism added across nodes only when memory demands and expert parallelism reserved for MoE. The stack choice — vLLM (easy, high-throughput default) vs TensorRT-LLM (compiled fused engine, lowest latency, high ops cost) vs Triton (multi-model orchestration) — is really about kernels and operational cost; FlashAttention, fusion, and CUDA graphs win by cutting HBM traffic and launch overhead, the true decode bottleneck. Wrap it in leading-signal autoscaling with warm replicas (because cold starts load tens of GB) and treat build-vs-buy as an SLA + hardware + team decision, not a 'which is best' one.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fine-tuning vs RAG vs Prompting: The Decision Framework | GenAI Systems Lab</title>
+  <meta name="description" content="Three tools that are not interchangeable — map the failure mode to the fix.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/finetuning-vs-rag">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/finetuning-vs-rag">
+  <meta property="og:title" content="Fine-tuning vs RAG vs Prompting: The Decision Framework | GenAI Systems Lab">
+  <meta property="og:description" content="Three tools that are not interchangeable — map the failure mode to the fix.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Fine-tuning vs RAG vs Prompting: The Decision Framework">
+  <meta name="twitter:description" content="Three tools that are not interchangeable — map the failure mode to the fix.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Fine-tuning vs RAG vs Prompting: The Decision Framework","description":"Three tools that are not interchangeable — map the failure mode to the fix.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/finetuning-vs-rag"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">DECISION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Fine-tuning vs RAG vs Prompting: The Decision Framework</h1>
+    <p class="desc">Three tools that are not interchangeable — map the failure mode to the fix.</p>
+
+    <section><h2>Start Here</h2><p>Let's start by separating two things that get tangled together constantly. Imagine a new support agent who is a wonderful communicator but has never read your product docs. Now imagine a second agent who has memorized every doc but answers in a cold, robotic, off-brand way. These are <em>two completely different problems</em> — one is missing <em>knowledge</em>, the other is missing the right <em>behavior</em> — and they need two completely different fixes.</p>
+<p>Here's the whole idea of this module in one line: <strong>RAG fixes the knowledge problem; fine-tuning fixes the behavior problem.</strong> RAG hands the model the right documents at answer time, so it can speak to <em>your</em> current facts. Fine-tuning changes the model's weights so it naturally responds in your format, voice, and reasoning patterns. Confusing which problem you actually have is, genuinely, the single most common expensive mistake in applied LLM work.</p>
+<p>So the skill we're building isn't &quot;RAG or fine-tuning?&quot; as a coin flip. It's <em>diagnosis</em> — looking at how your system fails and reading off which tool the failure calls for. And often the answer is <em>both</em>, in a specific order. Take your time; by the end, a mixed bag of failures will sort itself cleanly into two piles with an obvious sequence.</p></section>
+    <section><h2>How It Works</h2><p>Let's start by drawing the line cleanly, because everything else depends on getting it right. Fine-tuning and RAG solve <strong>different problems.</strong></p>
+<p><strong>RAG solves the knowledge problem</strong> — the model doesn't know your specific product docs, current pricing, or internal policies, because that information wasn't in its pretraining data or has changed since. <strong>Fine-tuning solves the behavior problem</strong> — the model doesn't respond in your format, doesn't use your brand voice, doesn't apply your reasoning patterns, or doesn't handle your edge cases the way your team would.</p>
+<p><mark>Conflating these two problems is the most common decision error in applied LLM work.</mark> So before choosing a tool, always ask first: is this a <em>knowledge</em> failure or a <em>behavior</em> failure?</p>
+<p>So let's turn that distinction into a lookup table you can actually use. <strong>Map failures to tools:</strong></p>
+<p>- Wrong facts, stale information, invented product details → <strong>RAG</strong>&lt;br&gt;- Wrong tone, format, reasoning pattern, inconsistent edge cases → <strong>fine-tuning</strong>&lt;br&gt;- Knowledge that changes frequently → <strong>RAG</strong> (re-indexing takes hours; retraining takes days)&lt;br&gt;- Citation / auditability requirements → <strong>RAG</strong> (the model can cite its source; <mark>fine-tuned knowledge cannot be traced to a specific document</mark>)&lt;br&gt;- Cost to update → RAG index rebuild is cheap and fast; fine-tuning dataset collection + training is expensive and slow.</p>
+<div class="illustration"><div class="illustration-label">Update cost — a doc changed. What does each path cost to absorb it?</div><pre>Trigger: product docs change (new pricing page, updated
+policy). How much does each approach cost to reflect it?
+
+RAG — re-index the changed documents:
+  1. chunk + embed the new/changed docs
+  2. upsert vectors into the index
+  → minutes to hours (scales with # changed docs)
+  → cost: embedding API calls only (cents–dollars)
+  → NO training, NO GPUs, NO eval run required
+  → the new fact is live on the very next query
+
+FINE-TUNE — bake the change into weights:
+  1. curate (instruction, response) examples for the change
+  2. run a training job (GPU hours)
+  3. run an eval suite to confirm no regression
+  4. redeploy the new checkpoint
+  → days (curation is the slow part, not the GPU time)
+  → cost: annotation labor + training + eval (much higher)
+  → and you repeat ALL of this the next time a fact changes
+
+  ─────────────────────────────────────────────────────────
+  This asymmetry is WHY dynamic knowledge → RAG: you re-index
+  in minutes vs. re-train in days for every single change.</pre></div>
+<p>The two are <strong>not either/or — they COMPOSE.</strong> RAG fills the knowledge gap (current, citable product facts); fine-tuning fills the behavior gap (format, tone, escalation logic, edge-case handling). A mature system usually runs both — <mark>RAG retrieving grounded context that a fine-tuned model then renders in the right voice.</mark></p>
+<p>The rule is <strong>sequencing, not exclusivity:</strong> build RAG first, close the knowledge failures, re-evaluate, then fine-tune on the behavioral residual.</p>
+<p>For the scenario: failures split equally means <strong>both tools are eventually needed, but order matters.</strong> Build RAG over product documentation first — it addresses half the failures immediately at lower cost with faster iteration.</p>
+<p>After RAG, re-evaluate: if remaining failures concentrate in tone/format/edge cases, those are behavioral and fine-tuning on support tickets is the right next step. <mark>Fine-tuning before RAG is almost always wrong — you end up encoding the model's inability to retrieve current product information at the weight level.</mark></p>
+<p>So let's close on the detail that most often gets misfiled, because it's a lovely test of the whole framework. Those three months of support tickets are <strong>behavioral signal</strong> — what good support <em>looked like</em>, how experts handled edge cases, what tone and format actually worked. <mark>They are fine-tuning training data, not RAG content.</mark> Reach for them <em>after</em> RAG has closed the knowledge gap, never before. The interactive just below lets you sort failures into the two piles yourself, and the production case at the end is exactly this call — an even split of failures, and the sequence that resolves it.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>RAG fixes the knowledge problem; fine-tuning fixes the behavior problem</strong> — conflating the two is the most common applied-LLM decision error.</li><li><strong>Map the failure to the tool:</strong> wrong/stale facts → RAG; wrong tone/format/reasoning/edge-cases → fine-tuning.</li><li><strong>Dynamic knowledge and auditability favor RAG</strong> — re-index in minutes vs re-train in days, and only RAG can cite a source document.</li><li><strong>RAG and fine-tuning compose</strong> — RAG retrieves grounded context, a fine-tuned model renders it in the right voice.</li><li><strong>Sequence: RAG first, then fine-tune the residual</strong> — fine-tuning first bakes a retrieval gap into the weights.</li><li><strong>The 3 months of support tickets are behavioral training data, not RAG content</strong> — use them for fine-tuning after RAG closes the knowledge gap.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your customer-support chatbot scores 74% on your eval set, and the failures split roughly evenly between <em>wrong product facts</em> and <em>wrong tone/format</em>. The PM asks: fine-tune on our support tickets, or build RAG over our docs? You have three months of tickets and a product documentation library. Take a moment before reading on: which do you build, and in what order? Here's the reasoning, step by step. Sort the failures first. Wrong facts and stale product details are a <em>knowledge</em> gap → that's RAG. Wrong tone and format are a <em>behavior</em> gap → that's fine-tuning. Since the split is roughly even, you eventually need both — but order matters enormously. Build RAG <em>first</em>: it clears half the failures immediately, at lower cost and faster iteration, and it lets you re-measure to see what's <em>actually</em> left. Fine-tuning first is almost always wrong, because you'd bake the model's inability to retrieve current facts straight into its weights. And notice what your three months of tickets really are: they're <em>behavioral</em> signal — how good support sounds — so they're fine-tuning data, applied <em>after</em> RAG closes the knowledge gap, not RAG content.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>RAG fixes knowledge gaps. Fine-tuning fixes behavior gaps. Map your failures to the right tool before building anything. Wrong facts → RAG first. Wrong format/tone/reasoning patterns → fine-tuning. When both are needed, RAG comes first: faster to iterate, cheaper to update, and domain knowledge is often dynamic. Fine-tune on behavioral signal after the knowledge layer is working.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

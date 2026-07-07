@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preference Alignment: RLHF vs DPO | GenAI Systems Lab</title>
+  <meta name="description" content="Optimize preferred-over-alternative beyond SFT; watch the alignment tax.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/custom-preference-alignment">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/custom-preference-alignment">
+  <meta property="og:title" content="Preference Alignment: RLHF vs DPO | GenAI Systems Lab">
+  <meta property="og:description" content="Optimize preferred-over-alternative beyond SFT; watch the alignment tax.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Preference Alignment: RLHF vs DPO">
+  <meta name="twitter:description" content="Optimize preferred-over-alternative beyond SFT; watch the alignment tax.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Preference Alignment: RLHF vs DPO","description":"Optimize preferred-over-alternative beyond SFT; watch the alignment tax.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/custom-preference-alignment"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">CUSTOMIZATION</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Preference Alignment: RLHF vs DPO</h1>
+    <p class="desc">Optimize preferred-over-alternative beyond SFT; watch the alignment tax.</p>
+
+    <section><h2>Start Here</h2><p>Imagine you've trained a model on thousands of your best example answers, and it <em>is</em> fluent — it writes in your format, hits your tone, gets the facts right. And yet people still quietly prefer a different answer. Not a <em>wrong</em> answer versus a right one; two answers that are both perfectly plausible, and humans reliably like one more. How would you even teach a model <em>that</em>?</p>
+<p>Here's the gap worth sitting with: everything we've done so far — showing the model good examples to imitate — can only ever say '<em>this</em> is a good answer.' It has no way to say '<em>this</em> answer is better than <em>that</em> one.' But 'better than' is exactly what quality often comes down to. So there's a whole kind of learning we haven't touched yet, and it needs a fundamentally different ingredient: not single examples, but <em>comparisons</em>.</p>
+<p>We'll build it up carefully. First, <em>why</em> imitation hits a ceiling — this is the key insight everything else hangs on. Then the two ways the field turns comparisons into a trained model, how a real service chooses between them, where the comparison data comes from, and the sneaky failure where 'aligning' a model too hard turns it into something that refuses to help at all. No rush — the payoff is understanding one of the most important ideas in how modern assistants are shaped.</p></section>
+    <section><h2>How It Works</h2><p>The reason SFT plateaus is structural: <strong>SFT imitates good answers but can't express <em>preferred-over-alternative</em>.</strong></p>
+<p>SFT is maximum-likelihood on a single 'correct' completion per prompt — it says 'produce <em>this</em>.' But quality is often relative: two answers are both fluent and factual, yet users clearly prefer one (more helpful, better tone, right length). SFT has no mechanism to encode 'A is better than B' — it only knows 'A is a valid target.' <mark>To optimize for what people prefer, you need a <em>comparative</em> signal — pairs of (chosen, rejected) — which is exactly what preference alignment consumes.</mark> This is why even a well-SFT'd model still feels subtly off: it's fluent but not <em>preference-optimized</em>.</p>
+<p><strong>RLHF</strong> is the original pipeline, and it's three stages: <strong>preference data → reward model → PPO.</strong></p>
+<p>First, collect <strong>preference pairs</strong>: show labelers two model outputs for the same prompt, they pick the better one. Second, train a <strong>reward model (RM)</strong> on those comparisons — a model that scores any output with a scalar 'how preferred is this.' Third, use <strong>PPO</strong> (reinforcement learning) to update the policy to maximize the RM's score, with a <strong>KL-divergence penalty</strong> that keeps the tuned policy from drifting too far from the SFT model. <mark>That KL leash is essential:</mark> without it, the policy 'reward-hacks' — it finds degenerate outputs that fool the RM (repetition, sycophancy, weird tokens) and collapses. RLHF is powerful but <strong>complex and unstable</strong>: three models in play (policy, RM, reference), sensitive PPO hyperparameters, and reward-hacking to fight.</p>
+<div class="illustration"><div class="illustration-label">RLHF vs DPO — same preference data, very different machinery</div><pre>Both start from the SAME input: preference pairs (chosen &gt; rejected)
+
+RLHF (3-stage, RL):
+  pairs --&gt; train Reward Model --&gt; PPO optimize policy vs RM
+                                   + KL penalty to SFT ref
+  models live at once: policy + reward model + reference  (3)
+  failure modes: reward hacking, PPO instability, tuning hell
+
+DPO (1-stage, no RL):
+  pairs --&gt; direct pairwise loss on the policy
+            (implicit reward = log-ratio vs a frozen reference)
+  models live at once: policy + frozen reference  (2)
+  failure modes: fewer; sensitive to data quality + the beta/KL term
+
+Same goal (raise P(chosen) over P(rejected)); DPO folds the reward model
+INTO the loss. For most teams DPO is the modern default: simpler, stabler,
+cheaper. RLHF still shows up where a reusable reward model / online RL matters.</pre></div>
+<p><strong>DPO (Direct Preference Optimization)</strong> is the modern default because it gets the same result <strong>without the reward model or the RL loop.</strong></p>
+<p>The key idea: the RLHF objective has a closed-form optimal policy in terms of the reward, and you can <em>invert</em> that relationship so the reward is expressed <em>implicitly</em> through the policy itself. DPO then optimizes a <strong>single pairwise classification loss</strong> directly on the policy: raise the log-probability of the <em>chosen</em> response relative to the <em>rejected</em> one, measured against a <strong>frozen reference model</strong> (which plays the role of the KL leash, controlled by a `beta` term). <mark>No separate reward model, no PPO, no sampling loop — just a supervised-style loss on preference pairs.</mark> The consequences: far simpler and more stable, cheaper to run, and it's why most customization teams reach for DPO first. (Mechanism deep-dive lives in the DPO Foundations module; here the point is <em>when a service picks it</em>.)</p>
+<p>The choice between them, for a <em>service</em>, comes down to <strong>operational complexity vs. flexibility.</strong></p>
+<p><strong>Reach for DPO</strong> when: you have good static preference pairs, you want stability and low ops overhead, and a straightforward 'make outputs more preferred' objective — which describes most customization work. <strong>Reach for RLHF</strong> when: you want a <strong>reusable reward model</strong> as an asset (score outputs, filter data, run online RL as fresh data arrives), you need <strong>online</strong> optimization against a live reward signal, or you have the ML-ops maturity to run PPO reliably and the flexibility pays off. <mark>The senior framing: DPO is the default; RLHF is the answer when the reward model itself, or online RL, is worth its operational cost.</mark> Newer direct methods (IPO, KTO, etc.) are variations on the DPO theme trading off different assumptions.</p>
+<p>Where do the <strong>preference pairs</strong> come from, and what goes wrong: <strong>human labeling vs. AI feedback (RLAIF), pair construction, and the alignment tax.</strong></p>
+<p>Data sourcing: <strong>human preference labels</strong> are gold-standard but slow and expensive; <strong>RLAIF / Constitutional AI</strong> uses a strong model (guided by a written principle set) to <em>generate</em> the preference judgments, trading some fidelity for scale. Either way, <strong>pair construction and annotation quality dominate</strong> — noisy or inconsistent preferences teach a noisy objective, and if your pairs mostly differ on length, you'll train a model that just rambles.</p>
+<p>The failure mode that catches teams: the <strong>alignment tax and over-refusal.</strong> Tune too aggressively toward 'safe/preferred' and the model becomes a hedging over-refuser — it declines valid requests, over-qualifies everything, and loses helpfulness. <mark>You must measure <em>both directions</em>: helpfulness on legitimate requests AND appropriate refusal on bad ones. A model that refuses everything scores perfectly on safety and is useless.</mark> Preference alignment is a balance, not a maximization.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>SFT imitates good answers but can't express <em>preferred-over-alternative</em>.</strong> It's max-likelihood on one target per prompt; quality is often relative. Optimizing for what users prefer needs a <em>comparative</em> (chosen, rejected) signal — the input to all preference alignment.</li><li><strong>RLHF is a 3-stage RL pipeline:</strong> preference pairs → reward model → PPO against it with a KL penalty to the SFT reference. The KL leash prevents reward-hacking. Powerful but complex/unstable — three models in play, sensitive PPO tuning.</li><li><strong>DPO folds the reward model into a single pairwise loss.</strong> It raises P(chosen) over P(rejected) against a frozen reference (KL role via `beta`) — no reward model, no PPO, no sampling loop. Simpler, stabler, cheaper — the modern default for most teams.</li><li><strong>Service-level choice = complexity vs flexibility.</strong> DPO by default (static pairs, low ops); RLHF when a reusable reward model or online RL is worth its operational cost.</li><li><strong>Preference data: human labels (gold, slow) vs RLAIF/Constitutional (scalable, lower fidelity).</strong> Pair construction and annotation quality dominate — length-biased pairs train a rambler.</li><li><strong>The alignment tax / over-refusal is the key failure mode.</strong> Over-tuning toward 'safe/preferred' yields a hedging over-refuser that declines valid requests. Measure <em>both</em> directions — helpfulness on good requests AND refusal on bad ones. Alignment is a balance, not a maximization.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put this to work. Your SFT model is fluent and on-format, but users keep thumbs-downing its answers: technically correct, yet unhelpful, hedge-everything, or subtly off-tone.</p>
+<p>Take a moment: what's going on, and what do you reach for? Here's the reasoning, step by step. SFT taught the model to imitate <em>good</em> answers, but it never learned that users <em>prefer</em> one plausible answer over another — that's the ceiling of imitation, and it's exactly the gap you're seeing. So you move to preference alignment, which trains on (chosen, rejected) pairs. Then the service-level decision: with solid static preference pairs and limited ML-ops maturity, you default to <strong>DPO</strong> — it folds the reward model into a single direct pairwise loss against a frozen reference, no separate reward model and no PPO loop, so it's simpler, stabler, cheaper. You'd only reach for <strong>RLHF</strong> if a reusable reward model or online RL against a live signal were worth the operational cost. Source your pairs from human labels (gold, slow) or RLAIF (scalable), watching that they don't just differ on length. And here's the trap to name before you ship: tune too hard toward 'safe and preferred' and you get the <strong>alignment tax</strong> — an over-refuser that declines valid requests and scores perfectly on a one-sided safety benchmark while being useless. So you measure <em>both</em> directions: helpfulness on legitimate requests AND appropriate refusal on bad ones. Alignment is a balance, not a maximization — and saying that out loud is the senior signal.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>SFT imitates good answers but can't encode <em>preferred-over-alternative</em> — that gap is why a fluent model still feels off, and closing it needs preference alignment on (chosen, rejected) pairs. RLHF is the original 3-stage RL pipeline (preference data → reward model → PPO with a KL leash); DPO folds the reward model into a single direct pairwise loss against a frozen reference — no RM, no RL loop — making it simpler, stabler, cheaper, and the modern default. A service picks DPO by default and RLHF when a reusable reward model or online RL earns its operational cost. Source pairs via human labels (gold, slow) or RLAIF (scalable), and guard against the alignment tax: over-tuning for 'safe/preferred' yields an over-refuser, so measure helpfulness <em>and</em> refusal in both directions — alignment is a balance, not a maximization.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

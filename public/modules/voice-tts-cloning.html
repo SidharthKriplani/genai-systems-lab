@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TTS &amp; Voice Cloning | GenAI Systems Lab</title>
+  <meta name="description" content="Acoustic model + vocoder, zero-shot cloning, and consent/deepfake risk.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/voice-tts-cloning">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/voice-tts-cloning">
+  <meta property="og:title" content="TTS &amp; Voice Cloning | GenAI Systems Lab">
+  <meta property="og:description" content="Acoustic model + vocoder, zero-shot cloning, and consent/deepfake risk.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TTS &amp; Voice Cloning">
+  <meta name="twitter:description" content="Acoustic model + vocoder, zero-shot cloning, and consent/deepfake risk.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"TTS & Voice Cloning","description":"Acoustic model + vocoder, zero-shot cloning, and consent/deepfake risk.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/voice-tts-cloning"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">VOICE AI</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>TTS &amp; Voice Cloning</h1>
+    <p class="desc">Acoustic model + vocoder, zero-shot cloning, and consent/deepfake risk.</p>
+
+    
+    <section><h2>How It Works</h2><p>Text-to-speech has evolved through three eras, and the modern split explains both the naturalness and the latency you're fighting.</p>
+<p><strong>Concatenative</strong> TTS stitched together recorded snippets — natural in-snippet but choppy at joins and inflexible. <strong>Parametric</strong> TTS generated speech from a statistical model — flexible but buzzy/robotic. <strong>Neural</strong> TTS is today's default and comes in two connected pieces: an <strong>acoustic model</strong> (text → an intermediate acoustic representation, classically a mel-spectrogram) and a <strong>vocoder</strong> (that representation → the actual audio waveform).</p>
+<p><mark>That two-stage split — acoustic model then vocoder — is the mental model to hold, because latency, quality, and cloning each attach to a different stage.</mark> Newer codec/LLM-style TTS (VALL-E, XTTS-family) blurs the two by predicting audio <em>codec tokens</em> autoregressively, which is what unlocks zero-shot cloning — but the acoustic/vocoder framing still explains the tradeoffs.</p>
+<p>The acoustic model decides <em>what</em> to say and <em>how it should sound</em>; the vocoder decides <em>how fast the first sound comes out.</em></p>
+<p>The acoustic model (Tacotron, FastSpeech, or a codec-token LLM) produces the spectrogram or codec tokens — this is where prosody, pacing, and speaker identity are determined. The vocoder (WaveNet historically; HiFi-GAN and streaming vocoders today) turns that into waveform samples.</p>
+<p><mark>For a real-time agent, the vocoder choice is a first-audio-latency decision: a <strong>streaming vocoder</strong> emits audio in small chunks as the acoustic model produces frames, so the first phoneme plays before the whole sentence is synthesized.</mark> That's precisely the scenario's 'first word takes over a second' bug — a non-streaming, generate-then-vocode setup pays the full-sentence synthesis cost before any sound, which recorded-sample benchmarks never expose.</p>
+<p><strong>Zero-shot voice cloning</strong> is the feature marketing wants, and its mechanism is a <strong>speaker embedding.</strong></p>
+<p>A codec/LLM-style TTS model is trained on thousands of speakers to condition its output on a compact vector — a <strong>speaker embedding</strong> — extracted from a few seconds of reference audio. At inference, you feed 3–10 seconds of the founder's voice, the model computes that embedding, and it generates <em>new</em> text in that voice without any per-voice training. <mark>This is 'zero-shot' because there's no fine-tuning step: the model generalizes to an unseen voice from a single short reference, the same way an LLM generalizes to a new task from a few in-context examples.</mark></p>
+<p>More reference audio and cleaner recordings yield a more faithful clone; a noisy 3-second clip yields an approximate one. Fine-tuning on more of the founder's audio can push fidelity higher, at the cost of a training step.</p>
+<div class="illustration"><div class="illustration-label">The TTS pipeline and where each concern lives</div><pre>Text  -&gt;  [ Acoustic model ]  -&gt;  spectrogram / codec tokens  -&gt;  [ Vocoder ]  -&gt;  audio
+
+  WHAT each stage owns:
+    Acoustic model : words, PROSODY (pitch/pace/emphasis), SPEAKER IDENTITY
+    Vocoder        : waveform quality + FIRST-AUDIO LATENCY (streaming or not)
+
+  Zero-shot cloning:
+    reference audio (3-10s)  -&gt;  speaker embedding (a vector)  -&gt;  condition the acoustic model
+    no per-voice training -&gt; &quot;zero-shot&quot;; more/cleaner audio -&gt; better clone
+
+  The scenario's two bugs map to two stages:
+    &quot;first word &gt; 1s&quot;      -&gt; vocoder is not streaming (generate-then-vocode)
+    &quot;flat, same intonation&quot;-&gt; prosody uncontrolled; needs SSML / control tokens
+
+  Recorded-sample leaderboards measure naturalness, NOT first-audio latency
+  and NOT scripted-disclaimer prosody -&gt; both bugs are invisible offline.</pre></div>
+<p>The 'flat intonation' complaint is a <strong>controllability</strong> problem, and it has a real fix.</p>
+<p>Pure neural TTS predicts the single most-likely prosody for a sentence, so read in isolation each sentence sounds fine — but across a scripted flow (especially formal disclaimers) the model defaults to a uniform, average intonation that feels robotic. It sounds natural per-sample and monotonous in context.</p>
+<p><mark>The lever is explicit control: <strong>SSML</strong> (Speech Synthesis Markup Language) and model control tokens let you specify emphasis, pauses, pacing, and pitch — so you <em>tell</em> the model to stress the right word and slow down for the disclaimer rather than hoping it infers it.</mark> Prosody lives in the acoustic model, so this is where you intervene; it's the difference between a technically-natural voice and one that sounds like it means what it's saying.</p>
+<p>There's a hard <strong>safety and governance</strong> layer here — and it's increasingly an interview and compliance topic, not an afterthought.</p>
+<p>Cloning a voice from seconds of audio is exactly the capability that enables <strong>impersonation and deepfakes</strong> — vishing scams, fake authorizations, non-consensual likeness use. Shipping a brand voice therefore carries obligations: <strong>consent</strong> (a documented right to use the founder's voice — and never cloning a voice you don't have permission for), <strong>watermarking</strong> (embedding an inaudible signal so synthetic audio is detectable), and <strong>disclosure</strong> (telling callers they're speaking to an AI where law or policy requires it).</p>
+<p><mark>The rule to internalize: voice-cloning capability is a governance surface, not just a feature — consent, watermarking, and disclosure are ship-blocking requirements, not nice-to-haves, and 'we can clone any voice from a clip' is a liability as much as a capability.</mark></p>
+<p>Putting it together, the TTS choice is the familiar <strong>naturalness vs. latency vs. control</strong> tradeoff, and 'tops the leaderboard' is the wrong selection criterion — the same trap as picking ASR on offline WER.</p>
+<p>Codec/LLM-style TTS gives the best naturalness and zero-shot cloning but is autoregressive and can be heavier/slower; classic acoustic-model + streaming-vocoder stacks (FastSpeech + HiFi-GAN) give lower, more predictable first-audio latency with strong controllability. For a real-time agent you weight <strong>streaming first-audio latency and SSML control</strong> heavily; for an offline audiobook you weight raw naturalness.</p>
+<p><mark>Choose the TTS from the deployment constraint — a real-time agent needs a streaming vocoder and prosody control, so the naturalness-leaderboard winner can be the wrong pick, exactly as it was in the scenario.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Neural TTS is two stages: acoustic model + vocoder.</strong> The acoustic model owns words, prosody, and speaker identity; the vocoder owns waveform quality and first-audio latency. Latency, quality, and cloning each attach to a different stage, so hold this split.</li><li><strong>A streaming vocoder is a first-audio-latency decision.</strong> It emits audio in chunks as the acoustic model produces frames, so the first phoneme plays before the sentence finishes. A generate-then-vocode setup pays full-sentence synthesis before any sound — the 'first word takes &gt;1s' bug.</li><li><strong>Zero-shot cloning works via a speaker embedding.</strong> A model trained on many speakers extracts a conditioning vector from 3–10s of reference audio and generates new text in that voice with no per-voice training. More/cleaner reference audio → a more faithful clone; fine-tuning trades a training step for higher fidelity.</li><li><strong>Flat intonation is a controllability problem, fixed with SSML / control tokens.</strong> Pure neural TTS predicts one average prosody — natural per-sample, monotonous across a scripted flow. Explicit markup for emphasis, pauses, pacing, and pitch (in the acoustic model) fixes it.</li><li><strong>Voice cloning is a governance surface.</strong> The same capability enables impersonation/deepfakes, so consent (documented right to the voice), watermarking (detectable synthetic audio), and disclosure (telling callers it's AI) are ship-blocking requirements, not features.</li><li><strong>Choose TTS from the deployment constraint, not the naturalness leaderboard.</strong> Real-time agents weight streaming first-audio latency and SSML control heavily; offline audiobooks weight raw naturalness — so the leaderboard winner can be the wrong pick for a live agent.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You need a natural, low-latency voice for your agent, and marketing wants a custom brand voice cloned from your founder's recordings. An engineer picks a state-of-the-art neural TTS model that tops naturalness leaderboards and wires it in. Naturalness on recorded samples is excellent — but on the live agent, the first word takes over a second to come out, and the cloned voice reads every sentence with the same flat, unvarying intonation, so scripted disclaimers sound robotic. You must choose the TTS approach, understand how cloning works, control prosody, and reason about the consent/deepfake risk — before shipping.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Neural TTS is an acoustic model (words, prosody, speaker identity) feeding a vocoder (waveform quality and first-audio latency), and the scenario's two bugs map cleanly to the two stages: a non-streaming vocoder causes the &gt;1s first word (fix: streaming vocoder), and uncontrolled prosody causes the flat disclaimers (fix: SSML / control tokens). Zero-shot cloning conditions a multi-speaker model on a speaker embedding from a few seconds of audio — no per-voice training — which is why it also raises consent, watermarking, and disclosure as ship-blocking governance, not features. As with ASR, choose TTS from the deployment constraint (real-time → streaming vocoder + prosody control), because the naturalness-leaderboard winner can be the wrong pick for a live agent.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

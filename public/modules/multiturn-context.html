@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Turn Context Management | GenAI Systems Lab</title>
+  <meta name="description" content="Context rot across turns — summarize, truncate, or retrieve history.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/multiturn-context">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/multiturn-context">
+  <meta property="og:title" content="Multi-Turn Context Management | GenAI Systems Lab">
+  <meta property="og:description" content="Context rot across turns — summarize, truncate, or retrieve history.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Multi-Turn Context Management">
+  <meta name="twitter:description" content="Context rot across turns — summarize, truncate, or retrieve history.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Multi-Turn Context Management","description":"Context rot across turns — summarize, truncate, or retrieve history.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/multiturn-context"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROMPT</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Multi-Turn Context Management</h1>
+    <p class="desc">Context rot across turns — summarize, truncate, or retrieve history.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a question that feels like it has an obvious answer, but doesn't. When you chat with a model across many turns, it <em>seems</em> to remember what you said earlier — so where does that memory live? Most people assume it's tucked away inside the model somewhere between messages. It isn't, and that one misconception is the root of nearly every long-conversation bug.</p>
+<p>Here's the puzzle we'll unravel. A model can hold a crisp conversation for a while, then somewhere around turn 30 quietly start ignoring something important the user said back at turn 3 — while every reply also gets slower and pricier. Two different problems, one underlying cause, and neither is the model 'breaking.'</p>
+<p>No need to rush this. We'll start from the single mechanical fact about how a conversation is actually fed to a model, watch two separate walls emerge from it, and then build up the handful of strategies that keep a long chat both affordable and <em>sharp</em>. By the end you'll be able to look at an assistant that 'forgot' an early instruction and say exactly why — and what to do about it.</p></section>
+    <section><h2>How It Works</h2><p>Start from the one fact everything else follows from: <strong>an LLM is stateless between turns.</strong> It carries no memory of your conversation from one call to the next — on each call it sees only the text you place in the context window <em>right now</em>. That single constraint forces the whole design. Because the model can't remember turn 3 on its own, the only way to make a chat feel continuous is to <em>resend the entire prior conversation</em> — every user and assistant turn — inside every new request. <mark>So cost and latency climb turn over turn: the input isn't your latest message, it's the whole growing transcript, re-sent and re-prefilled every single time. A 50-turn chat re-processes ~50 turns of history just to answer turn 51.</mark></p>
+<p>That resend strategy hits two walls at once. The hard wall is the <strong>finite context window</strong> — eventually the transcript won't fit, and something must be dropped. The <em>soft</em> wall is more insidious and arrives sooner: <strong>context rot / lost-in-the-middle.</strong> Even when everything technically fits, models don't attend uniformly across a long context — they reliably attend best to the <em>beginning</em> and the <em>end</em>, and worst to the <em>middle</em>. <mark>A constraint stated at turn 3 sinks into the middle of a 30-turn transcript and gets effectively ignored, not because it fell out of the window but because the model under-attends to the middle. That's exactly your 'forgot the EU data plan' bug.</mark> Long context degrades usefulness <em>before</em> it hits the size limit.</p>
+<div class="illustration"><div class="illustration-label">Lost-in-the-middle — why turn 3 gets forgotten</div><pre>Attention quality across a long context (schematic):
+
+  attention │██████                              ██████
+   to that  │██████                              ██████
+   region   │██████    ▁▁▁▁ ▁▁▁ ▁▁▁▁ ▁▁▁ ▁▁▁     ██████
+           └────────────────────────────────────────────
+             START          MIDDLE               END
+             (system,       (turn 3's &quot;EU plan&quot;  (latest
+              turn 1)         constraint sinks     user turn)
+                              here — under-read)
+
+  Fits in the window ≠ actually used. The middle is the danger zone.
+  → put durable constraints at the START or re-surface them near the END.</pre></div>
+<p>So you need a strategy to keep the conversation <em>useful and affordable</em> as it grows, and there are three basic moves — each a different tradeoff. <strong>Move 1 — truncation:</strong> keep only the last N turns (a sliding window over the conversation), drop the oldest. Cheap and simple, bounds the cost — but it's <em>lossy in the worst way</em>: it throws away the earliest turns, which are often where the <em>durable constraints</em> live ('EU data plan,' 'the user's name is X,' 'we decided on approach Y'). <mark>Naive truncation forgets the setup and remembers the small talk — usually backwards from what matters.</mark></p>
+<p><strong>Move 2 — summarization (compression):</strong> instead of dropping old turns, periodically <em>compress</em> them. Run an LLM pass that condenses the older part of the conversation into a compact summary ('User is on the EU data plan; wants X; we ruled out Y'), and replace the raw old turns with that summary, keeping recent turns verbatim. <mark>You trade fidelity for space: the summary is lossy, but it <em>deliberately preserves the load-bearing facts</em> while discarding the verbatim back-and-forth.</mark> The cost is an extra LLM call to summarize, plus the risk that the summarizer drops something that later turns out to matter. This is the workhorse for long assistant conversations.</p>
+<div class="illustration"><div class="illustration-label">Three strategies for a growing conversation</div><pre>As the transcript grows past what's useful/affordable:
+
+TRUNCATION (sliding window): keep last N turns, drop oldest
+  [ ✂ old turns dropped ][ turn 40 | 41 | ... | 50 ]
+  + cheap, bounded   − drops EARLY turns = the durable constraints
+                       (forgets setup, keeps small talk)
+
+SUMMARIZATION (compress): condense old turns into a summary
+  [ &quot;SUMMARY: user on EU plan, wants X, ruled out Y&quot; ][ recent turns ]
+  + preserves load-bearing facts, bounds size
+  − extra LLM call; summarizer may drop something that matters later
+
+RETRIEVAL (history as a store): embed all past turns, fetch only the
+  relevant ones for the current question
+  [ system ][ fetched: &quot;EU plan&quot; turn ][ recent turns ][ user Q ]
+  + scales to unbounded history, surfaces old facts on demand
+  − retrieval can miss; adds a lookup step; &quot;relevant&quot; is fuzzy</pre></div>
+<p><strong>Move 3 — retrieval of history:</strong> treat the whole conversation as a <em>searchable store</em>. Embed every past turn, and for each new user message, <em>retrieve</em> only the turns relevant to it and inject just those into context, rather than resending everything. <mark>This scales to effectively unbounded history and can resurface a turn-3 fact at turn 50 precisely when it's relevant — but it inherits RAG's failure modes: retrieval can miss the relevant turn, and 'relevant to the current message' is a fuzzy target for constraints that should <em>always</em> apply.</mark> In practice mature systems <em>combine</em> these: a rolling window of recent turns verbatim + a running summary of older ones + retrieval for specific old facts, plus a separate <strong>persistent memory</strong> for facts that must survive across <em>sessions</em> ('this user is always on the EU plan') rather than living only in one conversation.</p>
+<p>The judgment call — the part interviews probe — is <strong>when to compress.</strong> Compression isn't free (each summarization is an extra LLM call and a lossy step), so you don't do it every turn. The usual triggers: when the transcript approaches a <em>fraction of the context window</em> (e.g., compress once you're past ~60–70% full, leaving headroom for the model's answer), or every <em>K turns</em>, or when token cost per turn crosses a budget. <mark>The goal is to keep the <em>effective</em> context small and information-dense — recent turns sharp, older turns compressed, durable constraints kept where the model actually attends (start or re-surfaced near the end) — so you fight both the size wall and lost-in-the-middle at once.</mark></p>
+<p>So the whole chain lands on one framing: a conversation runs on the context window as a <em>scarce resource</em>, and resending everything is both expensive and — because of lost-in-the-middle — actively worse than managing history deliberately. <mark>The discipline is to keep the <em>effective</em> context small and dense: summarize older turns into a compact running summary, keep recent turns verbatim, retrieve specific old facts on demand, promote always-true facts to persistent cross-session memory, and keep durable constraints where the model actually attends — the start, or re-surfaced near the end.</mark></p>
+<p>The interactive lets you grow a transcript and watch both walls arrive — the size limit and the middle sag — and see how summarization keeps the load-bearing facts alive. Then the closing scenario puts it to work on an assistant that forgets an early constraint by turn 30 — see if you can separate the cost problem from the lost-in-the-middle problem before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>LLMs are stateless between turns</strong>, so continuity means resending the entire prior transcript every call — which is why cost and latency climb turn over turn (turn 51 re-prefills ~50 turns of history). The context window is the scarce resource a conversation runs on.</li><li><strong>Two walls: the hard finite context window (transcript won't fit) and the softer, earlier 'lost-in-the-middle' / context rot</strong> — models attend best to the start and end, worst to the middle, so a turn-3 constraint sinks into the middle and gets ignored even while it technically fits. Long context degrades usefulness before it hits the size limit.</li><li><strong>Truncation</strong> (keep last N turns) is cheap but drops the <em>earliest</em> turns — usually where durable constraints live, so it forgets the setup and keeps small talk. <strong>Summarization</strong> compresses old turns into a compact summary that deliberately preserves load-bearing facts (extra LLM call, lossy) — the workhorse for long chats.</li><li><strong>Retrieval of history</strong> treats past turns as a searchable store and injects only relevant ones — scales to unbounded history and resurfaces old facts on demand, but inherits RAG's miss-risk and struggles with always-apply constraints. Mature systems combine window + summary + retrieval, plus <strong>persistent cross-session memory</strong> for facts that must survive across conversations.</li><li><strong>When to compress is the judgment call:</strong> compress at a fraction of the window (~60–70% full, leaving answer headroom), every K turns, or at a cost budget — not every turn (it's a lossy, paid step). Keep effective context small and dense, and re-surface durable constraints at the start or near the end where attention is strong.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You build a support assistant that holds long conversations — 40, 50 turns is normal. Early on it's sharp. By turn 30 it starts forgetting a constraint the user gave at turn 3 ('I'm on the EU data plan, never suggest the US-only features'), and it's slow and expensive on every reply. Your logs show the bill climbing because each turn you resend the <em>entire</em> prior conversation, so the input grows every message. Take a moment before reading on: given everything above, which of those two symptoms is 'ran out of window' and which is something subtler — and why did turn 3 in particular get lost? Here's the reasoning, step by step. The rising cost is the stateless-model consequence: you resend the whole transcript every turn, so turn 51 re-prefills ~50 turns of history. But the forgotten constraint is <em>not</em> truncation — at turn 30 the transcript still fits; the turn-3 instruction sank into the <em>middle</em> of the context, where models reliably under-attend (lost-in-the-middle). The fix is a context-management strategy: summarize older turns into a compact running summary that preserves the EU-plan constraint, keep recent turns verbatim, retrieve specific old facts when needed, promote always-true facts to persistent cross-session memory, and re-surface durable constraints near the <em>end</em> of the prompt where attention is strong.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>LLMs are stateless, so multi-turn continuity means resending the whole transcript each call — which grows cost and, worse, triggers lost-in-the-middle, where a constraint stated early sinks into the under-attended middle and gets ignored even while it still fits. Manage the context window as a scarce resource with truncation (cheap but drops the durable early turns), summarization (compress old turns while preserving load-bearing facts — the workhorse), and retrieval of relevant history, plus persistent cross-session memory for always-true facts. Compress selectively (at a fraction of the window / every K turns / at a budget), and keep durable constraints where the model actually attends — the start or re-surfaced near the end.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

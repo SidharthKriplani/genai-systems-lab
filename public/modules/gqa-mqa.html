@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grouped-Query &amp; Multi-Query Attention | GenAI Systems Lab</title>
+  <meta name="description" content="Shrinking the KV cache — the memory bottleneck at inference.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/gqa-mqa">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/gqa-mqa">
+  <meta property="og:title" content="Grouped-Query &amp; Multi-Query Attention | GenAI Systems Lab">
+  <meta property="og:description" content="Shrinking the KV cache — the memory bottleneck at inference.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Grouped-Query &amp; Multi-Query Attention">
+  <meta name="twitter:description" content="Shrinking the KV cache — the memory bottleneck at inference.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Grouped-Query & Multi-Query Attention","description":"Shrinking the KV cache — the memory bottleneck at inference.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/gqa-mqa"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LANG MODELS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Grouped-Query &amp; Multi-Query Attention</h1>
+    <p class="desc">Shrinking the KV cache — the memory bottleneck at inference.</p>
+
+    
+    <section><h2>How It Works</h2><p>In standard <strong>Multi-Head Attention (MHA)</strong>, every layer projects the input into `H` separate <strong>query, key, and value</strong> heads. During autoregressive decoding you generate one token at a time, and each new token must attend to <strong>every previous token</strong>. Recomputing the keys and values for the whole history at every step would be quadratically wasteful, so instead you <strong>cache</strong> the K and V vectors for all past tokens — the <strong>KV cache</strong> — and only compute Q/K/V for the newest token.</p>
+<p>That cache is the hidden memory monster. <mark>Its size is: 2 (K and V) × num_layers × num_KV_heads × head_dim × sequence_length × batch_size × bytes_per_element.</mark> It scales with <strong>both</strong> context length and the number of concurrent requests — which is exactly why single-request benchmarks look fine and production OOMs.</p>
+<div class="illustration"><div class="illustration-label">Why the KV cache — not the weights — dominates at inference</div><pre>Decoding step t: generate token t, attend to tokens 0..t-1
+  Naive: recompute K,V for all past tokens every step  -&gt; O(t^2) waste
+  Fix:   cache K,V once per token, reuse forever          -&gt; the KV cache
+
+KV cache size (bytes):
+  2 * layers * KV_heads * head_dim * seq_len * batch * dtype_bytes
+  ^                                  ^          ^
+  K and V                            grows w/   grows w/
+                                     context    users
+
+Example (MHA, 7B-ish): 32 layers, 32 KV heads, head_dim 128,
+  seq_len 8192, batch 1, fp16 (2 bytes):
+  2 * 32 * 32 * 128 * 8192 * 1 * 2  ~= 4.3 GB  ...for ONE request
+  -&gt; 16 concurrent users -&gt; ~68 GB of cache alone (weights on top)
+
+The weights are FIXED; the KV cache scales with users x context.
+That's the bottleneck long-context, high-concurrency serving hits.</pre></div>
+<p>Look at the formula and one term jumps out as the lever: <strong>num_KV_heads</strong>. The queries have to stay numerous — you want `H` distinct query 'views' for model quality — but the cache size is driven by how many <strong>K/V</strong> heads you store. <mark>What if many query heads shared the same keys and values?</mark> That is the entire idea behind MQA and GQA.</p>
+<p><strong>Multi-Query Attention (MQA)</strong> takes it to the extreme: keep all `H` <strong>query</strong> heads, but use a <strong>single, shared K head and single V head</strong> for the whole layer. Every query head attends against the same keys and values. The KV cache shrinks by a factor of `H` — for 32 heads, that's a <strong>32× reduction</strong> in cache memory (and a matching cut in the memory bandwidth you must move per decode step, which is what actually gates decode latency).</p>
+<p>The cost is <strong>quality</strong>. Collapsing to one K/V head removes the diversity of 'what each head looks for and retrieves,' and large models trained with pure MQA tend to lose a bit of accuracy and can be less stable to train. <mark>MQA is maximum memory savings, minimum K/V diversity — a corner of the design space, not always the sweet spot.</mark></p>
+<p><strong>Grouped-Query Attention (GQA)</strong> is the interpolation that won. Instead of `H` KV heads (MHA) or `1` KV head (MQA), use <strong>G groups</strong>, where `1 &lt; G &lt; H`. The `H` query heads are partitioned into `G` groups, and <strong>all query heads within a group share one K head and one V head</strong>. So you store `G` K/V heads instead of `H`.</p>
+<p>GQA-`G` is a dial: <strong>G = H is exactly MHA; G = 1 is exactly MQA.</strong> You choose `G` to hit the memory budget while keeping enough K/V diversity for quality. <mark>It captures most of MQA's memory and bandwidth savings while recovering nearly all of MHA's quality — which is why it's the default in modern LLMs.</mark></p>
+<div class="illustration"><div class="illustration-label">MHA vs MQA vs GQA — KV heads per layer (H = 8 query heads)</div><pre>MHA (H KV heads):          8 query heads -&gt; 8 KV heads
+  Q0 Q1 Q2 Q3 Q4 Q5 Q6 Q7
+  |  |  |  |  |  |  |  |
+  K0 K1 K2 K3 K4 K5 K6 K7      cache = 8 KV heads  (baseline, best quality)
+
+MQA (1 KV head):           8 query heads -&gt; 1 shared KV head
+  Q0 Q1 Q2 Q3 Q4 Q5 Q6 Q7
+   \  \  \  |  /  /  /  /
+        [ K0 / V0 ]             cache = 1 KV head   (8x smaller, quality dips)
+
+GQA (G groups, here G=2):  8 query heads -&gt; 2 KV heads (4 queries share each)
+  Q0 Q1 Q2 Q3     Q4 Q5 Q6 Q7
+    \ | | /          \ | | /
+   [ K0/V0 ]        [ K1/V1 ]    cache = 2 KV heads (4x smaller, ~MHA quality)
+
+  G = H  =&gt; MHA        G = 1  =&gt; MQA        1 &lt; G &lt; H  =&gt; GQA
+  Llama-2/3-70B: 64 query heads, 8 KV heads  -&gt; GQA-8 (8x cache cut)</pre></div>
+<p>This is exactly the Llama-2-70B question from the scenario: <strong>64 query heads, 8 KV heads = GQA with G = 8</strong>. You keep 64 query 'views' for quality but store only 8 sets of K/V, an <strong>8× cut</strong> in KV-cache memory and bandwidth versus full MHA. That's what makes long-context, high-batch serving feasible on the same hardware.</p>
+<p>One caveat for 'just use fewer KV heads on my model': <strong>GQA is an architectural choice made at pretraining time.</strong> The K/V projections are shaped for `G` groups and the model is trained that way — you can't simply drop KV heads from an already-trained MHA checkpoint and expect it to work. There is a technique called <strong>uptraining</strong> (a.k.a. GQA conversion) that mean-pools an MHA model's KV heads into groups and then fine-tunes briefly to recover quality, but it is a retraining step, not a config flag.</p>
+<p>Named users: <strong>MQA</strong> — PaLM, Falcon, the original Shazeer proposal; <strong>GQA</strong> — Llama-2/3 (70B and up), Mistral 7B, and most current open frontier models. <mark>The recurring interview trap: treating query-head count and KV-head count as the same number. They are decoupled — quality wants many Q heads, the KV cache wants few KV heads, and GQA is how you get both.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>The KV cache is the inference memory bottleneck, not the weights.</strong> To avoid O(t²) recompute, decoding caches K and V for all past tokens; its size scales with num_KV_heads × head_dim × layers × seq_len × <strong>batch</strong> — so it grows with both context length and concurrent users.</li><li><strong>Weights are fixed; the KV cache scales with users × context.</strong> That's why a single-request benchmark looks fine while high-concurrency, long-context production OOMs on cache alone.</li><li><strong>MQA = 1 shared K/V head</strong> for all H query heads. Cache shrinks ~H× (and per-step memory bandwidth with it, which gates decode latency), but collapsing K/V diversity costs quality and training stability.</li><li><strong>GQA = G groups (1 &lt; G &lt; H):</strong> query heads are partitioned into G groups, each group sharing one K/V head → store G KV heads, not H. <strong>G = H is MHA; G = 1 is MQA</strong> — GQA is the tunable interpolation.</li><li><strong>GQA keeps most of MQA's memory/bandwidth savings with near-MHA quality</strong> — the reason it's the modern default. Llama-2/3-70B: 64 query heads, 8 KV heads = GQA-8, an 8× cache cut.</li><li><strong>Query-head count and KV-head count are decoupled.</strong> Quality wants many Q heads; the cache wants few KV heads. GQA is a pretraining-time choice (you can't just drop KV heads from a trained MHA model — 'uptraining' converts, at a retraining cost). Users: MQA (PaLM, Falcon); GQA (Llama-2/3, Mistral).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You benchmark a 7B model's throughput and it looks great with a single request. In production, with long prompts and many concurrent users, throughput craters and you OOM long before the model weights fill VRAM. Profiling shows the KV cache — not the weights — eating most of your memory, and it grows with every user and every token. Someone asks why Llama-2-70B uses '8 KV heads' when it has 64 query heads, and whether you can just 'use fewer KV heads' on your model. You need to explain the KV-cache bottleneck and the MHA → MQA → GQA spectrum before choosing an architecture.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>At inference the KV cache — not the weights — is the memory and bandwidth bottleneck, and it scales with both context length and concurrent users. MQA (1 shared KV head) shrinks it ~H× but hurts quality; GQA (G groups, 1 &lt; G &lt; H) is the tunable middle that keeps most of the savings at near-MHA quality — which is why Llama-2/3 and Mistral use it (e.g., Llama-2-70B = 64 query heads, 8 KV heads = GQA-8). Query-head count and KV-head count are decoupled, and the choice is made at pretraining.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

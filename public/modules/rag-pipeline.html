@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG Pipeline: End to End | GenAI Systems Lab</title>
+  <meta name="description" content="Query → retrieval → augmentation → generation. Step through each stage and see where failures hide.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/rag-pipeline">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/rag-pipeline">
+  <meta property="og:title" content="RAG Pipeline: End to End | GenAI Systems Lab">
+  <meta property="og:description" content="Query → retrieval → augmentation → generation. Step through each stage and see where failures hide.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RAG Pipeline: End to End">
+  <meta name="twitter:description" content="Query → retrieval → augmentation → generation. Step through each stage and see where failures hide.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RAG Pipeline: End to End","description":"Query → retrieval → augmentation → generation. Step through each stage and see where failures hide.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/rag-pipeline"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 7</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>RAG Pipeline: End to End</h1>
+    <p class="desc">Query → retrieval → augmentation → generation. Step through each stage and see where failures hide.</p>
+
+    <section><h2>Start Here</h2><p>Let's take a breath and name the thing plainly. &quot;RAG&quot; — retrieval-augmented generation — sounds like one big magical box, but it's really just two ordinary jobs bolted together. First a <strong>retriever</strong> goes and <em>finds</em> relevant text for your question. Then a <strong>generation</strong> model <em>reads</em> that text and writes an answer. Find, then write. That's the whole pipeline.</p>
+<p>Here's why pulling those two jobs apart matters so much, and it's the heart of this module: when a RAG system gives a bad answer, the bug lives in <em>one</em> of those two stages — and the fix for a broken finder looks nothing like the fix for a broken writer. Confuse the two and you can burn weeks polishing the writer when the finder never handed it the right page in the first place.</p>
+<p>So the skill we're building here isn't really about RAG internals — it's <em>attribution</em>: given a wrong answer, how do you tell which stage failed before you touch a line of code? There's a single clean test that settles it, and we'll build up to it slowly. No rush. Once you have that test, RAG debugging stops being guesswork.</p></section>
+    <section><h2>How It Works</h2><p>Let's start with the trap this whole module is built to help you avoid. When a RAG answer is wrong, the tempting move is to reach for a blunt fix — &quot;improve the model&quot; or &quot;fix the retrieval&quot; — without first knowing <em>which</em> stage actually broke. That guessing is the single most common way teams waste engineering cycles here. So before touching any code, ask one clean diagnostic question: <em>could this failure happen if I bypassed the retriever entirely and fed perfect context straight to the generation model?</em> If yes, it's a generation failure. If no, it's a retrieval failure. Hold onto that test — everything below is just it, applied.</p>
+<p>Consider the first kind of failure in the abstract: relevant material genuinely lives in the index, but a conceptual query doesn't surface it. Run our test — with perfect context handed over directly, would the answer still be wrong? No. So this is a <em>retrieval</em> failure. The usual cause is a vocabulary gap: the user asks in everyday language, while the documents use domain terms of art, and a general-purpose embedding model was never trained to place those two near each other in vector space. The retriever simply never produces the right chunk, so the generation model never gets a chance to use it.</p>
+<p>The fix for that lives entirely in the retrieval stage: hybrid search — dense embeddings for semantic match, plus BM25 for lexical overlap on the exact domain terms — combined with query expansion that injects domain synonyms <em>before</em> retrieval runs. Notice what won't help: a better generation model or an output guardrail can do nothing about a chunk that was never retrieved.</p>
+<p>Now the second kind: the model cites something specific — a case, a number, an identifier — that doesn't exist in the source at all. Run the test again: would this still happen if we handed the model perfect context? Yes, it can — the model was pretrained on text full of citation-shaped strings, so it has a strong prior for <em>completing that pattern</em> whenever the retrieved context lacks a real match. The retriever did its job; the model pattern-completed from memory. That makes it a <em>generation</em> failure.</p>
+<p>And the fix, correspondingly, lives in the generation stage: constrain output to cite only verbatim identifiers drawn from the retrieved chunks (structured output with citation validation), or instruct the model to emit &quot;no citation found&quot; rather than invent one. The deeper lesson — and the reason stage-isolated evals matter — is that measuring retrieval recall@k separately from answer faithfulness is what makes attribution rigorous. Treat both symptoms as one vague &quot;quality problem&quot; and tune the model, and you might tidy up the citations while leaving conceptual recall just as broken. The production case waiting at the end is exactly these two failures, side by side.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>RAG failures are stage-specific.</strong> Retrieval and generation break independently and cannot be fixed with the same intervention — mixing them up wastes weeks.</li><li><strong>The attribution test comes before any code.</strong> Ask: would this failure still occur if I fed perfect context directly, bypassing the retriever? Yes → generation; No → retrieval.</li><li><strong>Missing conceptual retrievals are a retrieval failure.</strong> Everyday query language never matches domain terminology in a general embedding model, so the right chunk is never produced.</li><li><strong>Retrieval fixes are retrieval-stage.</strong> Hybrid search (dense + BM25) plus query expansion with domain synonyms — a better generation model can't recover a chunk it never received.</li><li><strong>Hallucinated citations are a generation failure.</strong> The model pattern-completes citation-formatted strings from pre-training memory when the retrieved context lacks a match.</li><li><strong>Generation fixes are generation-stage.</strong> Constrain output to verbatim identifiers from retrieved chunks, or force 'no citation found' rather than inferring one.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A legal-research tool over thousands of case documents shows two different failures. One: for conceptual queries like <em>&quot;cases where force majeure was applied,&quot;</em> relevant cases that are definitely in the index don't come back. Two: the model sometimes cites specific cases that don't exist in the database at all. Take a moment before reading on: which stage owns each failure? Here's the reasoning, step by step, using our one test — <em>would this failure still happen if I bypassed the retriever and fed perfect context directly to the model?</em> For the missing cases: no. The query uses everyday language while the cases use legal terms of art (<em>&quot;frustration of contract,&quot;</em> <em>&quot;supervening impossibility&quot;</em>), and a general-purpose embedding model never learned to place those near each other — so the right chunk is never even found. That's a <em>retrieval</em> failure; the fix is retrieval-stage (hybrid search plus query expansion). For the invented citations: yes, it would still happen with perfect context, because the model is pattern-completing citation-shaped strings from its pretraining memory. That's a <em>generation</em> failure; the fix is generation-stage (constrain output to verbatim identifiers, or make it say &quot;no citation found&quot;). Notice how completely different those two fixes are — which is exactly why attributing the stage <em>first</em> is what saves the weeks.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>RAG failures are stage-specific. Hallucinated citations = generation failure (model completing patterns from training memory). Missing retrievals = retrieval failure (embedding or index quality). Diagnose before fixing — the correct attribution test is 'would this failure occur with perfect context injected directly?' Measure retrieval recall@k and answer faithfulness separately.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

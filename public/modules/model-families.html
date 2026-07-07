@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Families &amp; When to Use Which | GenAI Systems Lab</title>
+  <meta name="description" content="GPT-4 vs Gemini vs Claude vs open-source — the capability, cost, and data-privacy fork.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/model-families">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/model-families">
+  <meta property="og:title" content="Model Families &amp; When to Use Which | GenAI Systems Lab">
+  <meta property="og:description" content="GPT-4 vs Gemini vs Claude vs open-source — the capability, cost, and data-privacy fork.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Model Families &amp; When to Use Which">
+  <meta name="twitter:description" content="GPT-4 vs Gemini vs Claude vs open-source — the capability, cost, and data-privacy fork.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Model Families & When to Use Which","description":"GPT-4 vs Gemini vs Claude vs open-source — the capability, cost, and data-privacy fork.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/model-families"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">DECISION</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Model Families &amp; When to Use Which</h1>
+    <p class="desc">GPT-4 vs Gemini vs Claude vs open-source — the capability, cost, and data-privacy fork.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with the tempting shortcut almost everyone reaches for first. There are lots of models out there, big and small, cheap and expensive — and the safe-sounding instinct is: just pick the strongest one and use it for everything. If it's the most capable, how could you go wrong?</p>
+<p>Here's the catch the whole module unpacks: capability is not free, and &quot;more capable&quot; is not the same as &quot;better for <em>this</em> task.&quot; Every model has a <em>ceiling</em> of what it can do — and once a task is comfortably below that ceiling, a bigger model doesn't do it any <em>better</em>; it just does it <em>more expensively</em> and <em>more slowly</em>. So the strongest model is only the right default if your hardest task actually needs its strength. For everything easier, you're paying frontier prices for headroom the task never touches.</p>
+<p>We'll build this up plainly: first the idea of a per-task quality <em>ceiling</em>, then the tiers of models and what separates them, then how you match a model to a task's real constraint — latency, volume, or reasoning. Take your time — by the end, &quot;just use the biggest one&quot; will read as the expensive mistake it usually is.</p></section>
+    <section><h2>How It Works</h2><p>Start from the single idea everything else rests on: every task has a <strong>quality ceiling</strong> — a level of capability beyond which extra model power adds <em>nothing</em> to the result. A 5-category intent classifier is either right or wrong; once a model is good enough to be reliably right, a stronger model cannot be <em>more</em> right. So the first principle is that the useful question is never &quot;which model is strongest?&quot; but &quot;what is the <em>least</em> capability this task needs to be done well?&quot;</p>
+<p>That reframes model choice from a one-time platform default into a <strong>per-use-case decision</strong> — because different tasks sit at very different ceilings. And the reason it matters so much is the price of guessing high: across the model tiers, the gap from top to small is roughly <strong>20–50× in cost and 3–5× in latency</strong>, paid on <em>every request, forever.</em> Defaulting to the biggest model therefore means paying frontier prices for capability most of your traffic never uses.</p>
+<p>So it helps to know the tiers you're choosing among, cheapest capability last: <strong>frontier</strong> (GPT-4o, Claude Opus) — highest capability, highest cost; <strong>mid-tier</strong> (GPT-4o-mini, Claude Sonnet) — balanced; <strong>small/fast</strong> (Claude Haiku, Gemini Flash Lite) — optimized for speed and cost; <strong>open-source</strong> (Llama 3, Mistral) — self-hosted across the same spectrum. More parameters does buy more capability — but only up to the <em>task's</em> ceiling; above it, that capability is unused headroom.</p>
+<p>Make that concrete. Intent classification with 5 categories sits well within the ceiling of a small model like Claude Haiku. Running GPT-4o on it adds <strong>zero accuracy</strong> while adding 20–50× the cost per request and 3–5× the latency — and because that overpayment is per-request, it <em>compounds at volume.</em> This is exactly why the answer is a match, not a maximum: you pick the cheapest model that clears the task's ceiling, and the illustration below prices out just how much the naive maximum wastes.</p>
+<div class="illustration"><div class="illustration-label">1M classification requests — small vs frontier model (representative prices)</div><pre>Task: intent classification, ~500 input + ~20 output tokens
+per request, 1,000,000 requests/month.
+(Prices below are REPRESENTATIVE tiers, not live quotes.)
+
+SMALL/FAST model (e.g. Haiku / Flash-tier):
+  input  ~$0.25 / 1M tokens,  output ~$1.25 / 1M tokens
+  per request: 500×0.25e-6 + 20×1.25e-6
+             = $0.000125 + $0.000025 = $0.00015
+  × 1,000,000 requests  →  ~$150 / month
+
+FRONTIER model (e.g. GPT-4 / Opus-tier):
+  input  ~$5.00 / 1M tokens,  output ~$15.00 / 1M tokens
+  per request: 500×5e-6 + 20×15e-6
+             = $0.0025 + $0.0003 = $0.0028
+  × 1,000,000 requests  →  ~$2,800 / month
+
+  ─────────────────────────────────────────────────────
+  Monthly delta:  $2,800 − $150 ≈ $2,650   (~19× more)
+  Annualized:     ~$31,800 EXTRA per year
+
+Accuracy delta on a 5-category classifier: ≈ 0.
+You are paying ~$31.8k/yr for capability headroom this
+task never touches — the definition of wasted spend.</pre></div>
+<p>In practice the ceiling isn't the <em>only</em> constraint — the task's dominant <em>constraint</em> decides the tier, and it's usually one of three. A <strong>latency-bound</strong> task (a real-time chat widget with, say, a 500ms budget) cannot use a frontier model, because frontier <strong>TTFT</strong> (Time To First Token — how long until the model begins outputting text) runs 2–5s at peak load; a small or mid-tier model is required. A <strong>volume-bound</strong> task (a nightly batch summarization run) has no latency limit but pays per request, so a mid-tier model at ~1/10th the cost wins <em>if</em> quality holds. A <strong>reasoning-bound</strong> task (a coding assistant) is where frontier finally justifies its cost — because an error in generated code compounds into debugging time worth more than the API premium.</p>
+<p>So the method that falls out of all this is simple to state: define the <strong>minimum acceptable quality bar</strong> per use case — not &quot;best possible&quot; but &quot;good enough to ship&quot; — then pick the cheapest model that clears it. Test on your <em>actual</em> task, since benchmarks like MMLU measure general reasoning, not your specific workload, and measure cost and latency at your real request volume. The interactive lets you slide a task's complexity and watch the cheapest-adequate tier shift; then the closing scenario hands you three jobs at once and one tempting shortcut — decide which model each needs, and why, before the reasoning walks you through it.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>&quot;Use the biggest model for everything&quot; is the #1 avoidable cost overrun</strong> — it treats capability as free, but the top-vs-small gap is 20–50× cost and 3–5× latency on every request forever.</li><li><strong>Model choice is a per-use-case decision, not a platform default</strong> you set once.</li><li><strong>More capability ≠ better quality once a task is inside a smaller model's ceiling</strong> — 5-category intent classification gains zero accuracy from a frontier model, only 20–50× cost.</li><li><strong>Match the model to the constraint:</strong> latency-bound chat → small/mid; high-volume batch → mid-tier; complex reasoning/code → frontier (where error cost dwarfs the API premium).</li><li><strong>Define a minimum quality bar per use case, then pick the cheapest model that clears it</strong> — and test your actual task, since MMLU-style benchmarks don't measure your workload.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your company needs LLMs for three jobs at once: a real-time customer chat widget, a nightly batch document-summarization run, and an internal coding assistant. A stakeholder offers the tidy shortcut — 'just use GPT-4 for everything.' Take a moment before reading on: which of those three actually <em>needs</em> frontier capability, and what does the shortcut cost on the ones that don't? Here's the reasoning, step by step. The chat widget has a ~500ms latency budget, but frontier models run 2–5s TTFT at peak — so it <em>must</em> use a small or mid-tier model; the constraint here is latency, not capability. The nightly batch job has no latency constraint but high volume, so a mid-tier model at ~1/10th the cost is the right lever as long as summarization quality holds. The coding assistant is the one case where frontier earns its price, because a wrong line of generated code compounds into debugging time worth far more than the API premium. Notice what 'use GPT-4 for everything' actually buys on the two easy jobs: 20–50× the cost and 3–5× the latency for <em>zero</em> added quality — capability headroom the tasks never touch. Define a minimum quality bar per use case, pick the cheapest model that clears it, and test on your real task rather than an MMLU-style benchmark.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Model selection is task-capability matching. Define the minimum acceptable quality bar per use case, then find the cheapest model that meets it. Frontier models justify their cost for complex reasoning and code generation. For classification, routing, and summarization of straightforward content, mid-tier or small models almost always meet the bar at a fraction of the cost.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

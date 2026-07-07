@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark Contamination &amp; Gaming | GenAI Systems Lab</title>
+  <meta name="description" content="Why a model aces MMLU and fails your task — leakage, Goodhart, held-out hygiene.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/eval-contamination">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/eval-contamination">
+  <meta property="og:title" content="Benchmark Contamination &amp; Gaming | GenAI Systems Lab">
+  <meta property="og:description" content="Why a model aces MMLU and fails your task — leakage, Goodhart, held-out hygiene.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Benchmark Contamination &amp; Gaming">
+  <meta name="twitter:description" content="Why a model aces MMLU and fails your task — leakage, Goodhart, held-out hygiene.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Benchmark Contamination & Gaming","description":"Why a model aces MMLU and fails your task — leakage, Goodhart, held-out hygiene.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/eval-contamination"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">EVALUATION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Benchmark Contamination &amp; Gaming</h1>
+    <p class="desc">Why a model aces MMLU and fails your task — leakage, Goodhart, held-out hygiene.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with what a benchmark is even <em>for</em>. When we score a model on a test set, we're not curious whether it can answer <em>those exact questions</em> — we're using them as a stand-in for questions it has never seen, to estimate how it'll do out in the world. The whole value of a test rests on one quiet assumption: <em>the model didn't get to study the answer key first.</em></p>
+<p>Now here's the puzzle this module turns over. A model can genuinely top a famous leaderboard — real questions, real correct answers, no cheating in the obvious sense — and still be <em>worse</em> than a lower-ranked model on your actual work. How can a score be completely real and completely misleading at the same time?</p>
+<p>Take it slowly. We'll start from what that one assumption requires, watch exactly how it breaks when benchmarks meet how modern models are trained, and then build up the handful of defenses that restore a trustworthy signal. By the end you'll know why a leaderboard win should make you <em>more</em> suspicious, not less — and which single eval actually decides a deployment.</p></section>
+    <section><h2>How It Works</h2><p>Start from what a benchmark is <em>supposed</em> to measure: can the model answer questions it has <em>never seen</em>? That word — unseen — is load-bearing, because it's the only thing that makes a score evidence of <em>capability</em> rather than <em>memory</em>. Now hold that requirement against how modern models are actually built: they're pretrained on enormous web scrapes, and public benchmarks <em>live on the web</em> — on GitHub, in papers, in blog posts, in Stack Overflow answers, in dozens of mirrored copies. So the unseen assumption quietly fails. <mark>If the benchmark's questions (and often their answers) were in the pretraining data, the model isn't <em>reasoning</em> to the answer — it's <em>recalling</em> it. The test set leaked into the training set.</mark> This is <strong>contamination</strong> (also called <em>test-set leakage</em>), and it's the mechanism that silently breaks every public benchmark.</p>
+<p>This is why a benchmark score can be <em>real and meaningless at once</em>. The score is real: the model genuinely emitted the right answers. It's meaningless as a measure of <em>generalization</em>: it's reporting memorization, not capability. A model can top MMLU because MMLU questions were in its training corpus, then fall flat on <em>your</em> tickets — which were never on the web and cannot have leaked. <mark>Contamination inflates the exact thing you care about (held-out capability) while looking like legitimate skill. That gap is precisely what you observed.</mark></p>
+<p>Now layer on the <em>incentive</em> problem, because contamination isn't always accidental. Benchmarks are public, competitive, and career-/funding-defining, and that turns them into <strong>Goodhart's law</strong>: <em>when a measure becomes a target, it ceases to be a good measure.</em> Once 'MMLU score' is the number everyone optimizes, teams (consciously or not) start optimizing the <em>number</em> rather than the underlying capability it was meant to proxy — training on data that looks like the benchmark, tuning prompts to its format, selecting checkpoints by leaderboard rank. <mark>The benchmark stops measuring capability and starts measuring 'how hard did you optimize for this benchmark.' This is benchmark gaming, and it's the structural reason leaderboards drift away from real-world usefulness.</mark></p>
+<div class="illustration"><div class="illustration-label">Why a real score can be a meaningless score</div><pre>WHAT A BENCHMARK IS SUPPOSED TO MEASURE:
+    can the model answer questions it has NEVER seen?  (generalization)
+
+WHAT CONTAMINATION DOES:
+    benchmark Qs live on the web (GitHub, papers, blogs, mirrors)
+        │
+        ▼  swept into the pretraining corpus
+    model has SEEN the test questions (and often the answers)
+        │
+        ▼
+    at eval time it RECALLS, doesn't REASON
+        │
+        ▼
+    high score  ✓ real (it emitted right answers)
+                ✗ meaningless (measures memorization, not capability)
+
+  Your production tickets were NEVER on the web → cannot leak →
+  the model's true generalization shows → mediocre. The gap IS the tell.</pre></div>
+<p>Defending against this is a hygiene discipline, and the first tool is the <strong>canary string</strong>. A benchmark's authors embed a unique, random, hard-to-guess sentinel string (a 'canary GUID') inside the benchmark files. The deal: anyone building a pretraining corpus is asked to <em>exclude any document containing the canary</em>, and researchers can <em>search a model</em> for knowledge of the canary to detect whether the benchmark leaked in. <mark>The canary is a tripwire — it doesn't prevent leakage by itself, but it gives both dataset builders a filter and auditors a detector.</mark> (Its limits are real: only cooperative crawlers honor it, paraphrased or reformatted copies of the questions slip past a literal-string filter, and it can't catch a benchmark that leaked before the canary existed.)</p>
+<p>The second tool is <strong>held-out / private evaluation</strong>. If the test set is <em>never published</em>, it <em>can't</em> be in anyone's training data, so contamination is structurally impossible. This is why the evaluations that best predict real-world performance are increasingly <em>private</em>: an internal eval set built from your own data, or a third-party held-out benchmark whose questions are secret and only the aggregate score is released. <mark>The single most reliable defense against contamination is to test on data the model provably could not have seen — which, by construction, means data that isn't public.</mark> Your production tickets are exactly such a set, which is why they told you the truth the leaderboard hid.</p>
+<div class="illustration"><div class="illustration-label">Eval hygiene — the defenses and their limits</div><pre>DEFENSE            HOW IT WORKS                    LIMIT
+─────────────────────────────────────────────────────────────────
+canary string      unique GUID in the benchmark;    only cooperative
+                   crawlers exclude docs with it,   crawlers honor it;
+                   auditors search models for it    paraphrases slip by
+
+temporal split     test only on events/data AFTER   model can still
+(held-out-by-time) the model's training cutoff       have seen similar
+                   → can't have been trained on it   patterns; cutoffs lie
+
+private / held-out  test set NEVER published →       you must trust the
+eval               contamination impossible          holder; can't be
+                   by construction                    independently rerun
+
+  STRONGEST signal in practice: YOUR OWN data (production tickets,
+  internal set) — provably unseen, matches YOUR distribution.</pre></div>
+<p>There's a third, cheaper hygiene move worth naming: the <strong>temporal (held-out-by-time) split</strong>. Evaluate the model only on data created <em>after</em> its training cutoff — news events, code commits, questions that didn't exist when the model was trained. Such data <em>cannot</em> have been in the training set, so a temporal split gives you contamination-resistant signal without needing a fully private benchmark. <mark>Its weakness: the model may still have seen <em>similar</em> patterns, and stated training cutoffs are often fuzzy — but as a quick sanity check it's far better than a public static benchmark.</mark></p>
+<p>So the whole chain lands on one rule for how to <em>decide</em>: a leaderboard number is a weak, gameable, contamination-prone signal, not evidence the model will do <em>your</em> job — so treat public-benchmark wins with suspicion (especially suspiciously large or sudden ones), prefer temporal splits and canary-aware sources, and always validate on a private held-out set drawn from your own distribution. <mark>A model can ace MMLU and fail your task precisely because MMLU may be in its training data and your task never is — so the only eval that decides a deployment is one the model provably hasn't seen.</mark></p>
+<p>The interactive lets you watch a benchmark score inflate as questions leak into training, and hold steady on a private set that can't leak. Then the closing scenario puts it to work on a leaderboard-topping model that's mediocre on your own tickets — see if you can explain how the score is real yet meaningless before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Contamination = benchmark test data leaked into pretraining.</strong> Public benchmarks live on the web and get swept into training corpora; the model then <em>recalls</em> answers instead of <em>reasoning</em> them. The score becomes real (right answers emitted) but meaningless (measures memorization, not generalization).</li><li><strong>Goodhart's law drives benchmark gaming:</strong> once a benchmark score is the target everyone optimizes, it stops measuring capability and starts measuring 'how hard you optimized for the benchmark' — via benchmark-shaped training data, format tuning, and leaderboard checkpoint selection. This is why leaderboards drift from real-world usefulness.</li><li><strong>Canary strings are tripwires:</strong> a unique GUID embedded in the benchmark; cooperative crawlers exclude documents containing it, and auditors search models for it to detect leakage. Limits: only cooperative crawlers honor it, paraphrased copies slip past, and pre-existing leaks aren't caught.</li><li><strong>Private/held-out evaluation is the structural fix:</strong> an unpublished test set can't be in anyone's training data, so contamination is impossible by construction. The most predictive evals are increasingly private. Temporal (held-out-by-time) splits — testing only on post-cutoff data — are a cheaper contamination-resistant approximation.</li><li><strong>A model can ace MMLU and fail your task</strong> because MMLU may have leaked and your task never did. Deployment decisions must ride on a private held-out set drawn from <em>your own distribution</em> — provably unseen and matching your task, not a generic academic one. Treat suspiciously large public wins with suspicion.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A new open model tops the MMLU and HumanEval leaderboards, beating models you know are stronger in practice. Your team is excited and wants to swap it in. You run it on your own held-out set of production tickets and it's mediocre — noticeably worse than the model it 'beat.' Someone says 'the benchmarks must be wrong.' Take a moment before reading on: given everything above, how can that leaderboard score be perfectly real yet tell you nothing about <em>your</em> task? Here's the reasoning, step by step. The scores aren't fake — the model really emitted the right answers — but MMLU and HumanEval live on the web and are commonly swept into pretraining, so the model may be <em>recalling</em> memorized answers rather than <em>reasoning</em> them. That makes the score real yet meaningless as a generalization measure. Your production tickets were never public and cannot have leaked, so they expose the model's true, weaker capability — and the gap between the two numbers is the tell. The discipline that follows: distrust suspiciously large public wins, and decide the deployment on a private held-out set drawn from your own distribution, the one thing the model provably could not have seen.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Public benchmarks live on the web and leak into pretraining, so a top score can reflect memorization rather than capability — real yet meaningless for generalization — and Goodhart's law compounds it by turning the benchmark into a gamed target. Canary strings and temporal splits are partial defenses; the structural fix is a private held-out eval the model provably couldn't have seen, ideally drawn from your own production distribution. A model can ace MMLU and fail your task precisely because MMLU may be in its training data and your task never is.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

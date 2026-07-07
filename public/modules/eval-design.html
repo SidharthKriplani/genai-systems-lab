@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Designing an Eval Suite from Scratch | GenAI Systems Lab</title>
+  <meta name="description" content="Three questions every eval must answer. Four test case types. One failure budget that changes everything.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/eval-design">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/eval-design">
+  <meta property="og:title" content="Designing an Eval Suite from Scratch | GenAI Systems Lab">
+  <meta property="og:description" content="Three questions every eval must answer. Four test case types. One failure budget that changes everything.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Designing an Eval Suite from Scratch">
+  <meta name="twitter:description" content="Three questions every eval must answer. Four test case types. One failure budget that changes everything.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Designing an Eval Suite from Scratch","description":"Three questions every eval must answer. Four test case types. One failure budget that changes everything.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/eval-design"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">EVAL</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Designing an Eval Suite from Scratch</h1>
+    <p class="desc">Three questions every eval must answer. Four test case types. One failure budget that changes everything.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a question that sounds simple and isn't: <em>is it good enough to ship?</em> Someone builds a system, someone else asks that, and everyone nods — but pause on it. Good enough <em>for what</em>? Measured <em>how</em>? Against <em>which</em> cases? Until those are answered, &quot;good enough&quot; is just a feeling, and shipping on a feeling is how quiet disasters happen.</p>
+<p>Here's the reframing this whole module rests on. An eval isn't a score you compute at the end to see how you did. It's a <em>question you commit to in advance</em> — a specific, pre-agreed bar — so that the number, when it arrives, actually decides something. And the trap is that a single blended number like &quot;85% accurate&quot; can look reassuring while hiding the one failure that would sink you.</p>
+<p>So we'll build an eval the right way round: start from what the system must <em>never</em> do, gather a small set of real examples, and pick metrics that can't hide the failure that matters. No labeled data and two weeks? That's exactly the situation we'll design for. Take your time — the discipline here is what separates a defensible ship decision from a hopeful one.</p></section>
+    <section><h2>How It Works</h2><p>Start from what an eval fundamentally <em>is</em>: a pre-committed question with a pass/fail bar, built so the resulting number makes a decision instead of inviting interpretation. <strong>This means</strong> the design has to begin before any data exists — with two lists that define the shape of the test. What must the system <em>do</em>, and what must it <em>never</em> do? For contract analysis, must-do covers extracting all defined terms, identifying risk clauses by category, and flagging missing standard provisions; must-never covers omitting a high-risk clause, attributing a clause to the wrong party, or silently truncating a long contract. <strong>And</strong> for a legal tool the must-never list carries more weight than the must-do list — because the cost of the two failure kinds is not symmetric.</p>
+<p><strong>Which forces</strong> a choice about what data those lists get tested on. Use <em>real</em> documents from actual use cases, not synthetic ones, <strong>because</strong> synthetic contracts have clean structure while real contracts carry formatting irregularities, non-standard clause ordering, and unusual legal language — which is precisely where systems fail, so it's precisely where coverage is worth paying for. Annotate a golden set of 50–100 real documents by hand: that annotation is the one big upfront cost, but it's reusable across every future model version. <strong>And since</strong> coverage should track failure cost rather than spread evenly, allocate 60–70% of the annotation budget to must-never cases. The goal is worst-case coverage, not balanced coverage across every clause type.</p>
+<p><strong>Therefore</strong> the metric has to be one that can't average the danger away. For legal extraction, precision and recall — not accuracy — are the right primary metrics, and for must-never items <strong>recall is load-bearing</strong>: you accept lower precision (some false alarms on harmless clauses) to keep recall high on the clauses that matter most, because a missed high-risk clause is the catastrophic failure and a false alarm merely a nuisance. <strong>This is exactly why</strong> you fix the bar <em>before</em> building the eval: 'ship if recall on high-risk clauses is ≥95%' is defensible and pre-committed, whereas 'ship if overall accuracy is 85%' can pass while hiding 50% recall on the clauses that count. The interactive lets you watch a blended accuracy number stay high while per-category recall collapses — and the closing scenario is the two-week, no-labeled-data cold start where you build exactly this eval from scratch.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Start with two lists, not data collection.</strong> What the system must do and what it must never do define the test structure before a single annotation hour is spent.</li><li><strong>The must-never list carries more weight for high-stakes tools.</strong> For contract analysis, omitting a high-risk clause or misattributing a party is worse than any must-do miss.</li><li><strong>Annotate real customer documents, not synthetic ones.</strong> Real contracts have formatting irregularities and non-standard clause ordering — exactly where systems fail and where coverage matters.</li><li><strong>Allocate the annotation budget by failure cost.</strong> Must-never cases deserve 60–70% of the budget; the goal is worst-case coverage, not balance across all clause types.</li><li><strong>Precision and recall, not accuracy, for extraction.</strong> For must-never items recall is load-bearing — accept lower precision (false alarms) to keep recall high on the clauses that matter.</li><li><strong>Pre-commit the threshold before building the eval.</strong> 'Ship if high-risk recall ≥95%' is defensible; 'ship if overall accuracy is 85%' can hide 50% recall where it counts.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You're the first ML engineer at a startup building a contract-analysis product. No evals exist, the CEO is already asking 'is it good enough to ship?', and you have two weeks and no labeled data. Take a moment before reading on: where do you even start when there's nothing to measure against yet? Here's the plan, step by step. Don't start with data — start with two lists: what the system <em>must do</em> (extract defined terms, identify risk clauses, flag missing provisions) and what it <em>must never do</em> (omit a high-risk clause, misattribute a clause, silently truncate). For a legal tool the must-never list carries more weight, so it earns 60–70% of your annotation budget on a golden set of 50–100 <em>real</em> contracts — real, because that's where the formatting irregularities and odd clause orderings that break systems actually live. Then pick recall on high-risk clauses as the load-bearing metric and pre-commit the bar: 'ship if recall ≥95%.' Notice why this beats 'ship if accuracy is 85%' — that blended number could hide 50% recall on the exact clauses that matter while still passing. The eval answers a question you committed to <em>first</em>, not a number you rationalize after.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Design evals around your worst-case failure mode, not your average case. For high-stakes extraction, recall on the must-never categories is the load-bearing metric. Define the minimum acceptable recall threshold before building the eval — the eval should answer a pre-committed question, not produce a number you interpret retrospectively.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

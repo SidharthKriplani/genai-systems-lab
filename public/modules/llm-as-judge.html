@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM-as-Judge: Design, Bias, and Calibration | GenAI Systems Lab</title>
+  <meta name="description" content="See the three bias types that corrupt judge scores, and why 85% human-agreement is the ceiling you calibrate to.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/llm-as-judge">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/llm-as-judge">
+  <meta property="og:title" content="LLM-as-Judge: Design, Bias, and Calibration | GenAI Systems Lab">
+  <meta property="og:description" content="See the three bias types that corrupt judge scores, and why 85% human-agreement is the ceiling you calibrate to.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LLM-as-Judge: Design, Bias, and Calibration">
+  <meta name="twitter:description" content="See the three bias types that corrupt judge scores, and why 85% human-agreement is the ceiling you calibrate to.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"LLM-as-Judge: Design, Bias, and Calibration","description":"See the three bias types that corrupt judge scores, and why 85% human-agreement is the ceiling you calibrate to.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/llm-as-judge"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">EVAL</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>LLM-as-Judge: Design, Bias, and Calibration</h1>
+    <p class="desc">See the three bias types that corrupt judge scores, and why 85% human-agreement is the ceiling you calibrate to.</p>
+
+    
+    <section><h2>How It Works</h2><p>An <strong>LLM-as-judge</strong> uses a strong model to <em>evaluate</em> other models' outputs — scoring an answer, or picking the better of two — as a fast, cheap, scalable stand-in for human raters. It is genuinely useful: it can run on every commit, cover thousands of cases, and correlate reasonably with human judgment <em>when built carefully</em>. But it is a <strong>model with the same failure modes as any LLM</strong>, so an uncalibrated judge measures a mix of quality and its own biases. <mark>Treating the judge's number as ground truth is the core mistake; the judge is an instrument that must itself be validated.</mark></p>
+<p><strong>The rubric is the whole game.</strong> A judge prompt that says 'rate this answer 1–10' invites the model to invent its own inconsistent standard. <strong>G-Eval</strong>-style design fixes this: you give the judge (1) an explicit <strong>rubric</strong> — the specific criteria that define quality for <em>this</em> task (e.g., factual accuracy, completeness, tone, safety), (2) a <strong>scoring scale with anchored descriptions</strong> of what each level means, and (3) often <strong>chain-of-thought</strong> — have the judge reason through the criteria <em>before</em> emitting a score, which improves consistency and gives you an auditable rationale. A vague rubric produces a vague, drifting metric; a sharp, anchored rubric is what makes the judge repeatable. <mark>Most 'the judge is noisy' complaints are actually 'the rubric is underspecified' complaints.</mark></p>
+<div class="illustration"><div class="illustration-label">Vague prompt vs G-Eval rubric</div><pre>VAGUE (drifts, rewards length/fluency):
+  &quot;Rate this answer from 1 to 10.&quot;
+
+G-EVAL STYLE (anchored, auditable):
+  Task: grade a support answer against the retrieved policy.
+  Criteria, score each 1–5:
+    • Factual accuracy — every claim supported by the policy?
+    • Completeness — addresses the full question?
+    • Faithfulness — no claims beyond the provided context?
+  Steps: (1) list each claim  (2) check it against the policy
+         (3) reason per-criterion  (4) THEN output scores + overall.
+  Anchors: 5 = fully supported &amp; complete; 3 = minor gap;
+           1 = fabricated or off-topic.
+
+  → CoT-before-score = more consistent + a rationale you can audit.</pre></div>
+<p>Now the <strong>biases</strong> — the reason the scenario's number moved without quality moving. Judges have systematic, documented tendencies:</p>
+<p>- <strong>Position bias</strong> — in pairwise comparison, the judge favors the answer in a particular slot (often the first) regardless of content. This is exactly the 'winner flips when I swap the order' symptom.&lt;br&gt;- <strong>Verbosity / length bias</strong> — judges reward longer, more elaborate answers even when the extra text adds no correctness. This is the model-update mystery: longer answers scored 0.6 higher for free.&lt;br&gt;- <strong>Self-preference (self-enhancement) bias</strong> — a judge tends to rate outputs from <em>its own model family</em> higher, so using GPT-4 to judge GPT-4 outputs against a competitor is not neutral.&lt;br&gt;- Others: <strong>sensitivity to superficial style/formatting</strong>, <strong>anchoring</strong> to numbers in the prompt, and <strong>leniency drift</strong> over a long eval set.</p>
+<p><mark>These biases are not random noise you can average away — they are <em>systematic</em>, so they bias comparisons in a consistent direction and silently reward the wrong behavior (be longer, go first, sound like me).</mark></p>
+<div class="illustration"><div class="illustration-label">Mitigations mapped to biases</div><pre>BIAS                 SYMPTOM                     MITIGATION
+position bias        winner flips on reorder     swap order, judge BOTH ways,
+                                                 keep only order-agnostic wins
+verbosity bias       longer answer scores higher rubric penalizes padding;
+                                                 control for length; per-claim scoring
+self-preference      judge favors own family     use a DIFFERENT model family as judge;
+                                                 or an ensemble of judges
+style/format bias    fluent-but-wrong wins       rubric weights accuracy over polish;
+                                                 CoT forces claim-checking
+overall              &quot;score ≠ quality&quot;           CALIBRATE against human labels</pre></div>
+<p><strong>Pointwise vs pairwise</strong> is a real design fork with different bias profiles:</p>
+<p>- <strong>Pointwise (absolute)</strong> — score each answer independently on the scale. Easy to aggregate and track over time, but <strong>hard to calibrate</strong>: what does 7/10 <em>mean</em>, and is it stable across runs and models? Prone to leniency drift.&lt;br&gt;- <strong>Pairwise (relative)</strong> — show the judge two answers and ask which is better. Humans and models are <strong>more reliable at relative judgments</strong> than absolute ones, so pairwise is often more trustworthy — <em>but</em> it is where <strong>position bias</strong> bites hardest. The fix is to run each pair <strong>both orderings</strong> (A-then-B and B-then-A) and only count a win if it holds regardless of order; ties/flips signal an unreliable comparison. <mark>Pairwise trades the calibration problem of pointwise for a position-bias problem you can control by swapping order.</mark></p>
+<p>The non-negotiable step is <strong>calibration against human labels</strong>. Before you trust a judge, take a <strong>sample the humans have graded</strong>, run the judge on it, and measure agreement — not just raw accuracy but rank correlation (Spearman/Kendall) and, for pairwise, how often the judge agrees with human preference. A judge is <strong>only as good as its correlation with the humans it replaces</strong>; if agreement is weak, tighten the rubric, change the judge model, or fall back to humans for that slice. <mark>A judge is unreliable when: the rubric is subjective or the task needs domain expertise the judge lacks; when it's judging its own family (self-preference); on adversarial/safety-critical calls where being fooled is catastrophic; or whenever it hasn't been calibrated against humans at all.</mark> Report the judge's human-agreement number alongside its scores, and re-validate when you change the judge model — otherwise you're trusting an uncalibrated instrument and, as the scenario shows, optimizing your product to be longer and to go first.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>An LLM judge is an instrument, not ground truth.</strong> It's a fast, scalable stand-in for human raters but has the same failure modes as any LLM — an uncalibrated judge measures a blend of quality and its own biases.</li><li><strong>The rubric is the whole game (G-Eval).</strong> Give explicit criteria, an anchored scale, and chain-of-thought reasoning <em>before</em> the score. Most 'noisy judge' complaints are actually underspecified-rubric complaints; a vague 'rate 1–10' drifts.</li><li><strong>Judge biases are systematic, not averageable noise: position, verbosity, self-preference.</strong> Position bias flips pairwise winners on reorder; verbosity rewards length without correctness; self-preference favors the judge's own model family. They reward the wrong behavior in a consistent direction.</li><li><strong>Pairwise vs pointwise is a real fork.</strong> Pointwise (absolute scores) is easy to track but hard to calibrate and drifts; pairwise (which-is-better) is more reliable relatively but suffers position bias — mitigate by judging both orderings and counting only order-agnostic wins.</li><li><strong>Calibrate against human labels or don't trust it.</strong> Measure agreement/rank-correlation on a human-graded sample; a judge is only as good as its correlation with the humans it replaces. Unreliable when: subjective/expert tasks, judging its own family, adversarial/safety-critical calls, or never calibrated.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You've replaced slow, expensive human grading with an LLM judge that scores your chatbot's answers 1–10. It runs in CI on every deploy and everyone loves the speed. Then two things happen: a model update that shipped <em>longer, more verbose</em> answers mysteriously 'improved' the judge score by 0.6 with no real quality gain, and when you A/B two candidate answers by asking the judge which is better, you get <em>different winners depending on which answer you list first</em>. Your judge is measuring something, but it isn't quite quality. You need to understand its biases and how to make it trustworthy.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>An LLM judge is a fast, scalable stand-in for human raters but is itself an LLM with systematic biases — position (pairwise winners flip on reorder), verbosity (length rewarded for free), and self-preference (favors its own family). Anchor it with a G-Eval-style rubric and chain-of-thought, prefer order-controlled pairwise for relative judgments, and never trust the scores until you've calibrated them against human labels.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

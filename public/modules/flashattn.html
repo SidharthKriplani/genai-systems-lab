@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash Attention: IO-Aware Exact Attention | GenAI Systems Lab</title>
+  <meta name="description" content="Standard attention: O(n²) VRAM. Flash: O(n). Adjust sequence length and watch the gap explode.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/flashattn">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/flashattn">
+  <meta property="og:title" content="Flash Attention: IO-Aware Exact Attention | GenAI Systems Lab">
+  <meta property="og:description" content="Standard attention: O(n²) VRAM. Flash: O(n). Adjust sequence length and watch the gap explode.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Flash Attention: IO-Aware Exact Attention">
+  <meta name="twitter:description" content="Standard attention: O(n²) VRAM. Flash: O(n). Adjust sequence length and watch the gap explode.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Flash Attention: IO-Aware Exact Attention","description":"Standard attention: O(n²) VRAM. Flash: O(n). Adjust sequence length and watch the gap explode.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/flashattn"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">MEMORY</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Flash Attention: IO-Aware Exact Attention</h1>
+    <p class="desc">Standard attention: O(n²) VRAM. Flash: O(n). Adjust sequence length and watch the gap explode.</p>
+
+    <section><h2>Start Here</h2><p>Here's a puzzle that sounds like a magic trick until you see how it's done. Someone tells you a new way of running attention uses <em>5 to 10 times less memory</em> — and produces the <em>exact same numbers</em>. Not an approximation. Not a rounding. The identical output, at a fraction of the memory. Your first instinct is right to be suspicious: how can the same math cost that much less?</p>
+<p>The secret isn't in the math at all. It's in <em>where the data lives while you compute</em>. A GPU has two kinds of memory — a big slow one and a tiny fast one — and standard attention keeps shuffling a giant matrix in and out of the slow one. The whole trick is to never build that giant matrix in the first place.</p>
+<p>We'll get there step by step, and no step is hard. First we'll see exactly what standard attention does with memory and why it's wasteful. Then we'll meet the one obstacle that makes the obvious fix impossible — and watch the real answer fall out of getting around it. By the end, that &quot;impossible&quot; 10× claim will read as a plain fact about the algorithm.</p></section>
+    <section><h2>How It Works</h2><p>Start from a fact about GPUs that has nothing to do with attention yet: a GPU has <strong>two kinds of memory</strong>, and they are wildly different in speed. There's <strong>HBM</strong> (High Bandwidth Memory) — the big main DRAM, tens of gigabytes, but relatively slow to reach. And there's <strong>SRAM</strong> — tiny on-chip memory, only about 20MB on an A100, but roughly 10× faster. Anything you compute has to have its data sitting in one of these, and <em>which one</em> decides how long the computation waits.</p>
+<p>That distinction matters here because of what standard attention does with the big slow one. It <strong>materializes the full N×N score matrix in HBM</strong>. For 16K tokens in fp16: 16,384 × 16,384 × 2 bytes ≈ 512MB per layer, just for the scores. And it doesn't touch that matrix once — it writes it after the Q·K multiply, reads it back for the softmax, writes it again after normalizing, reads it once more to multiply by V. <strong>Four round trips through HBM per attention layer.</strong> Because the arithmetic itself runs faster than HBM can feed it data, attention at long sequences is <em>memory-bandwidth-bound, not compute-bound</em> — the GPU is waiting on memory, not on math.</p>
+<p>So the obvious response is 'just compute it more efficiently' — but that misreads the bottleneck. The compute is already fast; it's the <em>transfers</em> that are slow, and the GPU cannot make HBM faster. What it <em>can</em> do is keep the work in SRAM, which is 10× faster and where computation on already-loaded data takes a fraction of the time. <strong>But that creates a size problem:</strong> 20MB of SRAM can hold small <em>tiles</em> of the attention matrix, not the full 512MB. And standard softmax has a nasty requirement — it needs <em>all N scores in a row visible at once</em> before it can normalize. Which means you can't just tile it: the moment you need every score simultaneously, tiling is off the table.</p>
+<p>That constraint is what <em>forces</em> the real mechanism. <strong>Therefore</strong> you need a way to compute the softmax over N scores without ever holding all N at once. This is the <strong>online softmax trick</strong>: process the scores tile by tile while maintaining just two running statistics — the running maximum `m_i` and the running sum `S_i`. When a new tile arrives, update `m_i` if any new score exceeds the current max, rescale both the running sum and the partial output to account for the new max, then accumulate the tile's contribution. When the last tile is done, the accumulated output is <strong>mathematically bit-identical</strong> to running standard softmax over all N scores at once. Not an approximation — the same numbers, computed in an order that never needs the whole row in memory.</p>
+<div class="illustration"><div class="illustration-label">HBM round trips: standard vs Flash Attention</div><pre>Standard Attention — HBM round trips per layer (16K tokens, fp16):
+  1. Write Q·K scores  (N×N matrix) →  512MB to HBM
+  2. Read for softmax              →  512MB from HBM
+  3. Write softmax weights         →  512MB to HBM
+  4. Read for ×V                   →  512MB from HBM
+  ─────────────────────────────────────────────────
+  Total HBM traffic per layer:   ~2GB
+  Memory footprint:              512MB for the N×N matrix  (O(N²))
+
+Flash Attention — tiled SRAM computation:
+  Load tile of Q, K, V into SRAM  (~1MB per tile, fits on-chip)
+  Compute scores + online softmax in SRAM  (stays on-chip)
+  Update running output O in SRAM  (stays on-chip)
+  Move to next tile, repeat
+  Write only final output O (N×d) to HBM  →  ~16MB
+  ─────────────────────────────────────────────────
+  Total HBM traffic per layer:   ~0.1GB  →  20× reduction
+  Memory footprint:              O(N) — the N×N matrix is never stored
+
+Speed follows from bandwidth: fewer HBM round trips → faster at long N</pre></div>
+<p>So the memory saving is <strong>geometric</strong>, and follows directly from the previous step: because the N×N matrix is never stored in HBM at any point, standard attention's O(N²) footprint — 512MB at 16K tokens, growing with the <em>square</em> of length — collapses to O(N), just the output matrix (N×d), proportional to length itself. This is why the reduction is a fact rather than an estimate: eliminate the N×N materialization and the quadratic term is simply gone. The interactive lets you watch the tiled computation walk across the score matrix and track memory as the running statistics update — then the closing scenario puts it to work on a real migration decision that hinges on exactly this guarantee.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Standard attention is memory-bandwidth-bound at long sequences.</strong> The N×N score matrix (~512MB for 16K tokens) makes four HBM round trips per layer; CUDA cores compute faster than HBM can supply data.</li><li><strong>SRAM is the lever.</strong> On-chip SRAM (~20MB on an A100) is ~10× faster than HBM but too small to hold the full N×N matrix — so you must tile.</li><li><strong>Online softmax lets you tile.</strong> Maintaining a running max and running sum as each tile arrives computes the exact softmax without ever storing all N scores at once.</li><li><strong>The output is bit-identical, not approximate.</strong> No scores are dropped, thresholded, or quantized — it's the same weighted sum computed in a memory-efficient order.</li><li><strong>Memory saving is geometric.</strong> The N×N matrix is never materialized in HBM; memory goes from O(N²) to O(N) — the 5–10× reduction is a fact about the algorithm, not an estimate.</li><li><strong>Speed follows from fewer HBM accesses.</strong> Round trips drop from ~2GB to ~0.1GB per layer; the speedup is from bandwidth, not faster math.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A cost proposal claims Flash Attention 2 cuts memory 5–10× for 16K context with <em>zero</em> accuracy loss, and you have to approve the infrastructure migration on the strength of that number. Take a moment before reading on: is that claim even physically possible, or is someone hiding an approximation? Here's the reasoning, step by step. We saw that standard attention's memory cost is the N×N score matrix it materializes in HBM — 512MB at 16K tokens, growing with the <em>square</em> of sequence length. And we saw the online softmax trick lets you compute the exact same output while never storing that matrix at all, keeping only O(N) worth of running statistics. So the memory drop isn't an estimate or a quality tradeoff — it's the direct, geometric consequence of eliminating the N×N materialization. The claim holds, precisely because the numbers coming out are bit-identical to standard attention. Approve it.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Flash Attention achieves its 4–10× memory reduction by tiling computation in on-chip SRAM using the online softmax trick — eliminating the O(N²) HBM materialization entirely. It is mathematically identical to standard attention, not an approximation. The speedup comes from fewer HBM accesses, not from skipping computation.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

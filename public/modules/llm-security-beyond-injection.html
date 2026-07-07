@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Security Beyond Injection | GenAI Systems Lab</title>
+  <meta name="description" content="PII redaction, exfiltration, output filtering, tool-permission scoping, compliance.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/llm-security-beyond-injection">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/llm-security-beyond-injection">
+  <meta property="og:title" content="LLM Security Beyond Injection | GenAI Systems Lab">
+  <meta property="og:description" content="PII redaction, exfiltration, output filtering, tool-permission scoping, compliance.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LLM Security Beyond Injection">
+  <meta name="twitter:description" content="PII redaction, exfiltration, output filtering, tool-permission scoping, compliance.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"LLM Security Beyond Injection","description":"PII redaction, exfiltration, output filtering, tool-permission scoping, compliance.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/llm-security-beyond-injection"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">SAFETY</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>LLM Security Beyond Injection</h1>
+    <p class="desc">PII redaction, exfiltration, output filtering, tool-permission scoping, compliance.</p>
+
+    <section><h2>Start Here</h2><p>Let's start by noticing what prompt injection actually <em>is</em>, because it shapes what people wrongly think 'securing an LLM' means. Injection is about bad instructions getting <em>in</em> — an attacker sneaking a command into the model's input. Defend against that and it's tempting to feel done. Most teams stop right there.</p>
+<p>But here's the reframe that opens the whole module. Step back and picture an LLM app not as a brain to be tricked, but as a <em>pipe</em>: data flows <em>in</em> (the user's request, retrieved documents), it pools in the middle (the context — which may hold secrets, other users' data, your own system prompt), and it flows <em>out</em> (to the user, and, for an agent, to tools that can <em>act</em>). Injection guards only one end of that pipe — the entrance. Every other point where data can <em>escape</em>, or a privilege can be <em>abused</em>, is still wide open.</p>
+<p>No need to rush. We'll build the picture from that pipe: name each boundary, see the specific way data leaks or power is misused there, and derive the control that plugs it — PII redaction, exfiltration defenses, guardrails that gate <em>tool calls</em> not just replies, least-privilege scoping, and the compliance rules that make all of it non-optional. By the end 'I stopped prompt injection' will read as covering one door of a building full of windows.</p></section>
+    <section><h2>How It Works</h2><p>Start from a structural definition of what an LLM app <em>is</em>, ignoring attackers for a moment: it's a pipeline that takes <em>input</em> (which may carry sensitive data), holds <em>context</em> (which may hold secrets, other users' data, and your own system prompt), and produces <em>output</em> that flows to a user — and, for an agent, to <em>tools and systems</em> that can act. Once you see it as data moving across those boundaries, a general principle follows: <mark>every boundary where data crosses is a place data can leak or a privilege can be abused.</mark> Prompt injection is one specific abuse at exactly one boundary — bad data getting <em>in</em> — and it has its own module, so set it aside. Everything else in this module is the mirror concern: sensitive data and privilege escaping <em>out</em> across the other boundaries, and the controls that sit on each one.</p>
+<p>Start with the most concrete: <strong>PII detection and redaction</strong>, on <em>both</em> the input and the output. On the <strong>input</strong> side, a user may paste a credit-card number, an SSN, a medical detail — and if you log that prompt, embed it into a vector DB, or send it to a third-party model API, you've now <em>spread</em> that PII into systems that were never scoped to hold it (a compliance problem the moment it's written down). On the <strong>output</strong> side, the model may <em>emit</em> PII — regurgitating something from its context, or reconstructing it — straight to a user who shouldn't see it (as in the credit-card transcript). The control is a <strong>redaction pass</strong> (regex for structured PII like cards/SSNs/emails, plus an NER model or a classifier for names/addresses) that detects and masks PII <em>before</em> it's logged/stored (input) and <em>before</em> it reaches the user (output). <mark>PII is a two-sided problem: you filter it going <em>in</em> so you don't spread it, and going <em>out</em> so you don't leak it.</mark></p>
+<p>The second category is <strong>data exfiltration</strong> — sensitive information <em>escaping</em> the boundary it was supposed to stay inside. Three distinct flavours interviewers probe. <strong>(1) System-prompt leakage</strong>: your system prompt often contains proprietary instructions, business logic, or even embedded keys; a model can be coaxed into reciting it, handing competitors (or attackers) your playbook. <strong>(2) Cross-tenant / training-data leakage</strong>: in a multi-tenant app, another user's data may be in the model's context (via a shared cache, a mis-scoped retrieval, or a tool), and the model surfaces it to the wrong user — or, for a fine-tuned model, it <em>memorised</em> training records and reproduces them verbatim. <strong>(3) Tool-mediated exfiltration</strong>: an agent with tools can <em>actively</em> leak — e.g. it's induced to put secret data into an outbound request (a URL it fetches, an email it sends), carrying data <em>out</em> of your perimeter through a legitimate-looking action. <mark>Exfiltration is the mirror of injection: injection is bad data getting <em>in</em> to influence the model; exfiltration is sensitive data getting <em>out</em> through the model or its tools.</mark></p>
+<div class="illustration"><div class="illustration-label">The boundaries where LLM security fails (beyond injection)</div><pre>        INPUT                CONTEXT / MODEL              OUTPUT
+   (user, docs, tools)     (secrets, other tenants,     (to user AND to tools)
+                            system prompt, memorised
+                            training data)
+   ┌─────────────┐         ┌──────────────────┐        ┌──────────────┐
+   │ PII pasted  │──►[in   │  system prompt    │  out]──►│ PII emitted  │
+   │ by user     │  filter]│  other tenant data│  filter]│ to wrong user│
+   │             │         │  embedded secrets │        │ secret in a  │
+   └─────────────┘         └──────────────────┘        │ tool call ───┼──► LEAK
+        ▲                          │                    └──────────────┘
+        │                          ▼
+    INPUT GUARDRAIL          TOOL PERMISSIONS            OUTPUT GUARDRAIL
+    (redact PII before        (least privilege:          (block PII/secrets/
+     logging &amp; storing)        scoped creds, only         unsafe content before
+                               the tools it needs)        it reaches user/tool)
+
+  Injection = bad data IN (separate module).  This module = data/privilege
+  leaking OUT, plus the guardrails and scoping that stop it.</pre></div>
+<p>The controls for both PII and exfiltration converge on one architectural idea: <strong>guardrails — input and output filters that wrap the model.</strong> An <strong>input guardrail</strong> inspects (and redacts/blocks) what goes <em>into</em> the model or into your logs/stores. An <strong>output guardrail</strong> inspects what comes <em>out</em> <em>before</em> it reaches the user <em>or a downstream tool</em> — blocking PII, secrets/credentials (API keys, tokens matched by pattern), unsafe content, and off-policy answers. <mark>The critical, often-missed point: the output guardrail must sit between the model and the <em>tool</em>, not just between the model and the user — because an agent's most dangerous output isn't shown to a human, it's <em>executed</em>.</mark> A response that says 'ok, deleting the records' is only caught if something inspects the tool call before it runs. Guardrails can be rules/regex (fast, cheap, brittle), classifier models (PII/toxicity/secret detectors), or an LLM judge (flexible, slower) — usually layered.</p>
+<p>The single highest-leverage control for <em>agents</em> is <strong>tool-permission scoping and least privilege.</strong> An agent's real power — and real danger — is that it can <em>act</em>: call tools, hit APIs, run code, touch databases. The principle: <mark>an agent should be able to call only the tools it actually needs, and each tool should hold only the narrowest credential that lets it do its job — nothing more.</mark> The scenario's 'read a file' agent holding a delete-production credential is the textbook violation: the <em>capability</em> it was granted vastly exceeds the <em>function</em> it performs, so any compromise (injection, a confused-deputy trick, a model mistake) inherits that whole blast radius. Least privilege shrinks blast radius <em>by construction</em>: scope credentials tightly (read-only where read-only suffices, single-tenant where cross-tenant isn't needed), require human approval for irreversible/high-impact actions, sandbox code execution, and prefer allow-lists of exact tools over broad access. <mark>You cannot make the model perfectly safe, so you make the <em>tools</em> safe: even a fully-compromised agent can only do what its scoped permissions allow.</mark></p>
+<div class="illustration"><div class="illustration-label">Least privilege — scoping the blast radius</div><pre>OVER-SCOPED (the anti-pattern):
+  &quot;read-a-file&quot; agent ─► cloud cred with: read, write, DELETE, admin
+     any compromise (injection / confused deputy / model mistake)
+     ─► can wipe production.  Blast radius = everything the cred can do.
+
+LEAST PRIVILEGE (scope to the exact need):
+  &quot;read-a-file&quot; agent ─► cred with: read-only, this-bucket-only
+     same compromise ─► worst case, reads one bucket it was meant to read.
+
+  Controls that shrink blast radius:
+    • allow-list the EXACT tools the agent needs (deny by default)
+    • narrowest cred per tool (read-only, single-tenant, scoped path)
+    • human-in-the-loop approval for irreversible / high-impact actions
+    • sandbox code execution; no ambient prod credentials
+  Principle: you can't guarantee the model is safe → make the TOOLS safe.</pre></div>
+<p>Wrapping it all is <strong>compliance</strong>, which turns these controls from 'nice engineering' into <em>requirements</em>. <strong>Data residency</strong>: some data legally must stay in a region (EU user data in the EU), which constrains <em>which model/provider/region</em> you may even send a prompt to — a third-party API in the wrong region can be a violation on its own. <strong>Audit logging</strong>: you must be able to reconstruct <em>what the model saw, what it did, and what tools it called</em> — both to investigate incidents and to satisfy regulators; but the logs themselves then hold sensitive data, so they need the <em>same</em> PII redaction and access controls (logging raw prompts is a common self-inflicted leak). <strong>Retention</strong>: sensitive data — and the prompts/outputs containing it — should be kept only as long as needed and then deleted, per policy (GDPR-style 'right to be forgotten,' minimisation). <mark>Compliance is why 'the model works' is not the bar: a system that leaks PII, can't be audited, or ships EU data to the wrong region is a <em>failing</em> system even if every answer is correct.</mark> The interview-grade synthesis: beyond injection, secure the boundaries — redact PII in and out, prevent exfiltration (system prompt, cross-tenant, tool-mediated) with input/output guardrails that also gate tool calls, scope agent tools to least privilege so a compromise has a tiny blast radius, and satisfy compliance (residency, audit, retention) — because in production, safety and legality are part of correctness. The interactive below lets you place controls on each boundary of the pipe and watch what leaks when one is missing; then the closing scenario is three leaks at three different boundaries — see if you can name each boundary before the reasoning walks you through it.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>An LLM app leaks at its boundaries: input, context, output-to-user, and output-to-tools.</strong> Prompt injection (separate module) is bad data getting <em>in</em>; this module is sensitive data/privilege getting <em>out</em>. Put controls on every boundary.</li><li><strong>PII detection &amp; redaction is two-sided.</strong> Filter PII on <em>input</em> so you don't spread it into logs/vector DBs/third-party APIs (a compliance breach the moment it's stored), and on <em>output</em> so the model doesn't emit it to a user who shouldn't see it. Use regex for structured PII (cards/SSNs/emails) plus NER/classifier for names/addresses.</li><li><strong>Data exfiltration has three flavours:</strong> system-prompt leakage (reciting proprietary/embedded instructions or keys), cross-tenant / memorised-training-data leakage (surfacing another user's or a memorised record), and tool-mediated exfiltration (an agent smuggling secrets out via an outbound URL/email/tool call). Exfiltration is the mirror of injection.</li><li><strong>Guardrails = input and output filters wrapping the model — and the output guardrail must gate tool calls, not just user replies.</strong> An agent's most dangerous output is <em>executed</em>, not shown, so inspect the tool call before it runs. Block PII, secrets/credentials, unsafe/off-policy content; layer rules + classifiers + an LLM judge.</li><li><strong>Least privilege is the top control for agents; compliance makes it mandatory.</strong> Scope each agent to only the tools it needs and each tool to the narrowest credential (read-only, single-tenant), require approval for irreversible actions, sandbox code — so any compromise has a tiny blast radius. Compliance (data residency, audit logging with redaction, retention/minimisation) means a leaky or unauditable system fails even when every answer is correct.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You've hardened your LLM app against prompt injection, so you feel covered — then three incidents land in one week. First, a support-bot transcript shows the model cheerfully repeating a customer's full credit-card number and home address back in its answer, with no attacker at all. Second, an internal agent with a database tool takes a cleverly-worded request and returns a chunk of <em>another tenant's</em> records, plus, on inspection, part of your system prompt. Third, a security review finds your 'read a file' agent was provisioned with a cloud credential that can <em>also</em> delete production buckets. Take a moment before reading on: what do these three have in common, given injection was already handled? Here's the reasoning, step by step. Not one is an injection — nothing bad got <em>in</em>. Instead, each is something escaping <em>out</em> at a different boundary of the pipe: PII leaking to the user (an output-redaction gap), other-tenant data and the system prompt exfiltrating through context, and an over-scoped credential turning any future slip into a catastrophic blast radius (a least-privilege gap). Notice how cleanly the fixes fall out once you see the boundaries: two-sided PII redaction, output guardrails that also gate tool calls, and credentials scoped to the narrowest capability the agent actually needs.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Beyond prompt injection, an LLM app leaks at its boundaries, so secure each one: redact PII on both input (don't spread it into logs/vector DBs/third-party APIs) and output (don't emit it to the wrong user); prevent data exfiltration in its three forms (system-prompt leakage, cross-tenant/memorised-training-data leakage, and tool-mediated smuggling) with input and output guardrails — where the output guardrail must gate <em>tool calls</em>, not just user replies, since an agent's most dangerous output is executed rather than shown. Scope agents to least privilege (only the tools they need, the narrowest credential per tool, approval for irreversible actions) so any compromise has a tiny blast radius, and satisfy compliance (data residency, redacted audit logging, retention/minimisation) — because in production a system that leaks, can't be audited, or mishandles regional data is failing even when every answer is correct.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

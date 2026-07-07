@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>When to Fine-Tune (vs RAG / Prompt) | GenAI Systems Lab</title>
+  <meta name="description" content="The customization ladder — fine-tuning changes behavior, not facts.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/custom-when-to-finetune">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/custom-when-to-finetune">
+  <meta property="og:title" content="When to Fine-Tune (vs RAG / Prompt) | GenAI Systems Lab">
+  <meta property="og:description" content="The customization ladder — fine-tuning changes behavior, not facts.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="When to Fine-Tune (vs RAG / Prompt)">
+  <meta name="twitter:description" content="The customization ladder — fine-tuning changes behavior, not facts.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"When to Fine-Tune (vs RAG / Prompt)","description":"The customization ladder — fine-tuning changes behavior, not facts.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/custom-when-to-finetune"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">CUSTOMIZATION</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>When to Fine-Tune (vs RAG / Prompt)</h1>
+    <p class="desc">The customization ladder — fine-tuning changes behavior, not facts.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a simple, honest question: your model isn't behaving the way you want, and you've heard that the fix is to <em>fine-tune</em> it. Should you? It's a tempting reflex — the model feels generic, fine-tuning sounds like the serious, grown-up answer, so you reach for it. But here's the thing worth slowing down on: <strong>fine-tuning is only one of several ways to change how a model behaves, and it's the most expensive one.</strong> Reaching for it first is one of the most common mistakes in this whole field.</p>
+<p>So before we talk about <em>how</em> to fine-tune, we're going to get very clear on <em>when</em> to. The good news is there's a clean way to think about it — a short ladder of options, cheapest at the bottom, and one sharp distinction that decides almost every case. Once you can see that ladder, the decision stops feeling like a judgment call and starts feeling obvious.</p>
+<p>We'll build it up slowly, from the ground: what customization actually <em>is</em>, what fine-tuning can and can't do, and the one question that tells you which tool to grab. By the end, when someone says 'let's just fine-tune it,' you'll know exactly what to ask back.</p></section>
+    <section><h2>How It Works</h2><p>Model customization is a <strong>ladder of interventions ordered by cost</strong>, and the entire discipline is about climbing only as high as the problem forces you to.</p>
+<p>From cheapest to costliest: <strong>prompt / few-shot</strong> (change behavior with instructions and examples in the context, zero training), <strong>RAG</strong> (inject external knowledge at inference time via retrieval), <strong>fine-tuning / SFT</strong> (update the model's weights to bake in behavior, format, and tone), and <strong>continued pretraining</strong> (train on a large corpus to teach a genuinely new domain or language). <mark>The senior move is to start at the bottom and only climb when the rung below has <em>measurably</em> failed.</mark> Every rung up multiplies cost — engineering time, data, compute, and a permanent maintenance commitment.</p>
+<p>The single most important distinction — and the one interviews probe hardest — is: <strong>fine-tuning teaches behavior and form, not facts.</strong></p>
+<p>When you fine-tune on input→output pairs, you're shifting the model's <em>distribution over how it responds</em>: its format, tone, structure, the shape of its reasoning, which skills it reaches for. You are <strong>not</strong> reliably writing new facts into a lookup table. A model can absorb a few facts that appear thousands of times, but fine-tuning is a terrible, lossy, expensive way to store knowledge that changes — and it will confidently hallucinate the parts it half-learned.</p>
+<p><mark>Facts that change belong in a retrieval index (RAG), where you can update them the moment they change. Behavior that should be consistent belongs in the weights (fine-tuning).</mark> Confusing these two is the classic trap that separates junior from senior answers.</p>
+<div class="illustration"><div class="illustration-label">The customization ladder — map each need to the cheapest rung that solves it</div><pre>NEED                                    CHEAPEST RUNG THAT SOLVES IT
+------------------------------------    ----------------------------------
+Quick behavior nudge, one-off task      Prompt / few-shot   (minutes, $0 training)
+Inject facts that CHANGE                 RAG                 (update index instantly)
+Enforce consistent format / tone / JSON  Fine-tune (SFT)     (weeks, needs a dataset)
+Specialize a narrow task, cut latency    Fine-tune a SMALL model
+Genuinely new domain / language          Continued pretraining (months, huge corpus)
+
+The scenario's three complaints, correctly routed:
+  &quot;prices/policies are stale&quot;   -&gt; RAG        (facts, and they change)
+  &quot;new SKUs not covered&quot;        -&gt; RAG        (facts, and they change)
+  &quot;tone is too corporate&quot;       -&gt; Fine-tune  (behavior, should be consistent)
+
+=&gt; &quot;fine-tune the knowledge base&quot; solves the ONE problem fine-tuning is good at
+   and fails the two that are actually knowledge problems.</pre></div>
+<p>So <strong>when does fine-tuning genuinely win?</strong> Four cases, all about <em>behavior</em>, not facts:</p>
+<p><strong>(1) Consistent format or tone</strong> — you need every output as valid JSON in your schema, or every answer in your brand voice, and prompting gets it right 90% of the time but you need 99.5%. <strong>(2) Narrow task specialization</strong> — a single well-defined task where a fine-tuned small model matches a huge prompted model. <strong>(3) Latency and cost</strong> — a fine-tuned 7B can replace a prompted 70B for a specialized task, cutting cost 10x and latency 3x, because the behavior is baked in instead of steered by a long expensive prompt. <strong>(4) A skill prompting can't elicit</strong> — a reasoning pattern or style the base model just won't do reliably no matter how you prompt.</p>
+<p><mark>The unifying test: is this a <em>behavior</em> I need to be reliable and repeated? Then weights. Is it <em>knowledge</em> I need to be current? Then retrieval.</mark></p>
+<p>The costs that kill naive fine-tuning projects are the ones <strong>not</strong> on the training bill — they're the ongoing commitment.</p>
+<p><strong>Data</strong>: you need thousands of clean, on-distribution examples, and collecting/labeling them is usually the bulk of the effort. <strong>The eval harness</strong>: you can't tell if a fine-tune helped without a held-out, production-representative eval — building it is a project in itself. <strong>Base-model churn</strong>: the frontier moves every few months; the base you tuned on becomes obsolete, and your fine-tune doesn't automatically ride the upgrade — you re-tune. <strong>Serving and ops</strong>: a fine-tuned model is another artifact to version, deploy, monitor, and roll back.</p>
+<p><mark>A prompt is an edit. A fine-tune is a <em>product</em> you now own forever.</mark> That asymmetry is why the cheap rungs are the default.</p>
+<p>The answer that lands in interviews is almost never 'fine-tune' alone — it's <strong>RAG plus a fine-tuned model</strong>, because the two solve orthogonal problems.</p>
+<p>For the scenario: <strong>RAG</strong> serves the current prices, policies, and SKUs from an index you update the instant they change — no retraining, always fresh. A small <strong>fine-tune</strong> (SFT) fixes the tone and teaches the model to answer support questions in your exact format and voice. The retriever supplies <em>what to say</em>; the tuned weights supply <em>how to say it</em>.</p>
+<p><mark>This is the real production shape: retrieval for the facts (current, cheap to update), fine-tuning for the behavior (consistent, baked in). Reaching for one when you need both — or fine-tuning when you needed retrieval — is the mistake the framework exists to prevent.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Customization is a cost-ordered ladder</strong> — prompt/few-shot → RAG → fine-tune (SFT) → continued pretraining. Start at the bottom; only climb when the rung below has <em>measurably</em> failed. Each rung multiplies cost and adds a permanent maintenance commitment.</li><li><strong>Fine-tuning teaches behavior and form, not facts.</strong> It shifts the distribution over <em>how</em> the model responds (format, tone, skills), not <em>what</em> it knows. Facts that change belong in a retrieval index; behavior that should be consistent belongs in the weights.</li><li><strong>'Fine-tune to add knowledge' is the classic trap.</strong> A model half-learns changing facts and hallucinates the rest, and the fine-tune is stale the moment a price or policy changes — whereas a RAG index updates instantly.</li><li><strong>Fine-tuning wins on four behavior cases:</strong> consistent format/tone, narrow task specialization, latency/cost (a tuned small model replacing a prompted large one), and eliciting a skill prompting can't reliably produce.</li><li><strong>The real cost is ongoing, not the training bill:</strong> data collection/labeling, an eval harness, re-tuning as base models churn, and serving/ops. A prompt is an edit; a fine-tune is a product you own forever.</li><li><strong>The production answer is usually RAG <em>plus</em> a fine-tuned model</strong> — retrieval for the current facts, tuned weights for the consistent behavior. They solve orthogonal problems.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put this to work. A VP walks into your planning meeting and says: 'Our support answers are generic — let's fine-tune a model on our 400-page knowledge base and our past tickets.' The eng team is ready to start collecting data.</p>
+<p>Take a moment: what does the framework tell you? Here's the reasoning, step by step. First, separate the complaints by <em>type</em>. Two of the three problems are <strong>stale facts</strong> — product prices, policy changes, new SKUs — and only one is a <strong>behavior</strong> problem: the tone is too corporate. Now route each to the cheapest rung that solves it. The stale facts change constantly, so they belong in a <strong>RAG index</strong> you can update the instant they change — fine-tuning would bake them in as of the training snapshot. Only the tone is a consistent behavior that belongs in the <strong>weights</strong>. So the VP's plan — 'fine-tune the knowledge base' — solves the <em>one</em> problem fine-tuning is good at and fails the two that are actually knowledge problems. If you fine-tuned to fix all three, you'd spend six weeks, ship a model that's already out of date the day it launches, and <em>still</em> have the wrong tone half the time. The senior answer is RAG for the current prices/policies/SKUs plus a small fine-tune for the tone — and knowing when <em>not</em> to reach for fine-tuning is exactly the signal the interviewer is listening for.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Model customization is a cost-ordered ladder — prompt → RAG → fine-tune → continued pretraining — and the senior move is to climb only as high as the problem forces. The load-bearing distinction is that fine-tuning teaches <em>behavior and form</em>, not <em>facts</em>: changing knowledge belongs in a retrieval index, consistent behavior belongs in the weights. 'Fine-tune to add knowledge' is the classic trap. Fine-tuning wins on consistent format/tone, narrow specialization, and latency/cost, but its real price is the ongoing commitment (data, evals, re-tuning on base churn). The production answer is usually RAG for current facts <em>plus</em> a small fine-tune for consistent behavior.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

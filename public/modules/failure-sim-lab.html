@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Failure Modes | GenAI Systems Lab</title>
+  <meta name="description" content="Timeouts, rate limits, bad output, cascades — and the defenses.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/failure-sim-lab">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/failure-sim-lab">
+  <meta property="og:title" content="Production Failure Modes | GenAI Systems Lab">
+  <meta property="og:description" content="Timeouts, rate limits, bad output, cascades — and the defenses.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Production Failure Modes">
+  <meta name="twitter:description" content="Timeouts, rate limits, bad output, cascades — and the defenses.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Production Failure Modes","description":"Timeouts, rate limits, bad output, cascades — and the defenses.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/failure-sim-lab"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">RESILIENCE</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Production Failure Modes</h1>
+    <p class="desc">Timeouts, rate limits, bad output, cascades — and the defenses.</p>
+
+    
+    <section><h2>How It Works</h2><p>First principles: <mark>an LLM call is a network call to a slow, non-deterministic, rate-limited, occasionally-wrong remote dependency — so it inherits every distributed-systems failure mode, plus a few unique to generative output.</mark> The demo works because there's no load, no contention, and no adversarial timing; production has all three. Reliability engineering for LLM features is therefore mostly classic resilience (retries, fallbacks, circuit breakers, timeouts, idempotency) applied to an unusually slow and unusually unreliable dependency, with extra defenses for the fact that the <em>content</em> of a successful response can still be invalid.</p>
+<p>The <strong>failure modes</strong>, each with its mechanism:</p>
+<p><strong>Timeouts</strong> — LLM latency is high and variable (seconds, tail latencies of tens of seconds). A request that hangs holds a connection/thread; enough hung requests exhaust the pool and stall everything. Timeouts are non-negotiable: every LLM call needs a deadline.</p>
+<p><strong>Rate limits (429)</strong> — providers cap requests/tokens per minute. Under a traffic spike you hit the cap and get 429s; if you naively retry immediately, you add load to an already-throttled endpoint and make it worse (a retry storm).</p>
+<p><strong>Malformed / invalid output</strong> — the call <em>succeeds</em> (HTTP 200) but the <em>content</em> is unusable: broken JSON, missing required fields, wrong schema, a refusal where you expected data. This is unique to LLMs — success at the transport layer, failure at the semantic layer — and it breaks any downstream parser that assumed valid structure.</p>
+<p><strong>Tool errors</strong> — in agentic flows the model calls a tool that itself fails (the DB is down, the API 500s, the search returns nothing). The model must handle a failed observation, not assume tools always succeed.</p>
+<p><strong>Cascading failures</strong> — the dangerous emergent one: a single slow or failing dependency causes upstream requests to pile up waiting, exhausting resources, which takes down the caller, which takes down <em>its</em> caller. <mark>One slow dependency becomes a whole-system outage because everyone upstream is blocked waiting on it.</mark></p>
+<div class="illustration"><div class="illustration-label">How one slow dependency cascades into a full outage</div><pre>NORMAL:  user → API → LLM → tool → DB   (each fast, threads free)
+
+DB slows to 30s under load:
+  DB slow ──▶ tool call blocks 30s
+          ──▶ LLM request holds a connection 30s
+          ──▶ API worker thread pinned 30s
+          ──▶ new requests queue; thread pool fills
+          ──▶ API stops accepting ANY request  ← full outage
+                (even endpoints that don't touch the DB)
+
+  One slow leaf → upstream threads all blocked waiting → cascade.
+
+  CIRCUIT BREAKER cuts the chain:
+  DB failing ──▶ breaker OPENS after N failures
+             ──▶ tool calls fail FAST (no 30s wait)
+             ──▶ threads freed, degrade gracefully, system stays up</pre></div>
+<p>The <strong>defenses</strong>, each mapped to the failure it stops:</p>
+<p><strong>Retries with exponential backoff (+ jitter)</strong> — for <em>transient</em> failures (timeouts, 429s, 5xx). Retry, but wait progressively longer between attempts (1s, 2s, 4s…) and add random jitter so many clients don't retry in lockstep and create a synchronized retry storm. <mark>Never retry immediately or unboundedly — that amplifies the outage you're trying to recover from.</mark> Only retry idempotent/transient errors, never a deterministic 400 (malformed request) that will just fail again.</p>
+<p><strong>Fallbacks / graceful degradation</strong> — when the primary path fails, serve something instead of nothing: a secondary model, a cached response, a simpler heuristic, or an honest 'temporarily unavailable' message. The feature degrades in quality but stays <em>up</em>. This is the difference between a slow feature and a broken product.</p>
+<p><strong>Circuit breakers</strong> — the cascade-stopper. Track failures to a dependency; after a threshold, <em>open</em> the breaker and fail fast (reject immediately) instead of letting every request wait on the dead dependency. This frees threads and prevents the pile-up that causes cascades. After a cool-down it half-opens to test recovery. <mark>A circuit breaker trades 'this dependency's calls fail immediately' for 'the rest of the system stays alive.'</mark></p>
+<p><strong>Timeouts</strong> — the prerequisite for all of the above: bound how long any call can hang, so a slow dependency can't pin resources indefinitely. No timeout means no circuit breaker can even measure failure.</p>
+<p><strong>Idempotency</strong> — because retries and network ambiguity mean a request may be delivered more than once, design operations so that doing them twice is safe (idempotency keys, dedup). Without it, a retry after a timeout can double-charge, double-send, or double-write.</p>
+<p><strong>Output validation</strong> — for the malformed-output failure: validate/parse the model's response against a schema <em>before</em> trusting it, with a repair or re-ask path when it fails (and prefer structural enforcement like function-calling with a strict schema so malformed output is impossible upstream).</p>
+<div class="illustration"><div class="illustration-label">Failure mode → resilience pattern (the mapping to memorize)</div><pre>  FAILURE MODE            DEFENSE
+  ───────────────────────────────────────────────────────────────
+  timeout / hang          per-call TIMEOUT (deadline)
+  transient 429 / 5xx     RETRY + exponential BACKOFF + JITTER
+  primary path down       FALLBACK (2nd model / cache / degrade)
+  cascading pile-up       CIRCUIT BREAKER (fail fast, free threads)
+  retry double-delivery   IDEMPOTENCY key / dedup
+  malformed JSON output   OUTPUT VALIDATION + repair/re-ask
+                          (or function-calling strict schema)
+
+  Layered: timeout enables the breaker; backoff+jitter prevents
+  retry storms; fallback keeps it up; idempotency makes retries safe.</pre></div>
+<p>The synthesis is a <strong>resilience posture</strong>, not a single trick: bound every call with a <strong>timeout</strong>, <strong>retry</strong> only transient errors with <strong>backoff + jitter</strong>, wrap flaky dependencies in a <strong>circuit breaker</strong> so a failure fails fast instead of cascading, keep a <strong>fallback</strong> so the feature degrades instead of dying, make operations <strong>idempotent</strong> so retries are safe, and <strong>validate output</strong> so a 200-with-garbage doesn't poison downstream. <mark>The mindset shift interviews look for: stop treating the LLM as a reliable function and start treating it as an unreliable remote dependency — then apply the same discipline you'd apply to any third-party service you don't control.</mark></p>
+<p>The interactive below is a failure simulator: it presents production failure scenarios (including injection, schema drift, and prompt-regression cases) where you pick a configuration and see exactly why it works, partially works, or breaks — with the root cause and the system-design lesson spelled out. Work through them to connect each failure mode to the defense that neutralizes it, and to internalize that most 'LLM reliability' is distributed-systems reliability. Notice how often the winning config is the one that adds a <em>structural</em> guarantee (validation, a breaker, a fallback) rather than hoping the model behaves.</p>
+<p>Interview framing: <em>an LLM call is a slow, non-deterministic, rate-limited remote dependency, so it inherits timeouts, rate limits, tool errors, and cascading failures — plus malformed-output failures unique to generation. Defend with timeouts, retries+backoff+jitter, circuit breakers (stop cascades), fallbacks/graceful degradation, idempotency (safe retries), and output validation, layered so each defense enables the next.</em></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>An LLM call is an unreliable remote dependency.</strong> It's slow, non-deterministic, rate-limited, and occasionally wrong, so it inherits classic distributed-systems failures plus malformed-output failures unique to generation — the demo works only because there's no load, contention, or adversarial timing.</li><li><strong>Failure modes:</strong> timeouts (high/variable latency pins resources), rate limits/429 (spikes hit the cap; naive retries make it worse), malformed output (HTTP 200 but unusable content breaks parsers), tool errors (dependencies the model calls fail), and cascading failures (one slow dependency blocks everyone upstream into a full outage).</li><li><strong>Retries need backoff + jitter, and only for transient errors.</strong> Exponential backoff plus random jitter prevents synchronized retry storms; never retry immediately/unboundedly or retry a deterministic 400 that will just fail again.</li><li><strong>Circuit breakers stop cascades.</strong> After a failure threshold, open the breaker and fail fast so requests don't pile up waiting on a dead dependency — freeing threads and keeping the rest of the system alive; half-open after cool-down to test recovery.</li><li><strong>Fallbacks keep the feature up.</strong> A secondary model, cached response, heuristic, or honest 'temporarily unavailable' turns a broken product into a gracefully degraded one. Timeouts are the prerequisite that makes all other defenses measurable.</li><li><strong>Idempotency makes retries safe; output validation catches 200-with-garbage.</strong> Design operations so double-delivery is harmless, and validate/repair the model's output against a schema (or enforce it structurally via function-calling) before trusting it downstream.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your LLM feature calls a model API, which calls a tool, which calls a database. In the demo, everything works. In production the model API times out under load, the provider returns 429 rate-limit errors during a spike, the model occasionally emits malformed JSON that breaks your parser, and one slow dependency stalls every request until the whole feature falls over. None of these are model-quality problems — they're distributed-systems problems that happen to have an LLM in the loop. You need to enumerate the failure modes and the standard resilience patterns that keep the feature up when a dependency isn't.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>An LLM call is a slow, non-deterministic, rate-limited remote dependency, so an LLM feature inherits timeouts, rate limits, tool errors, and cascading failures — plus malformed-output failures where a 200 response carries unusable content. The resilience posture is layered: bound every call with a timeout, retry only transient errors with exponential backoff and jitter, wrap flaky dependencies in circuit breakers to fail fast and stop cascades, keep fallbacks so the feature degrades instead of dying, make operations idempotent so retries are safe, and validate output (or enforce it with strict function-calling) before trusting it downstream.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

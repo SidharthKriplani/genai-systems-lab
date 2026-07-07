@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Hop Retrieval | GenAI Systems Lab</title>
+  <meta name="description" content="Answers that need chaining across documents — decompose, retrieve, reason, repeat.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/multi-hop-retrieval">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/multi-hop-retrieval">
+  <meta property="og:title" content="Multi-Hop Retrieval | GenAI Systems Lab">
+  <meta property="og:description" content="Answers that need chaining across documents — decompose, retrieve, reason, repeat.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Multi-Hop Retrieval">
+  <meta name="twitter:description" content="Answers that need chaining across documents — decompose, retrieve, reason, repeat.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Multi-Hop Retrieval","description":"Answers that need chaining across documents — decompose, retrieve, reason, repeat.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/multi-hop-retrieval"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">RETRIEVAL</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Multi-Hop Retrieval</h1>
+    <p class="desc">Answers that need chaining across documents — decompose, retrieve, reason, repeat.</p>
+
+    <section><h2>Start Here</h2><p>Here's a question so simple a child could answer it, yet it quietly breaks most retrieval systems: <em>what's the weather in the city where the president lives?</em> Notice you can't answer that in one lookup. You have to do it in <strong>two steps</strong> — first find <em>which</em> city the president lives in, and only <em>then</em> can you look up the weather there. The second question literally doesn't exist until you've answered the first.</p>
+<p>That two-step shape is everywhere once you start noticing it. 'How tall is the tallest building in the country that won the last World Cup?' 'What's the return policy for the brand my last order was from?' Each one hides a little chain: answer A, and A tells you what B to go ask. A human does this so automatically they barely feel the seam.</p>
+<p>But a search engine that grabs documents in <em>one</em> shot has no way to pause in the middle, read what it found, and use it to decide what to look for <em>next</em>. And that, it turns out, is the whole difference between the questions your bot answers effortlessly and the ones where it confidently makes something up. We'll build up exactly why one-shot retrieval can't cross that seam, and what shape of system can.</p></section>
+    <section><h2>How It Works</h2><p>Some questions can be answered by finding <em>one</em> relevant passage. Others can only be answered by <em>chaining</em> facts that live in <em>different</em> passages — and that difference is a hard architectural boundary, not a matter of degree. Start by naming it precisely.</p>
+<p>A <strong>multi-hop question</strong> is one whose answer requires combining information from <em>two or more documents</em>, where you can't even <em>know which second document you need</em> until you've read the first. The scenario's question is the canonical shape: to find the parental-leave policy you must <em>first</em> discover <em>which country</em> the VP is in (hop 1: VP → Germany), and <em>only then</em> can you look up <em>that country's</em> leave policy (hop 2: Germany → policy). <mark>The identifying signature of a multi-hop question is a chain of dependencies: the answer to the second lookup is gated on the answer to the first.</mark></p>
+<p>Now see <em>why</em> your single-shot pipeline is structurally incapable of answering it. Standard RAG embeds the <em>whole question</em> into one vector and pulls the top-k <em>most similar</em> chunks in one shot. But no chunk is similar to the <em>entire</em> question here — the chunk that says 'the VP is based in Berlin' isn't about parental leave, and the chunk about German parental leave doesn't mention the VP. The single query vector is a <strong>blurry average</strong> of two distinct information needs, and it retrieves chunks that are mediocre matches for the <em>blend</em> rather than strong matches for <em>either hop</em>. <mark>Single-shot retrieval assumes the evidence for an answer is co-located or at least jointly similar to the query. Multi-hop questions violate that assumption by design.</mark></p>
+<div class="illustration"><div class="illustration-label">Why single-shot retrieval can't bridge the hops</div><pre>Question: &quot;parental-leave policy in the country where our VP of Eng is based&quot;
+
+SINGLE-SHOT (standard RAG):
+  embed the WHOLE question → 1 query vector (a blur of 2 needs)
+  top-k by similarity:
+    ✗ chunk &quot;German parental leave: 14 months...&quot;  (no VP mention)
+    ✗ chunk &quot;VP roster: Eng VP based in Berlin&quot;    (no leave mention)
+    ✗ chunk &quot;US parental leave: 12 weeks...&quot;       (semantically loud, WRONG)
+  → the two chunks that TOGETHER answer it are never both in top-k,
+    and nothing links them. Model guesses → US policy. Wrong.
+
+THE MISSING LINK:  VP ──(based in)──► Germany ──(leave policy)──► answer
+  hop 2's query DEPENDS on hop 1's answer — you can't form it up front.</pre></div>
+<p>The fix is to stop treating retrieval as one shot and make it a <strong>loop</strong>: <em>decompose → retrieve → reason → retrieve again</em>. Concretely, the system first <strong>decomposes</strong> the question into an ordered chain of sub-questions ('Where is the VP of Engineering based?' then 'What is the parental-leave policy in {that country}?'). It retrieves for hop 1, <em>reads</em> the result to extract the intermediate answer ('Germany'), <strong>substitutes</strong> that answer into hop 2's query, retrieves again with the now-<em>concrete</em> query, and only then composes the final answer. <mark>The essential move is that hop 2's query is <em>constructed from</em> hop 1's retrieved result — the loop lets a later retrieval depend on what an earlier one found, which a single shot fundamentally cannot do.</mark> This is the pattern behind IRCoT (interleaved retrieval + chain-of-thought), Self-Ask, and most agentic-RAG loops: retrieve, reason about what you now know, decide what to retrieve next.</p>
+<div class="illustration"><div class="illustration-label">Iterative retrieve → reason → retrieve</div><pre>ITERATIVE (multi-hop) loop:
+
+  decompose:  Q → [ Q1: &quot;Where is the VP of Eng based?&quot;,
+                    Q2: &quot;Parental-leave policy in {A1}?&quot; ]
+
+  hop 1:  retrieve(Q1) ─► chunk &quot;VP based in Berlin&quot;
+          reason ──────► A1 = &quot;Germany&quot;        ← intermediate answer extracted
+
+  hop 2:  build Q2 = &quot;parental-leave policy in Germany&quot;   ← DEPENDS on A1
+          retrieve(Q2) ─► chunk &quot;German parental leave: 14 months...&quot;
+          reason ──────► final answer
+
+  Each hop's query is CONCRETE (not a blur), so each retrieval is a
+  strong single-fact match — the thing standard RAG is already good at.</pre></div>
+<p>This power is not free, and a staff-level answer names the two costs precisely. <strong>Cost one: compounding error.</strong> Every hop is a fallible retrieval <em>plus</em> a fallible reasoning/extraction step, and errors <em>multiply</em> down the chain. If each hop is 90% reliable, a 2-hop chain is ~0.9 × 0.9 ≈ 81% and a 3-hop chain ~73% — and worse, an error in hop 1 doesn't just lower the score, it <strong>poisons every subsequent hop</strong>: extract the wrong country and every downstream retrieval searches for the wrong thing with full confidence. <mark>Multi-hop turns retrieval into a chain, and chains are only as strong as their weakest link, times their length.</mark></p>
+<div class="illustration"><div class="illustration-label">Compounding error and latency down the chain</div><pre>Per-hop reliability p = 0.90        Latency ≈ hops × (retrieve + LLM reason)
+
+  1 hop:  0.90                        1 hop:  ~1 retrieval + 1 LLM call
+  2 hops: 0.90² = 0.81                2 hops: ~2×(retrieve + reason)  ← serial!
+  3 hops: 0.90³ = 0.73                3 hops: ~3×(...)                  cannot
+  4 hops: 0.90⁴ = 0.66                4 hops: ~4×(...)                  parallelize
+
+  + hop-1 error POISONS all later hops (searches for the wrong entity
+    with full confidence) — not just a lower score, a wrong-track answer.
+
+  → each hop adds a full retrieve+reason ROUND-TRIP in SERIES.
+     Multi-hop is inherently slower AND more fragile than single-shot.</pre></div>
+<p><strong>Cost two: latency.</strong> The hops are <em>inherently serial</em> — you can't issue hop 2 until hop 1's answer exists — so a multi-hop query pays <em>N</em> sequential (retrieve + LLM-reason) round-trips instead of one. A 3-hop question can be 3× the latency and 3× the token cost of a single-shot answer. So the real skill is <strong>knowing when to reach for it</strong> versus when a cheaper fix suffices. The key discriminator: ask whether the sub-facts are <em>co-located or jointly retrievable</em>. If the answer's evidence tends to live <em>together</em> (or the pieces are all <em>individually</em> similar to the query), then simply <strong>raising top-k</strong> — retrieving 20 chunks instead of 5 so both facts land in context and the LLM stitches them itself — is far cheaper and often enough. Multi-hop retrieval earns its cost only when the facts are <em>genuinely scattered</em> and the second lookup <em>cannot be formed</em> without the first hop's result — a true dependency chain, not just 'two facts that happen to co-occur nearby.' <mark>Bigger top-k solves 'the facts are spread across a few nearby chunks'; iterative multi-hop solves 'I don't even know what to search for until I've read something first.' Diagnose which one you have before paying for the loop.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A multi-hop question needs facts from 2+ documents chained, where you can't know the 2nd lookup until you've done the 1st.</strong> Signature: a dependency chain (VP → Germany → leave policy). The second query is gated on the first query's answer.</li><li><strong>Single-shot RAG is structurally incapable of it.</strong> Embedding the whole question makes a blurry-average query vector that weakly matches the <em>blend</em> of two needs rather than strongly matching either hop, so the two chunks that together answer it are never both retrieved.</li><li><strong>The fix is an iterative loop: decompose → retrieve → reason → retrieve.</strong> Split into ordered sub-questions, retrieve hop 1, extract the intermediate answer, <em>substitute it</em> into hop 2's now-concrete query, retrieve again, compose. Each hop becomes a strong single-fact match. (IRCoT, Self-Ask, agentic RAG.)</li><li><strong>Cost one — compounding error.</strong> Each hop is a fallible retrieve + reason step, so reliability multiplies (0.9²≈0.81, 0.9³≈0.73), and a hop-1 error poisons every later hop (searches for the wrong entity confidently). Chains are as strong as their weakest link, times their length.</li><li><strong>Cost two — serial latency, and knowing when to use it.</strong> Hops can't parallelize (hop 2 needs hop 1's answer), so N hops = N sequential retrieve+reason round-trips. Use multi-hop only for genuine dependency chains; when facts are co-located/jointly similar, just raise top-k and let the LLM stitch — far cheaper.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put this to work on a real one. Your RAG bot handles single-fact questions perfectly — 'What's our refund window?' returns the policy instantly. Then a user asks: 'What's the parental-leave policy in the country where our VP of Engineering is based?' The bot confidently answers with the <em>US</em> policy — but your VP is based in Germany. Take a moment before reading on: given everything above, what does that failure tell you? Here's the reasoning, step by step. You dig into the retrieval logs and find that no single chunk contains both 'VP of Engineering' <em>and</em> 'Germany parental leave': one chunk says the VP is based in Berlin, a totally different chunk lists Germany's leave policy, and the loud, semantically-obvious US-policy chunk drowns them both out. That's the exact fingerprint of a <em>multi-hop</em> question meeting a <em>single-shot</em> retriever — the answer needs two facts chained (VP → Germany → policy), but the pipeline only ever fired one query, so the two chunks that together answer it were never both retrieved and the model guessed. Notice how cleanly the fix falls out once you name it: you don't need a better embedding model, you need to turn the one shot into a <em>loop</em> — retrieve the VP's country, read it, then build a second query from that answer.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>A multi-hop question needs facts chained across documents where the second lookup can't be formed until the first is answered, so single-shot RAG fails — its one blurry query vector matches neither hop well. The fix is an iterative decompose→retrieve→reason→retrieve loop (IRCoT/Self-Ask) that builds each hop's query from the previous hop's extracted answer, but it pays two real costs: compounding error (per-hop reliability multiplies and early errors poison later hops) and serial latency (hops can't parallelize). Reach for it only on genuine dependency chains; when the facts are co-located, just raise top-k and let the LLM stitch.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

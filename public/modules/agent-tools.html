@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Tool Design: Count, Schema, and Failure Modes | GenAI Systems Lab</title>
+  <meta name="description" content="Drag the tool count slider. Watch hallucination risk climb past 7 tools. See what good and bad schemas look like.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-tools">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-tools">
+  <meta property="og:title" content="Agent Tool Design: Count, Schema, and Failure Modes | GenAI Systems Lab">
+  <meta property="og:description" content="Drag the tool count slider. Watch hallucination risk climb past 7 tools. See what good and bad schemas look like.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Tool Design: Count, Schema, and Failure Modes">
+  <meta name="twitter:description" content="Drag the tool count slider. Watch hallucination risk climb past 7 tools. See what good and bad schemas look like.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agent Tool Design: Count, Schema, and Failure Modes","description":"Drag the tool count slider. Watch hallucination risk climb past 7 tools. See what good and bad schemas look like.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-tools"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Agent Tool Design: Count, Schema, and Failure Modes</h1>
+    <p class="desc">Drag the tool count slider. Watch hallucination risk climb past 7 tools. See what good and bad schemas look like.</p>
+
+    
+    <section><h2>How It Works</h2><p>The agent module showed how the agent loop works and how tool outputs must be structured to prevent reasoning errors. What it left unsolved: with 15 tools available simultaneously, the model must select the right one at each step from name and description alone. This is a selection problem layered on top of the execution problem. And it has a specific failure mode: with 15 tools, some of which have overlapping descriptions, the model makes wrong selections not from lack of capability but from ambiguous specification. 'Document search,' 'knowledge base search,' and 'policy lookup' all plausibly apply to the same query in your support context. The model can't use your internal taxonomy to distinguish them — it reads the names and descriptions you provide, and if those are ambiguous, it guesses.</p>
+<p>The naive response: make the descriptions longer. More detail seems like it should reduce confusion. But longer descriptions consume more tokens, and 15 × verbose descriptions means the model attends across a large tool-description block at every step. Ambiguous or overlapping descriptions produce wrong tool selection even with long descriptions. The problem is overlap, not length. Four design rules that fix this: (1) One action per tool — 'get_customer_info' combining CRM lookup and billing history creates ambiguity about which data it returns. Split them. (2) Verb-object naming — 'get_order_by_id(order_id)' is unambiguous; 'lookup' is not. The name should tell the model what action is taken and what it acts on. (3) Strong parameter schemas — required parameters with explicit types (string, integer, enum) constrain the model's action space; a tool requiring `order_id: string` is harder to call incorrectly than one taking an untyped `query`. (4) Minimum tool set — remove tools the current task doesn't need. A model choosing among 5 applicable tools makes better selections than one choosing among 15 where 10 are distractors.</p>
+<p>Ordering failures — sending email before verifying the user exists — are a different problem. This isn't a selection failure; it's a sequencing failure. The model selected the right tools but called them in the wrong order. Better descriptions don't fix this. Two patterns: orchestration (the outer system enforces sequence via a directed graph — LangGraph structures agent execution as a state machine where prerequisite edges prevent a node from executing until its inputs are available) versus autonomy (the agent reasons about dependency ordering from description alone). For irreversible actions — sending emails, processing refunds — use structural orchestration. Trust the graph, not the model's reasoning, to enforce prerequisites. Wrong tool selection is a design failure you fix in descriptions; wrong ordering under autonomy is an architectural failure you fix with orchestration. They're different problems requiring different interventions.</p></section>
+    
+    <section><h2>In Production — Apply It</h2><p>A support agent has 15 tool definitions: CRM lookup, order status, email send, refund processor, Slack notify, calendar create, document search, Jira ticket, user profile, billing history, support history, knowledge base search, policy lookup, contract lookup, SLA check. The agent frequently calls the wrong tool or invokes tools in the wrong order — sending email before verifying the user exists.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Tool design is as important as prompt design. Ambiguous names, overlapping descriptions, and irrelevant tools produce confused agents — not from capability gaps but from specification failures. Name tools with verbs and precise objects, maintain minimum tool sets per task, and use structural orchestration (not model reasoning) to enforce prerequisite ordering for irreversible actions.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

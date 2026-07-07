@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Token Streaming | GenAI Systems Lab</title>
+  <meta name="description" content="Prefill vs decode, TTFT, and why streaming cuts perceived latency.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/streaming-lab">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/streaming-lab">
+  <meta property="og:title" content="Token Streaming | GenAI Systems Lab">
+  <meta property="og:description" content="Prefill vs decode, TTFT, and why streaming cuts perceived latency.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Token Streaming">
+  <meta name="twitter:description" content="Prefill vs decode, TTFT, and why streaming cuts perceived latency.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Token Streaming","description":"Prefill vs decode, TTFT, and why streaming cuts perceived latency.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/streaming-lab"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LATENCY</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Token Streaming</h1>
+    <p class="desc">Prefill vs decode, TTFT, and why streaming cuts perceived latency.</p>
+
+    
+    <section><h2>How It Works</h2><p>First principles: an LLM generates <strong>one token at a time, autoregressively</strong> — each token is produced from all previous tokens, so token N+1 literally cannot exist until token N does. Generation splits into two phases with very different cost profiles:</p>
+<p><strong>Prefill</strong> — the model processes the entire input prompt in one parallel forward pass to build its internal state (the KV cache). This is a fixed up-front cost that scales with input length; nothing is emitted yet.</p>
+<p><strong>Decode</strong> — the model then emits output tokens one by one, each a separate forward pass reusing the cache. This is the sequential part, and its duration scales with the number of output tokens.</p>
+<p><mark>The key latency number, TTFT (time-to-first-token), is essentially prefill time: how long until the first output token is ready. Total time is TTFT + decode.</mark> Streaming exploits the gap between these two.</p>
+<p>Why streaming cuts <em>perceived</em> latency without touching <em>total</em> latency: in a <strong>batch</strong> (non-streaming) response, the client waits for prefill <em>and</em> all of decode, then receives the whole answer at once — the user stares at a spinner for the full TTFT + decode. In a <strong>streaming</strong> response, the server pushes each token <em>as decode produces it</em>, so the user sees the first word after just TTFT and then watches text flow in. <mark>The total generation time is identical — the model does the exact same work — but the user's <em>experience</em> of latency is dominated by TTFT, not total time.</mark> Humans perceive 'started responding in 400ms and flowing' as fast and 'blank for 8 seconds' as broken, even if both finish at 8 seconds. Streaming is a perceived-latency optimization, not a throughput one.</p>
+<div class="illustration"><div class="illustration-label">Batch vs. streaming — same total time, different perceived latency</div><pre>Prefill (TTFT) = 400ms   Decode = 34 tokens @ 8 tok/s ≈ 4,250ms
+Total = ~4,650ms in BOTH modes.
+
+BATCH (non-streaming):
+  t=0 ─────────── spinner ───────────▶ t=4,650ms  ALL text at once
+       user sees NOTHING for 4.65s        ↑ feels broken
+
+STREAMING (SSE, token-by-token):
+  t=0 ── prefill ──▶ t=400ms  &quot;The&quot;  ← first token: perceived-fast
+                     t=525ms  &quot;The quick&quot;
+                     t=650ms  &quot;The quick brown&quot;  … flows in …
+                     t=4,650ms  full answer complete
+       user sees motion at 400ms          ↑ feels fast
+
+  Same 4,650ms of model work. TTFT dominates PERCEIVED latency;
+  streaming makes TTFT the number the user feels, not the total.</pre></div>
+<p><strong>How token-by-token delivery works over the wire:</strong> the dominant transport is <strong>SSE (Server-Sent Events)</strong> over a single long-lived HTTP/1.1 response. The server holds the connection open and writes each token as a `data:` event the moment decode produces it; the client reads the event stream and appends tokens to the UI. SSE is one-way (server→client), stateless, and simple — which is why it's the default for chat. <strong>WebSockets</strong> are the alternative when you need full-duplex (e.g., barge-in / letting the user interrupt mid-stream, or richer bidirectional tool traffic). <strong>Batch</strong> is just 'wait for the whole thing' — highest TTFT, simplest, fine for non-interactive backends.</p>
+<p>Streaming buys UX but <strong>costs engineering complexity</strong> in four concrete ways — this is the part interviews probe:</p>
+<p><strong>Partial parsing</strong> — you're rendering an <em>incomplete</em> response. If the output is structured (JSON, markdown, code), you can't parse it until it's complete, so you must either buffer-and-parse-at-end (losing streaming's benefit for structured output) or incrementally parse partial tokens (hard: half a JSON object is invalid). Streaming and strict structured output are in tension.</p>
+<p><strong>Cancellation</strong> — if the user navigates away or the client disconnects, the <em>server keeps generating</em> unless you propagate the cancellation. An abandoned stream that keeps decoding is pure wasted compute (and cost). You must wire disconnect → abort.</p>
+<p><strong>Tool-call streaming</strong> — when the model emits a tool call mid-stream, the client must pause rendering, buffer, wait for the tool result, then resume — or it garbles the output. Interleaving reasoning text and tool calls in one stream is fiddly.</p>
+<p><strong>Silent termination</strong> — the nastiest: an SSE stream can die without an error (e.g., an intermediate proxy like nginx hits its default ~8KB buffer, or a timeout fires). The client receives <em>partial output with no error signal</em> and can't distinguish it from a complete response. <mark>This is why production streaming needs an explicit end-of-stream token/signal and client-side timeouts — otherwise a truncated answer looks identical to a finished one.</mark></p>
+<div class="illustration"><div class="illustration-label">Streaming failure modes and their defenses</div><pre>  FAILURE                WHAT THE CLIENT SEES        DEFENSE
+  ───────────────────────────────────────────────────────────────
+  client disconnect      (nothing — user left)       propagate abort
+    server keeps decoding → wasted compute/$          → cancellation
+
+  mid-stream tool call   text then a raw tool blob    buffer, pause
+    if not handled → garbled output                   render, resume
+
+  SSE buffer overflow    partial answer, NO error     explicit end-of-
+    (nginx ~8KB default)   looks 'complete'            stream signal +
+    silently terminates                               client timeout
+
+  Rule: a truncated stream must be DISTINGUISHABLE from a finished
+  one — otherwise the client trusts partial output as the answer.</pre></div>
+<p>The interactive below lets you pick a transport (SSE / WebSocket / Batch), tune TTFT and token rate, and inject each failure (client disconnect, mid-stream tool call, SSE buffer overflow) to watch exactly where the stream breaks and what the client experiences. Play it to feel the core lesson viscerally: batch shows the long blank wait; streaming shows motion at TTFT; and each injected failure shows why partial output without an explicit termination signal is dangerous. Watch especially the buffer-overflow case — the stream just stops, no error, partial text left on screen.</p>
+<p>Interview framing: <em>generation is prefill (→TTFT) then autoregressive decode; streaming pushes each token as decode produces it, so it cuts perceived latency (TTFT-dominated) without changing total time. It's usually SSE over one long HTTP response, and its costs are partial parsing (tension with structured output), cancellation on disconnect, tool-call interleaving, and silent termination — which is why you need explicit end-of-stream signals and client timeouts.</em></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Generation = prefill then decode.</strong> Prefill processes the whole prompt in one parallel pass (→ TTFT, scales with input length); decode emits tokens one-by-one autoregressively (scales with output length). Total = TTFT + decode.</li><li><strong>Streaming cuts <em>perceived</em>, not <em>total</em>, latency.</strong> Pushing each token as decode produces it lets the user see the first word after just TTFT; total generation time is identical, but the experienced latency is TTFT-dominated — 'flowing at 400ms' feels fast, '8s blank' feels broken.</li><li><strong>SSE is the default transport:</strong> one long-lived HTTP/1.1 response, server writes each token as a `data:` event, one-way and stateless. WebSockets add full-duplex (barge-in, bidirectional tools); batch waits for the whole response (highest TTFT).</li><li><strong>Partial parsing is in tension with structured output.</strong> You're rendering an incomplete response; strict JSON/code can't be parsed until complete, so you either buffer-at-end (losing the streaming win) or incrementally parse invalid-partial output (hard).</li><li><strong>Cancellation and tool-calls need explicit handling.</strong> A client disconnect leaves the server decoding (wasted compute) unless you propagate abort; a mid-stream tool call must pause/buffer/resume or the output garbles.</li><li><strong>Silent termination is the dangerous one.</strong> An SSE stream can die with no error (proxy buffer limits, timeouts), leaving partial output indistinguishable from a complete response — so production streaming needs explicit end-of-stream signals plus client-side timeouts.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your chat feature takes 8 seconds to produce a full answer. Users complain it feels broken. You flip on token streaming — the total time is <em>identical</em>, 8 seconds — yet complaints vanish and the feature feels fast. Then in production a new class of bugs appears: streams that cut off silently mid-answer, tool calls that garble the output, clients that disconnect but leave the server generating. You need to explain why streaming changed perceived speed without changing real speed, how token-by-token delivery actually works, and what it costs in engineering complexity.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>LLM generation is prefill (which sets TTFT) followed by autoregressive decode; streaming pushes each token as decode produces it, cutting <em>perceived</em> latency (which is TTFT-dominated) without changing total time — the model does identical work. It's typically SSE over one long HTTP response, and its engineering costs are partial parsing (in tension with structured output), cancellation on disconnect, mid-stream tool-call handling, and silent termination — the last of which demands explicit end-of-stream signals and client timeouts so truncated output isn't mistaken for a finished answer.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

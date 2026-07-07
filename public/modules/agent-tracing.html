@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracing Agent Loops | GenAI Systems Lab</title>
+  <meta name="description" content="Spans, not logs.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-tracing">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-tracing">
+  <meta property="og:title" content="Tracing Agent Loops | GenAI Systems Lab">
+  <meta property="og:description" content="Spans, not logs.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Tracing Agent Loops">
+  <meta name="twitter:description" content="Spans, not logs.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Tracing Agent Loops","description":"Spans, not logs.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-tracing"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">OPS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Tracing Agent Loops</h1>
+    <p class="desc">Spans, not logs.</p>
+
+    
+    <section><h2>How It Works</h2><p>Multi-agent systems established that agents execute chains of tool calls to produce output. The failure that leaves unaddressed: when that chain produces wrong output 1 time in 200, you have no visibility into which of 8 intermediate steps diverged. Without traces, a multi-step agent is a black box. You know the wrong input-output pair but cannot see which tool call passed wrong parameters, which returned unexpected data, or where intermediate reasoning introduced an error.</p>
+<p>Agent tracing captures the complete execution record: each tool call (name, parameters passed, raw output returned, latency), each LLM inference step (model, full context window sent, full output generated), and intermediate reasoning content between steps. Per-span fields that matter in practice: tool call parameters — exactly what arguments the agent passed, which often differ from the user's input due to intermediate parsing; raw tool output before the agent processed it; full LLM context window at each turn; per-step latency; per-step token counts for cost attribution. OpenTelemetry-compatible span structures (trace_id, span_id, parent_span_id, timestamps, attributes) integrate with standard observability backends without custom infrastructure.</p>
+<p>The patterns traces reveal that input-output logs never can: the agent called the right tool but passed wrong parameter values — a parsing failure earlier in the chain; a tool returned an error the agent silently ignored; the tool returned valid data that the agent misread in its reasoning step. The 1-in-200 refund error traces to exactly one of these. Trace-driven debugging converts 'something went wrong in 1 in 200 requests' into 'on step 3 of request xyz, order_lookup returned amount: 47.50 but the reasoning trace said 74.50 — transposition during string parsing.' Finding that from input-output logs requires blind testing across all plausible failure points; finding it from a trace requires one grep. The fixed cost of instrumentation before a production incident is always less than the variable cost of debugging a multi-step failure from black-box logs after one.</p></section>
+    
+    <section><h2>In Production — Apply It</h2><p>A refund agent produces incorrect refund amounts in 1 in 200 production requests. You can reproduce the failure in 1 in 10 deliberate tests once you understand the pattern — but you don't know the pattern yet. Your logs contain only the input query and final output. No visibility into which tool calls were made, what they returned, or intermediate reasoning.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>An agent you can't trace is an agent you can't debug. Capture every tool call (parameters + raw output), every LLM context window, and every reasoning step before going to production. The fixed cost of instrumentation is always less than the variable cost of debugging a multi-step failure from input-output logs alone.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

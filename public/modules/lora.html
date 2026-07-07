@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoRA &amp; QLoRA: Fine-Tuning Without the Compute Bill | GenAI Systems Lab</title>
+  <meta name="description" content="Adjust rank and model size. See how 99% of parameters disappear. Understand when LoRA beats RAG — and when it doesn't.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/lora">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/lora">
+  <meta property="og:title" content="LoRA &amp; QLoRA: Fine-Tuning Without the Compute Bill | GenAI Systems Lab">
+  <meta property="og:description" content="Adjust rank and model size. See how 99% of parameters disappear. Understand when LoRA beats RAG — and when it doesn't.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LoRA &amp; QLoRA: Fine-Tuning Without the Compute Bill">
+  <meta name="twitter:description" content="Adjust rank and model size. See how 99% of parameters disappear. Understand when LoRA beats RAG — and when it doesn't.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"LoRA & QLoRA: Fine-Tuning Without the Compute Bill","description":"Adjust rank and model size. See how 99% of parameters disappear. Understand when LoRA beats RAG — and when it doesn't.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/lora"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">TRAINING</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>LoRA &amp; QLoRA: Fine-Tuning Without the Compute Bill</h1>
+    <p class="desc">Adjust rank and model size. See how 99% of parameters disappear. Understand when LoRA beats RAG — and when it doesn't.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a very physical problem. Suppose you want ten specialized versions of one big model — a legal one, a medical one, a finance one, and so on. The obvious way is to fully fine-tune the model ten separate times, which leaves you holding ten complete copies of a 70-billion-parameter model. That's 1.4 terabytes sitting on disk, ten separate serving setups to keep alive, ten pipelines to maintain. Painful — and it gets <em>linearly</em> worse with every new client.</p>
+<p>Here's the question that cracks the problem open, and it's the soul of this module. When you adapt a model to a new domain, do you <em>really</em> need to change all 70 billion numbers? Or does &quot;talk like a lawyer&quot; actually live in a <em>much smaller</em> set of adjustments — a few important directions rather than every dimension at once? If the change is small, maybe you don't have to store a whole new model; maybe you just store the <em>change</em>.</p>
+<p>That single insight is <strong>LoRA</strong>, and we'll build it up carefully — the little bit of matrix arithmetic that makes it work, why the adapters are so tiny, and where the quality actually holds up versus where it frays. Take your time; the math is gentler than it looks, and the payoff is a serving setup that doesn't explode with every new domain.</p></section>
+    <section><h2>How It Works</h2><p>Let's start by naming the pain precisely, because the fix follows from getting it right. Ten domain models from a 70B base, done by full fine-tuning, means <strong>10 independent checkpoints</strong>: 10 x 140GB = <strong>1.4TB of storage</strong>, ten separate inference stacks, ten deployment pipelines to maintain.</p>
+<p>And here's the thing to notice — <mark>the problem isn't primarily storage, it's operational.</mark> Each domain drags along its own serving environment, and at 20 or 50 domains the infrastructure multiplies right along with it. So the real question underneath is this: <strong>does domain adaptation genuinely require rewriting all 70 billion parameters</strong>, or do the relevant changes actually live in a much smaller subspace of the weight space? Hold that question — the entire technique is an answer to it.</p>
+<p>LoRA's answer is a lovely one: <mark>domain adaptation shifts model behavior in a few important directions, not across all dimensions of a weight matrix at once.</mark> If that's true, we don't need to store a whole new matrix — we only need to store the small, <em>low-rank</em> change.</p>
+<p>Here's the arithmetic that makes it concrete. Instead of updating the full m x n weight matrix directly, <strong>decompose the update as `ΔW = A × B`</strong>, where A has shape m x r and B has shape r x n, with <strong>r much smaller</strong> than both m and n. Two skinny matrices multiply back up to the full shape — but you only ever <em>store and train</em> the two skinny ones. That's the entire trick, and everything cheap about LoRA comes straight out of it.</p>
+<div class="illustration"><div class="illustration-label">LoRA parameter count vs full fine-tuning</div><pre>LoRA parameter count vs full fine-tuning:
+
+Full update of one attention projection (4096×4096):
+  Parameters: 4096 × 4096 = 16,777,216
+
+LoRA rank-8 adapter for the same matrix:
+  A: 4096 × 8 = 32,768
+  B: 8 × 4096 = 32,768
+  Total: 65,536 — 0.4% of the full matrix
+
+For a 70B model across all attention layers:
+  Full fine-tuning: ~140GB checkpoint per domain
+  LoRA adapters: ~100–300MB per domain
+
+10 domains:
+  Full: 1.4TB + 10 inference stacks
+  LoRA: 140GB base + ~2GB of adapters + 1 inference stack</pre></div>
+<p><strong>One base model checkpoint, N lightweight adapter files.</strong> The base loads once into GPU memory; adapters swap in <strong>milliseconds</strong> per request or per tenant. New domains add an adapter, not a new serving environment — <mark>this is what makes multi-tenant LLM serving at scale operationally viable.</mark></p>
+<p>Quality at rank <strong>r=32–64 achieves 85–98%</strong> of full fine-tuning on most domain adaptation tasks. <mark>The gap depends on how far the target domain deviates from the base model's pre-training distribution.</mark></p>
+<p>For specialized vocabulary, document format, and tone adaptation, <strong>r=32 is usually sufficient.</strong> For tasks requiring <strong>new capabilities not represented in pre-training</strong>, the gap widens and higher rank or full fine-tuning may be required.</p>
+<p>There's one more idea worth having in your pocket, and it pushes the reach even further. <strong>QLoRA (Quantized LoRA)</strong> quantizes the <em>base model</em> to <strong>4-bit precision</strong> to shrink its memory footprint, while the adapter itself keeps training in full precision — so you lose almost nothing where it matters but save enormously on the frozen base.</p>
+<p>The payoff is striking: a 70B model that normally needs ~140GB at 16-bit <mark>fits in a single 80GB GPU under QLoRA</mark> — putting large-model fine-tuning within reach without a multi-GPU cluster. The interactive just below lets you watch rank and adapter size trade off directly, and the production case at the end is exactly this decision — ten clients, one base, and the question of whether tiny adapters can carry the load.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>The pain of N full fine-tunes is operational, not storage</strong> — 10 × 140GB checkpoints means 10 serving stacks and pipelines, multiplying with every new domain.</li><li><strong>LoRA decomposes the weight update as `ΔW = A × B` with rank r ≪ m,n</strong> — a rank-8 adapter for a 4096×4096 matrix is ~0.4% of the full parameters.</li><li><strong>One base + N adapters replaces N checkpoints</strong> — the base loads once, adapters swap in milliseconds per tenant, one inference stack serves all domains.</li><li><strong>Quality is 85–98% of full fine-tuning at r=32–64</strong> — enough for vocabulary/format/tone; the gap widens only when the task needs capabilities absent from pre-training.</li><li><strong>QLoRA quantizes the base to 4-bit while the adapter trains in full precision</strong> — fitting a 70B fine-tune onto a single 80GB GPU.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A team needs ten domain-specific fine-tuned versions of a 70B model — legal, medical, finance, retail, HR, and more — one per enterprise client. Full fine-tuning produces ten separate 140GB checkpoints: 1.4TB of storage and ten times the inference infrastructure. A researcher proposes LoRA. Take a moment before reading on: is this operationally viable, and what do you give up? Here's the reasoning, step by step. First, name the real pain — it isn't the disk space, it's the <em>operations</em>: ten serving stacks and ten pipelines, multiplying with every client you add. LoRA attacks exactly that by storing only the <em>update</em> to each weight matrix, decomposed as a low-rank product, so each domain becomes a ~100-300MB adapter instead of a 140GB clone. Now the whole fleet is one base model loaded once, with adapters swapping in per tenant in milliseconds on a single stack. And the tradeoff you're accepting: at rank 32-64 you get roughly 85-98% of full fine-tuning quality, which comfortably covers vocabulary, format, and tone — the gap only widens if a client needs a genuinely <em>new capability</em> the base model never learned. Notice how cleanly viability and cost fall out once you see the change is low-rank.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>LoRA enables multi-tenant fine-tuning at scale: one base model plus N lightweight adapters replaces N full model checkpoints. For 10+ domain-specific models, LoRA reduces storage 10–100× and inference infrastructure to a single stack. Quality is comparable to full fine-tuning at r=32–64. QLoRA extends this to single-GPU fine-tuning of 70B models.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

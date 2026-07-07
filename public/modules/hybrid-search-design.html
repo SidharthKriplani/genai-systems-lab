@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hybrid Search: Dense + BM25 + RRF | GenAI Systems Lab</title>
+  <meta name="description" content="Fuse meaning and exact terms.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/hybrid-search-design">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/hybrid-search-design">
+  <meta property="og:title" content="Hybrid Search: Dense + BM25 + RRF | GenAI Systems Lab">
+  <meta property="og:description" content="Fuse meaning and exact terms.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Hybrid Search: Dense + BM25 + RRF">
+  <meta name="twitter:description" content="Fuse meaning and exact terms.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Hybrid Search: Dense + BM25 + RRF","description":"Fuse meaning and exact terms.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/hybrid-search-design"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">VECTOR</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Hybrid Search: Dense + BM25 + RRF</h1>
+    <p class="desc">Fuse meaning and exact terms.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a tension hiding inside the word 'similar.' Semantic embedding search is wonderful at one kind of similarity: it understands that 'how do I cap requests per user' and 'rate limiting' <em>mean</em> the same thing, even with no words in common. That's its whole gift — it generalizes across paraphrases.</p>
+<p>But here's the catch that sets up this module. Some things you search for aren't <em>concepts</em> that have paraphrases at all — they're <em>exact tokens.</em> An error string, a function name, a version number, an API endpoint: for these, 'close in meaning' is worthless. `AttributeError: NoneType` doesn't want a document that's <em>semantically near</em> it; it wants the document with those <em>exact characters.</em> An exact token that doesn't literally match isn't a paraphrase — it's simply <em>wrong.</em> And dense search, built to reward semantic closeness, cannot tell 'means the same' apart from 'is the same.'</p>
+<p>So we have two genuinely different jobs — conceptual matching and literal matching — and it turns out no single retriever does both well. This module builds up the fix: bring in a second, old-school retriever that's great at literal matching, run both, and then face the surprisingly tricky question of how to <em>combine</em> two rankings whose scores don't even live on the same scale. Take your time; the fusion trick at the end is elegant once you see what problem it dodges.</p></section>
+    <section><h2>How It Works</h2><p>Start from what an embedding fundamentally <em>is</em>: a point in space positioned by <strong>meaning</strong>, so that semantically related texts land close together. That's the design goal, and it's why dense retrieval generalizes across paraphrases. But it has a direct and unavoidable consequence — the distance between an exact string like 'AttributeError: NoneType object has no attribute split' and a general phrase like 'Python type error handling' is <em>small</em>, because they genuinely <em>are</em> semantically related. That's not a bug; it's the feature working. The trouble is that exact technical tokens — error messages, function names, version numbers, endpoints — aren't concepts with synonyms. A token that doesn't <em>literally</em> match is wrong, not paraphrased, and dense search literally cannot tell 'semantically similar' from 'literally identical' because it was built for the former.</p>
+<p>If dense search structurally can't do literal matching, then the fix isn't a <em>better</em> embedding — it's a <em>different kind</em> of retriever alongside it. <strong>Sparse keyword search (BM25)</strong> was designed for exactly this: it scores documents by the frequency of the query's <em>exact</em> terms and penalizes long documents, so it finds 'AttributeError: NoneType' wherever those precise characters appear, regardless of meaning. Now the two retrievers are complementary by construction: dense finds semantically related docs without term overlap; sparse finds exact-term docs without semantic overlap — and neither one alone covers the full query distribution of a technical-docs tool.</p>
+<p>So you run both in parallel and <strong>fuse</strong> the two ranked lists — which surfaces one real obstacle. The scores aren't comparable: BM25 is unbounded and document-length-dependent, while cosine similarity is bounded in [-1, 1]. Average them by raw score and BM25 dominates purely because its numbers are bigger. <strong>Reciprocal Rank Fusion (RRF)</strong> sidesteps the whole problem by throwing away the magnitudes and using only <em>rank</em>: `RRF_score = 1/(rank_bm25 + k) + 1/(rank_vector + k)`, with k=60 as a smoothing constant. Position 1 from either method contributes 1/61 ≈ 0.016, position 10 contributes 1/70 ≈ 0.014 — so a top result from BM25 and a top result from dense count <em>equally</em>, no normalization required.</p>
+<p>Static fusion treats every query the same, but queries aren't the same — which is the last lever. <strong>Adaptive weighting</strong> first classifies the incoming query as 'exact' (code identifiers, error strings, version numbers — detectable with cheap heuristics like punctuation patterns and identifier-character density) or 'conceptual' (a natural-language question about behavior), then weights sparse results higher for the former and dense higher for the latter. The classifier adds sub-millisecond latency and materially lifts precision on each query type. The interactive lets you fire both exact and conceptual queries and watch RRF and adaptive weighting reorder the results; then the closing scenario hands you a semantic search that returns the wrong page for an exact error string — decide the fix before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Dense search generalizes across paraphrases by design.</strong> It can't distinguish 'semantically similar' from 'literally identical', so an exact error string matches general docs, not the specific page.</li><li><strong>Exact technical tokens aren't synonyms.</strong> Error messages, function names, version numbers, API endpoints — a token that doesn't literally match is wrong, not a paraphrase.</li><li><strong>BM25 is built for literal matching.</strong> It scores by exact term frequency and finds the document containing those exact characters, regardless of semantic similarity.</li><li><strong>Neither method alone covers the full query distribution.</strong> Dense handles conceptual queries, sparse handles exact-match — a technical doc tool needs both.</li><li><strong>RRF fuses in rank space to avoid score incompatibility.</strong> BM25 scores are unbounded and length-dependent; cosine is bounded [-1,1]. RRF = 1/(rank+k), k=60, so position 1 from either contributes equally.</li><li><strong>Adaptive weighting improves on static hybrid.</strong> A fast heuristic classifier ('exact' vs 'conceptual' via identifier density and punctuation) weights sparse higher for exact queries, dense higher for conceptual.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A technical-documentation search runs on embedding-based semantic search. It's great on conceptual queries ('how does rate limiting work') but fails on exact-match ones: the query 'AttributeError: NoneType object has no attribute split' gets matched to <em>general</em> Python-error docs instead of the specific error's page. Take a moment: why does semantic search, working <em>as designed</em>, return the wrong page here? Here's the reasoning, step by step. Embeddings encode <em>meaning</em>, so that exact error string sits close in embedding space to 'Python type error handling' — they're semantically related, and generalizing across paraphrases is precisely what embeddings are <em>built</em> to do; they can't distinguish 'semantically similar' from 'literally identical.' The complementary tool is <strong>BM25</strong>, sparse keyword search built for literal matching — it finds the doc containing those exact characters regardless of meaning. Run both in parallel and fuse them, and you cover the whole query distribution. The one snag is merging: BM25 scores are unbounded and length-dependent while cosine sits in [-1, 1], so naive averaging lets BM25 dominate by scale — which is why you use <strong>Reciprocal Rank Fusion</strong>, `1/(rank_bm25 + k) + 1/(rank_vector + k)` with k=60, working in <em>rank</em> space so position 1 from either method counts equally. Then add adaptive weighting: a cheap heuristic classifier tags this query 'exact' (identifier density, punctuation) and weights BM25 higher, because a mismatched exact token is wrong, not a paraphrase.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Semantic search alone fails on exact-match technical queries; keyword search alone fails on conceptual queries. Hybrid search with RRF fusion handles both without score normalization complexity. For production, add adaptive weighting (heavier sparse for exact queries, heavier dense for conceptual) to optimize precision across mixed query distributions.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Context Window Budget | GenAI Systems Lab</title>
+  <meta name="description" content="What competes for tokens — and the cost of overflow.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/context-budget-lab">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/context-budget-lab">
+  <meta property="og:title" content="The Context Window Budget | GenAI Systems Lab">
+  <meta property="og:description" content="What competes for tokens — and the cost of overflow.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Context Window Budget">
+  <meta name="twitter:description" content="What competes for tokens — and the cost of overflow.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"The Context Window Budget","description":"What competes for tokens — and the cost of overflow.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/context-budget-lab"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">COST</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>The Context Window Budget</h1>
+    <p class="desc">What competes for tokens — and the cost of overflow.</p>
+
+    
+    <section><h2>How It Works</h2><p>First principles: the context window is a <strong>hard token budget</strong> — a fixed maximum number of tokens (e.g., 8K, 32K, 128K) the model can attend to in one forward pass. It is not a soft preference; it is a wall set by the model's positional encoding and the quadratic memory/compute cost of attention. <mark>Every token you put in competes with every other token for that fixed space, and the output the model generates has to fit in it too.</mark> Treating the window as 'basically infinite because 128K is huge' is the mistake that produces both the overflow errors and the silent quality loss in the scenario.</p>
+<p><strong>What competes for the budget</strong> — four claimants, and the output is one of them:</p>
+<p><strong>System prompt</strong> — instructions, always present, always first. Fixed cost every single call.</p>
+<p><strong>Chat history</strong> — grows unbounded with the conversation. This is the sneaky one: it's cheap early and dominant later, which is exactly why the chatbot degrades over a long session.</p>
+<p><strong>Retrieved chunks (RAG)</strong> — the evidence, and the most <em>elastic</em> claimant: you choose how many. More chunks = more recall but more tokens.</p>
+<p><strong>Output reserve</strong> — you must <em>reserve</em> space for the model's response. If input fills the whole window, there's nothing left to generate into; the model truncates or refuses. Beginners forget the output is part of the same budget.</p>
+<p><mark>The budget is: system + history + retrieved + user message + output reserve ≤ window. When the sum exceeds the window, tokens get dropped — and you rarely control which ones gracefully.</mark></p>
+<div class="illustration"><div class="illustration-label">The token budget — everything competes, output must fit too</div><pre>CONTEXT WINDOW = 4,096 tokens (hard wall)
+
+  ┌──────────────────────────────────────────────────────────┐
+  │ SYSTEM 512 │ HISTORY 2,048 │ CHUNKS 4×512=2,048 │ USER 256 │
+  │ OUTPUT RESERVE 1,024 ────────────────────────────────────▶│
+  └──────────────────────────────────────────────────────────┘
+    512 + 2,048 + 2,048 + 256 + 1,024 = 5,888   →  +1,792 OVER
+
+  Result: the window overflows. The model truncates the oldest /
+  lowest-priority tokens (often history or a retrieved chunk) or
+  refuses. You lose information silently, mid-request.
+
+  To fit: prune history, drop weak chunks, or summarize.
+  System prompt + user message + a real output reserve are
+  non-negotiable — they must always be inside the wall.</pre></div>
+<p>Even when everything <em>fits</em>, there's a second, subtler failure: <strong>'lost in the middle.'</strong> Empirically, models attend most reliably to information at the <em>beginning</em> and <em>end</em> of the context and are worst at recalling facts buried in the <em>middle</em>. So a critical retrieved chunk placed in the middle of a long context can be effectively ignored even though it's technically present. <mark>Utilization is not uniform across the window — position matters.</mark> This is why the scenario's model 'ignores' a fact that's clearly there: it's in the dead zone. The practical consequence is that packing more chunks in can <em>lower</em> answer quality by pushing the good one into the middle — the fix is fewer, better-ranked chunks (reranking) placed at the edges, not more chunks.</p>
+<p>Managing the budget is a <strong>pack / prune / summarize</strong> discipline:</p>
+<p><strong>Pack</strong> — order by priority so the most important content lands where the model attends best (edges, not middle), and only include chunks that clear a relevance threshold.</p>
+<p><strong>Prune</strong> — drop the lowest-value claimants when you're near the limit: trim old history, cut low-scoring chunks. Reranking (keep top-k by true relevance) is the highest-leverage prune.</p>
+<p><strong>Summarize</strong> — compress rather than drop: replace 2,000 tokens of old chat history with a 200-token running summary, or map-reduce long documents into condensed evidence. Trades a little fidelity for a lot of space and is the standard way to hold long conversations.</p>
+<p>The <strong>cost and latency consequence</strong> closes the loop, and it's why 'just use the 128K model and stuff everything in' is wrong even when it fits:</p>
+<p><strong>Cost</strong> — you pay per input token. Doubling the context you send roughly doubles the input cost of every call. Stuffing full documents when three good chunks would do is a direct, recurring bill.</p>
+<p><strong>Latency</strong> — prefill (processing the input) scales with input length, and attention is quadratic in sequence length, so a longer context means a slower time-to-first-token and higher per-request latency. A bloated context makes the app <em>feel</em> sluggish.</p>
+<p><strong>Overflow</strong> — exceeding the window doesn't gracefully degrade; it truncates or errors, and the truncation is often silent and non-deterministic. <mark>So the goal is not 'maximize context' but 'fit the <em>minimum sufficient</em> context in the highest-attention positions' — it's cheaper, faster, and often more accurate.</mark></p>
+<p>The interactive below is a packing game: a fixed 4,096-token window and a set of claimants (system prompt, history at two ages, four retrieved chunks, user message, output reserve) that you toggle on and off, watching the budget bar and the overflow warning. Play it to build intuition for the tradeoffs — you'll feel how required items (system, user, output reserve) are locked, how history and chunks are the levers, and how fast the budget overflows. The transferable skill: for any request, decide what <em>must</em> be in, rank the rest, and pack only what fits — because everything competes for one hard wall.</p>
+<p>Interview framing: <em>the context window is a hard token budget shared by system prompt, history, retrieved chunks, the user message, and a reserved output — overflow truncates or errors, and even within budget 'lost in the middle' means position matters. Manage it with pack/prune/summarize and reranking, and remember that more context costs money (per-token) and latency (quadratic attention/prefill), so aim for minimum sufficient context, not maximum.</em></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>The context window is a hard token budget</strong>, set by positional encoding and quadratic attention cost — not a soft preference. Every token competes for fixed space, and the model's own output must fit inside the same wall.</li><li><strong>Five claimants:</strong> system prompt (fixed, first), chat history (grows unbounded — the sneaky degrader), retrieved chunks (most elastic), user message, and output reserve (beginners forget the response consumes budget too).</li><li><strong>Overflow is not graceful.</strong> When the sum exceeds the window the model truncates the oldest/lowest-priority tokens or refuses — often silently and non-deterministically, so you lose information you didn't choose to lose.</li><li><strong>'Lost in the middle': utilization isn't uniform.</strong> Models attend best at the beginning and end and worst in the middle, so a critical chunk buried mid-context is effectively ignored — packing more chunks can <em>lower</em> quality.</li><li><strong>Manage with pack / prune / summarize + reranking.</strong> Order by priority to the edges, drop low-value chunks/old history, and compress history into a running summary; fewer, better-ranked chunks beat more chunks.</li><li><strong>More context is not free:</strong> you pay per input token (cost scales ~linearly) and prefill/attention latency scales with length (quadratic), so aim for minimum sufficient context in high-attention positions, not maximum context.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your RAG chatbot works great in demos, then starts giving worse answers in long conversations — and occasionally errors out entirely. Investigation shows the system prompt, growing chat history, six retrieved chunks, and the reserved output space now sum to more than the model's context window. Worse, even when it fits, the model 'ignores' a fact that's clearly in the middle of the retrieved chunks. You need to explain the context window as a hard, finite token budget that everything competes for — and why more context is not free.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>The context window is a hard, finite token budget that the system prompt, chat history, retrieved chunks, user message, and reserved output all compete for — overflow truncates or errors, and even within budget 'lost in the middle' means position determines what the model actually uses. Manage it with pack/prune/summarize and reranking, and treat context as costly (per-token price plus quadratic prefill latency): aim for the minimum sufficient context in high-attention positions, not the maximum.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

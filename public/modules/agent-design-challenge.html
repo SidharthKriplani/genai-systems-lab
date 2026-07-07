@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Design Challenge | GenAI Systems Lab</title>
+  <meta name="description" content="Design an agent system end-to-end against real constraints.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-design-challenge">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-design-challenge">
+  <meta property="og:title" content="Agent Design Challenge | GenAI Systems Lab">
+  <meta property="og:description" content="Design an agent system end-to-end against real constraints.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Design Challenge">
+  <meta name="twitter:description" content="Design an agent system end-to-end against real constraints.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agent Design Challenge","description":"Design an agent system end-to-end against real constraints.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-design-challenge"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Agent Design Challenge</h1>
+    <p class="desc">Design an agent system end-to-end against real constraints.</p>
+
+    
+    <section><h2>How It Works</h2><p>Designing an agent is a <strong>sequence of coupled decisions</strong>, and the discipline is to make them in order rather than reach for defaults. A reusable spine: <mark>(1) Task &amp; success criteria → (2) Loop &amp; autonomy → (3) Tools → (4) Memory → (5) Guardrails → (6) Eval &amp; observability.</mark> Each decision is driven by the <em>stakes and shape of the task</em> defined in step 1, which is why you never start at 'which model' — the task determines everything downstream.</p>
+<p><strong>(1) Task &amp; success criteria — do this first or everything after is guesswork.</strong> Pin down: what does <em>done</em> mean, what does <em>failure</em> look like, and what's the <strong>cost asymmetry</strong>? A support bot that wrongly issues a refund is far worse than one that unnecessarily escalates to a human — so the design should bias toward escalation. Also decide the <strong>autonomy level</strong>: fully autonomous, human-in-the-loop (agent proposes, human approves), or human-on-the-loop (agent acts, human monitors). <mark>High-stakes + irreversible ⇒ lower autonomy.</mark> For Tier-1 support: read-only answers can be autonomous; refunds/account changes need a human gate.</p>
+<p><strong>(2) Loop &amp; autonomy — the control structure.</strong> The core is <em>perceive → plan → act → observe</em>, repeated until a stopping condition. Key design choices: <strong>stopping conditions</strong> (explicit goal met, a `finish` tool called, or a <strong>step/budget cap</strong> to bound cost and prevent loops); <strong>plan-then-act vs. interleaved</strong> (decompose upfront vs. decide each step from the latest observation — interleaved is more robust to surprises, upfront planning is cheaper and more auditable); and whether a <strong>single agent</strong> suffices or you need <strong>multi-agent</strong> decomposition (usually don't — added coordination cost rarely pays off for Tier-1). Always cap steps: an uncapped loop is an unbounded bill and a runaway.</p>
+<p><strong>(3) Tools — the agent's action surface, and least-privilege is the rule.</strong> Give the agent <em>exactly</em> the tools the task needs and no more, because every tool is attack surface and error surface. Prefer <strong>structured API/function tools</strong> (typed, transactional, unambiguous results) over computer use whenever an API exists. Mark <strong>irreversible tools</strong> (issue_refund, close_account) explicitly and route them through a confirmation gate. For support: `search_kb`, `get_order_status`, `escalate_to_human` can be autonomous; `issue_refund` is gated. <mark>A tool the agent doesn't have is a failure mode it can't have.</mark></p>
+<div class="illustration"><div class="illustration-label">The design framework applied to the Tier-1 support agent</div><pre>TASK        resolve Tier-1 tickets; success = correct resolution or clean escalation
+            cost asymmetry = wrong refund &gt;&gt; unnecessary escalation  → bias to escalate
+AUTONOMY    read/answer: autonomous · refund/account change: human-in-the-loop gate
+LOOP        perceive ticket → plan → act (tool) → observe → repeat
+            stop when: resolved | escalated | step cap (e.g. 8) hit
+TOOLS       search_kb(), get_order_status(), escalate_to_human()   ← autonomous
+            issue_refund(), change_account()                       ← GATED (confirm)
+MEMORY      short-term: this ticket's conversation (working context)
+            long-term:  RAG over KB + past tickets (retrieve, don't memorize)
+            episodic:   customer history fetched by id
+GUARDRAILS  input: prompt-injection filter on user text  · scope: refuse off-domain
+            output: PII redaction, tone check  · action: confirm before refund
+            fallback: on low confidence or cap hit → escalate_to_human (safe default)
+EVAL        offline: ticket replay set w/ graded resolutions
+            online:  resolution rate, escalation rate, wrong-action rate, cost/ticket
+            observ.: full trace logging (every tool call) for debugging + audit</pre></div>
+<p><strong>(4) Memory — match the type to what the task must remember.</strong> Distinguish <strong>short-term/working</strong> (this conversation's context — always needed), <strong>long-term semantic</strong> (knowledge the agent shouldn't hold in weights — implement as <strong>RAG/retrieval</strong> over a KB/vector store so answers are grounded and updatable), and <strong>episodic</strong> (per-user history fetched by id). The design error to avoid: cramming everything the agent might need into one giant prompt. <mark>Retrieve knowledge on demand; don't try to memorize it in context.</mark> For support, RAG over the knowledge base plus per-customer history covers it; no need for a persistent cross-session 'learned' memory at Tier-1.</p>
+<p><strong>(5) Guardrails — layered, because a single check will be bypassed.</strong> Design them at four layers: <strong>input</strong> (prompt-injection filtering on untrusted user text — the ticket body is an attacker-controlled channel), <strong>scope</strong> (refuse off-domain or out-of-policy requests), <strong>output</strong> (PII redaction, tone/safety checks before replying), and <strong>action</strong> (confirmation gates on irreversible tools). Crucially, define the <strong>fallback</strong>: when confidence is low or a guardrail trips or the step cap is hit, the agent should <strong>escalate to a human</strong> — the safe default that the cost asymmetry from step 1 demanded. <mark>A guardrail without a defined fallback just blocks; with one it degrades gracefully.</mark></p>
+<p><strong>(6) Eval &amp; observability — you cannot ship what you can't measure, and agents fail silently.</strong> Design eval <em>up front</em>, not after: an <strong>offline</strong> graded replay set (curated tickets with known-good resolutions) to catch regressions before deploy, and <strong>online</strong> metrics tied to the success criteria — resolution rate, escalation rate, <strong>wrong-action rate</strong> (the dangerous one, given the cost asymmetry), and cost per ticket. Underpin both with <strong>full trace logging</strong> — every tool call, decision, and observation — so failures are debuggable and auditable. The interview tell of a strong candidate: they close the loop by naming <em>how they'd know it's working</em> and <em>how they'd catch it failing</em>, and they justify every choice against the task's stakes rather than reciting a stack.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Design in order, driven by the task:</strong> (1) task &amp; success criteria → (2) loop &amp; autonomy → (3) tools → (4) memory → (5) guardrails → (6) eval. Never start at 'which model'; the task's stakes and cost asymmetry drive every downstream choice.</li><li><strong>Success criteria + cost asymmetry come first.</strong> Define <em>done</em>, define <em>failure</em>, and note which errors are worse (wrong refund ≫ unnecessary escalation). High-stakes/irreversible ⇒ lower autonomy (human-in-the-loop). This single step sets autonomy, guardrails, and the safe fallback.</li><li><strong>Loop = perceive→plan→act→observe with an explicit stopping condition and a step/budget cap.</strong> Uncapped loops are unbounded cost and runaways. Single-agent by default; add multi-agent only when decomposition clearly pays for its coordination cost.</li><li><strong>Tools = least privilege.</strong> Give exactly what the task needs; prefer structured API/function tools over computer use; mark irreversible tools and gate them behind confirmation. A tool the agent lacks is a failure mode it can't have.</li><li><strong>Memory = right type for the need:</strong> short-term working context always; long-term knowledge via RAG/retrieval (grounded, updatable) not stuffed in the prompt; episodic per-user history by id. Retrieve on demand; don't memorize.</li><li><strong>Guardrails are layered (input/scope/output/action) with a defined fallback</strong> — escalate-to-human on low confidence, tripped guardrail, or cap hit. And design <strong>eval up front</strong>: offline replay set + online metrics (resolution, escalation, wrong-action, cost) + full trace logging. Closing on 'how I'd know it works/fails' is the interview tell.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>In a system-design interview you're asked: 'Design an agent that autonomously handles Tier-1 customer support tickets end to end.' You could jump straight to 'it uses GPT-4 with some tools' — and lose the loop. The strong answer works a repeatable design framework out loud: nail the task and its success/failure criteria, then choose the loop, tools, memory, guardrails, and eval deliberately, justifying each against <em>this</em> task's stakes. The challenge exercises exactly that framework, and interviewers grade the reasoning, not the tool names.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Design an agent as an ordered chain driven by the task: define success/failure and cost asymmetry first, then choose the loop (with an explicit stop + step cap), least-privilege tools (structured APIs, gated irreversible actions), the right memory types (working context + RAG + episodic, not a memorized prompt), layered guardrails with an escalate-to-human fallback, and up-front eval (offline replay + online metrics + trace logging). Interviewers grade the reasoning and whether you justify each choice against the task's stakes — and whether you close on how you'd know it's working.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

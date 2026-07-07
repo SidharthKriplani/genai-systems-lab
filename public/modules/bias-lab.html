@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bias &amp; Fairness Detector | GenAI Systems Lab</title>
+  <meta name="description" content="Where bias enters LLM outputs, how to detect it, and how to mitigate.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/bias-lab">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/bias-lab">
+  <meta property="og:title" content="Bias &amp; Fairness Detector | GenAI Systems Lab">
+  <meta property="og:description" content="Where bias enters LLM outputs, how to detect it, and how to mitigate.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bias &amp; Fairness Detector">
+  <meta name="twitter:description" content="Where bias enters LLM outputs, how to detect it, and how to mitigate.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Bias & Fairness Detector","description":"Where bias enters LLM outputs, how to detect it, and how to mitigate.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/bias-lab"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">SAFETY</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Bias &amp; Fairness Detector</h1>
+    <p class="desc">Where bias enters LLM outputs, how to detect it, and how to mitigate.</p>
+
+    
+    <section><h2>How It Works</h2><p>First principles: an LLM is a compression of its training corpus, and <mark>the corpus is a record of how humans actually wrote — including every statistical association between demographics and roles, sentiment, and competence.</mark> The model has no separate 'fairness' objective; it learned P(next token | context), and if the training data associated certain names with certain professions or tones, the model reproduces that association as a <em>default</em>. Bias in an LLM is not a bug injected somewhere — it is the faithful reproduction of correlations present in the data, surfaced whenever the context lets a demographic signal steer the output.</p>
+<p>Bias enters at <strong>four points</strong>, and knowing which one you're fighting determines the fix:</p>
+<p><strong>1. Training data</strong> — the pretraining corpus carries the base-rate correlations (occupation-gender, name-sentiment, dialect-competence). This is the deepest and hardest layer.</p>
+<p><strong>2. RLHF / fine-tuning</strong> — human preference labeling shapes behavior, and the labelers' own biases plus the reward model's optimization can <em>introduce</em> new skews (including sycophancy — see below) or over-correct in uneven ways.</p>
+<p><strong>3. Prompt framing</strong> — the way you ask conditions the answer. A leading prompt ('why is X better than Y?') presupposes X is better; demographic markers in the prompt activate the trained associations.</p>
+<p><strong>4. Decoding / selection</strong> — position and ordering effects in how options are presented and scored.</p>
+<p>The <strong>types</strong> you must recognize:</p>
+<p><strong>Demographic bias</strong> — systematically different quality/tone/scores across gender, race, age, etc., for otherwise-identical inputs (the resume case).</p>
+<p><strong>Positional bias</strong> — the model favors options by their <em>position</em>, not their merit: in LLM-as-judge or ranking, whichever candidate is listed first (or last) gets an edge independent of content. This silently corrupts eval and pairwise comparisons.</p>
+<p><strong>Sycophancy</strong> — the model agrees with the user's stated view or flatters, because RLHF rewarded agreeable, approved-of responses. It will change a correct answer if you push back, trading truth for approval.</p>
+<p><strong>Anchoring</strong> — an early number or framing in the context drags the output toward it (a suggested salary, a first estimate), independent of the true answer.</p>
+<div class="illustration"><div class="illustration-label">Contrastive test — why single examples miss bias, pairs reveal it</div><pre>SINGLE-EXAMPLE SPOT-CHECK (what most teams do — and why it fails):
+  &quot;Summarize this resume.&quot;  →  a fluent, reasonable summary.
+  Looks fine in isolation. Ships. Bias invisible.
+
+CONTRASTIVE / PAIRED TEST (the correct design):
+  Same resume, vary ONLY the name, hold everything else fixed:
+
+   name = &quot;Michael&quot;  → &quot;Strong leader; drove... high potential.&quot;  score 8.1
+   name = &quot;Jessica&quot;  → &quot;Solid contributor; supported...&quot;          score 6.7
+                                                    Δ = 1.4, one pair
+
+  One pair could be noise. Run 20+ matched pairs:
+
+   mean(male) = 8.0   mean(female) = 6.6   Δ = 1.4, p &lt; 0.01
+                    → SYSTEMATIC bias, not noise
+
+  Bias is a DISTRIBUTIONAL property. You cannot see it in one output;
+  it only appears as a statistically significant gap across matched pairs.</pre></div>
+<p>That illustration carries the single most important measurement idea: <mark>bias is not visible in any one output — it is a property of the <em>distribution</em> of outputs across a controlled variable.</mark> A single biased-looking response can be sampling noise; a consistent gap across 20+ matched pairs (same input, one demographic marker varied, everything else held constant) is a <em>system behavior</em>. This is why safety filters miss it — filters check individual outputs for toxicity, but demographic bias is a subtle, statistically-significant delta that no single output trips. Detection <em>requires</em> a contrastive, paired experimental design and a significance test, not eyeballing.</p>
+<p><strong>Mitigation happens at four layers, mapped to the four entry points</strong> — and the crucial insight is which layer actually moves the needle:</p>
+<p><strong>Training data</strong> — rebalancing/augmentation. Deepest fix, most expensive, usually not available to an application team.</p>
+<p><strong>Fine-tuning / RLHF</strong> — adjust the reward signal and preference data (e.g., penalize sycophancy, balance demographic representation in feedback). This is where most durable bias correction actually happens.</p>
+<p><strong>System prompt</strong> — explicit instructions to ignore demographic markers, or blinding (strip names before scoring). Cheap, but the <em>weakest and most-overused</em> layer — teams reach for it first and it rarely fixes a distributional skew baked into weights.</p>
+<p><strong>Output evaluation</strong> — the feedback loop: a scored bias-eval suite (the paired test, automated) that gates releases and feeds back into fine-tuning. <mark>Most teams only build this last layer and then wonder why the bias persists — output evaluation <em>detects</em> bias, but the fix flows back through fine-tuning; the prompt is almost never the real lever.</mark></p>
+<p>The interactive below shows paired prompts — the same question with minor demographic variations — and asks you to spot which output carries the bias, then names the bias type. As you play, internalize the <em>contrastive</em> method: you're not judging whether one answer is 'bad,' you're detecting a systematic difference between two matched conditions. That is the transferable skill — set up matched pairs, hold everything constant but the protected attribute, and look for a statistically significant delta.</p>
+<p>Interview framing: <em>LLM bias is the faithful reproduction of training-data correlations, amplified by RLHF and prompt framing; it's a distributional property invisible in single outputs, so you measure it with contrastive paired tests and significance, and you fix it primarily through the fine-tuning/eval feedback loop — the system prompt is the weakest, most over-relied-on layer.</em></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Bias is faithful reproduction, not a bug.</strong> The model learned P(next token) over a human corpus with all its demographic correlations and has no separate fairness objective, so it reproduces those associations as defaults whenever context supplies a demographic signal.</li><li><strong>Four entry points:</strong> training data (deepest), RLHF/fine-tuning (can introduce new skews and sycophancy), prompt framing (leading questions, demographic markers), and decoding/position. The entry point determines the fix.</li><li><strong>Types to recognize:</strong> demographic (different quality for identical inputs), positional (favors an option by order — corrupts LLM-as-judge), sycophancy (agrees/flatters because RLHF rewarded it), anchoring (dragged toward an early number/frame).</li><li><strong>Bias is distributional, invisible in one output.</strong> A single skewed response can be noise; a significant gap across 20+ matched pairs is a system behavior — which is why toxicity filters miss it and why detection needs a contrastive paired design + significance test.</li><li><strong>Mitigation maps to entry points:</strong> data rebalancing (expensive), fine-tuning/RLHF reward adjustment (where durable correction happens), system prompt/blinding (cheap but weakest), output eval suite (detects, gates, feeds back).</li><li><strong>The prompt is almost never the real lever.</strong> Most teams build only the output-eval layer and stop; the fix flows back through the fine-tuning feedback loop, not through more prompt instructions.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your resume-screening assistant scores candidates. It passes every safety filter — no slurs, no overtly toxic output. But an audit finds that identical resumes with a stereotypically female name get systematically shorter, less enthusiastic summaries and lower 'leadership potential' scores than the same resume with a male name. Nobody wrote a biased rule. You need to explain where the bias entered, why single-example spot-checks missed it, and why the fix is almost never in the prompt.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>LLM bias is the faithful reproduction of demographic correlations in the training corpus — amplified by RLHF and prompt framing — and it is a distributional property invisible in any single output, so toxicity filters and spot-checks miss it. Detect it with contrastive paired tests (vary one protected attribute, test for a significant gap), and fix it primarily through the fine-tuning/eval feedback loop; the system prompt is the weakest and most over-relied-on layer.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

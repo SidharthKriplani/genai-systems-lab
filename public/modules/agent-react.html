@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The ReAct Pattern | GenAI Systems Lab</title>
+  <meta name="description" content="Reason, act, observe — the loop every agent runs.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-react">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-react">
+  <meta property="og:title" content="The ReAct Pattern | GenAI Systems Lab">
+  <meta property="og:description" content="Reason, act, observe — the loop every agent runs.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The ReAct Pattern">
+  <meta name="twitter:description" content="Reason, act, observe — the loop every agent runs.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"The ReAct Pattern","description":"Reason, act, observe — the loop every agent runs.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-react"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>The ReAct Pattern</h1>
+    <p class="desc">Reason, act, observe — the loop every agent runs.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with what a plain language model actually <em>is</em>, stripped of hype: it's a single function. Text goes in, text comes out, and that's the whole transaction. Ask it &quot;what's the status of order #4471?&quot; and it will happily write a fluent, confident answer — but it never <em>looked anything up</em>. It can't. It has no hands. It's guessing from patterns, and when it guesses wrong, it sounds exactly as sure as when it's right.</p>
+<p>So here's the puzzle: how do you take a thing that can only <em>talk</em> and turn it into a thing that can <em>act</em> — look up the real order, notice the real status, and only then answer? Pause on that, because the answer is simpler than it sounds. You let the model do the one thing it's good at (writing out what it wants to do next), then you — the surrounding program — actually <em>do</em> that thing in the real world and hand the true result back. Then it writes its next step against reality instead of a guess.</p>
+<p>That back-and-forth loop is called <strong>ReAct</strong> (Reason + Act), and it's the single most important pattern under essentially every AI agent you'll ever build. We'll take it one slot at a time — who thinks, who acts, and, crucially, <em>who is allowed to report what actually happened</em> — because that last question turns out to be where real agents quietly break.</p></section>
+    <section><h2>How It Works</h2><p>Start from the one thing a language model can actually do: a single forward pass turns a prompt into text, and that is the entire transaction. There is no side channel to the world inside that pass — the model cannot look anything up, cannot run code, cannot check a claim against a database. <strong>This means</strong> every fact it emits is reconstructed from patterns in its weights, so the moment a task depends on something the model does not already know (a live order status, a current price), a plain call can only <em>guess</em> — and it guesses in the same confident voice it uses for things it does know.</p>
+<p><strong>Therefore</strong>, to make such a model act rather than merely talk, you cannot change the forward pass — you have to wrap a loop around it that lets the model's text <em>drive</em> real actions and then feeds the real results back in. That is exactly what <strong>ReAct (Reason + Act)</strong> is: it interleaves two things the model is already good at — writing out reasoning, and emitting structured actions — into a loop that touches the world between steps.</p>
+<p><strong>So</strong> the loop resolves into exactly three roles, repeated until the model emits a final answer:</p>
+<p>- <strong>Thought</strong> — the model writes its reasoning as plain text: what it knows, what it still needs, what it will do next.&lt;br&gt;- <strong>Action</strong> — the model emits a structured tool call (name + arguments), then <em>stops generating</em>.&lt;br&gt;- <strong>Observation</strong> — the <em>runtime</em>, not the model, executes the tool and feeds the real result back into the context.</p>
+<p><strong>Which means</strong> the single most important invariant falls straight out of <em>who has access to the world</em>: only the runtime can run a tool, so only the runtime can produce a truthful Observation. <mark>The model produces Thoughts and Actions; the runtime produces Observations. The model must never write its own Observations.</mark></p>
+<p>Why interleave reasoning and acting at all, rather than plan everything up front? Because the model does not know the answer to `lookup_order(#4471)` until the tool runs. A pure-planning agent commits to a full plan against facts it is <em>guessing</em>; a ReAct agent takes one step, sees the real result, and lets that result reshape the next Thought. <strong>The reasoning is conditioned on observations that did not exist when the reasoning started.</strong> That grounding is what lets ReAct recover from a 404, a wrong assumption, or an empty search — it simply reasons about the observation and tries again.</p>
+<p>The explicit Thought text is not decoration. It is the model externalising its plan token-by-token so the <em>next</em> Action is chosen against a written-out rationale rather than an implicit one. Empirically this both improves action selection and gives you a debuggable trace: when the agent misbehaves, the Thought tells you what it <em>believed</em>, which localises the fault.</p>
+<div class="illustration"><div class="illustration-label">One ReAct loop — grounded vs fabricated observation</div><pre>PROMPT: &quot;Is order #4471 eligible for a refund?&quot;
+
+Thought:     I need the order status before I can judge eligibility.
+Action:      lookup_order({ id: 4471 })
+                 |
+                 v   &lt;-- RUNTIME executes the tool, not the model
+Observation: { status: &quot;delivered&quot;, days_since: 47, policy_window: 30 }   &lt;-- REAL
+                 |
+                 v
+Thought:     Delivered 47 days ago; policy window is 30 days. Not eligible.
+Action:      final_answer(&quot;Not eligible — outside the 30-day window.&quot;)
+
+  --- THE PRODUCTION BUG (fabricated observation) ---
+
+Thought:     The customer seems upset, they probably qualify.
+Observation: &quot;order eligible for refund&quot;        &lt;-- MODEL WROTE THIS. No tool ran.
+Action:      refund({ id: 4471 })                &lt;-- real action on a hallucinated fact
+
+  The loop failed at the Observation boundary: the model was allowed to
+  emit text into the slot the runtime was supposed to own.</pre></div>
+<p>So how do you <em>stop</em> the model from writing its own Observations? You do not ask it politely — you enforce it structurally. The runtime treats an Action as a <strong>generation stop point</strong>: the model emits the tool call and the decoder halts. Nothing after the Action token comes from the model on that turn. The runtime executes the tool, appends the <em>real</em> result as the Observation, and only then resumes generation. With modern function-calling APIs this is native — the model returns a `tool_calls` object and the turn <em>ends</em>; there is no channel for it to also produce an observation. <mark>The staging-vs-production bug in the scenario is almost always a home-grown ReAct loop that parsed free-text and forgot to stop generation at the Action, letting the model run straight through into a made-up Observation.</mark></p>
+<p>The loop needs three guardrails or it fails in predictable ways. <strong>First, a max-step limit.</strong> Nothing in the pattern guarantees termination — a model that keeps deciding it needs 'one more search' will loop until it exhausts the budget. A hard cap (e.g. 8–12 steps) with a graceful 'I could not complete this' is mandatory. <strong>Second, reliable tool outputs.</strong> ReAct's grounding is only as good as its Observations; a tool that returns ambiguous or malformed output corrupts the very facts the reasoning is conditioned on. <strong>Third, precise tool schemas.</strong> The model chooses Actions from tool descriptions; a vague schema produces wrong-tool and wrong-argument Actions (this is exactly why tool design is its own module).</p>
+<p>The three failure modes map cleanly onto the three roles, and this is the debugging payoff. A <strong>bad Thought</strong> is a planning failure — the model reasoned to the wrong next step (wrong tool chosen for the right reason, or a flawed decomposition). A <strong>bad Action</strong> is an interface failure — right intent, malformed call (wrong tool, wrong arguments, hallucinated tool name). A <strong>bad Observation</strong> is an execution/parsing failure — the tool errored, returned junk, or (worst case) the model was allowed to fabricate it. <mark>When an agent misbehaves, the first question is never 'is the model dumb' — it is 'which of the three slots is wrong,' because each has a different fix: better prompt/planning, better schema, or better tool reliability + a hard stop at the Action boundary.</mark></p>
+<p>ReAct is the architectural primitive under essentially every production agent framework — LangGraph, the OpenAI Agents SDK, Google's ADK all implement this loop or a close variant (some add explicit planning or reflection steps, but the Thought→Action→Observation spine remains). Understanding it at the level of <em>who owns each slot</em> and <em>where generation stops</em> is what separates diagnosing an agent in minutes from guessing for hours. The interactive lets you step through a real trace and inspect what the model is actually doing at each stage — use it to internalise the Observation-ownership boundary, since that is the invariant most home-grown loops violate.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>ReAct interleaves Reason and Act into a loop:</strong> Thought (reasoning as text) → Action (structured tool call) → Observation (real tool result) → repeat until final answer. This turns a one-shot LLM call into a grounded agent.</li><li><strong>The model owns Thought and Action; the RUNTIME owns Observation.</strong> The model must never write its own Observation — that is a fabricated fact driving a real action, the classic production failure.</li><li><strong>Interleaving beats up-front planning</strong> because the model can't know a tool's result until it runs. Each Thought is conditioned on Observations that didn't exist when planning began — that grounding is what lets ReAct recover from errors.</li><li><strong>The Action is a generation stop point.</strong> Modern function-calling ends the turn at the tool call; home-grown loops that parse free text and forget to stop are what let the model run straight into a made-up Observation.</li><li><strong>Three mandatory guardrails:</strong> a max-step limit (nothing guarantees termination), reliable tool outputs (grounding is only as good as Observations), and precise tool schemas (Actions are chosen from descriptions).</li><li><strong>Failure localises to a slot:</strong> bad Thought = planning fault (fix prompt), bad Action = interface fault (fix schema), bad Observation = execution/fabrication fault (fix tool reliability + stop at Action). Knowing which slot failed is the whole debugging win.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You ship a support agent that can call a `refund` tool and a `lookup_order` tool. In staging it works. In production it starts issuing refunds for orders it never looked up, and the transcript shows the model wrote 'Observation: order eligible for refund' with its OWN reasoning — the tool was never called. Take a moment before reading on: given the three slots you just learned, which one was violated? Here's the reasoning, step by step. The model is only ever allowed to own the Thought and the Action; the <em>runtime</em> owns the Observation, because the Observation is supposed to be a real fact from a real tool run. Here the model wrote text straight into the Observation slot — a fact nobody fetched — and a real refund fired off a hallucination. Notice what that tells you about the fix: this isn't a 'the model lied' problem you solve by scolding it, it's a structural hole. The loop failed to treat the Action as a hard stop point, so the decoder ran straight past the tool call into a made-up Observation. Enforce the stop, and the fabricated fact has nowhere to live.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>ReAct turns a one-shot LLM call into an agent by looping Thought → Action → Observation, where the model owns Thoughts and Actions and the runtime owns Observations. Interleaving grounds each reasoning step in real tool results; enforce it by stopping generation at the Action, and guard it with a max-step cap, reliable tools, and precise schemas. Debug by asking which of the three slots failed.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

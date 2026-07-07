@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calibration (Confidence vs Accuracy) | GenAI Systems Lab</title>
+  <meta name="description" content="ECE, reliability diagrams, why RLHF mis-calibrates, temperature scaling.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/calibration">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/calibration">
+  <meta property="og:title" content="Calibration (Confidence vs Accuracy) | GenAI Systems Lab">
+  <meta property="og:description" content="ECE, reliability diagrams, why RLHF mis-calibrates, temperature scaling.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Calibration (Confidence vs Accuracy)">
+  <meta name="twitter:description" content="ECE, reliability diagrams, why RLHF mis-calibrates, temperature scaling.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Calibration (Confidence vs Accuracy)","description":"ECE, reliability diagrams, why RLHF mis-calibrates, temperature scaling.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/calibration"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">EVALUATION</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Calibration (Confidence vs Accuracy)</h1>
+    <p class="desc">ECE, reliability diagrams, why RLHF mis-calibrates, temperature scaling.</p>
+
+    <section><h2>Start Here</h2><p>Let's start by separating two things we usually smush together: being <em>right</em>, and knowing <em>how likely you are to be right</em>. A model that answers a question also hands you a number — the probability it assigns to its own answer, its confidence. The tempting assumption is that this number is trustworthy: that '95% sure' really means 'wrong about one time in twenty.'</p>
+<p>Here's the puzzle. That assumption can quietly be false in a way that has nothing to do with the model being <em>dumb</em>. A model can be plenty accurate and still hand you confidence numbers that don't mean what they say — and the moment you build anything that <em>acts</em> on those numbers (auto-answer this, escalate that), the lie becomes your problem.</p>
+<p>We'll take it gently. First we'll pin down exactly what it means for confidence to be trustworthy, then how you'd measure whether a given model's confidence can be believed, then a surprising reason modern chat models tend to fail this — and a cheap fix. By the end you'll know to check one number before you ever automate on a model's confidence.</p></section>
+    <section><h2>How It Works</h2><p>Start from a definition, because it's the whole game: a model is <strong>calibrated</strong> when its stated confidence <em>matches its actual accuracy in aggregate</em>. <mark>Of all the predictions it makes with 70% confidence, about 70% should be correct; of all the ones it makes with 95% confidence, about 95% should be correct.</mark> Read that carefully, because it's easy to misread: calibration is <em>not</em> about being right more often — it's about the confidence numbers <em>meaning what they say</em>. That means accuracy and calibration are different axes entirely: a model can be highly accurate but badly calibrated, or mediocre but well calibrated. So the moment a system reads a confidence number and <em>acts</em> on it, what it depends on isn't accuracy — it's calibration.</p>
+<p>This is why anything built <em>on top of</em> a confidence number lives or dies by calibration. Take the simplest case — a threshold that auto-answers when confidence is high and escalates when it's low. That threshold assumes '95% confident' really implies 'wrong ~1 in 20 times.' But if the model is <strong>overconfident</strong> — saying 95% when it's actually right only 70% of the time — then the threshold lets a flood of wrong answers through the automated path at high stated confidence, and the escalation path starves. <mark>Notice what did and didn't fail: the model's <em>accuracy</em> might be perfectly fine; it's the <em>reliability of the confidence signal</em> that failed — and that reliability is exactly what calibration measures.</mark></p>
+<p>To measure it, you use a <strong>reliability diagram</strong>. Bin every prediction by its stated confidence (0–10%, 10–20%, …, 90–100%). For each bin, plot stated confidence on the x-axis against <em>observed accuracy within that bin</em> on the y-axis. <mark>A perfectly calibrated model lies on the diagonal y = x: in the '90% confidence' bin, 90% are actually correct. Points <em>below</em> the diagonal mean overconfidence (stated &gt; actual); points <em>above</em> mean underconfidence.</mark> Your model's diagram would show the high-confidence bins sagging far below the line — lots of 95%-confidence predictions landing at 70% real accuracy.</p>
+<div class="illustration"><div class="illustration-label">Reliability diagram — reading calibration off the curve</div><pre>accuracy
+  1.0 |                                    ● (perfect: on the line)
+      |                              . ' ´
+      |                        . ' ´          ← diagonal y=x
+      |                  . ' ´                   = PERFECT calibration
+  0.7 |            . ' ´        ○  ← 95%-conf bin lands at 0.70 accuracy
+      |      . ' ´                   (BELOW line = OVERCONFIDENT)
+      |. ' ´                    ○  ← the gap (0.95 - 0.70) is what
+  0.0 +----------------------------  feeds ECE
+      0.0        0.5         0.95  1.0   stated confidence
+
+  ON the diagonal  → calibrated
+  BELOW  (stated &gt; actual) → OVERCONFIDENT  ← your routing failure
+  ABOVE  (stated &lt; actual) → underconfident
+  ECE = avg |confidence - accuracy| over bins, weighted by bin size.</pre></div>
+<p>To collapse the diagram into one number, use <strong>Expected Calibration Error (ECE)</strong>. Partition predictions into confidence bins; for each bin compute the <em>absolute gap</em> between the bin's average confidence and its actual accuracy; then take a <em>weighted average of those gaps across bins, weighted by how many predictions fall in each bin</em>. <mark>ECE = Σ (bin_size / N) · |avg_confidence(bin) − accuracy(bin)|. Zero means perfectly calibrated; larger means the confidence numbers are more misleading.</mark> It's the single scalar you'd cite when you say 'this model's confidence can't be trusted' — a high ECE is the quantitative version of your production incident.</p>
+<div class="illustration"><div class="illustration-label">ECE — one worked number</div><pre>ECE = Σ_bins  (n_bin / N) · | avg_conf(bin) − accuracy(bin) |
+
+  bin        n     avg_conf   accuracy   |gap|    weight·gap
+  ─────────────────────────────────────────────────────────
+  0.5–0.6    100     0.55       0.54      0.01    (100/1000)·0.01 = .001
+  0.7–0.8    300     0.75       0.60      0.15    (300/1000)·0.15 = .045
+  0.9–1.0    600     0.96       0.72      0.24    (600/1000)·0.24 = .144
+  ─────────────────────────────────────────────────────────
+  N = 1000                                         ECE ≈ 0.19
+
+  ECE ≈ 0.19 → on average confidence overstates accuracy by ~19 pts.
+  Most of the damage is the big, badly-overconfident 0.9–1.0 bin —
+  exactly the bin your auto-answer threshold trusts most.</pre></div>
+<p>Now the crucial, counter-intuitive fact for modern LLMs: <strong>RLHF tends to <em>mis</em>-calibrate them, usually toward overconfidence.</strong> The base (pretrained) model is often surprisingly well calibrated — next-token probabilities roughly track correctness. But the preference-tuning stage (RLHF) optimizes the model to produce answers humans <em>rate highly</em>, and humans tend to <em>prefer confident, assertive, unhedged responses</em>. So the model learns to <em>sound</em> certain — and to <em>assign</em> high probability — even when it shouldn't. <mark>Alignment training trades away calibration for helpfulness/assertiveness: the RLHF'd model is more useful and more confident-sounding, but its confidence numbers drift away from its true accuracy. This is a documented, expected effect, and it's very likely what bit your router.</mark></p>
+<p>A partial remedy exists: <strong>temperature scaling</strong>, a post-hoc recalibration. After training, learn a single scalar `T` and divide the logits by `T` before the softmax (`softmax(logits / T)`). `T &gt; 1` <em>softens</em> the distribution — pulling overconfident probabilities down toward the truth; `T &lt; 1` sharpens it. You fit `T` on a held-out validation set to minimize calibration error, and crucially it <em>doesn't change which answer is top-ranked</em> (so accuracy is untouched) — it only rescales the confidences. <mark>Temperature scaling is cheap, doesn't hurt accuracy, and directly fixes the overconfidence your router tripped on — but it corrects the <em>global</em> scale, not per-question judgment.</mark> (Note: this is the same softmax-temperature knob as sampling temperature, used here for a different purpose — recalibration, not creativity.)</p>
+<div class="illustration"><div class="illustration-label">Where calibration matters — and where it bites</div><pre>CALIBRATION MATTERS wherever you ACT on the confidence number:
+
+  routing / auto-answer:  &quot;≥0.95 conf → answer, else escalate&quot;
+      overconfident model → floods the auto path with wrong answers,
+      starves the human queue   ← YOUR incident
+
+  abstention:  &quot;if conf &lt; τ, say 'I don't know'&quot;
+      miscalibration → abstains on easy Qs or answers hard ones blindly
+
+  human-in-the-loop:  surface confidence to reviewers
+      miscalibrated numbers → reviewers mis-trust the model
+
+  ensembling / thresholds / cost-sensitive decisions: all assume the
+  probability MEANS what it says.
+
+WHY LLMs bite:  RLHF rewards assertive answers → OVERCONFIDENCE.
+FIX:  temperature scaling — divide logits by T&gt;1 to soften; fit T on
+      held-out data; accuracy unchanged (top answer stays top).</pre></div>
+<p>So the whole chain lands on one discipline. <em>Any</em> system that acts on a confidence number — routing, abstention ('I don't know' below a threshold), human-in-the-loop triage, cost-sensitive thresholds — is only as trustworthy as the calibration underneath it, and a model can be accurate yet dangerous to route on if it's overconfident. <mark>The order of operations before shipping confidence-based automation: (1) plot a reliability diagram and compute ECE on <em>your</em> distribution; (2) expect RLHF-induced overconfidence and don't take stated probabilities at face value; (3) recalibrate with temperature scaling and re-measure ECE; (4) only then set thresholds.</mark></p>
+<p>The interactive lets you drag a reliability curve off the diagonal, watch ECE climb, and pull it back with temperature scaling without touching accuracy. Then the closing scenario puts it to work on a router that trusts 95%-confidence answers into an empty human queue — see if you can name the property that failed, and why it isn't accuracy, before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Calibration = stated confidence matches actual accuracy in aggregate:</strong> of all 70%-confidence predictions, ~70% should be right. It's orthogonal to accuracy — a model can be accurate but badly calibrated (or vice versa). Anything that <em>acts on</em> the confidence number depends on it.</li><li><strong>Reliability diagram:</strong> bin predictions by confidence, plot stated confidence (x) vs observed accuracy (y). Perfect = the diagonal y=x; below the line = overconfident (stated &gt; actual), above = underconfident. <strong>ECE</strong> collapses it to one number: Σ (bin_size/N)·|avg_confidence − accuracy| over bins; 0 = perfect, higher = more misleading.</li><li><strong>RLHF tends to MIS-calibrate toward overconfidence.</strong> The base model is often well calibrated, but preference tuning rewards confident, assertive answers, so the model learns to <em>sound</em> and <em>score</em> certain even when it shouldn't — trading calibration for helpfulness. This is expected, not a bug in your setup.</li><li><strong>Temperature scaling</strong> is a cheap post-hoc fix: learn a scalar T on held-out data and use softmax(logits/T). T&gt;1 softens overconfident probabilities toward truth; it <em>doesn't change the top-ranked answer</em> (accuracy untouched), only rescales confidences. It fixes the global scale, not per-question judgment.</li><li><strong>Calibration is load-bearing for routing, abstention, and human-in-the-loop.</strong> An overconfident model floods an auto-answer path with confident wrong answers and starves the human queue (the scenario). Before automating on confidence: reliability diagram + ECE on your distribution, expect RLHF overconfidence, recalibrate, re-measure, then set thresholds.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. You build a routing layer: when the model is confident it answers automatically, and when it's unsure it escalates to a human. To decide, you read the model's own confidence — the probability it assigns to its answer. In testing it feels great; in production it's a disaster. The model answers a huge fraction of questions at 95%+ confidence, a painful number of those confident answers are wrong, and the human queue sits nearly empty while error complaints climb. Take a moment before reading on: given everything above, which property failed here — and note it may not be accuracy at all. Here's the reasoning, step by step. The model may be just as accurate as ever; what broke is <em>calibration</em>. It's overconfident: its stated confidence exceeds its actual accuracy, so '95% confident' no longer implies 'wrong ~1 in 20.' A confidence threshold therefore admits a flood of confident-but-wrong answers to the auto path and starves the human queue — a calibration failure, distinct from an accuracy failure. And this is expected, not a fluke: RLHF rewards assertive answers and pushes models toward overconfidence. So before trusting confidence-based routing again, plot a reliability diagram and compute ECE on your own distribution, recalibrate with temperature scaling, re-measure, and only then set thresholds.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Calibration is whether a model's stated confidence matches its actual accuracy — orthogonal to raw accuracy and load-bearing for anything that acts on confidence (routing, abstention, human-in-the-loop). You measure it with a reliability diagram and summarize it with ECE (weighted average of |confidence − accuracy| across bins); RLHF tends to mis-calibrate models toward overconfidence because it rewards assertive answers. Temperature scaling (softmax(logits/T), T&gt;1) recalibrates cheaply without touching accuracy — so measure ECE on your own distribution and recalibrate before ever automating on confidence.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

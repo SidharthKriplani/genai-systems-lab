@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug This RAG System | GenAI Systems Lab</title>
+  <meta name="description" content="Five incidents. Only the symptom shown. Diagnose the failure mode — then see the root cause explanation.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/debug">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/debug">
+  <meta property="og:title" content="Debug This RAG System | GenAI Systems Lab">
+  <meta property="og:description" content="Five incidents. Only the symptom shown. Diagnose the failure mode — then see the root cause explanation.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Debug This RAG System">
+  <meta name="twitter:description" content="Five incidents. Only the symptom shown. Diagnose the failure mode — then see the root cause explanation.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Debug This RAG System","description":"Five incidents. Only the symptom shown. Diagnose the failure mode — then see the root cause explanation.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/debug"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">CHALLENGE</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Debug This RAG System</h1>
+    <p class="desc">Five incidents. Only the symptom shown. Diagnose the failure mode — then see the root cause explanation.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a frustration almost everyone building a RAG system hits eventually. The answers are <em>wrong somehow</em> — incomplete, generic, missing the point — and you have no idea why. So you do the natural thing: you start tweaking the prompt. A little rewording here, a stronger instruction there. Days go by. Sometimes it seems better, sometimes worse, and you can never quite tell if <em>you</em> fixed it or the wind changed.</p>
+<p>Here's the reason that flailing feels so hopeless, and it's the whole idea of this module: a RAG system is a <em>chain</em> of stages — it finds passages, it packs them into a prompt, then it writes an answer — and when you change the prompt, you're only poking at one link while blind to which link actually broke. If the problem is that the right passage never arrived, no amount of prompt-wording will save you.</p>
+<p>So instead of guessing, we're going to learn to <em>isolate the stage</em>. Take your time here — the payoff is enormous. By the end you'll have one clean experiment that tells you, in a single run, whether you have a retrieval problem or a generation problem. And those two need completely different fixes.</p></section>
+    <section><h2>How It Works</h2><p>Start from the single fact that makes RAG debuggable at all: a RAG system is not one thing, it is a <strong>chain of three stages</strong>. Retrieval finds candidate passages, augmentation packs them into the prompt, and generation writes the answer from that prompt. This matters <strong>because</strong> any one of the three can fail on its own — and a wrong final answer looks identical no matter which link broke. So the debugging question is never 'why is the answer bad?' but 'which <em>stage</em> produced the badness?' — and you cannot answer that by changing things that span multiple stages at once.</p>
+<p><strong>Which is exactly why</strong> undifferentiated prompt tuning stalls. When you reword a prompt and re-run, you've changed several variables and can't attribute any quality movement to any specific cause — you're chasing correlation, not causation. <strong>So</strong> the discipline is the opposite: isolate one stage, hold everything else fixed, and test that stage alone. The sharpest instrument for this is the <strong>oracle test</strong>, which cleaves the whole chain into just two possibilities in a single experiment. Manually build a prompt containing the <em>confirmed correct</em> chunk and ask the same question. If the model now answers correctly, the failure was upstream — in what chunks actually reached it (wrong chunk selected, truncation cutting the passage, or lost-in-the-middle ordering). If it <em>still</em> fails even with a perfect chunk handed to it, the failure is downstream, in generation itself.</p>
+<p><strong>This forces</strong> a clean ordered sequence, because each stage can only work with what the previous one delivered. (1) <strong>Retrieval recall@k</strong> — how often does the relevant chunk appear in the top-3? If it's low, fix retrieval first and treat everything else as secondary, since no augmentation or generation fix can rescue a chunk that never arrives. (2) <strong>Augmentation</strong> — log the exact prompt sent to the model and confirm the chunk is present and not silently truncated. (3) <strong>Oracle test</strong> — inject perfect context by hand and watch generation quality directly. When the oracle test is the one that fails — correct chunk present, but the model paraphrases loosely instead of quoting — the repair lives in generation: 'Quote directly from the retrieved passage before summarizing' forces grounding before abstraction, and 'Reproduce numbers and measurements exactly as they appear' stops the rounding of values that must be literal. Change one element, run against a fixed test set, record which change moved what. The interactive lets you toggle each stage and watch the failure localize — and the closing scenario is exactly this: correct chunks, incomplete answers, two weeks lost, and one experiment that ends the guessing.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Stage isolation, not parameter tuning.</strong> Two weeks of undifferentiated prompt changes fails because every variable moves at once — you can't attribute quality movement to any intervention.</li><li><strong>The oracle test separates retrieval from generation in one experiment.</strong> Feed a manually confirmed perfect chunk and ask the question — success means the failure is in what chunks reach the model; failure means generation.</li><li><strong>These two failure modes need entirely different repairs.</strong> Fixing retrieval does nothing for a generation failure, and vice versa.</li><li><strong>Fix retrieval first if recall@k is low.</strong> Everything downstream depends on the right chunk arriving; improving generation is useless if the chunk never reaches the model.</li><li><strong>Verify the actual prompt sent to the LLM.</strong> Log all retrieved content to confirm the relevant chunk is present and not silently truncated before blaming generation.</li><li><strong>Ground-before-abstraction prompts fix loose paraphrasing.</strong> 'Reproduce numbers and measurements exactly as they appear' forces literal extraction of clinical values.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A medical-literature RAG pipeline keeps producing answers that miss crucial detail — yet when you check, the retrieved chunks are <em>right</em>: the relevant paragraphs are clearly there. Two weeks of prompt changes, no systematic progress. Take a moment before reading on: given everything we built, which stage is broken, and what's the one experiment that proves it? Here's the reasoning, step by step. The chunks are confirmed correct, so retrieval isn't the suspect — which points straight at generation. Run the oracle test: hand the model the perfect chunk by hand and ask the same question. It still answers incompletely — paraphrasing loosely instead of extracting the specific clinical values. That isolates the failure as generational, and the fix follows from the diagnosis, not from guessing: grounding-before-abstraction prompts like 'Quote directly from the retrieved passage before summarizing' and 'Reproduce numbers and measurements exactly as they appear in the retrieved text.' Notice what the two weeks lacked — not effort, but <em>causation</em>. Stage isolation is what turns undifferentiated tuning into a pointed repair.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Debug RAG by stage isolation, not parameter tuning. The oracle prompt test — inject perfect context manually — separates a retrieval problem from a generation problem in one experiment. Change one variable at a time, measure against a fixed test set, stop when you can point to the specific cause.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

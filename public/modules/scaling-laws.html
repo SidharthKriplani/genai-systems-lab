@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scaling Laws &amp; Compute-Optimal Training | GenAI Systems Lab</title>
+  <meta name="description" content="Slide the parameter count. See the optimal token budget. Understand why a 7B model can beat a 70B — and when to overtrain small.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/scaling-laws">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/scaling-laws">
+  <meta property="og:title" content="Scaling Laws &amp; Compute-Optimal Training | GenAI Systems Lab">
+  <meta property="og:description" content="Slide the parameter count. See the optimal token budget. Understand why a 7B model can beat a 70B — and when to overtrain small.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Scaling Laws &amp; Compute-Optimal Training">
+  <meta name="twitter:description" content="Slide the parameter count. See the optimal token budget. Understand why a 7B model can beat a 70B — and when to overtrain small.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Scaling Laws & Compute-Optimal Training","description":"Slide the parameter count. See the optimal token budget. Understand why a 7B model can beat a 70B — and when to overtrain small.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/scaling-laws"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">TRAINING</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Scaling Laws &amp; Compute-Optimal Training</h1>
+    <p class="desc">Slide the parameter count. See the optimal token budget. Understand why a 7B model can beat a 70B — and when to overtrain small.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a spending question anyone can feel. You have a fixed pile of money to train a model. You can spend it two ways: on a <em>bigger</em> model (more parameters) or on <em>more training</em> for a smaller one (more tokens). Same budget, two dials. Which dial do you turn?</p>
+<p>For years the honest answer was a shrug dressed up as intuition — &quot;bigger models are better, so make it bigger.&quot; And bigger models <em>did</em> perform better, so the instinct wasn't crazy. But it hid a real question nobody could answer with numbers: given a <em>fixed</em> budget, is a dollar better spent on parameters or on tokens? That's not a matter of taste — it has an actual answer, and this module is the story of how the field found it.</p>
+<p>We'll build it up in the order it was discovered: first the realization that loss follows <em>predictable</em> curves, then the flawed early reading of those curves, then the careful experiment that corrected it into a simple ratio — and finally the twist that the <em>cheapest</em> answer at training time isn't the cheapest answer once you're paying for every query forever. Take your time; this is deep, but each step is one clean idea.</p></section>
+    <section><h2>How It Works</h2><p>Start from the fundamental object scaling laws are <em>about</em>: <strong>loss</strong> — how badly the model predicts held-out text. Before anyone mapped it, compute allocation was pure intuition: teams trained large models because large models performed better, with no principled way to say <em>by how much</em>, or whether a fixed budget was better spent on more parameters or more tokens. The field settled on a plausible-sounding rule — <strong>given a compute budget, maximize parameters</strong> — and GPT-3 (175B parameters, ~300B tokens) followed exactly that logic.</p>
+<p>Kaplan et al. (2020) provided the first empirical map: <strong>loss follows a power law</strong> in both model size N and dataset size D, independently. Each 10× increase in parameters or tokens reduces loss by a predictable amount — useful signal, but it left the <em>joint allocation</em> question unanswered.</p>
+<p>Crucially, Kaplan's runs varied model size while <strong>holding training tokens roughly constant at 300B.</strong> <mark>That confounded the parameter-vs-token question — you couldn't tell from Kaplan's experiments whether GPT-3's 175B/300B ratio was optimal.</mark></p>
+<p>Hoffmann et al. (2022) — the <strong>Chinchilla paper</strong> — ran controlled compute-matched experiments, varying <em>both</em> parameters and tokens. They found the GPT-3 generation was <strong>systematically undertrained</strong> — too many parameters, too few tokens.</p>
+<p>The result: at typical training scales, compute-optimal training requires <mark>approximately 20 training tokens per parameter.</mark> A 7B model needs ~140B tokens; a 70B model needs ~1.4T tokens. Below that ratio, you're paying for parameters you haven't trained sufficiently.</p>
+<div class="illustration"><div class="illustration-label">Chinchilla compute-optimal ratio: ~20 tokens per parameter</div><pre>Chinchilla compute-optimal ratio: ~20 tokens per parameter
+
+Model      Optimal tokens   Training compute (C ≈ 6×N×D)
+7B         ~140B tokens     ~5.9 × 10²¹ FLOPs
+13B        ~260B tokens     ~2.0 × 10²² FLOPs
+70B        ~1.4T tokens     ~5.9 × 10²³ FLOPs
+
+If you have 1.5T tokens of training data:
+  Optimal model size: ~75B parameters
+  70B model: near-optimal ✓
+  7B model: receives 10× more data than Chinchilla prescribes
+
+Counter-intuitively, 7B overtrained on 1.5T can match undertrained 70B
+at the same total compute — at 10× cheaper inference cost.</pre></div>
+<p>The ratio has a consequence that runs <em>against</em> intuition, and it's the crux worth sitting with. Because a smaller model can be pushed <em>past</em> its compute-optimal point — fed more tokens than the ratio prescribes — a deliberately <strong>over-trained</strong> small model often <em>matches or outperforms</em> an under-trained large one <strong>at the same total FLOPs</strong>, simply because it absorbed more signal per parameter. This is exactly the logic behind <strong>Llama 2 and Llama 3</strong>: Meta over-trained smaller models past compute-optimal on purpose, trading extra training compute for a smaller, cheaper model at deployment.</p>
+<p>And that points to the piece a 'bigger always wins' claim misses entirely — the cost that lands <em>after</em> training. Scaling laws predict <strong>pre-training loss, not downstream benchmark scores</strong> (those still need evaluation), but the inference math is unambiguous: a 70B model is <strong>5–10× more expensive per inference token</strong> than a 7B on the same hardware, on <em>every query for the model's whole deployed life.</em> So if a smaller model can reach equivalent loss by training on more tokens, every future query is permanently cheaper. The real question is therefore not 'which parameter count wins at training?' but 'what compute-optimal size maximizes quality-per-inference-dollar given this token budget?' The interactive lets you turn both dials and watch loss and inference cost trade off; then the closing scenario hands you a fixed budget, 1.5T tokens, and a confident 'bigger always wins' — see if you can rebut it before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Loss follows a power law in both parameters (N) and tokens (D)</strong> — Kaplan (2020) mapped each independently, but held tokens ~constant at 300B, confounding the parameter-vs-token tradeoff.</li><li><strong>Chinchilla (2022) found the GPT-3 generation was undertrained</strong> — too many parameters, too few tokens — and set compute-optimal at ~20 tokens per parameter.</li><li><strong>~20 tokens/param:</strong> 7B → ~140B tokens, 70B → ~1.4T tokens; 1.5T tokens is compute-optimal for a ~75B model.</li><li><strong>A deliberately over-trained small model can match an undertrained large one at equal FLOPs</strong> — the logic behind Llama 2/3 over-training past compute-optimal.</li><li><strong>A 70B model costs 5–10× more per inference token than a 7B</strong> — over-training a smaller model to equal loss makes every future query permanently cheaper.</li><li><strong>Scaling laws predict pre-training loss, not downstream benchmark scores</strong> — those still need evaluation. &quot;70B always beats 7B&quot; is false at fixed tokens.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. Your team has a fixed compute budget and <strong>1.5T tokens</strong> of domain training data, and a researcher argues flatly that the 70B model will <em>always</em> outperform the 7B. Take a moment before reading on: does 'bigger always wins' survive contact with a <em>fixed</em> budget and a <em>fixed</em> token count? Here's the reasoning, step by step. By Chinchilla's ~20-tokens-per-parameter rule, 1.5T tokens is compute-optimal for a <strong>~75B</strong> model — so the 70B is near-optimal, and at first glance the researcher looks right. But the 7B at 1.5T tokens is being fed <strong>10× more data than Chinchilla prescribes</strong>, i.e. deliberately over-trained — and a deliberately over-trained small model can <em>match</em> an under-trained large one at equal FLOPs, because it absorbed more signal per parameter. That's exactly the Llama 2/3 strategy. Then comes the part the 'always' claim misses entirely: a 70B model costs <strong>5–10× more per inference token</strong> than a 7B, on every query for the model's whole deployed life. So the real question was never 'which parameter count wins at training?' — it's 'what compute-optimal size maximizes quality-per-inference-dollar for this token budget?' And 'bigger always wins' is simply false at fixed tokens.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Bigger models trained on insufficient data underperform smaller models trained proportionally. Chinchilla compute-optimal ratio: ~20 tokens per parameter. For inference-constrained deployments, deliberately over-training a smaller model often achieves better quality-per-inference-dollar than under-training a larger one at the same compute budget. '70B always beats 7B' is wrong when you have fixed tokens.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

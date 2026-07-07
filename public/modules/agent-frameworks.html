@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Framework Landscape | GenAI Systems Lab</title>
+  <meta name="description" content="LangGraph, CrewAI, Autogen and friends — what each is for.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-frameworks">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-frameworks">
+  <meta property="og:title" content="Framework Landscape | GenAI Systems Lab">
+  <meta property="og:description" content="LangGraph, CrewAI, Autogen and friends — what each is for.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Framework Landscape">
+  <meta name="twitter:description" content="LangGraph, CrewAI, Autogen and friends — what each is for.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Framework Landscape","description":"LangGraph, CrewAI, Autogen and friends — what each is for.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-frameworks"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Framework Landscape</h1>
+    <p class="desc">LangGraph, CrewAI, Autogen and friends — what each is for.</p>
+
+    
+    <section><h2>How It Works</h2><p>Strip an agent framework to its core and the thing it wraps is embarrassingly small: <strong>an agent is a while-loop around a model call</strong>. Send messages to the model; if it emits a tool call, execute the tool and append the result; if it emits a final answer, stop. That loop is ~30 lines. Everything a framework adds sits <em>around</em> that loop, not inside it — which is exactly why the 'just hand-roll it' argument is seductive and also why it stops being true past a certain complexity.</p>
+<p>The useful question is never 'framework or no framework' in the abstract. It is: <mark>which of the surrounding concerns does this system actually have, and is a framework's abstraction of them worth the abstraction's cost?</mark></p>
+<p>Frameworks in this space are <strong>not interchangeable — they operate at different layers of the stack</strong>, which is the single most common point of confusion (and interview trap). Naming them together as if they compete is a category error:</p>
+<p><strong>Orchestration</strong> (LangGraph, AutoGen) — control flow across multiple steps or agents: state that persists between nodes, conditional edges, cycles, human-in-the-loop interrupts, checkpoint/resume. This is the layer you reach for when the <em>shape of the computation</em> is the hard part.</p>
+<p><strong>Tool/chain abstraction</strong> (LangChain) — glue for wiring models, prompts, retrievers, and tools into reusable components. Solves 'I keep re-writing the same RAG plumbing.'</p>
+<p><strong>Runtime / batteries-included agents</strong> (OpenAI Agents SDK, Google ADK, CrewAI) — an opinionated agent loop with tool-calling, handoffs, and guardrails already wired, tuned for one model family (OpenAI, Gemini) or one mental model (CrewAI's role-playing crews).</p>
+<p><strong>Observability</strong> (LangSmith) — tracing, eval, and replay. Orthogonal to all of the above; it watches whatever loop you run.</p>
+<p>So what does a framework abstract <em>away</em>? Concretely: <strong>the state machine, the retry/error semantics, the persistence layer, and the streaming/trace plumbing</strong> — the boring, bug-prone code that is identical across agents and easy to get subtly wrong. LangGraph's whole pitch is modeling the agent as an explicit graph of nodes with a typed shared `state`, so 'pause for human approval, then resume from exactly here after a crash' becomes a checkpointer config instead of a hand-built durable state machine.</p>
+<p><mark>The value scales with control-flow complexity, not with 'is it an agent.'</mark> A single linear tool-calling agent gets almost nothing from LangGraph and pays real complexity for it. A five-agent system with handoffs, retries, and resume-after-crash gets a great deal — hand-rolling that correctly is a multi-week project of exactly the code the framework already hardened.</p>
+<div class="illustration"><div class="illustration-label">The loop is small; the framework wraps what surrounds it</div><pre>THE AGENT (what you'd hand-roll — ~30 lines):
+  while not done:
+      resp = model(messages)              # 1. think
+      if resp.tool_calls:
+          for call in resp.tool_calls:
+              result = run_tool(call)      # 2. act
+              messages.append(result)      # 3. observe
+      else:
+          done = True                      # 4. stop
+
+WHAT A FRAMEWORK ADDS AROUND IT (the expensive part):
+  • state machine ...... typed shared state across nodes/agents
+  • control flow ....... conditional edges, cycles, parallel branches
+  • persistence ........ checkpoint after each step -&gt; resume after crash
+  • human-in-loop ...... interrupt(), wait for approval, resume
+  • retries/errors ..... per-step retry budgets, error routing edges
+  • handoffs ........... agent A delegates to agent B with shared context
+  • streaming/traces ... token + step streaming, LangSmith spans
+
+Rule of thumb:
+  linear single agent, 1-5 tools  -&gt; hand-roll (framework = pure overhead)
+  multi-step / multi-agent / resume/HITL -&gt; framework earns its cost</pre></div>
+<p>The costs are real and worth naming precisely, because 'lock-in' is used too loosely. <strong>Debuggability</strong> is the sharpest one: a hand-rolled loop is a stack trace you can read top to bottom. A heavy framework can bury the actual control flow under abstraction layers, so when an agent misbehaves you are debugging <em>the framework's</em> execution model, not your code — this is the single most common real complaint about LangChain/LangGraph in production.</p>
+<p><strong>Lock-in</strong> is concrete, not vibes: the more your business logic is expressed <em>as</em> framework primitives (nodes, edges, chains, crews), the more a migration is a rewrite, not a swap. <strong>Model-coupling</strong> is a specific sub-case: OpenAI Agents SDK and Google ADK are tuned to one provider — great until you need a second model family. And <strong>version churn</strong> is a genuine tax: these are young, fast-moving libraries whose APIs break between minor versions.</p>
+<p>The senior move is to pick by the <em>shape of the problem</em>, and the Framework Landscape interactive above lets you pressure-test that against a real use case rather than a benchmark. The heuristics worth internalizing:</p>
+<p><strong>Reach for orchestration (LangGraph/AutoGen)</strong> when control flow is the hard part — multi-agent handoffs, cycles, resume-after-crash, human approval gates. <strong>Reach for a runtime SDK (OpenAI/ADK/CrewAI)</strong> when you want a batteries-included loop fast and are comfortable inside one model family or one paradigm. <strong>Add LangSmith regardless</strong> — observability is orthogonal and you want traces the moment anything is non-trivial. <strong>Hand-roll</strong> when the loop is genuinely linear and you value a readable stack trace over saved plumbing.</p>
+<p><mark>The interview-grade answer is never 'always use X.' It is: name the surrounding concerns this system has, map each to the layer that owns it, and justify the abstraction cost.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>An agent is a while-loop around a model call (~30 lines); frameworks wrap what <em>surrounds</em> the loop</strong> — the state machine, persistence, retries, handoffs, and trace plumbing. The value scales with control-flow complexity, not with 'is it an agent.'</li><li><strong>These tools operate at different layers, not in competition.</strong> Orchestration (LangGraph, AutoGen) = control flow; tool/chain glue (LangChain) = RAG/tool plumbing; runtime SDKs (OpenAI Agents SDK, ADK, CrewAI) = batteries-included loop; observability (LangSmith) = tracing. Naming them as rivals is a category error.</li><li><strong>Frameworks earn their cost when the <em>shape of the computation</em> is hard</strong> — multi-agent handoffs, cycles, human-in-the-loop, resume-after-crash. A linear single-tool agent gets almost nothing from LangGraph and pays real complexity for it.</li><li><strong>Debuggability is the sharpest cost:</strong> a hand-rolled loop is a readable stack trace; a heavy framework makes you debug <em>its</em> execution model. This is the #1 real production complaint about LangChain/LangGraph.</li><li><strong>Lock-in is concrete, not vibes:</strong> the more your logic is expressed <em>as</em> framework primitives (nodes/edges/chains/crews), the more migration is a rewrite. Model-coupling (OpenAI SDK, ADK tied to one provider) and version churn are specific sub-costs.</li><li><strong>Pick by the shape of the problem:</strong> orchestration for complex control flow, a runtime SDK for a fast batteries-included loop in one model family, LangSmith for observability regardless, hand-roll when the loop is genuinely linear.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You inherit a prototype: 200 lines of Python that call the model, parse a tool call, run it, and loop — a hand-rolled ReAct agent. It works for the demo. Leadership now wants five agents that hand off to each other, retry on failure, resume after a crash, and stream traces to a dashboard. An engineer proposes rewriting everything on LangGraph; another says frameworks are 'lock-in' and you should keep hand-rolling. You have to decide what a framework actually buys you here — and where it costs you.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>An agent is a ~30-line while-loop; frameworks wrap what surrounds it (state, persistence, retries, handoffs, traces), and they live at different layers — LangGraph/AutoGen orchestrate, LangChain glues, OpenAI SDK/ADK/CrewAI are runtimes, LangSmith observes. Reach for a framework when control flow is the hard part; hand-roll a linear loop. The costs are concrete: debuggability, lock-in, model-coupling, version churn.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

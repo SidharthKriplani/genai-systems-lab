@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chunking Strategies | GenAI Systems Lab</title>
+  <meta name="description" content="Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/chunking">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/chunking">
+  <meta property="og:title" content="Chunking Strategies | GenAI Systems Lab">
+  <meta property="og:description" content="Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Chunking Strategies">
+  <meta name="twitter:description" content="Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chunking Strategies","description":"Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/chunking"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 6</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Chunking Strategies</h1>
+    <p class="desc">Same document. Four strategies. Watch which chunks get retrieved for each query — and why some strategies fail.</p>
+
+    
+    <section><h2>How It Works</h2><p><strong>Chunking is the step that decides what a 'retrievable unit' is</strong> — you split source documents into pieces, embed each piece, and retrieve pieces. It sits <em>upstream</em> of everything else in RAG, which makes it deceptively high-leverage: a chunk is simultaneously (1) the thing that gets embedded (so it must be semantically coherent enough for one vector to represent it), and (2) the thing that gets handed to the LLM (so it must carry enough context to be <em>usable</em> on its own). <mark>Those two jobs pull in different directions, and every chunking decision is a negotiation between them.</mark></p>
+<p>The strategies form a ladder from <em>ignorant-of-content</em> to <em>content-aware</em>:</p>
+<p>- <strong>Fixed-size</strong> — split every N characters/tokens. Trivial, fast, and <strong>content-blind</strong>: it will happily cut mid-sentence, mid-table, mid-word. This is the scenario's default and the source of its bugs.&lt;br&gt;- <strong>Sentence / recursive</strong> — split on natural boundaries (paragraphs → sentences → words), recursively, so you never cut mid-sentence. LangChain's `RecursiveCharacterTextSplitter` is the common workhorse: respects structure while targeting a size.&lt;br&gt;- <strong>Semantic</strong> — embed sentences and place a boundary where the <em>topic shifts</em> (a large embedding-distance jump between consecutive sentences). Chunks become topically coherent regardless of length. More compute up front, better single-vector representations.&lt;br&gt;- <strong>Structural / document-aware</strong> — split on the document's own structure: Markdown headers, HTML sections, code functions, table rows kept whole. Respects the author's intended units — the most robust for structured docs (the split table would stay intact).</p>
+<p><mark>The trend up the ladder is: spend more effort at index time to make each chunk a more honest, self-contained semantic unit.</mark></p>
+<div class="illustration"><div class="illustration-label">The lost-boundary failure — fixed-size cuts through meaning</div><pre>SOURCE:
+  &quot;...To request a refund, first open a ticket (step 4). Then attach
+   the receipt and select 'Damaged' as the reason (step 5)...&quot;
+
+FIXED-SIZE 512, no overlap — boundary lands mid-procedure:
+  ┌ chunk A ─────────────────────────────┐ ┌ chunk B ──────────────┐
+  │ ...first open a ticket (step 4).      │ │ Then attach the       │
+  │                                       │ │ receipt ... (step 5)  │
+  └───────────────────────────────────────┘ └───────────────────────┘
+  Query &quot;how do I refund damaged goods?&quot; retrieves chunk A →
+  answer is missing step 5.  Recall@k looked FINE (A is &quot;relevant&quot;),
+  but the retrieved unit is INCOMPLETE. ← the lost-boundary failure
+
+WITH OVERLAP (e.g. 64-char stride back):
+  chunk B now starts &quot;...open a ticket (step 4). Then attach receipt
+  (step 5)...&quot;  → the boundary-spanning context is preserved in B.</pre></div>
+<p><strong>Chunk size and overlap is the central tradeoff</strong>, and it is a genuine tension, not a knob to max out:</p>
+<p>- <strong>Small chunks</strong> → each is topically precise, so retrieval is sharp (the embedding represents one idea, high precision) — <em>but</em> each carries little surrounding context, so an answer that needs neighboring sentences gets a truncated, incomplete unit (the scenario's 'it' with no antecedent).&lt;br&gt;- <strong>Large chunks</strong> → carry lots of context, so a retrieved chunk is more likely self-sufficient — <em>but</em> the single embedding now averages several ideas together (diluted, less precise retrieval), and you burn context-window tokens on irrelevant surrounding text, which also invites the generator to hallucinate off the noise.&lt;br&gt;- <strong>Overlap</strong> (chunks share a sliding window of tokens with their neighbors) is the standard mitigation for boundary loss: a fact that straddles a boundary appears <em>whole</em> in at least one chunk. The cost is redundancy — overlapping tokens are stored and retrieved multiple times, inflating index size and occasionally returning near-duplicate chunks. <mark>Overlap doesn't eliminate the boundary problem; it makes it survivable by ensuring straddling context lives intact somewhere.</mark></p>
+<p><strong>Chunking interacts with two other components you can't ignore.</strong> First, the <strong>embedding model's context window</strong>: if a chunk exceeds the embedder's max input (many embedding models cap at 512 tokens; some newer ones go to 8k), the tail is <strong>silently truncated before embedding</strong>, so part of your chunk isn't represented in its vector at all — you retrieve on text the model never saw. Chunk size must fit <em>inside</em> the embedder's window, not just the LLM's. Second, <strong>retrieval granularity</strong>: the chunk is the atom of retrieval, so if the answer's supporting evidence is spread across three chunks, you need all three in the top-k — smaller chunks fragment evidence and demand higher k; larger chunks bundle it but dilute precision. <mark>Chunking is not an isolated preprocessing choice — it co-determines what your embedder can represent and what your retriever can assemble.</mark></p>
+<div class="illustration"><div class="illustration-label">Size/overlap decision grid</div><pre>                 SMALL chunks              LARGE chunks
+  retrieval      sharp, high precision      diluted (averaged ideas)
+                 (one idea / vector)
+  self-suff.     often incomplete           usually self-contained
+  context cost   cheap tokens               burns window on noise
+  evidence       fragmented → need high k   bundled → lower k
+  embedder fit   safely inside window       risk of silent truncation
+  ────────────────────────────────────────────────────────────────
+  OVERLAP: shared sliding window → boundary-spanning facts appear
+           WHOLE in ≥1 chunk. Cost: storage + near-duplicate hits.
+  PRACTICAL START: recursive/structural split, ~256–512 tokens,
+           ~10–20% overlap; measure recall &amp; answer completeness,
+           then tune. There is no universal best — it's data-dependent.</pre></div>
+<p><strong>The 'lost boundary' failure is the through-line of this whole module.</strong> Naive fixed-size chunking cuts through the middle of meaning — a table, a definition and its antecedent, a numbered procedure — so the retrieved chunk is judged 'relevant' by your recall metric yet is <em>incomplete</em>, and the answer silently drops a step. This is why recall@k can look fine while answers are wrong: the metric rewards retrieving <em>a</em> relevant chunk, not a <em>complete</em> one. The fixes stack: move up the ladder toward <strong>structural/semantic</strong> splitting so boundaries fall where meaning does, <strong>add overlap</strong> so straddling facts survive, and <strong>keep chunks inside the embedder's window</strong> so nothing is silently truncated. <mark>Chunking has no universal optimum — it depends on your documents (prose vs tables vs code) and query patterns — so the discipline is to treat it as a tunable that you evaluate on <em>answer completeness</em>, not just retrieval recall.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A chunk does two conflicting jobs:</strong> it's what gets embedded (must be a coherent single-vector unit) and what's handed to the LLM (must be self-contained enough to use). Every chunking choice negotiates between these.</li><li><strong>Strategies climb from content-blind to content-aware:</strong> fixed-size (splits mid-sentence/table — the naive default), sentence/recursive (respects natural boundaries), semantic (splits where topic shifts via embedding distance), structural (splits on headers/functions/table rows). Higher = more index-time effort for more honest chunks.</li><li><strong>Size/overlap is a real tradeoff, not a knob to max.</strong> Small chunks = sharp retrieval but incomplete context; large chunks = self-sufficient but diluted embeddings and wasted tokens. Overlap makes boundary-spanning facts survive whole at the cost of redundancy.</li><li><strong>Chunking interacts with the embedder's context window and retrieval granularity.</strong> A chunk past the embedder's token cap is silently truncated before embedding (you retrieve on unseen text); evidence spread across chunks needs all of them in top-k, so small chunks fragment evidence and demand higher k.</li><li><strong>The lost-boundary failure is why recall can look fine while answers are wrong.</strong> Fixed-size cuts through meaning, so a 'relevant' chunk is incomplete (missing step, dangling antecedent). Fix by moving toward structural/semantic splits + overlap, and tune on <em>answer completeness</em>, not just recall — there's no universal best.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Your RAG bot answers well on FAQ-style questions but fails on anything that spans a boundary — a table split across two chunks, a definition whose 'it' refers to a sentence now in a different chunk, a procedure whose step 4 landed in one chunk and step 5 in the next. You're chunking at a fixed 512 characters with no overlap because that was the default. Retrieval recall looks fine on paper, yet the retrieved chunks are subtly <em>incomplete</em>. You need to decide how to chunk — and understand why the naive default is quietly costing you answers.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Chunking decides the retrievable unit, and a chunk must serve two conflicting masters — a coherent single embedding and a self-contained unit for the LLM. Fixed-size splitting is content-blind and causes the lost-boundary failure (a 'relevant' chunk that's incomplete, so recall lies); move up toward semantic/structural splitting, add overlap so straddling facts survive whole, keep chunks inside the embedder's window, and tune on answer completeness rather than retrieval recall alone.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

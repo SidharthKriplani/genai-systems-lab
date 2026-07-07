@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Planning &amp; Task Decomposition | GenAI Systems Lab</title>
+  <meta name="description" content="How agents break goals into sub-tasks — and where it falls apart.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-planning">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-planning">
+  <meta property="og:title" content="Agent Planning &amp; Task Decomposition | GenAI Systems Lab">
+  <meta property="og:description" content="How agents break goals into sub-tasks — and where it falls apart.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Planning &amp; Task Decomposition">
+  <meta name="twitter:description" content="How agents break goals into sub-tasks — and where it falls apart.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agent Planning & Task Decomposition","description":"How agents break goals into sub-tasks — and where it falls apart.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-planning"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Agent Planning &amp; Task Decomposition</h1>
+    <p class="desc">How agents break goals into sub-tasks — and where it falls apart.</p>
+
+    
+    <section><h2>How It Works</h2><p>Agent-tools established how a single agent selects and executes tools. The failure at task scale: tool selection at each step is conditioned on the immediate context, not on a representation of the full task trajectory. Without a plan, the agent treats each decision as 'what is the best next action given what I have so far?' — it cannot represent 'I need to complete A and B before I can do C, and I've only done A.' This produces two failure modes: looping (the agent calls search again because it doesn't know it already has sufficient information for that subtask) and premature stopping (the agent declares completion after 3 steps because each individual step looked complete, without checking that all required subtasks were finished).</p>
+<p>Three planning approaches: ReAct (Reason + Act) interleaves a reasoning trace with each action — before calling a tool, the model writes 'I need to find competitor A's pricing. I have already found competitor B and C. Next step: search for competitor A pricing.' The reasoning trace forces implicit plan tracking and reduces loops on well-structured tasks. Plan-then-execute generates the full step sequence first, then executes each step without re-planning — better when the task structure is known upfront, worse when intermediate findings change what's needed next. Hierarchical agents separate a planner model (decomposes goals) from executor agents (implement steps) — the planner sees only high-level task status, preventing executor tool-level noise from corrupting the plan.</p>
+<p>Plans only work when paired with explicit completion criteria — 'research three competitors' needs concrete done-conditions ('one pricing page, one feature list, one customer review source per competitor') or the agent has no way to know when enough is enough. Give the planner explicit tool descriptions with output schemas. Plans must be revisable: a plan-then-execute agent that hits a blocked step gets stuck; add a re-plan trigger ('if step N fails or returns insufficient data, output REPLAN with reason') to recover most blocked executions.</p></section>
+    
+    <section><h2>In Production — Apply It</h2><p>Your agent is tasked with 'research three competitors and write a comparison report.' It sometimes calls 20+ tools in a loop and other times gives up after 3 steps with an incomplete result. Reliability is 60%. A colleague says you're not giving the agent a planning mechanism.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Planning gives agents the ability to represent the full task trajectory, not just the next best action. ReAct (reasoning trace before each action) is the lowest-friction entry point — it reduces looping by forcing the agent to articulate what it has and what remains. Always define explicit completion criteria per subtask: without a done-condition, the agent cannot know when to stop. For complex multi-step tasks, add a re-plan trigger for blocked or insufficient steps.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

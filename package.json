@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/prerender-gt.js && vite build",
+    "build": "npm run prerender && vite build",
+    "prerender": "node scripts/prerender-gt.js && node scripts/prerender-modules.js && node scripts/prerender-companies.js",
     "preview": "vite preview",
     "check:color": "node scripts/check-no-hex.mjs"
   },

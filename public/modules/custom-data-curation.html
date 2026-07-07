@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fine-Tuning Data Curation | GenAI Systems Lab</title>
+  <meta name="description" content="Quality over quantity; build the eval set first; synthetic data safely.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/custom-data-curation">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/custom-data-curation">
+  <meta property="og:title" content="Fine-Tuning Data Curation | GenAI Systems Lab">
+  <meta property="og:description" content="Quality over quantity; build the eval set first; synthetic data safely.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Fine-Tuning Data Curation">
+  <meta name="twitter:description" content="Quality over quantity; build the eval set first; synthetic data safely.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Fine-Tuning Data Curation","description":"Quality over quantity; build the eval set first; synthetic data safely.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/custom-data-curation"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">CUSTOMIZATION</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Fine-Tuning Data Curation</h1>
+    <p class="desc">Quality over quantity; build the eval set first; synthetic data safely.</p>
+
+    <section><h2>Start Here</h2><p>Say you've decided — correctly — that fine-tuning is the right tool for your problem. Now comes the question everyone underestimates: <em>what data do you train on?</em> The instinct is almost universal, and almost always wrong: <strong>more is better.</strong> Grab every example you can find, dump it in, let the model sort it out. It feels safe. Surely a bigger pile can't hurt?</p>
+<p>Here's the surprise we're going to unpack: for fine-tuning, a small pile of <em>clean</em> examples routinely beats a huge pile of messy ones — and the messy pile can make your model actively <em>worse</em> than where you started. That sounds backwards until you understand what fine-tuning is actually doing, and once you do, it clicks completely.</p>
+<p>So let's build the intuition from zero. We'll look at what the model already knows before you touch it, what fine-tuning is really adjusting, and why — because of that — every bad example you feed it does real damage. Then we'll turn that understanding into a concrete recipe for building a training set that works. Stay with the <em>why</em> first; the <em>how</em> falls out of it naturally.</p></section>
+    <section><h2>How It Works</h2><p>The counterintuitive core: <strong>for SFT, a few thousand clean, consistent, on-distribution examples routinely beat hundreds of thousands of noisy ones.</strong></p>
+<p>The base model already learned language, reasoning, and world knowledge during pretraining. Fine-tuning isn't teaching it to think — it's teaching it <em>which behavior to surface</em>, a comparatively tiny adjustment. The <strong>LIMA</strong> result made this concrete: ~1,000 carefully curated examples produced a strongly aligned model, because SFT is mostly <em>style and format alignment</em>, not capability injection.</p>
+<p><mark>So every noisy example is not neutral — it's actively harmful.</mark> The model imitates whatever you show it. Feed it 200k raw tickets and it faithfully learns the terse, inconsistent, occasionally-rude distribution of your <em>worst</em> agents alongside your best. More bad data makes a worse model, not a bigger one.</p>
+<p>Building a good SFT set is four disciplines, and volume isn't one of them: <strong>format consistency, distribution coverage, deduplication, and label quality.</strong></p>
+<p><strong>Format consistency</strong> — every example should model the <em>exact</em> output shape you want. If half your tickets end abruptly and half are polished, the model learns a blurry average of both. <strong>Coverage</strong> — the training distribution must match the <em>production</em> distribution of questions: if 30% of real traffic is billing but your set is 5% billing, the model underperforms exactly where it's needed most. <strong>Deduplication</strong> — near-duplicate examples (the same canned reply pasted across thousands of tickets) let the model <em>memorize</em> instead of generalize, and inflate whatever bias that duplicate carries. <strong>Label quality</strong> — remove contradictory pairs (two tickets giving opposite answers to the same question) and low-quality responses; contradictions teach the model that both answers are acceptable.</p>
+<div class="illustration"><div class="illustration-label">Why 3k curated beats 200k raw — the same task, two datasets</div><pre>RAW 200,000 tickets (dump everything)          CURATED 3,000 (senior move)
+---------------------------------------        -----------------------------------
+Mixed tone (best + worst agents)               Only exemplar answers, brand voice
+Contradictory answers to same Q                Contradictions resolved / removed
+Canned reply duplicated 8,000x                 Deduped -&gt; each pattern once
+PII leaked from real customers                 Scrubbed / synthesized
+Distribution skewed to easy tickets            Reweighted to match prod traffic
+
+RESULT:                                        RESULT:
+  memorizes duplicates + PII                     generalizes the format
+  imitates rude/terse phrasing                   consistent brand tone
+  contradicts itself                             coherent, on-distribution
+  eval WORSE than base                           eval clearly better
+
+Rule of thumb: hours spent curating 3k examples pay back more than
+weeks spent collecting the next 100k raw ones.</pre></div>
+<p><strong>Synthetic data and distillation</strong> are the standard way to fill coverage gaps — and they carry two specific failure modes you must name.</p>
+<p>The technique: use a stronger model (or the same model with a good prompt) to <em>generate</em> training examples — paraphrase your best answers into more variety, synthesize examples for under-covered categories, or distill a large model's behavior into your smaller one. Done well, it cheaply fixes the coverage holes real data can't.</p>
+<p>The risks: <strong>bias inheritance</strong> — the generator's quirks, refusals, and blind spots get copied straight into your training set, so you inherit its weaknesses. And <strong>model collapse</strong> — if you train on too much synthetic data (especially the model's own output), the distribution narrows over generations, losing the tails and diversity, and quality quietly degrades. <mark>The discipline: use synthetic data to <em>augment</em> real data and fill specific gaps, keep a healthy fraction of real examples, and eval synthetic-trained models against a <em>real</em> held-out set.</mark></p>
+<p>You cannot curate a dataset without first building the <strong>held-out eval set</strong> — and it has to exist <em>before</em> you train.</p>
+<p>The eval set is the <em>contract</em> that defines what 'better' means. It must be <strong>production-representative</strong> (sampled from real traffic, covering the real distribution including the hard cases) and <strong>held out</strong> — never seen in training. Without it, you're tuning blind: you'll optimize the training loss and have no idea whether the deployed behavior improved or regressed.</p>
+<p><mark>Build the eval first for a second reason: it tells you <em>what data to curate</em>.</mark> If the eval shows billing questions are the weak spot, you know to enrich billing coverage in training. The eval isn't the last step — it's the compass that directs the whole curation effort.</p>
+<p>The failure that hides in plain sight is <strong>data leakage and contamination</strong> — and its signature is a specific, readable pattern in the loss curves.</p>
+<p>If any eval examples (or near-duplicates of them) leak into training, your eval metrics are inflated — the model looks great in testing and disappoints in production, because it partly <em>memorized the test</em>. Rigorous dedup <em>between</em> train and eval, not just within train, is mandatory. And watch the curves: <mark><strong>training loss falling while eval loss is flat or rising is the classic overfitting signature</strong></mark> — the model is memorizing training noise (the duplicates, the PII, the one-off phrasings) rather than learning the generalizable behavior. That divergence is your cue to stop, clean the data, and shrink the run — not to add more epochs.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Quality beats quantity for SFT.</strong> The base model already learned to think in pretraining; fine-tuning just aligns style/format — a small adjustment. A few thousand clean examples (the LIMA lesson, ~1k) routinely beat hundreds of thousands of noisy ones. Noisy data is <em>actively harmful</em>: the model imitates your worst examples too.</li><li><strong>A good SFT set is four disciplines:</strong> format consistency (model the exact output shape), distribution coverage (match production traffic), deduplication (near-dupes cause memorization + bias inflation), and label quality (remove contradictory/low-quality answers).</li><li><strong>Synthetic data fills coverage gaps but carries two named risks:</strong> bias inheritance (you copy the generator's quirks and blind spots) and model collapse (too much synthetic data narrows the distribution and degrades quality). Augment real data, keep a real fraction, eval on real held-out data.</li><li><strong>Build the held-out eval set FIRST.</strong> It's the contract for what 'better' means (production-representative, never seen in training) <em>and</em> the compass telling you which gaps to curate.</li><li><strong>Dedup between train and eval, not just within train.</strong> Leakage inflates eval metrics — the model memorizes the test and disappoints in production.</li><li><strong>Falling train loss with flat/rising eval loss = overfitting.</strong> The model is memorizing noise (duplicates, PII, one-off phrasings). Cue to clean data and shrink the run, not add epochs.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put this to work. Eng scraped 200,000 past tickets — closed conversations, agent replies, everything — and ran SFT overnight. The tuned model came out <em>worse</em> than the base: it copies agents' terse, sometimes rude phrasing, contradicts itself between answers, and occasionally leaks another customer's order details it memorized from the training set. The team's instinct is 'we need more data.'</p>
+<p>Take a moment: what does everything above tell you? Here's the reasoning, step by step. Fine-tuning makes the model <em>imitate its training distribution</em> — so a raw dump of 200k tickets faithfully taught it the terse, sometimes-rude phrasing of the worst agents alongside the best. The self-contradiction? Contradictory ticket pairs taught the model that opposite answers to the same question are both acceptable. The leaked order details? Canned replies and PII duplicated thousands of times let the model <em>memorize</em> instead of generalize. So 'we need more data' is exactly backwards — more noisy data makes a worse model, not a bigger one. The fix is to curate <em>down</em>: dedup, enforce one consistent output format, remove contradictions, reweight to match production traffic — landing on a few thousand clean examples that will beat 400k raw ones. Hours spent curating 3k pay back more than weeks spent collecting the next 100k. That inversion — quality over volume — is the whole lesson, and the senior signal.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Fine-tuning success is a data-<em>curation</em> problem, not a volume problem: the base model already learned to think, so SFT is mostly style/format alignment — a few thousand clean, consistent, deduped, on-distribution examples routinely beat hundreds of thousands of noisy ones (LIMA). Build the held-out, production-representative eval set <em>first</em> — it defines 'better' and points you at which gaps to fill. Use synthetic data to augment and fill coverage holes, but guard against bias inheritance and model collapse. Dedup between train and eval to prevent leakage, and read the loss curves: falling train loss with flat/rising eval loss means you're memorizing noise — clean the data, don't add epochs.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

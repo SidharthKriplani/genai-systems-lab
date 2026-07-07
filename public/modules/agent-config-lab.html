@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Config Lab | GenAI Systems Lab</title>
+  <meta name="description" content="Tune an agent's config and watch the outcome shift.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/agent-config-lab">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/agent-config-lab">
+  <meta property="og:title" content="Agent Config Lab | GenAI Systems Lab">
+  <meta property="og:description" content="Tune an agent's config and watch the outcome shift.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent Config Lab">
+  <meta name="twitter:description" content="Tune an agent's config and watch the outcome shift.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Agent Config Lab","description":"Tune an agent's config and watch the outcome shift.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/agent-config-lab"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">AGENTS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Agent Config Lab</h1>
+    <p class="desc">Tune an agent's config and watch the outcome shift.</p>
+
+    
+    <section><h2>How It Works</h2><p>The reframe that makes this module click: <mark>most 'the agent is broken' incidents are actually 'the agent is configured wrong.'</mark> The model is behaving correctly <em>given its configuration</em> — an unlimited retry budget with no memory will loop forever because that is what those two settings, composed, mean. The Agent Config Lab interactive above lets you set five knobs, run a simulation, and watch a specific failure fire with the exact causal chain. This teaching frames <em>why each knob moves behavior</em> so you can catch the bad combination in design review, before it pages someone.</p>
+<p>Walk the knobs one at a time. <strong>System prompt</strong> sets the agent's role, scope, and stop conditions — it is where you bound the task ('do only X; when Y is done, stop'). Vague scope here is how you get <strong>scope creep</strong> (the agent 'helpfully' acts outside the task) and <strong>premature/late termination</strong> (it stops early, or never decides it's done). <strong>Tool set</strong> is the sharpest lever: more tools = more capability but also more failure surface. Past roughly <strong>5–7 tools the model's tool-selection accuracy degrades and it starts hallucinating tool names or parameters</strong> — the production-validated ceiling. The fix for 'I need 22 tools' is almost never a 22-tool flat schema; it is a router agent delegating to specialized sub-agents with small tool sets each.</p>
+<p><strong>Model choice</strong> trades capability against cost and latency, and it interacts with everything else — a weaker model tolerates fewer tools before hallucinating and needs tighter scope. <strong>Temperature</strong> controls output randomness: <mark>low (0–0.3) for deterministic tool-calling and structured extraction where you want the <em>same</em> correct call every time; higher (0.7+) for creative generation.</mark> A common bug is a high temperature on an agent that must emit precise tool arguments — it invents parameters. <strong>Step / budget caps</strong> (max tool calls, max tokens, max wall-clock) are the hard ceiling that turns an infinite loop into a bounded, escalatable failure. <strong>Stop conditions</strong> define <em>done</em> — an explicit final-answer signal or a checklist of sub-goals — so the agent neither halts early nor spins forever.</p>
+<div class="illustration"><div class="illustration-label">The five knobs → the failure they prevent (or cause)</div><pre>KNOB                 TURNS TOO FAR ───────►  FAILURE MODE
+─────────────────────────────────────────────────────────────
+system prompt        vague scope             scope creep / premature stop
+tool set             &gt;5-7 tools, flat        hallucinated tool calls
+                     schema                  (invented names/params)
+model choice         too weak for task       lower hallucination ceiling
+temperature          high (0.7+) on          invented tool arguments
+                     tool-calling            (non-deterministic calls)
+step / budget caps   none / unlimited        infinite loop, runaway cost
+memory               none, on a long/        state amnesia, re-processes
+                     pipeline task           work, cascading errors
+context budget       too small for tool-     context overflow (truncates
+                     heavy research          its own earlier reasoning)
+
+THE PAGED INCIDENT (composed failure):
+  22 tools  +  retry=unlimited  +  memory=none  +  8K context
+     │              │                  │              └─ overflow risk
+     │              │                  └─ no learning from failed calls
+     │              └─ retries the same failing call forever
+     └─ tool hallucination well past the 5-7 ceiling
+  ⇒ 40 min, $4.20, zero output — a CONFIGURATION bug, not a model bug</pre></div>
+<p>The senior insight is that <strong>failures come from knob <em>combinations</em>, not single settings</strong> — which is exactly what the interactive rewards you for discovering. Unlimited retries alone is survivable <em>if</em> the agent has memory to learn a call keeps failing; no memory alone is survivable <em>if</em> retries are bounded. Compose <em>unlimited retries × no memory</em> and you get a guaranteed infinite loop, because each failed call teaches nothing and nothing stops the re-try. Likewise <strong>large context budget × external-data ingestion × no memory-isolation</strong> opens a tool/prompt-poisoning path (a scraped page says 'ignore prior instructions' and the model obeys). <mark>Reading configs means reading the <em>interaction</em>, not each field in isolation.</mark></p>
+<p>That yields a design-review checklist you can apply from memory, mapping each knob to its production default:</p>
+<p><strong>Tools:</strong> keep to 5–7 per agent; route to sub-agents beyond that. <strong>Retries:</strong> hard cap (≈3 per tool, ≈30 total) with backoff — never unlimited. <strong>Memory:</strong> match to task shape — none is fine for a one-shot Q&amp;A, but a pipeline or long research task needs at least a progress manifest / checkpoint so a restart doesn't re-do work. <strong>Context:</strong> size to the tool-output volume; tool-heavy research on an 8K window overflows. <strong>Temperature:</strong> low for tool-calling/extraction, high only for creative generation. <strong>Stop conditions + step caps:</strong> always set, so every run is bounded and escalatable.</p>
+<p><mark>The interview-grade skill this builds: given an agent config, predict the failure before it runs — and given a failure, name the knob combination that caused it.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Most 'the agent is broken' incidents are 'the agent is configured wrong.'</strong> The model behaves correctly <em>given its config</em>; the failure is in the knobs. The skill is reading a config and predicting the failure — and reading a failure back to its knob combination.</li><li><strong>Tool set is the sharpest knob: past ~5–7 tools, tool-selection accuracy degrades and the model hallucinates tool names/params.</strong> The fix for 'I need 20 tools' is a router agent delegating to sub-agents with small tool sets, not a flat 20-tool schema.</li><li><strong>Temperature must match the job:</strong> low (0–0.3) for deterministic tool-calling and structured extraction (same correct call every time); high (0.7+) only for creative generation. High temperature on a tool-calling agent invents parameters.</li><li><strong>Step/budget caps + stop conditions are the hard ceiling</strong> that turns an infinite loop into a bounded, escalatable failure. Retries must be capped (≈3/tool, ≈30 total) with backoff — never unlimited. Stop conditions define <em>done</em> so the agent neither halts early nor spins forever.</li><li><strong>Memory must match task shape:</strong> none is fine for one-shot Q&amp;A, but a pipeline or long research task needs a checkpoint/progress manifest or a restart re-does work (state amnesia). Context budget must be sized to tool-output volume or research overflows an 8K window.</li><li><strong>Failures come from knob <em>combinations</em>, not single settings:</strong> unlimited retries × no memory = guaranteed infinite loop; large context × external data × no isolation = tool/prompt-poisoning path. Read the interaction, not each field alone.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>An on-call page fires: a research agent has run for 40 minutes, burned $4.20 in tokens, and produced nothing. The model is fine — the same model works elsewhere. Digging in: the agent has 22 tools in its schema, an unlimited retry budget, no memory between steps, and an 8K context window. Nobody changed the prompt or the model. The failure is entirely in how the agent was <em>configured</em>. Before you can fix it you have to see each knob as a lever on behavior, not a default to accept.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Most 'broken agent' incidents are misconfiguration: the model is correct given its knobs. Learn each lever — system prompt (scope/stop), tool set (5–7 ceiling before hallucination), model choice, temperature (low for tool-calling), step/retry caps (bounded, never unlimited), memory (match task shape), context budget (size to tool output) — and, crucially, read the <em>combinations</em>: unlimited retries × no memory = infinite loop. The skill is predicting the failure from the config, and tracing a failure back to the knob combination that caused it.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transformer Forward Pass | GenAI Systems Lab</title>
+  <meta name="description" content="Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/transformer">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/transformer">
+  <meta property="og:title" content="Transformer Forward Pass | GenAI Systems Lab">
+  <meta property="og:description" content="Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Transformer Forward Pass">
+  <meta name="twitter:description" content="Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Transformer Forward Pass","description":"Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/transformer"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">LAYER 3</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Transformer Forward Pass</h1>
+    <p class="desc">Real math in the browser. Embed → attend → FFN → predict. Tighten temperature, add heads, watch it change.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with what attention actually does — because it's less than you think. Attention lets every word look around the sentence and pull in the words that matter to it. That sounds like understanding. But watch the mechanics closely: all attention ever does is <em>blend</em>. It takes vectors that already exist and mixes them in weighted proportions — like mixing paints on a palette. The mix can be exquisitely chosen. It is still, always, a mix.</p>
+<p>So here's a question worth sitting with: if blending is so powerful, why not stack a hundred attention layers and call it a language model? Try to predict what goes wrong before reading on. Two things, and both are quiet. First, a blend of blends is still a blend — you can stir paint forever and never get a color that wasn't on the palette. Stack nothing but attention and the whole tower collapses, mathematically, into one layer of mixing. Second, attention doesn't know where words <em>are</em>. Shuffle the sentence and it computes exactly the same thing — to attention, a sentence is a bag of words, not a sequence.</p>
+<p>A <strong>Transformer block</strong> is the machine built around these two failures — plus a third that appears the moment you fix them and try to go deep. We'll build it piece by piece: the part that transforms rather than blends, the part that restores word order, and the two devices — a highway and a regulator — that keep a very deep stack alive during training. No rush. Each part exists because something specific breaks without it, and once you've seen the break, the part feels less like an invention and more like the only possible move.</p></section>
+    <section><h2>How It Works</h2><p>Look at what one attention output <em>is</em>: a weighted average of value vectors — a <strong>linear combination</strong>. Nothing more.</p>
+<p>Now stack a second attention layer on top. You're averaging averages. A third: averaging those. Here's the uncomfortable theorem hiding in plain sight: <mark>composing linear functions collapses to a single linear function — a hundred stacked attention layers have no more expressive power than one well-chosen layer of mixing.</mark> The paints never leave the palette.</p>
+<p>And there's a second, stranger gap. Swap two words and re-run attention: the outputs are identical. Attention is a <em>set</em> operation — it sees which words are present, not where they stand. 'Dog bites man' and 'man bites dog' are the same bag.</p>
+<p><mark>Two structural gaps, then — no real transformation, no sense of order — and neither can be fixed by adding more attention.</mark> Something genuinely new has to enter the block.</p>
+<p>The transformation gap is filled by the <strong>Feed-Forward Network (FFN)</strong> — and it's worth seeing why it's different in kind, not just in degree. After each attention sublayer, every position passes <em>individually</em> through a small two-layer network: expand to <strong>4× the hidden dimension</strong>, bend through a ReLU or GeLU, project back down. That bend is the whole point. A linear map can only rotate and stretch space; the nonlinearity lets the model <em>fold</em> it — and folding finally moves a vector somewhere no blend could reach.</p>
+<p>Think of the division of labor this way: attention gathers, the FFN thinks. Each position gets a private workshop where its gathered context is actually transformed. <mark>And the workshop is where the model's knowledge lives — factual associations are predominantly stored in FFN weights.</mark></p>
+<p>The order gap is patched separately, before the stack: <strong>positional encoding</strong> stamps each token's location into its vector, so 'dog bites man' finally stops equaling 'man bites dog'. Modern models use <strong>RoPE</strong> (Rotary Positional Embedding), which encodes <em>relative</em> position as a rotation inside the attention computation itself — with the useful side effect that it generalizes past the sequence lengths seen in training.</p>
+<p>Two gaps closed. Now stack the block deep — depth is where multi-step reasoning comes from — and meet the third crisis.</p>
+<p>Training works by sending a message backward: the loss tells the top layer how to improve, that layer passes the message down, and so on — a hundred handoffs deep. Every handoff shrinks the message a little. Shrink something by half a hundred times and what's left isn't 'small'. It's <strong>zero</strong> — nothing the optimizer can use. The early layers stand at the bottom of a hundred-story building waiting for instructions that never arrive.</p>
+<p>Pause here: how would you get a message to the bottom floor intact? You wouldn't relay it through every floor. You'd build an elevator shaft.</p>
+<p>That's a <strong>residual connection</strong>: `output = input + block(input)`. Read it geometrically — the input doesn't go <em>through</em> the block, it goes <em>around</em> it, untouched, and the block adds a small correction as it passes. Each layer stops being a gatekeeper and becomes a contributor, and the shaft — <mark>the untouched identity path — runs unbroken from the loss to the very first layer: a direct gradient highway.</mark></p>
+<p>But the shaft creates its own quieter problem. Every floor <em>adds</em> to what rides past, and additions compound — a few dozen layers up, the stream carries values wildly larger than what entered. The building stands; its contents are swelling, and layers deep in the stack receive inputs at scales they were never trained to expect. So each sublayer gets a regulator: <strong>layer normalization</strong>, re-centering and rescaling the signal to a standard size after each residual addition. The 'add &amp; layer-norm' stamped on every block diagram is exactly this pair — <strong>highway plus regulator</strong>, gradient path and scale control together.</p>
+<p>Now a question that sounds like trivia and decides whether a deep model trains at all: <em>where</em> do you install the regulator?</p>
+<p>The original Transformer chose <strong>post-norm</strong>: `LayerNorm(x + Sublayer(x))` — the norm sits <em>on the shaft</em>, after each addition. It works. But notice the cost: every gradient riding the highway now gets rescaled at every single floor. The shaft is no longer pristine, and past a few dozen layers this turns fragile — deep post-norm models need delicate learning-rate warmup or they diverge.</p>
+<p><strong>Pre-norm</strong> makes the move that, in hindsight, looks inevitable: `x + Sublayer(LayerNorm(x))` — the norm slides <em>inside the branch</em>, regulating only what enters the sublayer. The identity path is never touched. <mark>That single relocation is why GPT-2 and essentially every modern LLM train stably at depth, without warmup.</mark></p>
+<p>One simplification remains. Standard LayerNorm does two jobs — re-center (subtract the mean) and re-scale (divide by the spread) — plus a learned bias. Measure each job's contribution and the centering turns out to matter very little. <strong>RMSNorm</strong> drops it: divide by the root-mean-square, apply a learned scale, done. About the same quality, less arithmetic — which is why Llama, Mistral, and most recent models ship <strong>pre-norm + RMSNorm</strong>.</p>
+<div class="illustration"><div class="illustration-label">Activation-scale drift across layers: no norm vs pre-norm</div><pre>Typical RMS of activations entering each block (illustrative):
+
+           layer 1   layer 6   layer 12   layer 24
+  NO norm:   1.0  →   4.8   →    22.0   →   140.0     ← blows up with depth,
+             (residual adds compound; later layers see wild scales → unstable)
+
+  Pre-norm:  1.0  →   1.1   →     1.0   →     1.1      ← each block's INPUT is
+             (LayerNorm/RMSNorm renormalizes the sublayer input every layer)
+             meanwhile the residual stream x is left UNTOUCHED → clean gradient path
+
+Post-norm  = LayerNorm(x + Sublayer(x))   norm ON the residual stream  → needs warmup, fragile at depth
+Pre-norm   = x + Sublayer(LayerNorm(x))   norm INSIDE the branch       → stable deep, no warmup
+RMSNorm    = x / RMS(x) * g               drops mean-centering + bias   → ~same quality, cheaper (Llama/Mistral)</pre></div>
+<p>One decision remains, and it isn't about how the block computes — it's about what the block is <em>for</em>.</p>
+<p>Ask: when a token looks around the sentence, should it see <em>everything</em>? If the job is to understand text — classify it, embed it for retrieval — then yes. Let every token attend in both directions and each position distills the richest possible summary of the whole passage. That's an <strong>encoder</strong>.</p>
+<p>But if the job is to <em>write</em>, there's a problem: the future words don't exist yet. A model trained with full visibility would be practicing with answers it can never have at generation time. So <strong>decoders</strong> add a <strong>causal mask</strong> — each token may attend only leftward, to what's already written. An author, not an editor: producing the sentence one word at a time, seeing only the page so far.</p>
+<p>This one bit — mask or no mask — splits the transformer family in two, and mixing them up has real production cost. Embedding models for RAG are <em>encoders</em>; generation models are <em>decoders</em>. <mark>Reach into a generation model for embeddings and retrieval quality drops — the causal mask has distorted the vector geometry</mark>, because every vector was built half-blind by design.</p>
+<p>And that completes the machine: an FFN so the model transforms instead of blends, positional encoding so order exists, a residual highway with norm regulators so depth is trainable, and a masking choice that decides what the whole stack can be used for. The interactive lets you assemble and stack it. Then the closing scenario hands you a tempting one-line proposal about depth — weigh it against the four levers you just built before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Attention alone leaves two gaps</strong> — no per-position nonlinearity (stacked linear layers collapse to one) and no order awareness (attention is a set operation). Neither is fixable by adding more attention layers.</li><li><strong>The FFN supplies the nonlinearity and stores most parametric knowledge.</strong> Two linear layers with a GeLU/ReLU between, at 4× width; factual associations live predominantly in FFN weights.</li><li><strong>Residual connections make depth trainable.</strong> `output = input + block(input)` creates a direct gradient highway from the loss to every layer, defeating vanishing gradients.</li><li><strong>Layer/RMSNorm stabilizes activation scale</strong>, a second problem residuals don't solve — magnitudes drift across stacked blocks without it.</li><li><strong>Pre-norm beats post-norm at depth:</strong> moving the norm inside the residual branch (`x + Sublayer(LayerNorm(x))`) keeps the identity path clean, so deep LLMs train without warmup. RMSNorm drops mean-centering + bias for the same quality, cheaper.</li><li><strong>Causal masking splits encoders from decoders.</strong> Bidirectional encoders are best for embedding/retrieval; causal decoders for generation — using a decoder's representations for retrieval distorts the vector geometry.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now put the machine to work. An engineer on your team proposes the tempting one-liner: <em>just add more layers</em> — the model should reason better on hard multi-step questions — and no compute budget is attached. Pause before reading on: with the block's anatomy fresh in mind, what exactly is wrong with that sentence? Here's the reasoning, unhurried. Depth <em>is</em> one of the structural levers we built — so the idea isn't crazy on its face. But notice everything it ignores. It says nothing about <em>width</em> — the FFN, where the model's knowledge actually lives. Nothing about the residual-and-norm machinery that decides whether added depth is even trainable. Nothing about the encoder-versus-decoder split that determines what those layers can be used for. And it names no budget, when depth is precisely the axis that scales cost hardest. So the right response isn't yes or no — it's to probe whether the engineer sees depth as one lever among several, each with a price, because reaching for it blindly is how compute budgets die without buying any reasoning.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Depth isn't free: each Transformer layer adds sequential latency, memory, and training compute. Residual connections make depth trainable. In production, model depth directly determines cost-per-token — 'add more layers' needs a compute budget attached to be a real proposal.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

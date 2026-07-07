@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Preprocessing &amp; Normalization | GenAI Systems Lab</title>
+  <meta name="description" content="Tokenization schemes, subword algorithms, stemming vs lemmatization — the first transform.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nlp-preprocessing">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nlp-preprocessing">
+  <meta property="og:title" content="Text Preprocessing &amp; Normalization | GenAI Systems Lab">
+  <meta property="og:description" content="Tokenization schemes, subword algorithms, stemming vs lemmatization — the first transform.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Text Preprocessing &amp; Normalization">
+  <meta name="twitter:description" content="Tokenization schemes, subword algorithms, stemming vs lemmatization — the first transform.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Text Preprocessing & Normalization","description":"Tokenization schemes, subword algorithms, stemming vs lemmatization — the first transform.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nlp-preprocessing"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">NLP FOUNDATIONS</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Text Preprocessing &amp; Normalization</h1>
+    <p class="desc">Tokenization schemes, subword algorithms, stemming vs lemmatization — the first transform.</p>
+
+    
+    <section><h2>How It Works</h2><p>Every NLP pipeline starts with the same unglamorous question: <em>how do you chop a string into the units your model actually operates on?</em> That chopping is <strong>tokenization</strong>, and the choice of unit sits on a spectrum from coarse to fine, with a hard tradeoff running down the middle.</p>
+<p>At the <strong>coarse</strong> end is <strong>word / whitespace tokenization</strong> — split on spaces, one token per word. It's intuitive and gives short sequences, but it has two fatal problems. First, the <strong>vocabulary is unbounded</strong>: every distinct surface form ('run', 'runs', 'running', 'ran', 'runner') is its own token, plus every typo, name, and number, so the vocabulary grows without limit into the millions. Second, and worse, it has <mark>no way to represent a word it never saw in training — the out-of-vocabulary (OOV) problem — so a novel or rare word becomes a single useless `&lt;unk&gt;` token, and all its meaning is lost.</mark></p>
+<p>At the <strong>fine</strong> end is <strong>character tokenization</strong> — one token per character. This <em>cannot</em> have an OOV problem (any word is just a sequence of known characters) and the vocabulary is tiny (a few hundred symbols). But it pays for that on the other axis: <strong>sequences become enormous</strong>. 'unhappiness' is 1 word token but 11 character tokens, and since every model has quadratic-ish cost in sequence length and a fixed context budget, character-level sequences are punishingly long and force the model to relearn spelling from scratch before it can learn meaning.</p>
+<div class="illustration"><div class="illustration-label">The core tradeoff: vocabulary size vs sequence length</div><pre>                COARSE  &lt;───────────────────────────&gt;  FINE
+                 word           subword            character
+
+vocab size      millions        ~30k-50k            ~few hundred
+                (unbounded)      (fixed, chosen)     (tiny)
+
+OOV problem     SEVERE           none (rare word     none (any word
+                (rare word →      splits into         is known chars)
+                 &lt;unk&gt;)           known pieces)
+
+seq length      short            medium              very long
+                &quot;unhappiness&quot;    un + happi + ness   u-n-h-a-p-p-i-...
+                = 1 token        = 3 tokens          = 11 tokens
+
+  Word: tiny sequences, exploding vocab, breaks on rare words.
+  Char: no OOV, tiny vocab, crushing sequence length.
+  SUBWORD sits in the sweet spot — fixed vocab AND no OOV.</pre></div>
+<p><strong>Subword tokenization won because it takes the best of both ends.</strong> The idea: keep a <em>fixed-size</em> vocabulary (say 32k) of the most useful <em>pieces</em> — frequent whole words stay whole ('the', 'happy'), but rare or complex words are split into known sub-pieces ('unhappiness' → 'un' + 'happi' + 'ness'). Now the vocabulary is bounded <em>and</em> there's no OOV: a word you've never seen is just decomposed into pieces you have. <mark>Subword tokenization dissolves the OOV problem and caps the vocabulary at the same time, and it captures morphology for free — 'happy', 'happiness', and 'unhappiness' now share the 'happi' piece, so their relatedness is visible to the model instead of hidden behind three unrelated integers.</mark> The German compound 'Rindfleisch...' splits into meaningful chunks instead of being one unhelpful monolith.</p>
+<p>How does an algorithm <em>choose</em> which pieces to keep? There are two philosophies. <strong>BPE (Byte-Pair Encoding)</strong> is <em>merge-frequency-based</em>: start from characters, then repeatedly find the most frequent adjacent pair and merge it into a new token, over and over, until you hit your target vocabulary size. It's greedy and bottom-up — the pieces that survive are the ones that co-occur most often. <strong>WordPiece</strong> (used by BERT) is similar but merges the pair that most increases the <em>likelihood</em> of the training corpus under a language model, not just raw frequency. <strong>Unigram</strong> goes top-down the other way: start with a huge candidate vocabulary and <em>prune</em> the pieces whose removal least hurts corpus likelihood, keeping a probabilistic model over segmentations. The through-line: <mark>BPE picks pieces by co-occurrence frequency; WordPiece and Unigram pick pieces by how much they improve a likelihood model of the text.</mark></p>
+<div class="illustration"><div class="illustration-label">BPE merges, worked on a tiny corpus</div><pre>Corpus (word : count):  low:5   lower:2   newest:6   widest:3
+Start as characters:    l o w   l o w e r   n e w e s t   w i d e s t
+
+Merge the most frequent adjacent PAIR each round:
+  round 1:  &quot;e s&quot; appears 6+3 = 9 times  → merge → &quot;es&quot;
+            ... n e w es t ...   w i d es t ...
+  round 2:  &quot;es t&quot; appears 9 times        → merge → &quot;est&quot;
+  round 3:  &quot;l o&quot; appears 5+2 = 7 times   → merge → &quot;lo&quot;
+  round 4:  &quot;lo w&quot; appears 7 times        → merge → &quot;low&quot;
+
+Learned pieces: es, est, lo, low, ...  (frequency-driven, bottom-up)
+A NEW word &quot;widest&quot; now tokenizes as: wid + est  (both known pieces)
+                                        → no OOV, morphology captured</pre></div>
+<p>One more design choice matters enormously in practice: <strong>how do you handle whitespace and language-independence?</strong> Classic tokenizers pre-split on spaces, which quietly assumes languages <em>have</em> spaces (Chinese and Japanese don't) and makes detokenization lossy — you can't perfectly reconstruct the original spacing. <strong>SentencePiece</strong> fixes this by treating the raw input as a stream of Unicode characters and encoding the space itself as a visible meta-symbol (`▁`), so a space becomes just another token. <mark>Because whitespace is now <em>inside</em> the token stream, SentencePiece is fully reversible (decode gives back the exact original) and language-agnostic (it needs no notion of 'words' or spaces), which is why it's the default for most modern multilingual LLMs.</mark> SentencePiece is a <em>framework</em> that can run BPE or Unigram underneath — it's orthogonal to the merge algorithm.</p>
+<p>Now zoom out to the classical cleaning steps that dominated pre-neural NLP, because a strong answer knows which of these survived. <strong>Stemming</strong> crudely chops suffixes with hand-written rules ('running' → 'run', but also 'university' → 'univers') — fast, dumb, often produces non-words. <strong>Lemmatization</strong> is the principled version: use a dictionary and the word's part-of-speech to map to its true base form ('better' → 'good', 'ran' → 'run') — slower but correct. <strong>Lowercasing</strong> shrinks the vocabulary but can destroy meaning ('US' the country vs 'us' the pronoun; 'Apple' the company). <strong>Unicode normalization</strong> (NFC vs NFKC) canonicalizes characters so 'é' as one codepoint and 'e' + combining-accent become identical; NFKC additionally folds compatibility variants (a ligature 'ﬁ' → 'fi'), which helps matching but can lose information. <strong>Stopword removal</strong> deletes ubiquitous words ('the', 'is', 'a') — <mark>a win for sparse bag-of-words models where those words are pure noise, but actively harmful when the word carries meaning: strip 'not' from a sentiment task, or 'to be or not to be' from search, and you've deleted the point.</mark></p>
+<p>Here's the modern punchline every interviewer wants. <strong>LLMs skip almost all of that classical cleaning</strong> — no stemming, no lemmatization, no stopword removal, often no lowercasing — because a large model <em>learns</em> morphology and the (ir)relevance of function words on its own, and aggressive cleaning throws away signal it could use. <mark>But tokenization did <em>not</em> become less important — it became MORE important, just for different reasons.</mark> You pay <em>per token</em>, so tokenization directly sets your API cost and how much fits in the context window. Tokenizers split numbers inconsistently ('1234' might be one token or four), which is a real source of arithmetic errors. And a tokenizer trained mostly on English fragments other languages into far more tokens per sentence — so the same message can cost 2-3x more in Hindi or Thai than in English. The classical pipeline mostly retired; tokenization graduated from preprocessing footnote to a first-class cost, quality, and fairness lever.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Tokenization trades vocabulary size against sequence length.</strong> Word-level = tiny sequences but unbounded vocab and severe OOV (rare word → `&lt;unk&gt;`); character-level = no OOV and tiny vocab but crushing sequence length. Every tokenizer lives on this axis.</li><li><strong>Subword tokenization won by taking both ends' strengths.</strong> A fixed vocabulary of frequent pieces keeps whole words whole and splits rare ones ('unhappiness' → un+happi+ness), so the vocab is bounded, OOV disappears, and morphology is captured (related words share pieces).</li><li><strong>BPE picks pieces by co-occurrence frequency; WordPiece and Unigram pick by likelihood.</strong> BPE greedily merges the most frequent adjacent pair bottom-up; WordPiece merges what most raises corpus likelihood; Unigram prunes a big vocab top-down by least likelihood loss.</li><li><strong>SentencePiece encodes whitespace as a token (`▁`), making it reversible and language-agnostic.</strong> It needs no notion of 'words' or spaces (works on Chinese/Japanese), decodes back to the exact original, and can run BPE or Unigram underneath — which is why modern multilingual LLMs default to it.</li><li><strong>LLMs drop classical cleaning but tokenization matters MORE.</strong> No stemming/lemmatization/stopword removal (the model learns those), but you pay per token — tokenization sets cost, context usage, number-splitting arithmetic bugs, and non-English token inflation (2-3x more tokens).</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You're building a multilingual search feature, and your first tokenizer is dead simple: split on whitespace. It works in the demo. Then real traffic arrives. A user searches 'unhappiness' and gets nothing, because your index only ever saw 'happy' and 'happiness' — three related words, three unrelated tokens, no shared signal. A German user's query 'Rindfleischetikettierung' is a single monster token that appears exactly once in your entire corpus, so it's useless. Your vocabulary has ballooned past 2 million entries and every rare word is an out-of-vocabulary hole. Before you pick a fix, you need to understand the axis every tokenizer is really trading on.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Tokenization trades vocabulary size against sequence length: word-level explodes the vocab and breaks on out-of-vocabulary words, character-level avoids OOV but crushes sequence length, and subword tokenization wins the middle by keeping a fixed vocabulary that splits rare words into known pieces (no OOV, free morphology). BPE merges by frequency while WordPiece/Unigram optimize likelihood, and SentencePiece encodes whitespace as a token to be reversible and language-agnostic. LLMs drop classical cleaning (stemming, lemmatization, stopwords) but tokenization matters more than ever — it governs cost per token, number-splitting arithmetic bugs, and non-English token inflation.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

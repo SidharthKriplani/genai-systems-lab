@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Structured Output Design | GenAI Systems Lab</title>
+  <meta name="description" content="JSON mode, function calling, and grammar-constrained generation — tradeoffs by use case.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/structured-outputs">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/structured-outputs">
+  <meta property="og:title" content="Structured Output Design | GenAI Systems Lab">
+  <meta property="og:description" content="JSON mode, function calling, and grammar-constrained generation — tradeoffs by use case.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Structured Output Design">
+  <meta name="twitter:description" content="JSON mode, function calling, and grammar-constrained generation — tradeoffs by use case.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Structured Output Design","description":"JSON mode, function calling, and grammar-constrained generation — tradeoffs by use case.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/structured-outputs"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROMPTING</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Structured Output Design</h1>
+    <p class="desc">JSON mode, function calling, and grammar-constrained generation — tradeoffs by use case.</p>
+
+    <section><h2>Start Here</h2><p>Let's start by noticing something odd about asking a model for JSON. You say &quot;return valid JSON,&quot; and most of the time you get back a clean, perfectly-formed object — so it's easy to assume the model <em>knows</em> JSON the way a program does, checking its own braces as it goes. Then one response in a dozen comes back with a missing brace or a stray comma, your pipeline crashes, and the illusion shatters.</p>
+<p>Here's the reframe the whole module rests on: the model has <strong>no parser and no notion of structure</strong> while it writes. It produces JSON the exact same way it produces a sentence — one token at a time, each token chosen because it's a <em>likely continuation</em>, not because a validator approved it. A `{` appears because `{` is probable after &quot;return JSON&quot;; a `}` appears when a closing brace <em>feels</em> probable — which is usually, but crucially not <em>always</em>, at the right nesting level. Valid JSON is a happy statistical accident, not a guarantee.</p>
+<p>So the real question becomes: if the model can't guarantee structure on its own, how do you <em>make</em> the output valid — and how do you do it without hiding the model's uncertainty? We'll build up from the weakest approach to the one that actually enforces structure, then handle the subtle trap that enforcement introduces. Take your time; by the end, an 8% malformed-JSON rate will make complete sense, and you'll know the one fix that drives it to zero.</p></section>
+    <section><h2>How It Works</h2><p>Start from how the model generates <em>anything</em>: <strong>token by token</strong>, each token chosen because it has high conditional probability given everything before it. Nothing about that process is special for JSON. JSON is not a native output <em>mode</em> — it's just a format that <em>emerges</em> when the tokens the model happens to emit line up into valid syntax. The model has no parser, no schema validator, and no structural awareness while it writes; it produces `{`, `&quot;field&quot;`, `:`, `&quot;value&quot;` in sequence purely because that pattern is probable after 'return JSON with fields X, Y, Z.'</p>
+<p>Once you see generation that way, the failure modes stop being mysterious and become <em>predictable.</em> If braces are chosen by probability rather than by tracking depth, then the model will sometimes run out of effective generation budget mid-object and truncate, sometimes emit a closing brace at the wrong nesting level, and sometimes append an explanatory sentence after the JSON because the instruction never pinned down what should follow. These aren't random glitches — they're the direct consequence of <em>no structural bookkeeping.</em></p>
+<p>Which means the fixes sort cleanly by <em>how much structure they actually enforce.</em> <strong>Prompting</strong> for JSON ('return valid JSON with these fields') just makes valid output <em>more probable</em> — 85–92% compliance, fine only for low-stakes pipelines with retry logic. <strong>JSON mode</strong> (`response_format: {type: 'json_object'}`) forces valid <em>syntax</em> but constrains nothing about <em>which</em> keys appear or their types, so you still get hallucinated fields, missing required ones, and wrong value types. <strong>Structured outputs with schema enforcement</strong> goes to the root: grammar-constrained decoding restricts the sampler, at <em>every</em> generation step, to only the tokens that keep the output valid against your schema — so a misplaced comma or an omitted required field is no longer improbable, it's <em>impossible.</em> That's the correct fix for production extraction.</p>
+<p>But enforcing a schema introduces one subtle trap, and it follows straight from the mechanism: if the sampler <em>must</em> emit a value of the required type at each field, the model <strong>cannot express uncertainty</strong> — asked for a date it doesn't actually know, it will coerce a plausible-looking value rather than flag the gap. So the schema itself has to make room for doubt: add a <strong>confidence</strong> field and prompt the model to rate each extraction, then route low-confidence values to human review without blocking the automated path. The interactive lets you toggle between prompting, JSON mode, and full schema enforcement and watch the failure rate collapse; then the closing scenario hands you an 8%-malformed pipeline and asks for the real fix — decide it before the reasoning does.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>JSON is not a native output mode</strong> — the model has no parser or validator; it emits tokens that happen to form JSON when it works, and truncates or mis-nests when it fails.</li><li><strong>Prompting for JSON gets ~85-92% compliance</strong> — adequate only for low-stakes pipelines with retry logic.</li><li><strong>JSON mode forces valid <em>syntax</em> but not <em>schema</strong></em> — you still get hallucinated fields, missing required fields, and wrong types.</li><li><strong>Schema-enforced structured outputs use grammar-constrained decoding</strong> — the sampler is restricted to tokens that keep output schema-valid at every step; it <em>cannot</em> omit a required field or misplace a comma.</li><li><strong>Forced schemas can't express uncertainty</strong> — the model must emit a typed value even when the truth is unknown, so gaps get coerced into plausible-looking values.</li><li><strong>Add a per-field confidence field</strong> — route low-confidence extractions to human review without blocking the automated path.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A data-extraction pipeline asks GPT-4o to pull fields from contracts and return JSON. 92% parse cleanly; 8% fail — truncated objects, extra commas, missing closing braces — and the pipeline crashes on every failure. Take a moment before reading on: is this a prompt-quality problem you can prompt your way out of, or something structural? Here's the reasoning, step by step. It's structural: the model has no parser and no schema-awareness while generating, so it emits `{`, `&quot;field&quot;`, `:`, `&quot;value&quot;` because that pattern is <em>probable</em>, not because anything validated it — which is why it sometimes truncates mid-object, closes a brace at the wrong nesting level, or tacks an explanatory sentence after the JSON. That means prompting harder ('return <em>valid</em> JSON') tops out around 85–92% — right where you are. JSON mode (`response_format: {type: 'json_object'}`) forces valid <em>syntax</em> but still lets keys and types drift, so you'd trade malformed JSON for hallucinated or missing fields. The actual fix is <strong>structured outputs with schema enforcement</strong> — grammar-constrained decoding that restricts the sampler, at <em>every</em> token, to choices that keep the output valid against your schema, so a misplaced comma or an omitted required field becomes literally impossible. One caveat worth designing for: a forced schema <em>can't</em> say 'I don't know' and will coerce a plausible value instead — so add a per-field confidence value and route the low-confidence ones to human review.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>JSON mode prevents syntax errors; it doesn't enforce your schema. For production extraction pipelines where field compliance is required, use structured outputs with explicit schema enforcement — it applies grammar-constrained decoding at the token level. Add a confidence field to your schema to surface uncertain extractions for human review rather than forcing the model to generate plausible-looking values for ambiguous inputs.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

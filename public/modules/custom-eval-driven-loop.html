@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval-Driven Customization Loop | GenAI Systems Lab</title>
+  <meta name="description" content="Catastrophic forgetting, regression suites, and the fine-tune flywheel.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/custom-eval-driven-loop">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/custom-eval-driven-loop">
+  <meta property="og:title" content="Eval-Driven Customization Loop | GenAI Systems Lab">
+  <meta property="og:description" content="Catastrophic forgetting, regression suites, and the fine-tune flywheel.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Eval-Driven Customization Loop">
+  <meta name="twitter:description" content="Catastrophic forgetting, regression suites, and the fine-tune flywheel.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Eval-Driven Customization Loop","description":"Catastrophic forgetting, regression suites, and the fine-tune flywheel.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/custom-eval-driven-loop"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">CUSTOMIZATION</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Eval-Driven Customization Loop</h1>
+    <p class="desc">Catastrophic forgetting, regression suites, and the fine-tune flywheel.</p>
+
+    <section><h2>Start Here</h2><p>Here's an uncomfortable truth about fine-tuning that's easy to miss until it bites you: teaching a model something new can quietly make it <em>forget</em> something it already did well. You tune it to be great at one task, your demos look fantastic, you ship — and weeks later someone notices it's gotten worse at something it used to nail. Nobody was watching that other thing, so nobody caught it. How do you build a process where that simply can't happen?</p>
+<p>That question is the heart of this module, and the answer isn't a clever trick — it's a <em>discipline</em>. The reason the failure sneaks through is almost always the same: you measured the thing you were trying to improve, and nothing else. So the fix starts with a mindset shift — from 'did my change help?' to 'did my change help <em>without breaking anything</em>?' — and that turns out to require a specific way of building and running evaluations.</p>
+<p>We'll construct the whole loop from the ground up: why the evaluation set has to exist <em>before</em> you train, why one eval is never enough, how measurement itself can lie to you, and how a real service turns all of this into a machine where a regression gets caught by a gate and reverted in minutes instead of discovered by a customer weeks later. Take your time — this is the difference between fine-tuning as a hobby and fine-tuning as a product.</p></section>
+    <section><h2>How It Works</h2><p>The foundational rule, repeated across this track: <strong>the held-out, production-representative eval exists <em>before</em> you train.</strong></p>
+<p>The eval set is the <strong>contract</strong> that decides whether a fine-tune helped — sampled from real traffic, covering the real distribution including hard cases, and never seen in training. Without it, 'the demo looked better' is your only signal, which is how the scenario happened. <mark>Build it first, and build it to reflect <em>production</em>, not the training distribution — a fine-tune can look great on training-like inputs and fail on the real spread.</mark> This eval-first discipline is what turns customization from vibes into a measurable engineering loop.</p>
+<p>The specific danger of fine-tuning is <strong>catastrophic forgetting</strong> — and it's why one eval is never enough.</p>
+<p>When you tune on a narrow task, gradient updates that improve <em>that</em> task can <strong>degrade previously-working capabilities</strong>: the weights move to fit refund-question patterns and, as a side effect, disturb the representations that handled other question types. The model gets better at the thing you measured and quietly worse at things you didn't. <mark>The countermeasure is structural: always evaluate on <strong>two</strong> suites — the <strong>new-task eval</strong> (did the tune help?) <em>and</em> a <strong>regression suite</strong> of previously-working capabilities (did the tune break anything?).</mark> Shipping on the task metric alone is precisely the mistake that shipped the refund regression.</p>
+<div class="illustration"><div class="illustration-label">The customization flywheel — where the regression gate goes</div><pre>        prod failures (real thumbs-down, escalations, misses)
+                     |
+                     v
+        curate  ---&gt; split into  TRAIN set  +  EVAL set (held out)
+                     |
+                     v
+                 fine-tune (SFT / LoRA / DPO)
+                     |
+                     v
+        EVAL GATE:   NEW-TASK eval   AND   REGRESSION suite
+                     |                        |
+              improved? ---yes--+            broke anything? ---yes--&gt; BLOCK / rollback
+                     |          |                                       (never ship)
+                     no         v
+                     |     ship (A/B first)
+                     |          |
+                     +&lt;---------+  collect prod failures again -&gt; loop
+
+The gate has TWO conditions: task must improve AND regression must hold.
+A tune that wins the task but regresses elsewhere NEVER ships.</pre></div>
+<p>Comparing two models rigorously means knowing your <strong>measurement tools and their pitfalls</strong>: task metrics, LLM-as-judge, and production A/B.</p>
+<p><strong>Task metrics</strong> (exact-match, F1, pass rates) are cheap and objective but only cover what you can score automatically. <strong>LLM-as-judge</strong> scales subjective quality (helpfulness, tone) but has real pitfalls — position bias (favoring the first option), verbosity bias (favoring longer answers), and self-preference (favoring its own model's style); mitigate with randomized order, calibrated rubrics, and spot-checks against human labels. <strong>Production A/B</strong> is the ground truth — route a fraction of live traffic to the new model and compare real user outcomes — but it's slow and only catches what your metrics track. <mark>Use offline evals (task + regression) as the pre-ship gate, then A/B as the online confirmation; neither alone is sufficient.</mark></p>
+<p>The subtle trap that undermines the whole loop is <strong>Goodhart's law: when a metric becomes the target, it stops measuring what you want.</strong></p>
+<p>If you tune and re-tune against the <em>same</em> eval set, you gradually <strong>overfit the eval</strong> — chasing its idiosyncrasies rather than real quality. The eval number climbs while production quality stalls or drops. <mark>Defenses: keep a <em>rotating</em> or periodically-refreshed held-out set the tuning process never trains against, hold back a truly-blind test set used only for go/no-go, and treat a rising eval with flat production A/B as a red flag that you're gaming the metric.</mark> The regression suite helps here too: it's harder to game two orthogonal targets than one.</p>
+<p>For a fine-tuning <em>service</em>, the loop needs <strong>governance</strong>: dataset/version lineage, reproducibility, and rollback.</p>
+<p><strong>Lineage</strong> — every deployed model maps to an exact dataset version, base model, and config, so you can answer 'what data produced this behavior?' and reproduce or audit it. <strong>Reproducibility</strong> — pinned data + seed + config means a tune can be rebuilt, essential for debugging a regression. <strong>Rollback</strong> — because adapters are tiny, cheap artifacts (from the serving module), a regression detected in the gate or in A/B triggers an <strong>instant rollback</strong> to the previous adapter version by re-pointing the router — no 140GB redeploy, no three-week escalation. <mark>The whole point of the eval-driven loop is that a regression is <em>caught by a gate and reverted in minutes</em>, not discovered by a customer weeks later.</mark> That's the difference between a fine-tuning hobby and a fine-tuning product.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Build the held-out, production-representative eval BEFORE training.</strong> It's the contract for whether a fine-tune helped — real distribution, hard cases included, never in training. 'The demo looked better' is not a signal.</li><li><strong>Catastrophic forgetting: narrow tuning silently degrades previously-working capabilities.</strong> Gradient updates that help the target task disturb representations that handled other tasks. Always run <em>two</em> evals: the new-task eval AND a regression suite.</li><li><strong>The customization flywheel:</strong> prod failures → curate (train + held-out eval) → fine-tune → eval gate (task improves AND regression holds) → A/B → ship → collect again. The gate has two conditions; a tune that wins the task but regresses elsewhere never ships.</li><li><strong>Know your measurement pitfalls:</strong> task metrics (objective, narrow); LLM-as-judge (scalable but position/verbosity/self-preference biased — randomize, rubric, spot-check); production A/B (ground truth but slow). Offline evals gate pre-ship; A/B confirms online.</li><li><strong>Goodhart's law:</strong> tuning repeatedly against one eval overfits it — the number rises while production stalls. Defend with rotating/blind held-out sets and treat rising-eval-with-flat-A/B as a red flag. Two orthogonal targets (task + regression) are harder to game.</li><li><strong>Service governance = lineage + reproducibility + instant rollback.</strong> Every model maps to an exact dataset/base/config; regressions caught by the gate or A/B revert in minutes by re-pointing the router to the prior adapter — not a customer-reported, weeks-late escalation.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put this to work. You shipped a fine-tune that clearly improved the target task — billing-question answers got noticeably better in your demos. Three weeks later, support notices the model now botches <em>refund</em> questions it used to handle perfectly.</p>
+<p>Take a moment: what failed, and what would have prevented it? Here's the reasoning, step by step. The failure is <strong>catastrophic forgetting</strong> — tuning on the narrow billing task moved weights in ways that degraded the previously-working refund capability. And it shipped <em>silently</em> for one reason: you measured only the new task and never checked whether the tune broke old capabilities. The structural fix is exactly the discipline we built: always evaluate on <em>two</em> suites before shipping — the new-task eval (did the tune help?) AND a regression suite of previously-working capabilities (did the tune break anything?) — and gate the ship on <em>both</em> conditions. A tune that wins the task but regresses elsewhere never ships. Then, because adapters are tiny artifacts, a regression caught by that gate — or later by a production A/B — triggers an <em>instant</em> rollback by re-pointing the router at the previous adapter, no 140GB redeploy. That's the whole point of the eval-driven loop: a regression is caught by a gate and reverted in minutes, not discovered by a customer three weeks later. That difference is what separates a fine-tuning hobby from a fine-tuning product.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Productized fine-tuning is eval-driven or it's guesswork. Build the held-out, production-representative eval <em>first</em> — it's the contract for whether a tune helped. Because narrow tuning causes catastrophic forgetting, always evaluate two suites (new-task <em>and</em> regression) and gate the ship on both: a tune that wins the task but regresses elsewhere never ships. Run the flywheel — prod failures → curate → tune → eval gate → A/B → ship → collect — and respect the measurement pitfalls: LLM-as-judge biases (randomize/rubric/spot-check) and Goodhart's law (rotating/blind evals; trust the A/B when it diverges from a rising offline score). Govern it like a product with dataset/version lineage, reproducibility, and instant adapter rollback, so a regression is caught by a gate and reverted in minutes — not discovered by a customer three weeks later.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluating Voice: WER, MOS, End-to-End | GenAI Systems Lab</title>
+  <meta name="description" content="What WER misses, how MOS works, and evaluating the whole agent.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/voice-eval-wer-mos">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/voice-eval-wer-mos">
+  <meta property="og:title" content="Evaluating Voice: WER, MOS, End-to-End | GenAI Systems Lab">
+  <meta property="og:description" content="What WER misses, how MOS works, and evaluating the whole agent.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Evaluating Voice: WER, MOS, End-to-End">
+  <meta name="twitter:description" content="What WER misses, how MOS works, and evaluating the whole agent.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Evaluating Voice: WER, MOS, End-to-End","description":"What WER misses, how MOS works, and evaluating the whole agent.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/voice-eval-wer-mos"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">VOICE AI</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>Evaluating Voice: WER, MOS, End-to-End</h1>
+    <p class="desc">What WER misses, how MOS works, and evaluating the whole agent.</p>
+
+    
+    <section><h2>How It Works</h2><p><strong>WER (Word Error Rate)</strong> is the ASR standard, and its definition tells you exactly what it does and doesn't capture.</p>
+<p>`WER = (Substitutions + Insertions + Deletions) / (number of reference words)`. Align the hypothesis to the reference transcript, count the three edit types, divide by reference length. It's an <strong>edit distance</strong>, so every word counts the same.</p>
+<p><mark>That equal weighting is the whole limitation: WER treats a dropped 'the' and a wrong drug name or account number as identical one-word errors, even though only one of them breaks the task.</mark> A 6% WER means 6 of every 100 words are wrong on average — but <em>which</em> words, WER cannot tell you.</p>
+<p>The scenario's paradox — low WER, failed calls — is the classic WER trap, and it's the number-one interview point on ASR eval.</p>
+<p><mark>A 5% WER that lands on the ONE critical entity (the appointment date, the account number) is worse for the product than a 15% WER spread across filler words ('um', 'the', 'you know') that don't change meaning.</mark> WER is entity-blind: it can look excellent while systematically corrupting exactly the words the downstream task depends on.</p>
+<p>That's precisely what the support engineer found: sub-5% WER on calls where the single load-bearing entity was wrong. The aggregate metric was healthy; the task-relevant errors were fatal. This is why WER is necessary but never sufficient for a product decision.</p>
+<div class="illustration"><div class="illustration-label">Two transcripts, same WER, opposite outcomes</div><pre>Reference: &quot;book the appointment for Tuesday the fourteenth at account 4471&quot;
+                                                      (12 words)
+
+Hypothesis A (1 error on filler):
+  &quot;book THE appointment for Tuesday the fourteenth at account 4471&quot;
+   -&gt; &quot;book uh the ...&quot; style slip, 1 wrong filler word
+   WER = 1/12 = 8.3%   TASK OUTCOME: SUCCESS (entities intact)
+
+Hypothesis B (1 error on the entity):
+  &quot;book the appointment for THURSDAY the fourteenth at account 4471&quot;
+   -&gt; Tuesday -&gt; Thursday, 1 substitution
+   WER = 1/12 = 8.3%   TASK OUTCOME: FAILURE (wrong day booked)
+
+Same WER. Opposite product result. WER cannot tell these apart.
+-&gt; track ENTITY / KEYWORD error rate on the words the task depends on.</pre></div>
+<p>Because WER is entity-blind, the fixes are <strong>task-weighted metrics</strong> plus disciplined <strong>normalization.</strong></p>
+<p>Track <strong>entity error rate / keyword error rate</strong> — WER computed only over the words that matter (dates, names, IDs, drug names) — so an error on a load-bearing entity is visible and heavily weighted. Consider <strong>semantic accuracy</strong>: did the transcript preserve <em>meaning</em>, even if wording differs? And beware <strong>normalization pitfalls</strong>: how you handle numbers ('fourteen' vs '14'), punctuation, and casing can swing WER by points without any real quality change — so normalize reference and hypothesis consistently or you'll measure formatting, not accuracy.</p>
+<p><mark>The upgrade over raw WER is to weight errors by task impact, not to count all words equally — because the product only fails on the words that carry the task.</mark></p>
+<p><strong>TTS is evaluated by MOS (Mean Opinion Score)</strong> — and its nature (subjective, human) is both its value and its weakness.</p>
+<p>MOS is a <strong>subjective 1–5 rating</strong> of naturalness, averaged over many human listeners. 4.2/5 means 'listeners judged it quite natural.' It's the TTS gold standard <em>because</em> naturalness is perceptual — there's no ground-truth waveform to diff against. But human MOS is <strong>slow and expensive</strong> (you need a listening panel), and it's <strong>relative</strong>: scores drift across studies, listener pools, and rating scales, so a 4.2 in one study isn't strictly comparable to a 4.2 in another.</p>
+<p><mark>So MOS is trustworthy as a <em>within-study</em> comparison (is voice A more natural than voice B, rated by the same panel) but shaky as an absolute cross-study number — and it says nothing about whether the voice succeeds <em>in the conversation.</em></mark></p>
+<p>Because human MOS is costly, teams use <strong>objective proxies</strong> — useful but limited.</p>
+<p><strong>MCD (Mel-Cepstral Distortion)</strong> measures spectral distance to a reference recording — cheap and automatic, but it needs a reference and correlates only loosely with perceived naturalness. <strong>Neural MOS predictors</strong> (e.g. UTMOS) are models trained to <em>predict</em> human MOS from audio — fast and reference-free, great for regression-testing that a change didn't degrade quality. <mark>But a predictor is only as good as its training distribution: it can miss failure modes humans would catch (odd prosody, artifacts on rare inputs), so proxies gate CI, human MOS confirms before ship.</mark> Never treat a predicted MOS as a human verdict.</p>
+<p>The deepest point, and the resolution of the scenario, is the <strong>component-vs-system trap.</strong></p>
+<p><mark>Strong ASR (low WER) + strong TTS (high MOS) can still produce a bad agent, because the agent's quality is a property of the <em>whole conversation</em> — turn-taking, error recovery, dialogue success — not of its parts.</mark> The team's 6% WER and 4.2 MOS are component metrics; the calls failed on entity errors and, likely, on turn-taking and confirmation — none of which WER or MOS measure.</p>
+<p>So evaluating a voice agent requires <strong>end-to-end metrics</strong>: <strong>task success rate</strong> (did the caller accomplish their goal — book the appointment, resolve the issue?), <strong>turn/first-audio latency</strong> at p95, <strong>interruption/barge-in handling</strong>, and <strong>conversation-level success</strong> ('did the whole call succeed'). Task success rate is the one that would have caught the scenario: those low-WER calls had a <em>failing</em> task success rate.</p>
+<p>So the answer to leadership's question is: <strong>component metrics gate components; task success gates the ship.</strong></p>
+<p>Use WER (with entity error rate) to catch ASR regressions, MOS (with neural-predictor proxies for CI) to catch TTS regressions — these are your leading indicators per component. But the ship decision rides on <strong>end-to-end task success rate and conversation quality on realistic calls</strong>, because that's the only metric that captures the entity errors, turn-taking failures, and confirmation gaps that make components-good, calls-bad.</p>
+<p><mark>The interview thesis: WER and MOS tell you if the <em>parts</em> are healthy; only end-to-end task success tells you if the <em>product</em> works — and a low WER on the wrong words is exactly how a healthy-looking dashboard ships a broken agent.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>WER = (Substitutions + Insertions + Deletions) / reference words</strong> — an edit distance that weights every word equally. It tells you the <em>rate</em> of word errors, never <em>which</em> words, so it's entity-blind by construction.</li><li><strong>A low WER on a critical entity beats a high WER on filler — for the product.</strong> A 5% WER that corrupts the appointment date or account number fails the task; a 15% WER on 'um'/'the' doesn't. This is the WER trap and the top ASR-eval interview point.</li><li><strong>Upgrade WER with task-weighted metrics and clean normalization.</strong> Track entity/keyword error rate over load-bearing words, consider semantic accuracy, and normalize numbers/punctuation/casing consistently so you measure accuracy, not formatting.</li><li><strong>MOS is a subjective 1–5 human naturalness rating</strong> — the TTS gold standard because naturalness is perceptual, but slow, expensive, and relative (not strictly comparable across studies). It measures naturalness, not conversational success.</li><li><strong>Objective MOS proxies (MCD, neural predictors like UTMOS) gate CI; human MOS confirms before ship.</strong> Predictors are only as good as their training distribution and can miss failure modes humans catch — never treat a predicted MOS as a human verdict.</li><li><strong>Component-vs-system trap: strong ASR + strong TTS can still be a bad agent.</strong> Evaluate end-to-end — task success rate, p95 turn/first-audio latency, barge-in handling, conversation-level success. Task success rate is what catches components-good, calls-bad.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Leadership asks 'is our voice product good enough to ship?' The team reports a 6% word error rate (WER) on ASR and a 4.2 MOS (mean opinion score) on TTS and recommends shipping — both numbers beat the last release. But a support engineer notices something odd: on a batch of failed calls, WER was under 5%, yet every one of those calls got the appointment date or the account number wrong, and users abandoned. Strong component metrics, failed conversations. You need to explain what WER and MOS actually measure, where they mislead, and how to evaluate a <em>whole</em> voice agent rather than its parts.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>WER = (S+I+D)/reference words is an equal-weight edit distance, so it's entity-blind: a 5% WER on the appointment date or account number fails the task while a 15% WER on filler doesn't — which is exactly how the scenario's dashboard looked healthy while calls failed. Fix it with entity/keyword error rate and clean normalization; for TTS, MOS is the subjective 1–5 naturalness gold standard (with neural predictors like UTMOS as CI proxies and human MOS to confirm), but it says nothing about conversational success. The decisive point is the component-vs-system trap: strong ASR + strong TTS can still be a bad agent, so gate components on WER/MOS but gate the ship on end-to-end task success rate, p95 latency, and turn-taking on realistic calls.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

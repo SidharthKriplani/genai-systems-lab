@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>seq2seq &amp; the Birth of Attention | GenAI Systems Lab</title>
+  <meta name="description" content="The encoder-decoder bottleneck and Bahdanau/Luong attention — the seed of self-attention.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/nlp-seq2seq-attention">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/nlp-seq2seq-attention">
+  <meta property="og:title" content="seq2seq &amp; the Birth of Attention | GenAI Systems Lab">
+  <meta property="og:description" content="The encoder-decoder bottleneck and Bahdanau/Luong attention — the seed of self-attention.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="seq2seq &amp; the Birth of Attention">
+  <meta name="twitter:description" content="The encoder-decoder bottleneck and Bahdanau/Luong attention — the seed of self-attention.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"seq2seq & the Birth of Attention","description":"The encoder-decoder bottleneck and Bahdanau/Luong attention — the seed of self-attention.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/nlp-seq2seq-attention"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">NLP FOUNDATIONS</span>
+      <span class="badge">intermediate</span>
+    </div>
+    <h1>seq2seq &amp; the Birth of Attention</h1>
+    <p class="desc">The encoder-decoder bottleneck and Bahdanau/Luong attention — the seed of self-attention.</p>
+
+    
+    <section><h2>How It Works</h2><p>Begin with the architecture the whole module is about. A <strong>sequence-to-sequence (seq2seq)</strong> model handles tasks where a variable-length input maps to a variable-length output — machine translation is the canonical case. It has two halves: an <strong>encoder</strong> (usually an RNN/LSTM) that <em>reads</em> the entire source sentence and compresses it into a representation, and a <strong>decoder</strong> (another RNN/LSTM) that <em>generates</em> the target sentence one word at a time, conditioned on that representation. <mark>In the original design, the encoder's <em>final hidden state</em> — a single fixed-size vector, sometimes called the 'thought vector' — is the <em>only</em> thing passed to the decoder. The decoder must reconstruct the entire translation from that one vector.</mark></p>
+<div class="illustration"><div class="illustration-label">Vanilla seq2seq — everything through one vector</div><pre>  ENCODER (reads French)                DECODER (writes English)
+  je   suis   étudiant                    I     am    a    student
+   │     │      │                          ▲     ▲     ▲      ▲
+   ▼     ▼      ▼                          │     │     │      │
+ [e]──►[e]──►[e]────►  ●  ────────────────►[d]──►[d]──►[d]──►[d]
+                       ▲
+             ONE fixed-size vector &quot;c&quot;
+             (the encoder's final hidden state)
+
+  The whole source must be crammed into c. Long sentence ⇒ c overflows,
+  early words get blurred, the decoder drifts. The BOTTLENECK.</pre></div>
+<p>Name the failure precisely, because it's the crux. This is the <strong>fixed-vector bottleneck</strong> (or information bottleneck). <mark>A single fixed-size vector has <em>constant</em> capacity, but source sentences have <em>variable, unbounded</em> length — so as sentences get longer, you're cramming more and more information through the same narrow pipe, and the earliest words get blurred or overwritten.</mark> A short phrase fits; a 30-word sentence does not. This is <em>exactly</em> the symptom in the scenario: the decoder does fine at the start (recent encoder memory) and drifts near the end (early source content already lost). Making the vector bigger only postpones the wall — the fundamental mismatch is <em>fixed capacity vs unbounded length.</em></p>
+<p>The fix is beautiful and simple in hindsight: <strong>attention.</strong> Instead of forcing the decoder to work from one summary vector, <em>keep all of the encoder's hidden states</em> — one per source word — and let the decoder <strong>look back at all of them at every output step.</strong> <mark>At each step of generating the target, the decoder computes a set of <strong>alignment weights</strong> — one weight per source word saying 'how relevant is this source word to the word I'm about to produce?' — and reads a <strong>context vector</strong> that is the <em>weighted sum</em> of the encoder states.</mark> So when the decoder is about to emit 'student', it puts most weight on the source word 'étudiant' and reads mostly <em>that</em> word's representation. The decoder gets a <em>fresh, focused</em> view of the source at every step, instead of one stale summary.</p>
+<div class="illustration"><div class="illustration-label">Attention — a fresh weighted view every step</div><pre>  Encoder states (kept, one per source word):
+     h(je)   h(suis)   h(étudiant)
+       │        │           │
+       └────────┼───────────┘
+                ▼
+   Decoder emitting &quot;student&quot;:
+     align weights:  je=0.05  suis=0.10  étudiant=0.85   ← focus!
+     context cₜ = 0.05·h(je) + 0.10·h(suis) + 0.85·h(étudiant)
+                  ▼
+                &quot;student&quot;
+
+  Different output step ⇒ different weights ⇒ different context.
+  No single bottleneck: the whole source stays available, re-focused
+  per step.</pre></div>
+<p>Two classic formulations differ only in <em>how</em> they score the match between a decoder state and each encoder state, and interviewers love the contrast. <strong>Bahdanau attention</strong> (2014, 'additive') feeds the decoder's previous state and each encoder state through a small feed-forward network (a learned layer with a tanh) to produce each alignment score — it <em>learns</em> the scoring function. <strong>Luong attention</strong> (2015, 'multiplicative') scores with a simple <strong>dot product</strong> (or a bilinear `hᵈ·W·hᵉ`) between the decoder and encoder states — cheaper, no extra network. <mark>Both then softmax those scores into weights that sum to 1 and take the weighted sum of encoder states. Additive = a learned MLP scorer; multiplicative = a dot-product scorer. The dot-product form is the one that scales up.</mark></p>
+<div class="illustration"><div class="illustration-label">Bahdanau (additive) vs Luong (multiplicative)</div><pre>Both produce alignment weights, then softmax, then weighted sum.
+They differ only in the SCORE function:
+
+  BAHDANAU (additive):   score = vᵀ · tanh( W₁·hᵈ + W₂·hᵉ )
+     a small feed-forward net LEARNS the match.  More params.
+
+  LUONG (multiplicative): score = hᵈ · hᵉ    (dot)
+                     or   score = hᵈ · W · hᵉ (general)
+     just a dot product.  Cheaper, no extra net.
+
+  weights = softmax(scores) ,   context = Σ weightᵢ · hᵉᵢ
+  → dot-product scoring is what &quot;Attention Is All You Need&quot; scales up.</pre></div>
+<p>There's a bonus that makes attention <em>interpretable</em>, and it's worth knowing for an interview. Stack the alignment weights for every (target word, source word) pair into a grid and you get an <strong>alignment matrix</strong> — a <em>soft word alignment</em> between the two languages. <mark>In translation this matrix lights up almost like a bilingual dictionary: 'student' aligns to 'étudiant', 'am' to 'suis', and it even captures reordering (adjectives and nouns swap order across languages).</mark> Nobody labeled these alignments; they emerged from learning to translate well. It's one of the earliest cases of a deep model giving a genuinely readable window into <em>what it's attending to.</em></p>
+<p>Now the framing that turns this from a translation trick into the seed of a revolution. Attention here is still <em>bolted onto</em> recurrence: the encoder and decoder are still RNNs, and attention is an <em>extra</em> mechanism that lets the decoder peek at all encoder states. <mark>The radical leap of 'Attention Is All You Need' (2017) was to ask: if attention is doing the real work of relating positions to each other, do we even <em>need</em> the recurrence? Drop the RNN entirely, and let <em>every</em> position attend to <em>every</em> other position directly — 'self-attention'.</mark> That move (a) kills the sequential bottleneck from the previous module (all positions computed in parallel) and (b) makes any two tokens one attention hop apart regardless of distance. The Bahdanau/Luong context vector is the direct conceptual ancestor of the transformer's attention — same 'compute relevance weights, take a weighted sum,' now generalized to attend <em>everywhere</em>, with no recurrence left.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Seq2seq = encoder reads the source into a representation, decoder generates the target one token at a time.</strong> In vanilla seq2seq the <em>only</em> thing passed across is the encoder's single final hidden state (the 'thought vector'), from which the decoder must reconstruct the whole output.</li><li><strong>The fixed-vector bottleneck: one constant-size vector vs variable, unbounded source length.</strong> Long sentences cram too much through the narrow pipe; early words blur and the decoder drifts near the end. Bigger vectors only postpone the wall — the mismatch is fixed capacity vs unbounded length.</li><li><strong>Attention keeps ALL encoder hidden states and, at every decoder step, computes alignment weights (relevance per source word) and reads a weighted-sum context vector.</strong> The decoder gets a fresh, focused view of the source per step instead of one stale summary — no bottleneck.</li><li><strong>Bahdanau (additive) scores alignment with a small learned feed-forward net (tanh); Luong (multiplicative) scores with a dot product (or bilinear).</strong> Both softmax the scores and take a weighted sum of encoder states. The dot-product form is what later scales up. The stacked weights form an alignment matrix = soft word alignment.</li><li><strong>This attention is the direct conceptual seed of self-attention.</strong> 'Attention Is All You Need' dropped the recurrence entirely and let every position attend to every other ('self-attention'), killing the sequential bottleneck (parallel) and making any two tokens one hop apart. Same 'weights + weighted sum,' generalized to attend everywhere.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>You're on a machine-translation team in 2015, and your encoder-decoder model translates short French phrases into English beautifully. Then the sentences get longer, and quality falls off a cliff — a 30-word sentence comes back garbled, with the end of the translation drifting off-topic as if the model forgot how the source began. A colleague stares at the architecture and asks: 'We're squeezing the <em>entire</em> source sentence into one final hidden vector before the decoder ever starts. How is one fixed-size vector supposed to hold a 30-word sentence?' That question is the crack that attention was invented to fill — and, unknowingly, your team is one conceptual step away from the idea that will become 'Attention Is All You Need.'</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Vanilla seq2seq forces the entire variable-length source through the encoder's single fixed-size final hidden state — the fixed-vector bottleneck — which is why translation quality collapses on long sentences. Attention removes the bottleneck by keeping all encoder states and, at each decoder step, computing alignment weights (Bahdanau's learned additive scorer or Luong's cheaper dot-product) and reading a weighted-sum context vector, yielding a fresh, focused view of the source per step plus an interpretable soft-alignment matrix. That 'relevance weights plus weighted sum' operation is the direct conceptual seed of self-attention: 'Attention Is All You Need' dropped the recurrence and let every position attend to every other, parallelizing the model and putting any two tokens one hop apart.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

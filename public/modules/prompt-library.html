@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Prompt Library | GenAI Systems Lab</title>
+  <meta name="description" content="Reusable, robust prompt patterns and how to adapt them safely.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/prompt-library">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/prompt-library">
+  <meta property="og:title" content="Production Prompt Library | GenAI Systems Lab">
+  <meta property="og:description" content="Reusable, robust prompt patterns and how to adapt them safely.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Production Prompt Library">
+  <meta name="twitter:description" content="Reusable, robust prompt patterns and how to adapt them safely.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Production Prompt Library","description":"Reusable, robust prompt patterns and how to adapt them safely.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/prompt-library"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROMPT</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Production Prompt Library</h1>
+    <p class="desc">Reusable, robust prompt patterns and how to adapt them safely.</p>
+
+    
+    <section><h2>How It Works</h2><p>A production prompt is not a wish — it is a <strong>specification the model executes probabilistically</strong>, and every ambiguity you leave becomes a distribution the model samples from. The first-principles move is to convert vague intent into explicit structure, because <mark>the model fills every gap you leave with its prior, and its prior is 'be a generically helpful chat assistant' — rarely what your pipeline needs.</mark> A strong prompt closes those gaps deliberately.</p>
+<p>The <strong>anatomy of a robust system prompt</strong> is five parts, each closing a specific failure mode:</p>
+<p><strong>1. Role / persona</strong> — 'You are a financial-document analyst.' Not decoration: it conditions the model onto the right slice of its training distribution (vocabulary, rigor, defaults). A well-chosen role shifts behavior before you write a single rule.</p>
+<p><strong>2. Constraints</strong> — the hard rules: 'Only use the provided context. Never infer. Keep answers under 100 words.' These narrow the output space. The trap (covered in the failure interactives) is <em>too many</em> — 15 conflicting rules make the model refuse everything, so prefer a few crisp, non-overlapping constraints.</p>
+<p><strong>3. Output contract</strong> — the exact shape the consumer expects: JSON schema, field names, types, 'no prose outside the object.' This is what stops the downstream parser from breaking. A prompt feeding code <em>must</em> specify a contract.</p>
+<p><strong>4. Few-shot examples</strong> — one to three worked input→output pairs. The model learns the <em>distribution</em> of your examples, not just the labels, so examples teach format, tone, and edge-case handling faster than prose. But one bad example poisons the pattern for all similar inputs, so examples are a dataset to curate, not filler.</p>
+<p><strong>5. Refusal / fallback handling</strong> — 'If the context does not contain the answer, respond exactly: NOT_FOUND.' Without a defined escape hatch, the model's obedience reflex makes it <em>invent</em> an answer rather than admit it can't comply. This single clause is one of the biggest hallucination reducers you can add.</p>
+<div class="illustration"><div class="illustration-label">Weak prompt vs. production prompt — same task, different guarantees</div><pre>WEAK:  &quot;Summarize this document.&quot;
+  role?        → defaults to generic assistant
+  constraints? → none; may pull in outside knowledge
+  contract?    → free-form prose; parser may break
+  examples?    → none; format is a coin flip
+  refusal?     → none; summarizes a blank page confidently
+
+PRODUCTION:
+  [ROLE]      You are a financial-document analyst.
+  [CONSTRAINT]Use ONLY the provided context. Do not infer.
+  [CONTRACT]  Output JSON: {&quot;summary&quot;: str, &quot;risk_level&quot;:
+              &quot;low&quot;|&quot;med&quot;|&quot;high&quot;}. No text outside the object.
+  [FEW-SHOT]  &lt;one input doc → one exact JSON output&gt;
+  [REFUSAL]   If context is empty/insufficient, output
+              {&quot;summary&quot;: null, &quot;risk_level&quot;: null}.
+
+  Each block removes one failure mode the weak prompt leaves open.</pre></div>
+<p>Beyond a single prompt, production teams reuse a small set of <strong>patterns</strong>, each solving a recurring problem:</p>
+<p><strong>RAG prompt</strong> — 'Answer only from the context; cite [source]; if absent, say you don't know.' Grounds the model on retrieved evidence and forbids parametric guessing. The refusal clause is what makes it trustworthy.</p>
+<p><strong>LLM-as-judge</strong> — a prompt that scores another model's output against a rubric ('Rate faithfulness 1–5; a claim is faithful only if supported by the context'). Powers automated eval and regression suites. Its own bias (position, verbosity, self-preference) must itself be controlled.</p>
+<p><strong>Chain-of-Thought (CoT)</strong> — 'Think step by step before answering.' Allocates intermediate compute so the model reasons through multi-step problems instead of pattern-matching a final answer. Costs tokens/latency; you often hide the scratchpad and surface only the conclusion.</p>
+<p><strong>Structured output</strong> — pairs a JSON schema with a format constraint. The prompt requests it, but the real guarantee comes from constrained decoding / function-calling at the API layer, not the words alone.</p>
+<p><strong>ReAct (Reason + Act)</strong> — interleaves reasoning traces with tool calls ('Thought → Action → Observation → …'). The backbone of agents: it lets the model plan, call a tool, read the result, and continue.</p>
+<p><strong>Adapting a template safely</strong> is where teams get burned. A prompt is coupled to a model, a temperature, an example set, and a downstream contract — change any one and behavior can shift. <mark>Treat prompts as code: version them, diff them, and gate every change behind a scored regression suite on canonical input→output pairs.</mark> When you fork a template: keep the role/constraint/contract skeleton, swap only the domain specifics, re-validate the few-shot examples against the new domain (a good example in one domain can be a poisoning example in another), and re-run the eval before shipping. A prompt that worked on GPT-4 at temp 0.2 is not guaranteed on a smaller model at temp 0.7.</p>
+<div class="illustration"><div class="illustration-label">Pattern → the problem it solves → the failure it prevents</div><pre>  PATTERN            SOLVES                     PREVENTS
+  ───────────────────────────────────────────────────────────────
+  RAG prompt         answer from evidence       parametric guessing
+  LLM-as-judge       automated scoring          manual-only eval
+  Chain-of-Thought   multi-step reasoning       shallow pattern-match
+  Structured output  machine-readable result    parser breakage
+  ReAct              plan + use tools           blind one-shot answers
+
+  All five ride on the same skeleton: ROLE + CONSTRAINTS +
+  OUTPUT CONTRACT + (few-shot) + REFUSAL PATH.</pre></div>
+<p>The interactive below is a browsable library of these production prompts — RAG, agents, evaluation, extraction, coding — each with its design notes. As you read them, reverse-engineer the anatomy: find the role, the constraints, the output contract, the few-shot block, and the refusal path in each one, and ask 'what failure mode does this specific line prevent?' That decomposition is the reusable skill; the individual prompts are just instances of it.</p>
+<p>Interview framing: <em>a reusable prompt encodes role + constraints + an output contract + curated few-shot + a refusal path, and it's versioned and regression-tested like code. You adapt it by swapping domain specifics while preserving the skeleton and re-validating examples and evals against the new model/temperature.</em></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A prompt is a probabilistic spec; every gap is a distribution.</strong> The model fills unspecified behavior with its generic-assistant prior, so robustness comes from closing gaps deliberately, not from longer prose.</li><li><strong>Anatomy = role + constraints + output contract + few-shot + refusal path.</strong> Role conditions the distribution; constraints narrow the output; the contract stops parser breakage; few-shot teaches format/edge cases; the refusal clause is a top hallucination reducer.</li><li><strong>Few-shot teaches the distribution, not just labels.</strong> One to three curated pairs beat prose for format and tone — but a single bad example poisons all semantically similar inputs, so treat examples as a reviewed dataset.</li><li><strong>Patterns are reusable solutions:</strong> RAG (ground + cite + refuse), LLM-as-judge (automated scoring, watch its own bias), CoT (spend compute on reasoning), structured output (schema + constrained decoding), ReAct (reason + tool-call loop = agents).</li><li><strong>Structural guarantees beat instructions.</strong> 'Output JSON' is a request; function-calling with a strict schema is an enforcement. Prefer the strongest structural constraint the API offers over asking nicely in prose.</li><li><strong>Prompts are code: version, diff, regression-test.</strong> Adapt a template by preserving the skeleton, swapping domain specifics, re-validating examples, and re-running evals — behavior is coupled to model + temperature + example set + downstream contract.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Two engineers ship the 'same' summarization feature. One writes 'Summarize this document.' The other writes a system prompt with an explicit role, hard constraints, a strict output schema, two few-shot examples, and a defined refusal path. In eval, the second one is 30 points higher on faithfulness, never breaks the downstream JSON parser, and refuses gracefully on empty input — while the first hallucinates, occasionally returns prose the parser chokes on, and cheerfully summarizes a blank page. You need to articulate exactly which parts of a prompt buy which guarantees, so the team stops treating prompts as throwaway strings.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>A production prompt is a probabilistic spec whose robustness comes from a deliberate skeleton — role, constraints, output contract, curated few-shot, and a refusal path — reused across patterns (RAG, LLM-as-judge, CoT, structured output, ReAct). Enforce machine-readable output structurally (function-calling/constrained decoding) rather than by asking, and version and regression-test prompts like code, re-validating examples and evals whenever you change domain, model, or temperature.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

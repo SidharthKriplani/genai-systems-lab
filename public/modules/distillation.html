@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knowledge Distillation | GenAI Systems Lab</title>
+  <meta name="description" content="Teacher → student, soft-label KL objective, and when to distill vs quantize.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/distillation">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/distillation">
+  <meta property="og:title" content="Knowledge Distillation | GenAI Systems Lab">
+  <meta property="og:description" content="Teacher → student, soft-label KL objective, and when to distill vs quantize.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Knowledge Distillation">
+  <meta name="twitter:description" content="Teacher → student, soft-label KL objective, and when to distill vs quantize.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Knowledge Distillation","description":"Teacher → student, soft-label KL objective, and when to distill vs quantize.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/distillation"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">FOUNDATIONS</span>
+      <span class="badge">advanced</span>
+    </div>
+    <h1>Knowledge Distillation</h1>
+    <p class="desc">Teacher → student, soft-label KL objective, and when to distill vs quantize.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with a small classroom analogy, because it gets to the whole idea. Imagine two ways of teaching a student. In the first, you hand back every quiz marked only right or wrong — no explanation, just the correct answer. In the second, an experienced teacher sits beside the student and says, <em>'Well, the answer is billing, but honestly this one looks a lot like an account issue, and it's nothing like spam.'</em> Which student learns faster? Obviously the second — because they're absorbing not just the answer, but the teacher's whole sense of how the categories relate.</p>
+<p>Now here's the puzzle we'll chase. When we train a small model, we almost always teach it the <em>first</em> way: a labeled dataset gives it right-or-wrong answers and nothing more. And a small model trained like that tends to plateau below a big one — we usually blame its size. But what if part of the gap isn't size at all? What if it's that we've been giving it the <em>impoverished</em> kind of feedback, when a big model already holds the rich, teacherly version?</p>
+<p>Take your time with this. We'll pin down exactly what information a plain label throws away, watch how a large model's fuller answer smuggles that information back in, and see the precise trick — turning up a 'temperature' knob — that makes the hidden signal loud enough to learn from. By the end you'll understand why a well-distilled small model beats an identical one trained from scratch.</p></section>
+    <section><h2>How It Works</h2><p>Start from what a labeled dataset actually gives a small model. A <strong>hard label is one-hot</strong>: for an email that is really 'billing', the target is [billing=1, technical=0, account=0, spam=0, ...]. Cross-entropy against that one-hot target tells the model exactly one thing — the correct class — and asserts that every other class is <strong>equally and maximally wrong</strong>.</p>
+<p>But that's false. A billing dispute is much closer to an account-access complaint than to spam. <mark>The one-hot target throws that similarity structure away.</mark></p>
+<p>A small model trained from scratch has to rediscover which classes are near which others purely from co-occurrence in its limited data, and with limited capacity it often can't. That is why the from-scratch small model plateaus below the big one: <strong>not only fewer parameters, but a poorer training signal.</strong></p>
+<p>Knowledge distillation replaces (or blends) the one-hot target with the <strong>teacher's full output distribution</strong> — the probabilities the large model assigns across ALL classes/tokens. This is the core idea. Instead of 'the answer is billing,' the target becomes the teacher's soft judgment: 'billing 0.72, account 0.21, technical 0.06, spam 0.001, ...'.</p>
+<p>Geoff Hinton called the information hiding in those small non-top probabilities <strong>dark knowledge</strong>. The teacher saying account=0.21 (not 0.001) tells the student that billing and account are confusable neighbors; the teacher saying spam≈0.001 tells the student spam is nowhere near.</p>
+<p>A hard label carries roughly log2(num_classes) bits about this example; the soft distribution carries a <strong>graded similarity signal over every class at once</strong>. <mark>The student learns the teacher's geometry of the problem, not just its verdict.</mark></p>
+<p>The objective. Distillation trains the student to match the teacher's distribution, measured by <strong>KL divergence</strong> — the same quantity from the training-signal module, the extra bits you pay to encode samples from p (teacher) using the student's code q. Minimizing KL(teacher‖student) over the soft targets pulls the student's whole distribution toward the teacher's, including the ranking of the non-top classes.</p>
+<p>In practice you <strong>blend two terms</strong>: L = α · T² · KL(soft_teacher ‖ soft_student) + (1−α) · CE(hard_label, student). <mark>The hard-label cross-entropy keeps the student anchored to ground truth where labels exist; the KL term transfers the dark knowledge.</mark> A typical α is 0.5–0.9 — the soft signal usually does most of the work.</p>
+<div class="illustration"><div class="illustration-label">Temperature exposes the dark knowledge (and the T² fix)</div><pre>Teacher logits z for one example (4 classes):  [4.0, 3.0, -1.0, -3.0]
+
+Softmax at T=1 (softmax(z)):
+  billing 0.708 | account 0.260 | technical 0.005 | spam 0.0006
+  -&gt; account 0.26 is visible but technical/spam are ~0: the near-neighbor
+     signal is faint, and gradients from those tiny probs are negligible.
+
+Softmax at T=3 (softmax(z / T)):
+  billing 0.452 | account 0.324 | technical 0.121 | spam 0.062
+  -&gt; the RELATIVE structure is now exposed: billing &gt; account &gt; technical &gt; spam.
+     &quot;spam is far, technical is closer, account is a real neighbor&quot; is now
+     a strong training signal the student can actually fit.
+
+Why T raises T=1 -&gt; T=3? Softening flattens the distribution so the ratios
+between small classes carry gradient. You apply the SAME temperature T to the
+student's logits during training, then softmax both.
+
+The T^2 detail: soft targets from softmax(z/T) shrink each logit's gradient by
+~1/T^2 (a 1/T from the softened student output, a 1/T from the softened target).
+Multiplying the distillation loss by T^2 rescales it back so the soft-target
+gradients stay comparable in magnitude to the hard-label CE gradients when you
+blend them. Drop the T^2 and the soft term is silently down-weighted ~9x at T=3.</pre></div>
+<p>Temperature, precisely. At inference T=1 you want a peaked distribution. But for transfer you deliberately <strong>raise the temperature (T&gt;1)</strong> on BOTH teacher and student logits before the softmax. A higher T flattens both distributions, magnifying the relative probabilities of the non-top classes — <mark>exactly the dark knowledge you want to move.</mark></p>
+<p>Without softening, technical=0.005 and spam=0.0006 are numerically tiny and produce almost no gradient, so the neighbor structure never transfers; the student effectively falls back to learning near-hard labels.</p>
+<p>The catch is that softening by T shrinks the gradient magnitude of the soft term by <strong>~1/T²</strong>, so the standard recipe <strong>multiplies the distillation loss by T²</strong> to keep it on the same scale as the hard-label term — otherwise the soft signal gets silently down-weighted and you've thrown away the thing you turned temperature up to capture.</p>
+<p>Variants, at a naming level.</p>
+<p><strong>(1) Response-based / logit distillation:</strong> match the teacher's output distribution — everything above. Simplest, most general, and all you need if you only have the teacher's outputs.</p>
+<p><strong>(2) Feature-based:</strong> also match intermediate representations — the student is trained so its hidden layers mirror the teacher's (this is how DistilBERT hits ~97% of BERT's GLUE score at ~40% fewer parameters). Needs white-box access and a projection to align dimensions.</p>
+<p><strong>(3) Relation-based:</strong> match relationships BETWEEN examples (e.g. pairwise distances in representation space) rather than per-example outputs.</p>
+<p><strong>(4) Sequence-level distillation for autoregressive LLMs:</strong> matching per-token distributions is weak because errors compound over a generation; instead you train the student on the teacher's actual generated sequences (often the teacher's beam/greedy output), so <mark>the student learns to reproduce whole trajectories the teacher would produce.</mark></p>
+<p>The modern LLM pattern is (4) taken to its logical end: <strong>use a strong teacher to GENERATE the training data</strong>. You don't need the teacher's logits at all — you sample outputs, or richer, ask the teacher for step-by-step rationales, and fine-tune a smaller model on that synthetic corpus.</p>
+<p>Alpaca distilled instruction-following from a stronger model's generations; Orca went further by training on the teacher's reasoning traces, not just final answers; the Phi and Gemma lines lean heavily on high-quality (often teacher-generated / filtered) data to punch far above their parameter count.</p>
+<p>Mechanistically this is still distillation — you're transferring the teacher's behavior through its outputs — but it works <strong>black-box, over any API, with no access to logits or weights</strong>. <mark>The soft-label/KL machinery and the synthetic-data machinery are the same idea (copy the teacher's output distribution) at two different levels of access.</mark></p>
+<p>The decision: <strong>distill vs quantize vs prune vs just use a smaller base</strong>. These attack different axes.</p>
+<p><strong>Quantization</strong> keeps the SAME architecture and shrinks the numeric precision of the weights (fp16 -&gt; int8/int4) — cheap, no training run, but it only takes you so small before quality falls off a cliff, and it can't change the model's capability. <strong>Pruning</strong> removes weights/heads/channels, usually needing a fine-tune to recover.</p>
+<p><strong>Distillation</strong> is the expensive-but-powerful option: it requires a training run and access to a teacher (logits OR just generations), but it can produce a genuinely smaller architecture that retains quality a same-size model trained from scratch cannot reach — because it inherits the teacher's learned similarity structure.</p>
+<p><mark>Crucially they COMPOSE and are usually stacked:</mark> distill the 70B down to an 8B student to recover most of the quality, THEN quantize that 8B to int4 for deployment. <strong>Distillation buys quality-per-parameter; quantization buys bytes-per-parameter.</strong></p>
+<p>Limits, stated plainly so you don't oversell it.</p>
+<p><strong>First, the student rarely exceeds the teacher</strong> on the distilled distribution — you are copying the teacher's judgments, including its mistakes and biases; distillation transfers a ceiling, it doesn't raise one. (Self-distillation and ensemble-teacher tricks nibble at this but don't overturn it.)</p>
+<p><strong>Second, coverage bounds transfer:</strong> the student only learns the teacher's behavior on the inputs you actually distill over. If your distillation data doesn't cover a slice of the input space, the student has no signal there and will diverge from the teacher exactly where you didn't look — a narrow synthetic set gives a narrow student.</p>
+<p><strong>Third, capacity gaps are real:</strong> if the student is far too small relative to the task, no amount of soft labels closes the gap — it will plateau below the teacher no matter how good the signal, because it lacks the representational room to hold the teacher's function.</p>
+<p><mark>When a student plateaus well below its teacher, the first two suspects are always (a) too little capacity or (b) distillation data that doesn't cover the failing region — not the temperature or α.</mark></p></section>
+    <section><h2>Key Points</h2><ul><li><strong>A one-hot hard label throws away similarity structure.</strong> It asserts every wrong class is equally wrong, so a from-scratch small model must rediscover which classes are near-neighbors from scratch — a poorer signal, not just fewer parameters.</li><li><strong>Distillation trains the student on the teacher's full soft distribution.</strong> The small non-top probabilities are 'dark knowledge' — account=0.21 vs spam=0.001 tells the student which classes are confusable. The student learns the teacher's geometry, not just its verdict.</li><li><strong>Objective blends KL to the teacher + hard-label CE:</strong> `L = α·T²·KL(soft_teacher‖soft_student) + (1−α)·CE`. KL transfers dark knowledge; CE anchors to ground truth (α typically 0.5–0.9).</li><li><strong>Temperature T&gt;1 flattens both distributions</strong> to expose near-zero-class gradients; softening shrinks the soft gradient ~1/T², so multiply the distillation loss by T² to keep it comparable to the hard-label term.</li><li><strong>Modern LLM distillation = train on the teacher's generated data/rationales</strong> (Alpaca, Orca, Phi, Gemma). Same idea as soft labels — copy the teacher's output distribution — but black-box, no logits needed.</li><li><strong>Distillation composes with quantization:</strong> distill 70B→8B for quality-per-parameter, then quantize to int4 for bytes-per-parameter. Limits: student can't exceed the teacher, transfers only what the data covers, and plateaus if too small.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A 70B model hits the quality bar on a customer-support classification and drafting task, but it costs $8 per million tokens and adds 900ms of latency the team can't ship. Product needs something ~10× cheaper and faster that keeps most of the quality. A smaller base model trained from scratch on the same labeled data plateaus 6 points below the 70B.</p>
+<p>Take a moment before reading on — why would training the small model on the teacher's <em>outputs</em> beat training it directly on the very same labeled data? Here's the reasoning, step by step. The from-scratch model was fed one-hot labels, which assert every wrong class is equally wrong and throw away all the similarity structure — so part of that 6-point gap is a poorer <em>signal</em>, not just fewer parameters. Distillation swaps the target for the 70B's full softened distribution: 'billing 0.72, account 0.21, spam 0.001.' That 0.21-vs-0.001 gap — the <strong>dark knowledge</strong> — hands the student the teacher's geometry of the problem for free, exactly what a one-hot label couldn't express. Notice how directly this addresses the plateau: the student inherits learned structure it could never have rediscovered from its limited data, so it recovers most of the gap a same-size from-scratch model can't. And the deployment move follows straight from the earlier decision: distill 70B → 8B for quality-per-parameter, then quantize that 8B to int4 for bytes-per-parameter — the ~10× cost and latency cut, quality largely intact.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Distillation trains a small student to copy a large teacher's full output distribution, not its argmax — the non-top probabilities ('dark knowledge') carry similarity structure a one-hot label throws away, which is why a distilled student beats a same-size model trained from scratch. Blend KL to the teacher's temperature-softened distribution (with the T² rescale) plus hard-label CE; at the LLM level this generalizes to fine-tuning on the teacher's generated data/rationales. Distillation buys quality-per-parameter and composes with quantization (distill then quantize) — but the student can't exceed the teacher, transfers only what the distillation data covers, and plateaus if it's simply too small.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>

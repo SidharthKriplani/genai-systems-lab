@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zero-Shot Prompting: What Works and Why | GenAI Systems Lab</title>
+  <meta name="description" content="Why some zero-shot prompts succeed where few-shot fails — and vice versa.">
+  <link rel="canonical" href="https://genai-systems-lab-ivory.vercel.app/modules/zero-shot">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://genai-systems-lab-ivory.vercel.app/modules/zero-shot">
+  <meta property="og:title" content="Zero-Shot Prompting: What Works and Why | GenAI Systems Lab">
+  <meta property="og:description" content="Why some zero-shot prompts succeed where few-shot fails — and vice versa.">
+  <meta property="og:site_name" content="GenAI Systems Lab">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Zero-Shot Prompting: What Works and Why">
+  <meta name="twitter:description" content="Why some zero-shot prompts succeed where few-shot fails — and vice versa.">
+
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Zero-Shot Prompting: What Works and Why","description":"Why some zero-shot prompts succeed where few-shot fails — and vice versa.","author":{"@type":"Organization","name":"GenAI Systems Lab"},"publisher":{"@type":"Organization","name":"GenAI Systems Lab"},"mainEntityOfPage":"https://genai-systems-lab-ivory.vercel.app/modules/zero-shot"}</script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: #0c0a08; color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: #22D3EE; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .top-bar {
+      background: #0f0d0b; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { font-size: 13px; font-weight: 700; font-family: "Courier New", monospace; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+    .open-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; background: #22D3EE18; border: 1px solid #22D3EE40; color: #22D3EE; white-space: nowrap;
+    }
+    .open-btn:hover { background: #22D3EE28; text-decoration: none; }
+    .accent-bar { height: 3px; background: linear-gradient(90deg, transparent, #22D3EEcc 30%, #22D3EEcc 70%, transparent); }
+    article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .badge {
+      font-size: 10px; font-family: "Courier New", monospace; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase; background: #22D3EE18; border: 1px solid #22D3EE30; color: #22D3EE;
+    }
+    h1 { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .desc { font-size: 15px; color: rgba(255,255,255,0.55); margin-bottom: 40px; line-height: 1.6; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 14px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 14px; }
+    mark { background: #22D3EE22; color: #fff; padding: 0 2px; border-radius: 2px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    li { font-size: 15px; color: rgba(255,255,255,0.72); margin-bottom: 8px; }
+    .illustration { background: #1a1612; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .illustration-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    pre { font-family: "Courier New", monospace; font-size: 12.5px; color: rgba(255,255,255,0.75); white-space: pre-wrap; overflow-x: auto; }
+    .callout { background: #22D3EE0c; border-left: 3px solid #22D3EE; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 32px; }
+    .callout-label { font-size: 11px; font-weight: 700; color: #22D3EE; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .callout p { margin-bottom: 0; color: rgba(255,255,255,0.85); }
+    .cta-card { margin-top: 40px; padding: 28px; border-radius: 16px; background: #22D3EE0c; border: 1px solid #22D3EE30; text-align: center; }
+    .cta-card h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+    .cta-card p { margin-bottom: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .cta-card a { display: inline-block; padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #22D3EE; color: #000; }
+    .cta-card a:hover { opacity: 0.9; text-decoration: none; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-family: "Courier New", monospace; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="https://genai-systems-lab-ivory.vercel.app" class="brand">GenAI Systems Lab</a>
+    <a href="https://genai-systems-lab-ivory.vercel.app/#concepts" class="open-btn">Open interactive version →</a>
+  </div>
+  <div class="accent-bar"></div>
+  <article>
+    <div class="meta">
+      <span class="badge">PROMPTING</span>
+      <span class="badge">beginner</span>
+    </div>
+    <h1>Zero-Shot Prompting: What Works and Why</h1>
+    <p class="desc">Why some zero-shot prompts succeed where few-shot fails — and vice versa.</p>
+
+    <section><h2>Start Here</h2><p>Let's start with the most natural thing in the world: you have a task, so you just <em>ask</em> the model to do it. &quot;Sort these emails into these twelve categories.&quot; No examples, no setup — just a plain description of what you want, the input, and out comes an answer. That's <strong>zero-shot</strong> prompting, and it's genuinely wonderful: it costs nothing, needs no labeled data, and often works surprisingly well.</p>
+<p>Here's the idea this module is built around, and it's a gentle one. Zero-shot isn't a <em>failed</em> version of something better — it's the <em>first level</em> of telling a model what you want. It leans entirely on what the model already learned in pre-training, so it shines on tasks it saw a thousand times (sentiment, summaries, common transformations) and gets shaky exactly where <em>your</em> task has its own private rules the model was never told.</p>
+<p>So the real skill isn't &quot;zero-shot vs. examples&quot; as a fight to pick a winner. It's learning to <em>read</em> where zero-shot falls short — because those exact stumbles are a map telling you which examples to add next. Take your time; by the end, a disappointing accuracy number turns into a precise to-do list.</p></section>
+    <section><h2>How It Works</h2><p>Let's start with why you can ask a model to do a task it's never been shown examples of. The ability comes from instruction-following training — SFT and RLHF — which taught the model to respond to a plain natural-language description of a task. Zero-shot just uses that directly: describe the task, give the input, take the output. No annotation cost, no example curation, nothing to build. And it genuinely works well when the task closely matches patterns the model saw <em>everywhere</em> in pre-training — sentiment classification, factual Q&amp;A, summarization, common text transformations. So hold this thought before we look at where it slips: a 71%-style baseline isn't a failure to explain away, it's a real capability showing up for free.</p>
+<p>So where does the gap come from? Here's the key move — it comes from the <em>boundary cases</em>, never from the easy ones. Categories like &quot;billing&quot; and &quot;technical&quot; feel obvious in isolation. But an email about API authentication failures with an invoice attached genuinely sits on the line between them, and only a disambiguation rule — <em>your</em> rule — decides which category wins. Zero-shot was never shown that rule. So the model does the only thing it can: it resolves the ambiguity with whatever category distribution it happened to learn in pre-training, which may not match your business logic at all. Pause on that, because it's the whole diagnosis: the misses cluster exactly where your task has private structure the model couldn't have known.</p>
+<p>So let's name the relationship this sets up, because it changes how you work. Zero-shot and few-shot aren't rival approaches competing for one slot — they're <em>different levels of the same thing</em>, task specification. The move is: start with zero-shot because it's fast and free, measure it on your <em>actual</em> task, and then read the failures as a guide to exactly which boundary cases your few-shot examples must cover. The zero-shot failures <em>are</em> your example-curation list. The interactive just below lets you watch this play out, and the production case waiting at the end is precisely this — a 71% baseline that, read correctly, tells you what to build next.</p></section>
+    <section><h2>Key Points</h2><ul><li><strong>Zero-shot leans on instruction-following</strong> — SFT/RLHF let the model act on a plain task description with no examples; 71% is a real signal, not a failure.</li><li><strong>It works where the task matches pre-training</strong> — sentiment, factual Q&amp;A, summarization, common transforms; zero annotation cost.</li><li><strong>The gap lives at the boundary</strong> — cases where two categories both apply have no disambiguation rule, so the model falls back to its pre-training prior, which may not match your business logic.</li><li><strong>Longer descriptions are not the fix</strong> — verbose caveats and edge-case prose often <em>hurt</em>; the real fix for boundary cases is examples.</li><li><strong>Zero-shot and few-shot are levels of specification, not rivals</strong> — start zero-shot, measure on your real task, then let the failures pick your examples.</li><li><strong>Zero-shot failures are the example-curation guide</strong> — they tell you exactly which boundary cases few-shot must cover.</li></ul></section>
+    <section><h2>In Production — Apply It</h2><p>Now let's put all of that to work on a real one. A new teammate asks why the team bothers with detailed prompts at all when &quot;you can just ask the model what you want.&quot; They run a zero-shot test on your 12-category email classification task and get 71%, against your carefully-built 89%. Take a moment before reading on: is that 71% a failure, and what is it actually telling you? Here's the reasoning, step by step. First, 71% with zero effort is a <em>real signal</em>, not an embarrassment — it's the model handling every clear-cut email correctly from pre-training alone. So where did the other 18 points go? Not to the easy cases — to the <em>boundaries</em>. An email about an API authentication failure with an invoice attached is genuinely both billing and technical, and only <em>your</em> business rule decides which wins. Zero-shot never saw that rule, so it fell back on its pre-training prior, which doesn't match your taxonomy. Notice the payoff: those specific misses aren't just errors, they're your example-curation guide — they name exactly which boundary cases your few-shot examples need to cover. Zero-shot didn't lose; it <em>scouted</em>.</p></section>
+    <div class="callout"><div class="callout-label">Key Insight</div><p>Zero-shot is the correct starting point for any new task — it costs nothing and reveals where your task is ambiguous. When it falls short, the failures tell you exactly which boundary cases your few-shot examples need to resolve. Don't skip zero-shot; its failures are your specification guide.</p></div>
+
+    <div class="cta-card">
+      <h2>Try it interactively</h2>
+      <p>GenAI Systems Lab is a free platform for AI engineers — configure real failure modes, break things, and build the judgment that gets you hired.</p>
+      <a href="https://genai-systems-lab-ivory.vercel.app/#concepts">Open GenAI Systems Lab →</a>
+    </div>
+  </article>
+  <footer>genai-systems-lab-ivory.vercel.app · Free for AI engineers and PMs</footer>
+</body>
+</html>
