@@ -1703,17 +1703,20 @@ function runTransformer(sentenceIdx, n_heads, temperature) {
   const tokens = TRANSFORMER_SENTENCES[sentenceIdx].tokens;
   const seqLen = tokens.length;
 
-  // 1. Token + positional embeddings
-  const tokenEmbeds = tokens.map((tok, pos) => {
+  // 1. Token + positional embeddings (raw kept separately so the token-journey
+  // scene can show the vector BEFORE the position stamp — same numbers as before)
+  const rawTokenEmbeds = tokens.map((tok) => {
     const wordSeed = tok.split("").reduce((s, c) => s + c.charCodeAt(0), 0) * 13 + sentenceIdx * 7;
     const r = seededRand(wordSeed);
-    const emb = Array.from({ length: D }, () => randGauss(r) * 0.5);
-    return emb.map((v, i) =>
+    return Array.from({ length: D }, () => randGauss(r) * 0.5);
+  });
+  const tokenEmbeds = rawTokenEmbeds.map((emb, pos) =>
+    emb.map((v, i) =>
       v + 0.5 * (i % 2 === 0
         ? Math.sin(pos / Math.pow(10000, i / D))
         : Math.cos(pos / Math.pow(10000, (i - 1) / D)))
-    );
-  });
+    )
+  );
 
   // 2. Multi-head attention
   const allHeadWeights = [];
@@ -1762,7 +1765,7 @@ function runTransformer(sentenceIdx, n_heads, temperature) {
     .map((tok, i) => ({ tok, prob: probs[i] }))
     .sort((a, b) => b.prob - a.prob);
 
-  return { tokenEmbeds, allHeadWeights, finalOut, nextTokenDist };
+  return { tokenEmbeds, allHeadWeights, finalOut, nextTokenDist, rawTokenEmbeds, normed };
 }
 
 function embColor(v) {
@@ -1800,7 +1803,7 @@ function TransformerModule({ onNavigate }) {
           The transformer is the architecture behind every modern LLM. Each token is embedded into a vector, self-attention lets tokens interact with every other token in the sequence, feed-forward layers apply non-linear transformations, and a final projection produces a probability distribution over the vocabulary. <strong className="text-white">Temperature</strong> and <strong className="text-white">number of heads</strong> are real parameters — adjust them below and watch what changes. The model here is tiny (d_model=8), but the math is exact.
         </p>
       </div>
-      <TransformerScenes />
+      <TransformerScenes result={result} tokens={tokens} />
       {/* Top controls */}
       <div className="grid grid-cols-12 gap-3">
         {/* Sentence picker */}
@@ -12631,10 +12634,10 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
     <div className="w-52 shrink-0 overflow-y-auto py-4 hidden sm:block" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
       <div className="px-3 mb-3 space-y-2">
         <button
-          onClick={() => currentGym ? setActive(null) : setActiveGym(null)}
+          onClick={() => currentGym ? handleBack() : setActiveGym(null)}
           className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors"
         >
-          ← {currentGym ? currentGym.label : "Foundations"}
+          ← {openedFromTracks ? "My Tracks" : (currentGym ? currentGym.label : "Foundations")}
         </button>
         {/* Gym switcher — jump to another gym without going back to the grid. */}
         <select
@@ -12721,8 +12724,8 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
             onNavigate={onNavigate}
             mastery={mastery}
             markComplete={markComplete}
-            onBack={() => setActive(null)}
-            gymLabel={currentGym?.label}
+            onBack={handleBack}
+            gymLabel={openedFromTracks ? "My Tracks" : currentGym?.label}
           />
         </div>
       </div>
@@ -12779,9 +12782,9 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
                     </button>
                 }
                 <button
-                  onClick={() => setActive(null)}
+                  onClick={handleBack}
                   className="hidden sm:block text-[9px] font-mono text-violet-400 hover:text-violet-300 border border-violet-800/40 rounded px-1.5 py-0.5 transition-colors">
-                  Foundations
+                  {openedFromTracks ? "My Tracks" : "Foundations"}
                 </button>
               </div>
             </div>

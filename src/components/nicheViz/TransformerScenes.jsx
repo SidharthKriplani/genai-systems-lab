@@ -436,18 +436,256 @@ function SceneZoomOut() {
   );
 }
 
-export default function TransformerScenes() {
+// ── The token journey (bound to runTransformer's real d_model=8 numbers) ─────
+const PROJ = [
+  [0.42, -0.31, 0.18, 0.55, -0.22, 0.38, -0.45, 0.12],
+  [-0.28, 0.47, 0.51, -0.19, 0.33, -0.42, 0.15, 0.36],
+];
+const JSTAGES = [
+  { id: "embed", label: "1 · Embed", hint: "The token's raw vector — eight real numbers, born from the embedding table." },
+  { id: "pos", label: "2 · + Position", hint: "The position stamp nudges every dimension — 'dog at p0' and 'dog at p2' are now different vectors." },
+  { id: "attend", label: "3 · Attend", hint: "Arrows show this token's real attention weights — its vector moves toward a weighted average of what it attends to (then residual + norm)." },
+  { id: "ffn", label: "4 · FFN", hint: "The workshop: expand 8→16, fold through ReLU, project back. The point jumps somewhere no blend could reach." },
+  { id: "predict", label: "5 · Predict", hint: "The LAST position's finished vector meets the output projection — a probability race over the next token." },
+];
+
+function proj2d(v, cx, cy, scale) {
+  const px = v.reduce((a, x, i) => a + x * PROJ[0][i], 0);
+  const py = v.reduce((a, x, i) => a + x * PROJ[1][i], 0);
+  return { x: cx + px * scale, y: cy + py * scale };
+}
+
+function jEmbColor(v) {
+  const t = Math.max(0, Math.min(1, (Math.max(-2, Math.min(2, v)) + 2) / 4));
+  return `rgb(${Math.round(t * 139 + (1 - t) * 30)},${Math.round(t * 30 + (1 - t) * 30)},${Math.round(t * 246 + (1 - t) * 80)})`;
+}
+
+function stageVecs(result, stageId) {
+  if (stageId === "embed") return result.rawTokenEmbeds;
+  if (stageId === "pos") return result.tokenEmbeds;
+  if (stageId === "attend") return result.normed;
+  return result.finalOut; // ffn + predict
+}
+
+function TokenJourney({ result, tokens, suggestedStage }) {
+  const [stageIdx, setStageIdx] = useState(0);
+  const [focus, setFocus] = useState(tokens.length - 1);
+
+  useEffect(() => {
+    if (suggestedStage) {
+      const i = JSTAGES.findIndex(s => s.id === suggestedStage);
+      if (i >= 0) setStageIdx(i);
+    }
+  }, [suggestedStage]);
+  useEffect(() => { setFocus(f => Math.min(f, tokens.length - 1)); }, [tokens]);
+
+  const stage = JSTAGES[stageIdx];
+  const effFocus = stage.id === "predict" ? tokens.length - 1 : focus;
+  const vecs = stageVecs(result, stage.id);
+  const vec = vecs[effFocus];
+
+  // trail: the focus token's projected position at every stage up to the current one
+  const trail = JSTAGES.slice(0, Math.min(stageIdx, 3) + 1).map(s => proj2d(stageVecs(result, s.id)[effFocus], 150, 118, 40));
+
+  // averaged attention weights (over heads) for the focus row
+  const nH = result.allHeadWeights.length;
+  const attnRow = result.allHeadWeights.reduce(
+    (acc, hw) => acc.map((a, j) => a + hw[effFocus][j] / nH),
+    new Array(tokens.length).fill(0)
+  );
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">The token's journey · real d_model=8 math</div>
+        <div className="flex gap-1 flex-wrap">
+          {JSTAGES.map((s, i) => (
+            <button key={s.id} onClick={() => setStageIdx(i)}
+              className={`px-2 py-1 rounded-md text-[11px] font-medium transition-all ${i === stageIdx ? "bg-cyan-600 text-white" : "bg-zinc-800 text-zinc-500 hover:text-zinc-300"}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-1.5 flex-wrap">
+        {tokens.map((t, i) => (
+          <button key={i} onClick={() => stage.id !== "predict" && setFocus(i)}
+            className={`px-2.5 py-1 rounded-md text-xs font-mono transition-all ${i === effFocus ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            {t}
+          </button>
+        ))}
+        <span className="text-[11px] text-zinc-600 self-center ml-1">← follow this token</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-wide">the vector itself</div>
+          <div className="flex gap-1">
+            {vec.map((v, d) => (
+              <div key={d} className="flex-1">
+                <div className="h-9 rounded" style={{ background: jEmbColor(v), transition: "background .5s" }} />
+                <div className="text-[9px] font-mono text-zinc-500 text-center mt-0.5">{v.toFixed(1)}</div>
+              </div>
+            ))}
+          </div>
+          {stage.id === "predict" && (
+            <div className="space-y-1 pt-1">
+              {result.nextTokenDist.slice(0, 5).map((c, i) => (
+                <div key={c.tok} className="flex items-center gap-2">
+                  <span className="w-16 text-[11px] font-mono text-zinc-300 truncate">{c.tok}</span>
+                  <div className="flex-1 h-4 rounded bg-zinc-800 overflow-hidden">
+                    <div className="h-full rounded" style={{ width: `${Math.max(2, c.prob * 100)}%`, background: i === 0 ? "#fbbf24" : "#52525b", transition: "width .5s" }} />
+                  </div>
+                  <span className="w-10 text-[10px] font-mono text-zinc-500 text-right">{(c.prob * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="text-[10px] text-zinc-500 uppercase tracking-wide mb-1">where it lives (fixed 8→2 projection)</div>
+          <svg viewBox="0 0 300 236" className="w-full rounded-lg bg-zinc-950/60 border border-zinc-800/60">
+            {trail.length > 1 && (
+              <polyline points={trail.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
+                fill="none" stroke="#22d3ee" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+            )}
+            {stage.id === "attend" && tokens.map((t, j) => {
+              if (j === effFocus || attnRow[j] < 0.02) return null;
+              const a = proj2d(vecs[effFocus], 150, 118, 40);
+              const b = proj2d(vecs[j], 150, 118, 40);
+              return <line key={j} x1={b.x} y1={b.y} x2={a.x} y2={a.y} stroke="#8b5cf6" strokeWidth={Math.max(0.6, attnRow[j] * 6)} opacity="0.7" />;
+            })}
+            {tokens.map((t, j) => {
+              const p = proj2d(vecs[j], 150, 118, 40);
+              const isF = j === effFocus;
+              return (
+                <g key={j} style={{ transform: `translate(${p.x}px,${p.y}px)`, transition: "transform .6s" }}>
+                  <circle r={isF ? 7 : 4} fill={isF ? "#22d3ee" : "#3f3f46"} />
+                  <text y="-10" textAnchor="middle" fill={isF ? "#67e8f9" : "#71717a"} fontSize="9" fontFamily="monospace">{t}</text>
+                  {stage.id === "attend" && j !== effFocus && attnRow[j] >= 0.02 && (
+                    <text y="16" textAnchor="middle" fill="#a78bfa" fontSize="8" fontFamily="monospace">{attnRow[j].toFixed(2)}</text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+      <p className="text-xs text-zinc-500 leading-relaxed border-l-2 border-cyan-600/50 pl-3">{stage.hint}</p>
+    </div>
+  );
+}
+
+// ── Scene · Author or editor (causal mask structure) ─────────────────────────
+function SceneMask() {
+  const [causal, setCausal] = useState(true);
+  const toks = ["the", "cat", "sat", "here"];
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Scene · Author or editor</div>
+        <span className="inline-flex rounded-lg overflow-hidden border border-zinc-800">
+          <button onClick={() => setCausal(false)} className={`px-2.5 py-1.5 text-xs ${!causal ? "bg-zinc-700 text-white" : "bg-transparent text-zinc-500"}`}>Encoder (editor)</button>
+          <button onClick={() => setCausal(true)} className={`px-2.5 py-1.5 text-xs border-l border-zinc-800 ${causal ? "bg-zinc-700 text-white" : "bg-transparent text-zinc-500"}`}>Decoder (author)</button>
+        </span>
+      </div>
+      <svg viewBox="0 0 300 190" className="w-full">
+        <text x="160" y="14" textAnchor="middle" fill="#71717a" fontSize="10">who may each token look at?</text>
+        {toks.map((t, i) => <text key={"r" + i} x="52" y={48 + i * 34} textAnchor="end" fill="#a1a1aa" fontSize="11" fontFamily="monospace">{t} →</text>)}
+        {toks.map((t, j) => <text key={"c" + j} x={84 + j * 44} y="30" textAnchor="middle" fill="#a1a1aa" fontSize="11" fontFamily="monospace">{t}</text>)}
+        {toks.map((_, i) => toks.map((_, j) => {
+          const blocked = causal && j > i;
+          return (
+            <g key={i + "-" + j}>
+              <rect x={64 + j * 44} y={36 + i * 34} width="40" height="26" rx="4"
+                fill={blocked ? "#18181b" : "#8b5cf6"} opacity={blocked ? 0.6 : 0.35 + 0.4 * (1 / (1 + Math.abs(i - j)))}
+                stroke={blocked ? "#3f3f46" : "#8b5cf6"} strokeWidth="0.8" style={{ transition: "fill .3s, opacity .3s" }} />
+              {blocked && <text x={84 + j * 44} y={53 + i * 34} textAnchor="middle" fill="#52525b" fontSize="11">✕</text>}
+            </g>
+          );
+        }))}
+      </svg>
+      <p className="text-xs text-zinc-500 leading-relaxed border-l-2 border-violet-600/50 pl-3">
+        {causal
+          ? "The author: each token attends only leftward — the future doesn't exist yet. This is what generation requires, and it's why a decoder's vectors make poor embeddings: every one was built half-blind, distorting the geometry retrieval needs."
+          : "The editor: every token sees the whole page — the richest per-position summary. This is encoder attention, the right geometry for classification, retrieval, and embeddings."}
+      </p>
+    </div>
+  );
+}
+
+// ── Scrollytelling: pinned visual, beats drive the scene ─────────────────────
+const BEATS = [
+  { id: "trap", title: "The palette trap", text: "One attention layer: every vector may move only to a weighted average of the others — somewhere inside the palette. Stack another and you're blending blends. Apply attention a few times and watch the points drift inward, trapped; answer the gate, then fold." },
+  { id: "journey", title: "A token's journey", text: "Now follow one real token — eight exact numbers, no illustration. Step it through: embedded, position-stamped, pulled by attention toward what it attends to, then folded by the FFN somewhere no blend could reach. The workshop where the model's knowledge lives." },
+  { id: "stamp", title: "The stamp test", text: "Attention alone is order-blind — a set operation. Swap the words and the outputs are provably identical, to the last decimal. Turn the position stamps on and the geometry finally knows where things stand. RoPE encodes exactly this, as rotation." },
+  { id: "shaft", title: "The shaft", text: "Go deep and the third crisis appears: training's backward message shrinks at every handoff — halve it a hundred times and nothing reaches the early layers. Turn residuals off and send the pulse: watch it die before sublayer 1. Then restore the shaft: output = input + block(input)." },
+  { id: "norm", title: "Where the regulator sits", text: "Switch to post-norm: the regulator sits on the shaft, taxing every gradient at every floor — fragile at depth, needs warmup. Pre-norm slides it inside the branch — x + Sublayer(LayerNorm(x)) — and the highway stays pristine. That one placement is why modern LLMs train stably." },
+  { id: "rms", title: "The swelling stream", text: "The shaft has a quieter cost: every floor adds to what rides past, and additions compound. Turn the regulator off and watch the forward meter — 1 → 25 in six sublayers, ~140 by layer 24. The norm re-centers the signal after every addition." },
+  { id: "mask", title: "Author or editor", text: "Last decision: may a token see the future? The editor (encoder) sees the whole page — richest embeddings. The author (decoder) masks what isn't written yet — that's generation. One bit splits the transformer family, and mixing them up costs real retrieval quality." },
+  { id: "predict", title: "The prediction", text: "The payoff: the last position's finished vector meets the output projection and becomes a probability race over the next token. When you tune temperature in a production API call, you are reaching directly into this step." },
+];
+const BEAT_VISUAL = { trap: "trap", journey: "journey", stamp: "stamp", shaft: "highway", norm: "highway", rms: "highway", mask: "mask", predict: "journey" };
+
+function Scrolly({ result, tokens }) {
+  const [active, setActive] = useState(0);
+  const refs = useRef([]);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) setActive(Number(e.target.dataset.beat)); }),
+      { rootMargin: "-35% 0px -55% 0px" }
+    );
+    refs.current.forEach(el => el && obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  const visual = BEAT_VISUAL[BEATS[active].id];
+  return (
+    <div className="lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-5">
+      <div className="lg:order-2 sticky top-2 lg:top-4 self-start z-10 space-y-2 bg-zinc-950/95 lg:bg-transparent rounded-xl">
+        <div className={visual === "trap" ? "" : "hidden"}><SceneBlendTrap /></div>
+        <div className={visual === "journey" ? "" : "hidden"}>
+          <TokenJourney result={result} tokens={tokens} suggestedStage={BEATS[active].id === "predict" ? "predict" : BEATS[active].id === "journey" ? "embed" : undefined} />
+        </div>
+        <div className={visual === "stamp" ? "" : "hidden"}><SceneStampTest /></div>
+        <div className={visual === "highway" ? "" : "hidden"}><SceneHighway /></div>
+        <div className={visual === "mask" ? "" : "hidden"}><SceneMask /></div>
+      </div>
+      <div className="lg:order-1">
+        {BEATS.map((b, i) => (
+          <div key={b.id} data-beat={i} ref={el => (refs.current[i] = el)}
+            className={`min-h-[45vh] lg:min-h-[62vh] flex items-center transition-opacity duration-300 ${i === active ? "opacity-100" : "opacity-35"}`}>
+            <div>
+              <div className="text-[10px] font-mono text-zinc-600 mb-1">{i + 1} / {BEATS.length}</div>
+              <div className="text-sm font-bold text-zinc-200 mb-2">{b.title}</div>
+              <p className="text-sm text-zinc-400 leading-relaxed">{b.text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function TransformerScenes({ result, tokens }) {
+  const hasData = result && tokens && result.rawTokenEmbeds && result.normed;
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-3">
         <p className="text-xs text-zinc-400 leading-relaxed">
-          <span className="font-bold text-zinc-300 uppercase tracking-wide">The block, in four scenes.</span>{" "}
-          Each scene proves one claim from the walkthrough — the palette trap, the elevator shaft, the stamp test, the zoom-out — then the full forward pass below lets you assemble and stack the machine.
+          <span className="font-bold text-zinc-300 uppercase tracking-wide">The block, as a journey.</span>{" "}
+          Scroll: the visual stays pinned while the story walks through it — the palette trap, one real token's journey, the stamp test, the shaft, the mask, the prediction. Every number in the journey is the exact d_model=8 math from the sentence you pick below.
         </p>
       </div>
-      <SceneBlendTrap />
-      <SceneHighway />
-      <SceneStampTest />
+      {hasData ? (
+        <Scrolly result={result} tokens={tokens} />
+      ) : (
+        <>
+          <SceneBlendTrap />
+          <SceneHighway />
+          <SceneStampTest />
+        </>
+      )}
       <SceneZoomOut />
     </div>
   );

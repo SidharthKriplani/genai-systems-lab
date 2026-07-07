@@ -134,3 +134,57 @@ JS API itself can't load. Dead `execFileSync` imports removed; node --check clea
 Also: 3B1B-STANDARD.md gained a "Definition of done" section (text + scenes + gate + claims-check +
 esbuild + prerender-awareness ship together; deferrals must be explicit) — added after the transformer
 rewrite initially shipped text-only.
+
+## Log 2026-07-08 (later still) — SEO prerender shipped (all 3 labs); GSL C6 origin-aware back — Concepts half done, item-level hash still open
+
+**SEO/prerender (LAB-STANDARDS.md Part 1 — cross-lab session).** GSL: `scripts/prerender-gt.js` BASE_URL
+parameterized (`SITE_BASE_URL` env, same Vercel domain fallback); two new scripts,
+`scripts/prerender-modules.js` (139 foundation modules → `public/modules/<id>.html`, teaching text pulled
+from the bundled `foundationsRunnerData.js`, title/subtitle/tag/level cross-referenced from Concepts.jsx's
+`MODULES` array via a bounded regex scan — no JSX eval) and `scripts/prerender-companies.js` (24 company
+profiles → `public/companies/<slug>.html` from `COMPANY_PROFILES`). Both append into the sitemap
+`prerender-gt.js` writes (330 GT + 139 modules + 24 companies = 493 URLs + static). `package.json`
+`"build"` now runs all 3 prerender scripts before `vite build` (`"prerender"` script added for
+sandbox-only verification). All sandbox-verified via `node`: real prose in sample outputs, sitemap
+XML-valid. (The esbuild `.bin` ENOEXEC fix in the entry above supersedes the sandbox's `.bin` invocation —
+scripts now use the `esbuild` JS API.) Mirrors the same-day MSL (206 modules + 180 posts, fixed 8
+regex-dropped posts + 2 dup slugs in the pre-existing pipeline) and PAL (79 modules + 85 posts, byte-exact
+`#/room/itemId` CTAs from `hashRouting.js`) builds — see their own docs.
+
+**C6 (origin-aware back), Concepts surface only.** Per the 2026-07-08 audit above (GSL FAIL — "Study→ from
+My Tracks can't return"): `Concepts.jsx`'s `ConceptsApp` now tracks `openedFromTracks` (set in the
+`initialModule` deep-link effect, cleared on any normal `openModule()` browse). New `handleBack()`
+replaces the 3 "← back to module list" call sites (sidebar chip, `FoundationRunnerShell`'s `onBack`, the
+mobile "Foundations" pill) — when `openedFromTracks`, it calls `onNavigate({ tab: "my-tracks" })` instead
+of `setActive(null)`, and the button label reads "← My Tracks" instead of the gym name. Verify:
+Concepts.jsx + whole App bundle clean (esbuild@0.21.5). NOT pushed.
+
+**Still open (not attempted this pass — deliberately, see below):** the item-level hash-encoding half of
+C1/C2/C3 (module/gym selection isn't in the URL at all — Back from a module returns to the previous *tab*,
+not "before this module"; refresh loses the open module; no copy-paste deep link to a specific module
+outside the My-Tracks path). This needs a real design pass (extend `navigate(view)`'s hash payload the way
+PAL's `hashRouting.js` does, or adopt path-based routes per the SEO/prerender plan) across `Concepts.jsx`
++ GroundTruth + every other deep-linkable surface — bigger than a same-session patch, and this session hit
+it while another concurrent session was actively mid-edit on `Concepts.jsx`/`App.jsx`/`GSL_PLAN.md`
+(observed via live file changes during this work) — deliberately scoped down to the safe, additive
+Concepts-only C6 fix above rather than risk a large conflicting edit to files under active concurrent
+work. Next session: do the hash-encoding design pass fresh, confirm no collision with whatever landed here
+in the meantime (check `git log`/diff first, per root CLAUDE.md's living-docs discipline).
+
+## Log 2026-07-08 (later still) — transformer module: #1 token journey + #2 scrollytelling SHIPPED
+The two structural items flagged "still open" earlier today are now built:
+- **Token journey (real math):** `runTransformer` in Concepts.jsx now additionally returns
+  `rawTokenEmbeds` (pre-position) + `normed` (post-attention residual+LN) — additive only, same numbers,
+  existing panels untouched. New `TokenJourney` in TransformerScenes.jsx: follow any token through
+  5 stages (Embed → +Position → Attend → FFN → Predict) with its 8-cell vector strip (real values),
+  a fixed 8→2 projection map with stage-trail, real averaged attention arrows + weights at the Attend
+  stage, and the real nextTokenDist probability race at Predict. Module passes
+  `result`/`tokens` props; component falls back to stacked scenes without them.
+- **Scrollytelling:** `Scrolly` in TransformerScenes.jsx — 8 beats (trap, journey, stamp, shaft, norm,
+  RMS, mask, predict) as scroll-driven caption blocks; the visual column is `sticky` (pinned) and swaps
+  between the persistent scene instances (hidden, not unmounted — state survives) via IntersectionObserver.
+  Beat→visual map keeps SceneHighway pinned across three consecutive beats (persistent object). New
+  compact `SceneMask` (encoder/editor vs decoder/author grid). SceneZoomOut remains the stacked finale.
+  Mobile: visual sticks at top, captions scroll beneath (45vh beats); desktop two-column (62vh beats).
+- Both files esbuild-verified. NOT yet pushed. Remaining nice-to-haves only: Scene 2 gradient factors
+  still illustrative; prose ==highlight== concept-tinting (InlineMd change) unpicked.
