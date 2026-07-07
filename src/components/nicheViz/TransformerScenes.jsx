@@ -381,56 +381,89 @@ export function SceneStampTest() {
 }
 
 // ── Scene 4 · The zoom-out ────────────────────────────────────────────────────
-const D_MODEL = 4096;
+const D_OPTS = [768, 1600, 2048, 4096, 8192, 12288];
+const REF_MODELS = [
+  { name: "GPT-2 small", L: 12, d: 768 },
+  { name: "GPT-2 XL", L: 48, d: 1600 },
+  { name: "Llama-2 7B", L: 32, d: 4096 },
+  { name: "Llama-2 70B", L: 80, d: 8192 },
+  { name: "GPT-3 175B", L: 96, d: 12288 },
+];
+const blockParams = (L, d) => (12 * L * d * d) / 1e9;
+const fmtB = b => (b < 1 ? `${Math.round(b * 1000)}M` : b < 1000 ? `${b.toFixed(1)}B` : `${(b / 1000).toFixed(2)}T`);
 
 export function SceneZoomOut() {
   const [layers, setLayers] = useState(24);
-  const paramsB = (12 * D_MODEL * D_MODEL * layers) / 1e9;
-  const flopsG = 2 * paramsB;
-  const chips = Math.min(layers, 16);
+  const [dIdx, setDIdx] = useState(3);
+  const d = D_OPTS[dIdx];
+  const paramsB = blockParams(layers, d);
+  const flops = 2 * paramsB;
+  const nearest = REF_MODELS.reduce((best, m) => {
+    const dist = Math.abs(Math.log(blockParams(m.L, m.d)) - Math.log(paramsB));
+    return dist < best.dist ? { m, dist } : best;
+  }, { m: null, dist: Infinity });
+  const closeEnough = nearest.dist < 0.7;
+  const chips = Math.min(layers, 18);
+  const chipW = 56 + 100 * (d / 12288);
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Scene 4 · The zoom-out</div>
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Scene · The zoom-out — build your own frontier model</div>
+        {closeEnough && nearest.m && (
+          <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-amber-600/20 text-amber-300 border border-amber-600/40">
+            you've roughly built {nearest.m.name}
+          </span>
+        )}
+      </div>
+      <div className="flex gap-6 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">depth</span>
-          <input type="range" min="6" max="96" step="6" value={layers} onChange={e => setLayers(+e.target.value)} className="w-40 accent-amber-500" />
-          <span className="text-xs font-mono text-zinc-200 w-16">{layers} layers</span>
+          <span className="text-xs text-violet-400 font-medium w-24">depth · linear</span>
+          <input type="range" min="6" max="96" step="2" value={layers} onChange={e => setLayers(+e.target.value)} className="w-36 accent-violet-500" />
+          <span className="text-xs font-mono text-zinc-200 w-20">{layers} layers</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-emerald-400 font-medium w-28">width · quadratic</span>
+          <input type="range" min="0" max={D_OPTS.length - 1} step="1" value={dIdx} onChange={e => setDIdx(+e.target.value)} className="w-36 accent-emerald-500" />
+          <span className="text-xs font-mono text-zinc-200 w-20">d = {d}</span>
         </div>
       </div>
       <div className="flex gap-4 items-center flex-wrap">
-        <svg viewBox="0 0 200 190" className="w-40 flex-shrink-0">
+        <svg viewBox="0 0 220 200" className="w-44 flex-shrink-0">
           {Array.from({ length: chips }, (_, i) => (
-            <g key={i}>
-              <rect x={40 - i * 0.6} y={166 - i * 9.5} width="120" height="8" rx="2" fill="#18181b" stroke={i % 2 === 0 ? "#8b5cf6" : "#10b981"} strokeWidth="0.8" opacity={0.55 + 0.45 * (i / chips)} />
-            </g>
+            <rect key={i} x={(220 - chipW) / 2 - i * 0.5} y={172 - i * 9.2} width={chipW} height="7.5" rx="2"
+              fill="#18181b" stroke={i % 2 === 0 ? "#8b5cf6" : "#10b981"} strokeWidth="0.8"
+              opacity={0.5 + 0.5 * (i / chips)} style={{ transition: "width .3s, x .3s" }} />
           ))}
-          <line x1="30" y1="178" x2="30" y2={168 - chips * 9.5} stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" />
-          {layers > 16 && <text x="100" y="14" textAnchor="middle" fill="#71717a" fontSize="11" fontFamily="monospace">… × {layers}</text>}
+          <line x1="28" y1="184" x2="28" y2={172 - chips * 9.2} stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" />
+          {layers > 18 && <text x="110" y="16" textAnchor="middle" fill="#71717a" fontSize="11" fontFamily="monospace">… × {layers}</text>}
         </svg>
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-3 flex-wrap flex-1 min-w-[220px]">
           <div className="rounded-lg bg-zinc-800/60 px-4 py-3">
-            <div className="text-[10px] text-zinc-500 uppercase tracking-wide">block params (d=4096)</div>
-            <div className="text-xl font-mono text-zinc-100">{paramsB.toFixed(1)}B</div>
+            <div className="text-[10px] text-zinc-500 uppercase tracking-wide">block params ≈ 12·L·d²</div>
+            <div className="text-2xl font-mono text-zinc-100" style={{ transition: "all .3s" }}>{fmtB(paramsB)}</div>
+            <div className="text-[10px] text-zinc-600">embeddings excluded</div>
           </div>
           <div className="rounded-lg bg-zinc-800/60 px-4 py-3">
-            <div className="text-[10px] text-zinc-500 uppercase tracking-wide">FLOPs / token</div>
-            <div className="text-xl font-mono text-zinc-100">{flopsG.toFixed(0)}G</div>
-          </div>
-          <div className="rounded-lg bg-zinc-800/60 px-4 py-3 space-y-1">
-            <div className="text-[10px] text-zinc-500 uppercase tracking-wide">the four levers</div>
-            <div className="text-[11px] leading-relaxed">
-              <span className="text-amber-400">shaft + regulator</span> <span className="text-zinc-600">·</span>{" "}
-              <span className="text-emerald-400">width (FFN)</span> <span className="text-zinc-600">·</span>{" "}
-              <span className="text-violet-400">attention</span> <span className="text-zinc-600">·</span>{" "}
-              <span className="text-zinc-300">masking</span>
-            </div>
+            <div className="text-[10px] text-zinc-500 uppercase tracking-wide">FLOPs / token ≈ 2·params</div>
+            <div className="text-2xl font-mono text-zinc-100">{flops < 1000 ? `${flops.toFixed(0)}G` : `${(flops / 1000).toFixed(1)}T`}</div>
+            <div className="text-[10px] text-zinc-600">every single generated token</div>
           </div>
         </div>
       </div>
+      <div className="flex gap-1.5 flex-wrap">
+        {REF_MODELS.map(m => {
+          const isNear = closeEnough && nearest.m?.name === m.name;
+          return (
+            <button key={m.name} onClick={() => { setLayers(m.L); setDIdx(D_OPTS.indexOf(m.d)); }}
+              className={`px-2 py-1 rounded-md text-[11px] font-mono transition-all border ${isNear ? "bg-amber-600/20 text-amber-300 border-amber-600/40" : "bg-zinc-800 text-zinc-500 border-zinc-700 hover:text-zinc-300"}`}>
+              {m.name} · {m.L}L × {m.d}
+            </button>
+          );
+        })}
+      </div>
       <p className="text-xs text-zinc-500 leading-relaxed border-l-2 border-zinc-600 pl-3">
-        Each chip is the full block you just built — ~12·d² ≈ 201M parameters at d=4096. Drag depth and watch the cost counter: depth is the axis that scales hardest, and it buys nothing without the shaft that keeps it trainable, the width where knowledge lives, and the masking that decides what the stack is for. Now answer the engineer in the closing scenario — "just add more layers" — with this slider in mind.
+        Each chip is the full block you just built. Now feel the two cost axes: double the depth and params double — <span className="text-violet-400">linear</span>. Double the width and they quadruple — <span className="text-emerald-400">quadratic</span>. Set 96 layers at d=12288 and the formula lands almost exactly on GPT-3's 175B: the machine from this page, stacked, IS the frontier model. Now answer the engineer from the closing scenario — "just add more layers" — knowing depth is one lever, width is where the knowledge lives, and neither comes free.
       </p>
     </div>
   );
@@ -484,10 +517,8 @@ export function TokenJourney({ result, tokens, suggestedStage }) {
   const vecs = stageVecs(result, stage.id);
   const vec = vecs[effFocus];
 
-  // trail: the focus token's projected position at every stage up to the current one
   const trail = JSTAGES.slice(0, Math.min(stageIdx, 3) + 1).map(s => proj2d(stageVecs(result, s.id)[effFocus], 150, 118, 40));
 
-  // averaged attention weights (over heads) for the focus row
   const nH = result.allHeadWeights.length;
   const attnRow = result.allHeadWeights.reduce(
     (acc, hw) => acc.map((a, j) => a + hw[effFocus][j] / nH),
@@ -613,21 +644,6 @@ export function SceneMask() {
   );
 }
 
-export default function TransformerScenes({ result, tokens }) {
-  const hasData = result && tokens && result.rawTokenEmbeds && result.normed;
-  return (
-    <div className="space-y-4">
-      {hasData && (
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-3">
-          <p className="text-xs text-zinc-400 leading-relaxed">
-            <span className="font-bold text-zinc-300 uppercase tracking-wide">The journey, live.</span>{" "}
-            The scenes you met inside the walkthrough used a fixed example. Here the journey binds to the
-            sentence, head count, and temperature you pick in the forward pass below — same exact d_model=8 math.
-          </p>
-        </div>
-      )}
-      {hasData && <TokenJourney result={result} tokens={tokens} />}
-      <SceneZoomOut />
-    </div>
-  );
+export default function TransformerScenes() {
+  return <SceneZoomOut />;
 }

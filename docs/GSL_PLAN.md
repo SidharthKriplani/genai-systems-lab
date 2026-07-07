@@ -207,3 +207,19 @@ Fix = the real structural change, done properly in the runner:
   standard's text–scene lock); default export slimmed to TokenJourney (live, bound to the module's
   sentence/heads/temperature controls) + SceneZoomOut in Hands-On.
 This registry is the rollout mechanism for every future module: write beats, write scenes, drop markers.
+
+## Log 2026-07-08 (post-review fixes) — user checked the built page; three fixes
+1. **Journey duplication:** TokenJourney rendered twice (inline in prose + live in Hands-On). Now ONCE —
+   the in-prose fixed-example instance (via the scene registry). TransformerScenes default export is now
+   just SceneZoomOut, moved to render AFTER the forward-pass panels (finale position, per the standard).
+2. **Forward-pass demo orphaned:** the pre-existing d_model=8 interactive had no title/context after the
+   restructure. Added a title strip ("The forward pass, live · d_model=8, exact") + one-line text tying it
+   back to the walkthrough's journey scene.
+3. **Zoom-out underwhelming:** rebuilt as "build your own frontier model" — TWO sliders (depth 6–96 =
+   linear cost, width d∈{768…12288} = quadratic cost), params ≈ 12·L·d² + FLOPs/token counters, chip stack
+   scales with both axes, five real-model preset buttons (GPT-2 small/XL, Llama-2 7B/70B, GPT-3), and a
+   "you've roughly built <model>" badge via log-distance matching. 96L × 12288 lands on ~174B ≈ GPT-3 —
+   the formula meeting reality is the wow. Embeddings-excluded caveat on the counter.
+Incident during the edit: a too-wide python replacement span briefly deleted TokenJourney + SceneMask
+(caught by esbuild on foundationScenes.jsx import check, re-inserted verbatim). All 4 touched files
+esbuild-verified clean. NOT yet pushed.

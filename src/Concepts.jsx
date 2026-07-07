@@ -1687,7 +1687,11 @@ function TransformerModule({ onNavigate }) {
           The transformer is the architecture behind every modern LLM. Each token is embedded into a vector, self-attention lets tokens interact with every other token in the sequence, feed-forward layers apply non-linear transformations, and a final projection produces a probability distribution over the vocabulary. <strong className="text-white">Temperature</strong> and <strong className="text-white">number of heads</strong> are real parameters — adjust them below and watch what changes. The model here is tiny (d_model=8), but the math is exact.
         </p>
       </div>
-      <TransformerScenes result={result} tokens={tokens} />
+      {/* Forward pass — title strip (the walkthrough's journey scene points here) */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-3">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">The forward pass, live · d_model=8, exact</div>
+        <p className="text-xs text-zinc-500 leading-relaxed mt-1">In the walkthrough you followed one token through this machine. Here is the whole machine, running — pick the sentence, change the head count, drag temperature, and watch every panel recompute. Nothing is illustrative: these are the real matrices.</p>
+      </div>
       {/* Top controls */}
       <div className="grid grid-cols-12 gap-3">
         {/* Sentence picker */}
@@ -1901,6 +1905,8 @@ function TransformerModule({ onNavigate }) {
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
         <p className="text-sm text-zinc-400 leading-relaxed italic">Every frontier LLM runs this same forward pass — embed, attend, FFN, predict — just scaled to hundreds of layers and billions of parameters. The architecture decisions that matter in production (number of heads, model dimension, context length) all connect directly back to what you see here. When you tune temperature in a production API call, you are reaching directly into the predict step of this diagram.</p>
       </div>
+
+      <TransformerScenes />
 
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
