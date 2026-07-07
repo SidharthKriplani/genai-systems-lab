@@ -51,7 +51,17 @@ export default function FoundationsRunner({
 
   function selectAnswer(qi, i) {
     if (submitted[qi]) return;
-    setAnswers(prev => { const a = [...prev]; a[qi] = i; return a; });
+    const isMulti = Array.isArray(mcqList[qi]?.correct);
+    setAnswers(prev => {
+      const a = [...prev];
+      if (isMulti) {
+        const cur = Array.isArray(a[qi]) ? a[qi] : [];
+        a[qi] = cur.includes(i) ? cur.filter(x => x !== i) : [...cur, i].sort((x, y) => x - y);
+      } else {
+        a[qi] = i;
+      }
+      return a;
+    });
   }
 
   function submitAnswer(qi) {
@@ -413,7 +423,16 @@ function tokenizeInline(str) {
 // ── QuestionBlock ──────────────────────────────────────────────────────────────
 
 function QuestionBlock({ qi, total, q, selected, isSubmitted, onSelect, onSubmit }) {
-  const isCorrect = selected === q.correct;
+  // Multi-select: q.correct is an array of indices ("Select all that apply").
+  // Single-select (default, unchanged behavior): q.correct is a number.
+  const isMulti = Array.isArray(q.correct);
+  const selArr = Array.isArray(selected) ? selected : [];
+  const correctArr = isMulti ? q.correct : [q.correct];
+  const isCorrect = isMulti
+    ? selArr.length === correctArr.length && correctArr.every(c => selArr.includes(c))
+    : selected === q.correct;
+  const canSubmit = isMulti ? selArr.length > 0 : selected !== null;
+
   return (
     <div className="space-y-3">
       {total > 1 && (
@@ -422,10 +441,15 @@ function QuestionBlock({ qi, total, q, selected, isSubmitted, onSelect, onSubmit
         </p>
       )}
       <p className="text-sm font-semibold text-zinc-100 leading-relaxed">{q.question}</p>
+      {isMulti && (
+        <p className="text-[10px] font-mono text-violet-400/80 uppercase tracking-widest">
+          Select all that apply
+        </p>
+      )}
       <div className="space-y-2">
         {q.options.map((opt, i) => {
-          const sel   = selected === i;
-          const right = q.correct === i;
+          const sel   = isMulti ? selArr.includes(i) : selected === i;
+          const right = correctArr.includes(i);
           let cls = "text-zinc-400 border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 hover:text-zinc-300";
           if (isSubmitted) {
             if (right) cls = "text-emerald-300 border-emerald-800/50 bg-emerald-950/20";
@@ -442,7 +466,7 @@ function QuestionBlock({ qi, total, q, selected, isSubmitted, onSelect, onSubmit
               className={`w-full text-left text-sm px-4 py-3 rounded-lg border transition-all ${cls}`}
             >
               <span className="font-mono text-[11px] mr-2 opacity-60">
-                {String.fromCharCode(65 + i)}.
+                {isMulti ? (sel ? "☑" : "☐") : `${String.fromCharCode(65 + i)}.`}
               </span>
               {opt}
               {isSubmitted && right && <span className="ml-2 text-emerald-400 font-bold">✓</span>}
@@ -464,7 +488,7 @@ function QuestionBlock({ qi, total, q, selected, isSubmitted, onSelect, onSubmit
       ) : (
         <button
           onClick={onSubmit}
-          disabled={selected === null}
+          disabled={!canSubmit}
           className="px-5 py-2.5 rounded-lg text-sm font-bold border border-violet-800/50 text-violet-400 hover:border-violet-600 hover:text-violet-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
           Check answer
