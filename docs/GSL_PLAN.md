@@ -104,6 +104,33 @@ LOCKED NAMES: Project Labs → **Workshop**; Code Labs → **Coding Dojo**; Read
   author-vs-editor (causal mask). Illustration block, keyPoints, recap, mcqs untouched. All technical
   claims verified present post-rewrite (4× FFN, RoPE, pre/post-norm formulas, RMSNorm, Llama/Mistral).
   esbuild-verified. NOT yet pushed.
-- Next for this workstream: scene rebuild of the transformer interactive (scrollytelling, residual-highway
-  gradient-pulse scene prototyped and approved in chat 2026-07-08), then roll voice to the rest of the
-  Language Models gym (attention, kv-cache, sampling, tokenizer…).
+- Scenes SHIPPED same day: new `src/components/nicheViz/TransformerScenes.jsx` (default export, imported +
+  rendered at the top of TransformerModule in Concepts.jsx, above the existing d_model=8 forward-pass demo).
+  Three scenes, text-scene locked to the rewritten prose: Scene 1 palette trap (attention presses = weighted
+  averages trapped in the dashed linear-span hull; FFN fold escapes it), Scene 2 elevator shaft (residual rail
+  + gradient pulse, residuals on/off, pre/post-norm, per-sublayer |dL/dx| readouts; factors illustrative
+  1.0/0.82/0.5), Scene 3 stamp test (REAL attention over three 4-d vectors: swap words = identical outputs;
+  RoPE-style rotation stamps = outputs diverge, live max-delta). esbuild-verified. NOT yet pushed.
+- Same-day additions closing the brainstorm gaps: Scene 1 gained a warping background GRID (flat -> folded
+  on FFN, linear-vs-nonlinear made spatial) + a pause-and-predict gate that locks the FFN button until the
+  user answers "what could free the points?"; Scene 2 gained a live per-sublayer FORWARD-RMS METER driven by
+  a new "Regulator: on/off" toggle (animates the ASCII drift table: 1.0 flat vs 1->25 explosion) + a predict
+  gate before residuals can be turned off; NEW Scene 4 "zoom-out" (chip stack, depth slider 6-96, live
+  params/FLOPs counters at d=4096 ~12d^2/block, four-levers color legend) feeding the closing scenario.
+- Still open for this module (the two structural items, deliberate defer): (1) scrollytelling - pin scenes,
+  scroll-drive the prose beats (FoundationsRunner layout change, affects all modules); (2) the persistent
+  token-journey object bound to runTransformer's real d_model=8 numbers (needs props from TransformerModule
+  into the scenes + per-beat choreography). Also: Scene 2 gradient factors still illustrative; prose
+  ==highlight== tinting per concept color would need an InlineMd change in the runner.
+- Next: roll voice + scenes to the rest of the Language Models gym (attention, kv-cache, sampling, tokenizer).
+
+## Log 2026-07-08 (later) — prerender scripts fixed: esbuild .bin ENOEXEC on the Mac
+User's `npm run build` failed in `prerender-modules.js` (and would have in `prerender-companies.js`):
+both spawned `node_modules/.bin/esbuild` via execFileSync → ENOEXEC (platform-mismatched .bin shim),
+while prerender-gt.js (vm-eval, no esbuild) wrote its 330 pages fine. Fix: both scripts now use
+esbuild's JS API (`await import("esbuild")` + `esbuild.build({...})`) — the same resolution path vite
+uses, which is healthy on the Mac. Fallback message points at `npm rebuild esbuild` / reinstall if the
+JS API itself can't load. Dead `execFileSync` imports removed; node --check clean on both.
+Also: 3B1B-STANDARD.md gained a "Definition of done" section (text + scenes + gate + claims-check +
+esbuild + prerender-awareness ship together; deferrals must be explicit) — added after the transformer
+rewrite initially shipped text-only.

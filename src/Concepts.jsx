@@ -35,6 +35,7 @@ import GQAMemoryViz from "./components/nicheViz/GQAMemoryViz.jsx";
 import VoiceLatencyBudget from "./components/nicheViz/VoiceLatencyBudget.jsx";
 // MSL-parity: interactives for the remaining 27 teaching-only modules.
 import RopeViz from "./components/nicheViz/RopeViz.jsx";
+import TransformerScenes from "./components/nicheViz/TransformerScenes.jsx";
 import SparseAttentionViz from "./components/nicheViz/SparseAttentionViz.jsx";
 import DenseVsSparseViz from "./components/nicheViz/DenseVsSparseViz.jsx";
 import QueryRewritingViz from "./components/nicheViz/QueryRewritingViz.jsx";
@@ -1799,6 +1800,7 @@ function TransformerModule({ onNavigate }) {
           The transformer is the architecture behind every modern LLM. Each token is embedded into a vector, self-attention lets tokens interact with every other token in the sequence, feed-forward layers apply non-linear transformations, and a final projection produces a probability distribution over the vocabulary. <strong className="text-white">Temperature</strong> and <strong className="text-white">number of heads</strong> are real parameters — adjust them below and watch what changes. The model here is tiny (d_model=8), but the math is exact.
         </p>
       </div>
+      <TransformerScenes />
       {/* Top controls */}
       <div className="grid grid-cols-12 gap-3">
         {/* Sentence picker */}
@@ -12526,12 +12528,28 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
 
   // Deep-link straight to a specific module (e.g. "Study →" from My Tracks) —
   // resolve its gym from GYMS.moduleIds and open the module runner directly.
+  // C6 fix (2026-07-08 LAB-STANDARDS audit): also remember that this open
+  // came from My Tracks, so the module's own "← Back" returns there instead
+  // of dropping the user into the gym's module list (GSL's C6 was FAIL — the
+  // only lab where Study→ couldn't return to the originating track).
+  const [openedFromTracks, setOpenedFromTracks] = useState(false);
   useEffect(() => {
     if (!initialModule) return;
     const gym = GYMS.find(g => g.moduleIds?.includes(initialModule));
     if (gym) setActiveGym(gym.id);
     setActive(initialModule);
+    setOpenedFromTracks(true);
   }, [initialModule]);
+
+  function handleBack() {
+    if (openedFromTracks) {
+      setOpenedFromTracks(false);
+      setActive(null);
+      onNavigate({ tab: "my-tracks" });
+    } else {
+      setActive(null);
+    }
+  }
 
   // Phase 0.3 pilot — one-time, additive migration of legacy Concepts agent mastery ids
   // to their Agent Lab equivalents so progress isn't lost when agent education moves to
@@ -12560,6 +12578,9 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
 
   function openModule(id) {
     setActive(id);
+    // A normal in-gym browse — any pending "opened from My Tracks" origin
+    // from an earlier deep-link is now stale.
+    setOpenedFromTracks(false);
     track("concept_module_opened", { module: id, source: activeGym || "direct" });
   }
 
