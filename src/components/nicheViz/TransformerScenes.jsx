@@ -49,7 +49,7 @@ const GRID_FOLDED = gridPaths(true);
 
 const GATE1_OPTIONS = ["More attention layers", "A nonlinear transformation", "More attention heads"];
 
-function SceneBlendTrap() {
+export function SceneBlendTrap() {
   const [pts, setPts] = useState(P0);
   const [attnCount, setAttnCount] = useState(0);
   const [folded, setFolded] = useState(false);
@@ -171,7 +171,7 @@ const RMS_ON = [1.0, 1.05, 1.02, 1.08, 1.0, 1.04];
 const RMS_OFF = [1.0, 1.9, 3.6, 6.9, 13.0, 25.0];
 const GATE2_OPTIONS = ["≈ 1.00 — unchanged", "≈ 0.30 — reduced", "≈ 0.02 — effectively gone"];
 
-function SceneHighway() {
+export function SceneHighway() {
   const [res, setRes] = useState(true);
   const [pre, setPre] = useState(true);
   const [normOn, setNormOn] = useState(true);
@@ -328,7 +328,7 @@ function attend(vecs) {
   });
 }
 
-function SceneStampTest() {
+export function SceneStampTest() {
   const [swapped, setSwapped] = useState(false);
   const [stamped, setStamped] = useState(false);
 
@@ -383,7 +383,7 @@ function SceneStampTest() {
 // ── Scene 4 · The zoom-out ────────────────────────────────────────────────────
 const D_MODEL = 4096;
 
-function SceneZoomOut() {
+export function SceneZoomOut() {
   const [layers, setLayers] = useState(24);
   const paramsB = (12 * D_MODEL * D_MODEL * layers) / 1e9;
   const flopsG = 2 * paramsB;
@@ -467,7 +467,7 @@ function stageVecs(result, stageId) {
   return result.finalOut; // ffn + predict
 }
 
-function TokenJourney({ result, tokens, suggestedStage }) {
+export function TokenJourney({ result, tokens, suggestedStage }) {
   const [stageIdx, setStageIdx] = useState(0);
   const [focus, setFocus] = useState(tokens.length - 1);
 
@@ -576,7 +576,7 @@ function TokenJourney({ result, tokens, suggestedStage }) {
 }
 
 // ── Scene · Author or editor (causal mask structure) ─────────────────────────
-function SceneMask() {
+export function SceneMask() {
   const [causal, setCausal] = useState(true);
   const toks = ["the", "cat", "sat", "here"];
   return (
@@ -613,79 +613,20 @@ function SceneMask() {
   );
 }
 
-// ── Scrollytelling: pinned visual, beats drive the scene ─────────────────────
-const BEATS = [
-  { id: "trap", title: "The palette trap", text: "One attention layer: every vector may move only to a weighted average of the others — somewhere inside the palette. Stack another and you're blending blends. Apply attention a few times and watch the points drift inward, trapped; answer the gate, then fold." },
-  { id: "journey", title: "A token's journey", text: "Now follow one real token — eight exact numbers, no illustration. Step it through: embedded, position-stamped, pulled by attention toward what it attends to, then folded by the FFN somewhere no blend could reach. The workshop where the model's knowledge lives." },
-  { id: "stamp", title: "The stamp test", text: "Attention alone is order-blind — a set operation. Swap the words and the outputs are provably identical, to the last decimal. Turn the position stamps on and the geometry finally knows where things stand. RoPE encodes exactly this, as rotation." },
-  { id: "shaft", title: "The shaft", text: "Go deep and the third crisis appears: training's backward message shrinks at every handoff — halve it a hundred times and nothing reaches the early layers. Turn residuals off and send the pulse: watch it die before sublayer 1. Then restore the shaft: output = input + block(input)." },
-  { id: "norm", title: "Where the regulator sits", text: "Switch to post-norm: the regulator sits on the shaft, taxing every gradient at every floor — fragile at depth, needs warmup. Pre-norm slides it inside the branch — x + Sublayer(LayerNorm(x)) — and the highway stays pristine. That one placement is why modern LLMs train stably." },
-  { id: "rms", title: "The swelling stream", text: "The shaft has a quieter cost: every floor adds to what rides past, and additions compound. Turn the regulator off and watch the forward meter — 1 → 25 in six sublayers, ~140 by layer 24. The norm re-centers the signal after every addition." },
-  { id: "mask", title: "Author or editor", text: "Last decision: may a token see the future? The editor (encoder) sees the whole page — richest embeddings. The author (decoder) masks what isn't written yet — that's generation. One bit splits the transformer family, and mixing them up costs real retrieval quality." },
-  { id: "predict", title: "The prediction", text: "The payoff: the last position's finished vector meets the output projection and becomes a probability race over the next token. When you tune temperature in a production API call, you are reaching directly into this step." },
-];
-const BEAT_VISUAL = { trap: "trap", journey: "journey", stamp: "stamp", shaft: "highway", norm: "highway", rms: "highway", mask: "mask", predict: "journey" };
-
-function Scrolly({ result, tokens }) {
-  const [active, setActive] = useState(0);
-  const refs = useRef([]);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) setActive(Number(e.target.dataset.beat)); }),
-      { rootMargin: "-35% 0px -55% 0px" }
-    );
-    refs.current.forEach(el => el && obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-
-  const visual = BEAT_VISUAL[BEATS[active].id];
-  return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-5">
-      <div className="lg:order-2 sticky top-2 lg:top-4 self-start z-10 space-y-2 bg-zinc-950/95 lg:bg-transparent rounded-xl">
-        <div className={visual === "trap" ? "" : "hidden"}><SceneBlendTrap /></div>
-        <div className={visual === "journey" ? "" : "hidden"}>
-          <TokenJourney result={result} tokens={tokens} suggestedStage={BEATS[active].id === "predict" ? "predict" : BEATS[active].id === "journey" ? "embed" : undefined} />
-        </div>
-        <div className={visual === "stamp" ? "" : "hidden"}><SceneStampTest /></div>
-        <div className={visual === "highway" ? "" : "hidden"}><SceneHighway /></div>
-        <div className={visual === "mask" ? "" : "hidden"}><SceneMask /></div>
-      </div>
-      <div className="lg:order-1">
-        {BEATS.map((b, i) => (
-          <div key={b.id} data-beat={i} ref={el => (refs.current[i] = el)}
-            className={`min-h-[45vh] lg:min-h-[62vh] flex items-center transition-opacity duration-300 ${i === active ? "opacity-100" : "opacity-35"}`}>
-            <div>
-              <div className="text-[10px] font-mono text-zinc-600 mb-1">{i + 1} / {BEATS.length}</div>
-              <div className="text-sm font-bold text-zinc-200 mb-2">{b.title}</div>
-              <p className="text-sm text-zinc-400 leading-relaxed">{b.text}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function TransformerScenes({ result, tokens }) {
   const hasData = result && tokens && result.rawTokenEmbeds && result.normed;
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-3">
-        <p className="text-xs text-zinc-400 leading-relaxed">
-          <span className="font-bold text-zinc-300 uppercase tracking-wide">The block, as a journey.</span>{" "}
-          Scroll: the visual stays pinned while the story walks through it — the palette trap, one real token's journey, the stamp test, the shaft, the mask, the prediction. Every number in the journey is the exact d_model=8 math from the sentence you pick below.
-        </p>
-      </div>
-      {hasData ? (
-        <Scrolly result={result} tokens={tokens} />
-      ) : (
-        <>
-          <SceneBlendTrap />
-          <SceneHighway />
-          <SceneStampTest />
-        </>
+      {hasData && (
+        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-3">
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            <span className="font-bold text-zinc-300 uppercase tracking-wide">The journey, live.</span>{" "}
+            The scenes you met inside the walkthrough used a fixed example. Here the journey binds to the
+            sentence, head count, and temperature you pick in the forward pass below — same exact d_model=8 math.
+          </p>
+        </div>
       )}
+      {hasData && <TokenJourney result={result} tokens={tokens} />}
       <SceneZoomOut />
     </div>
   );

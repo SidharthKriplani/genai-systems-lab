@@ -188,3 +188,22 @@ The two structural items flagged "still open" earlier today are now built:
   Mobile: visual sticks at top, captions scroll beneath (45vh beats); desktop two-column (62vh beats).
 - Both files esbuild-verified. NOT yet pushed. Remaining nice-to-haves only: Scene 2 gradient factors
   still illustrative; prose ==highlight== concept-tinting (InlineMd change) unpicked.
+
+## Log 2026-07-08 (final) — scenes INTERLEAVED with the prose beats (supersedes the scrolly)
+User feedback on the deployed page: scenes sat in their own block, apart from the walkthrough text.
+Fix = the real structural change, done properly in the runner:
+- `src/utils/tinyTransformer.js` — NEW: runTransformer + TRANSFORMER_SENTENCES + NEXT_CANDIDATES + all
+  math helpers extracted from Concepts.jsx (identical numbers; Concepts now imports runTransformer/
+  TRANSFORMER_SENTENCES/seededRand from it). Breaks the would-be circular import for scenes.
+- `src/components/nicheViz/foundationScenes.jsx` — NEW registry: `FOUNDATION_SCENES["<moduleId>/<sceneId>"]`
+  → component. Includes `TokenJourneyStandalone` (fixed example: sentence 0, 2 heads, T=1.0).
+- `FoundationsRunner.jsx` — explanation[] grammar extended: `{ type: "scene", sceneId }` renders the
+  registered scene INLINE at that point in the flow. Backward compatible; unknown ids no-op; the SEO
+  prerender already returns "" for unknown item types (verified: transformer.html clean, 139 pages).
+- `foundationsRunnerData.js` transformer explanation[]: 5 scene markers inserted — trap after beat 1;
+  journey + stamp after beat 2; highway after beat 3; mask after the final beat.
+- `TransformerScenes.jsx`: scenes now named exports; the Scrolly/BEATS condensed-caption experiment
+  REMOVED (superseded — the real prose now drives the scenes directly, which is the truer form of the
+  standard's text–scene lock); default export slimmed to TokenJourney (live, bound to the module's
+  sentence/heads/temperature controls) + SceneZoomOut in Hands-On.
+This registry is the rollout mechanism for every future module: write beats, write scenes, drop markers.

@@ -2,6 +2,7 @@
 // Schema: runnerData.mcqs (array) preferred; runnerData.mcq (object) supported for compat.
 
 import { useState } from "react";
+import { FOUNDATION_SCENES } from "./components/nicheViz/foundationScenes.jsx";
 
 export default function FoundationsRunner({
   moduleId,
@@ -201,6 +202,10 @@ export default function FoundationsRunner({
                     <pre className="text-xs font-mono text-zinc-300 leading-relaxed overflow-x-auto whitespace-pre">{item.content}</pre>
                   </div>
                 );
+              }
+              if (item?.type === "scene") {
+                const Scene = FOUNDATION_SCENES[`${moduleId}/${item.sceneId}`];
+                return Scene ? <div key={i} className="my-2"><Scene /></div> : null;
               }
               return null;
             })}
