@@ -278,3 +278,68 @@ Ran a second, mechanically-driven fix-pass (9 parallel agents again, same file s
 **Files touched (all esbuild-verified clean, individually and as full bundles — `src/data/foundationsRunnerData.js --bundle`, `src/FoundationsRunner.jsx`, `src/Concepts.jsx`):** `src/FoundationsRunner.jsx`, `src/data/foundationsRunnerData.js`, and all 25 files that export an mcq-bearing `RUNNER_*` object: `src/data/foundations/{quantization,dpo,speculative-decoding,moe,distillation,market-gap,gap-routing-security,gap-agenteval-ragingest,retrieval-breadth,breadth-2,nlp-foundations-1,nlp-foundations-2,nlp-foundations-3,nlp-foundations-4,production-tone,deepen-thin}.js`, `src/data/agents/{agent-core,agent-scale,agent-sim,agent-eco}.js`, `src/data/tracks/{model-customization,inference-optimization,voice-ai,code-generation}.js`, `src/data/playground/playground-labs.js`. Also unrelated but fixed same session: `src/Concepts.jsx` `NEXT_TOKEN_PROMPTS[3]` ("Once upon a time…") had all 4 options `correct: false` (crashed on reveal) — fixed to mark the highest-prob option correct.
 
 **NOT pushed.** `git add src/ docs/` covers everything above (the temp verify script is at repo root, outside `src/`, so it's automatically excluded — no special care needed). Build on Mac first per standing convention.
+
+---
+
+## Log 2026-07-08 — MCQ length-tell fix, MSL/PAL parity, content-audit rubric, 3B1B scope check
+
+Follow-on to the earlier same-day "Quick Check MCQ length-tell fix" entry (GSL's own quiz rebalance,
+93.1%→2.7%). This entry covers the cross-lab parity work + the 3B1B interactive-scoping question.
+
+**Content Audit Rubric (new, root-level doc):** `/Users/ASUS/Documents/Professional/BreakLabs/CONTENT-AUDIT-RUBRIC.md`.
+10 categories derived from the real GSL `tokenizer`/`attention` content fixes done earlier the same day
+(undefined term before use, tested-but-not-taught, asserted-not-shown, unverified/incorrect claim, hidden
+interactive parameter, missing causal "so what", structural/proximity mismatch, under-explained concept
+vs siblings, confusable mechanism relationship, dangling thread/missing handoff). Explicitly scoped OUT:
+MCQ length-tell (separate, already-tooled — use `_verify_mcq_balance.mjs`) and voice/prerender fidelity
+(3B1B-STANDARD.md's job). Not yet applied systematically to the other 137 GSL modules or to MSL/PAL —
+exists so that pass can be run later without re-deriving the categories.
+
+**3B1B interactive-scoping check (tasks #41/#42 in this session):** confirmed `3B1B-STANDARD.md` read.
+Current scene-registry state: `src/components/nicheViz/foundationScenes.jsx`'s `FOUNDATION_SCENES` object
+has exactly 5 keys, all under `"transformer/*"` (trap, journey, stamp, highway, mask) — i.e. the scene
+mechanism (named-export scenes wired via `{type:"scene",sceneId}` markers in `explanation[]`, rendered
+inline by FoundationsRunner) currently exists for exactly ONE module (`transformer`, the living template).
+`groundUp` field (the 3B1B narrative rewrite, independent of scenes) is present on 15 modules as of this
+check: `transformer` + 14 others across `foundationsRunnerData.js`, `agents/agent-core.js`,
+`agents/agent-scale.js`, `foundations/breadth-2.js`, `distillation.js`, `dpo.js`,
+`gap-agenteval-ragingest.js`, `gap-routing-security.js`, `market-gap.js`, `moe.js`, `quantization.js`,
+`retrieval-breadth.js`, `speculative-decoding.js`, `tracks/inference-optimization.js`,
+`tracks/model-customization.js` — these have prose-only rewrites, NOT yet scene-upgraded (per the
+Definition of Done, a groundUp-only module is a partial/deferred state, not finished — should be logged
+as such wherever it hasn't been already). Total GSL foundation module count: 218 (per `foundationsRunnerData.js`
+module-object count at this check — includes all spread-in track files). Net: **~203 modules with no
+groundUp rewrite and 217 with no scene** — the rollout (transformer done → attention → kv-cache → sampling
+→ tokenizer → Retrieval, per the spec's stated order) is barely started relative to the full module count.
+Scoping conclusion: this is a large, multi-session content build, not a single-pass task — the existing
+rollout order in 3B1B-STANDARD.md stands as the plan; no change to that ordering recommended here.
+
+**MSL quiz fix-pass — DONE, measured.** Built shared `src/components/foundations/CheckQuestion.jsx`
+(supports both legacy single-letter `answer` and new array `answer` for multi-select "select all that
+apply", checkbox UI, exact-set grading) to replace the `CheckQuestion` function duplicated verbatim across
+all 19 `src/tabs/foundations/*FoundationTab.jsx` files — all 19 now import the shared component instead
+(local defs removed, JSX call sites unchanged). All 19 `*Modules.js` data files in `src/data/foundations/`
+rebalanced against `_verify_mcq_balance.mjs` (same script pattern as GSL's, adapted for MSL's
+`checkQuestions: [{q, options:["A) ...",...], answer:'A'}]` schema, routed through `npx -y esbuild@0.21.5`
+to dodge a macOS-vs-Linux-sandbox esbuild binary mismatch). Baseline 795 questions, 98.2% flagged (length
+gives away the answer) → final full-repo sweep: every file at or below ~27% flagged (several at 0%), all
+comfortably at/under the ~25-35% chance-level target. Every module across all 19 files also got exactly
+one question converted to multi-select (`answer: ['X','Y']`), per the user's "at least one multi-option
+question per module" rule. Full per-file numbers logged in MSL's own `docs/BACKLOG.md`.
+
+**PAL quiz fix-pass — DONE, measured, single-select only (deliberate scope decision).** PAL has no shared
+quiz runner — 44 files across 4 foundation families (stats/exp/metrics/rca), 3 different inline schema
+variants. Judgment call (approved by user: "okay do it as per your calls now"): did NOT add multi-select
+support to PAL this pass — forcing it onto 44 bespoke files individually was judged higher-risk than the
+core length-tell fix; logged as a future, separately-scoped item if wanted. `_verify_mcq_balance.mjs`
+built fresh for PAL (bracket-balanced extraction + `new Function()` eval, no bundling — handles all 3
+schema shapes generically). All 44 files worked through in 4 batches (stats+rca=14, exp=14, metrics
+split 8+8); files with genuine length-tell MCQs were rebalanced (trim correct/expand distractors, `correct`
+value never changed), files confirmed to be non-MCQ bespoke interactives (drag-classify, match-to-label,
+select-all-that-apply checklists where length carries no signal) were correctly left untouched. Final
+full-repo sweep via the script: 25/25 matched questions at 0% flagged (12 further questions skipped by the
+script's shape-recognition heuristics — spot-checked by hand in the batch reports, confirmed either already
+balanced or non-MCQ). Full per-file numbers logged in root `CLAUDE.md`.
+
+**Not pushed.** Standard rules apply — GSL push via `rm -f .git/index.lock .git/HEAD.lock` then `git add
+src/` (never `EXTERNAL-ASSESSMENT.md`), hand to Sidharth's Mac for build+push.
