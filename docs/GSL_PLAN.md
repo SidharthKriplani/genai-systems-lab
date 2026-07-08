@@ -567,3 +567,141 @@ All ~15 fix agents ran real esbuild@0.21.5 (and node --check for plain-JS files)
 own edits; I independently re-ran a full-app bundle check on `src/App.jsx` afterward (11.7mb, 0 errors,
 only pre-existing unrelated warnings) plus confirmed `RUNNER_DATA` key count is exactly 133 (139 minus the
 6 intentionally-deleted orphans). Not pushed — same approve-first workflow as everything else in this repo.
+
+---
+
+## 2026-07-08 (late) — attention module: first application of 3B1B-STANDARD.md rules 7-12
+
+`3B1B-STANDARD.md` gained 6 new voice rules + 2 edited rules (1, 6) + expanded Pass-2 checklist this
+session, derived from a long back-and-forth on the `attention` module specifically: explicit mechanical
+labeling, one worked illustration landed after buildup, bracket-reminders on first appearance, set-base
+vs. activate-recall framing (load-bearing concepts only), cross-module continuity, no unexplained
+parameter origins, jargon-second tightened to "twice demonstrated," length discipline recalibrated
+(recall-reinforcement of load-bearing concepts is density, not padding — video gets free multi-channel
+reinforcement, reading doesn't).
+
+Applied the full writer+adversarial two-pass process to `attention` (first real run under the new rules).
+Pass 1: rewrote groundUp (cross-module bridge from `tokenizer`'s embedding-table handoff), added explicit
+W_Q/W_K origin (learned via gradient descent, not derived), added raw/scaled-relevance-score + attention-weight
+labeling throughout, added a softmax bracket-reminder on first appearance, added one consolidated
+end-to-end worked trace (reusing real numbers already computed, no fabrication) closing on a
+pause-and-predict using the user's own sentence, fixed a Definition-of-Done rule-6 violation ("Hands-On
+tab below" → named reference).
+
+Pass 2 (separate agent, draft-only, no writer reasoning visible): 6 real violations found —
+(1) "piling up" fired before its second concrete demonstration, (2) a dot-product restated from scratch
+instead of recall-framed, (3) √d_k's origin category (fixed-by-design) left implicit, (4) the quadratic-cost
+paragraph opened with no driving question from the prior paragraph and crammed 3 threads together,
+(5) missing "so what" for the O(n²) cost, (6) the scenario overclaimed certainty by conflating
+attention-sink with the separately-evidenced "lost in the middle" phenomenon. All 5 clear-cut fixes applied
+directly; targeted, not full rewrite. Technical-claims grep confirmed all formulas/terms survived
+(√d_k, Q·K, W_Q, W_K, softmax ×8, attention weight ×3, raw/scaled relevance score, O(n²), multi-head,
+lost in the middle). esbuild clean.
+
+**One violation NOT content-fixed — a genuine rule-design tension surfaced by first real use, flagged to
+the user rather than silently resolved:** rule 1 (jargon-second, "twice demonstrated") assumes a term can
+always get two separate concrete demonstrations before naming. Scene rule 1 (one persistent running
+example) means Q/K, by construction, are only shown in ONE concrete pairing (agreed/surgeon) before being
+named — a relational concept can't easily get "two instances" inside a single-example module the way a
+purely mechanical operation like "pile up" can. Open question for the user: should relational
+load-bearing terms (Q/K/V, attention weight) get an exception to the twice-rule, or should the spec
+require a second lightweight illustrative pairing (not a second full running example) before naming
+those specifically?
+
+Not yet done: NLP/scene rebuild for `attention` (0 scene markers currently, unlike `transformer`'s 5) —
+still an open, undecided question per the standing note. Next in rollout order per 3B1B-STANDARD.md:
+kv-cache, sampling, tokenizer (tokenizer already has one known Definition-of-Done rule-6 violation of its
+own — "Hands-On tab below" — same fix pattern as attention's, not yet applied).
+
+**Rule 1 tension resolved (user decision):** kept strict — no exception for relational load-bearing terms.
+Spec updated: the second instance for a relational term (Q/K etc.) can be a small lightweight illustrative
+pairing rather than a second full running example, keeping scene rule 1 intact. Applied retroactively to
+`attention`: added a second, lightweight *treated*/*surgeon* pairing before Q/K are named (was previously
+only one pairing — *agreed*/*surgeon* — before naming). esbuild clean. `attention` module now fully clean
+against Pass 2's own checklist.
+
+## 2026-07-08 (later) — kv-cache module: second application, note-taking metaphor added
+
+Bridged from `nextoken` (the true conceptual prerequisite — autoregressive one-token-at-a-time generation)
+rather than `hallucination` (its flat-list neighbor but an unrelated topic) — rule 11 is about genuine
+conceptual continuity, not mechanical list-adjacency; noted as a judgment call, not asked up front since
+low-stakes. Pass 2 (separate agent) found: "KV cache" named before K/V concretely demonstrated even once,
+GQA used 2 beats before its own definition, two load-bearing facts (999-recompute count, 0.33MB/token)
+restated verbatim instead of recall-framed, and the formula's leading `2` (K+V) / `2 bytes` (fp16) left
+unlabeled. All fixed directly. Also added a genuinely new element: a text-only metaphor (re-reading a book
+vs. keeping notes) — the auditor flagged that, unlike `attention`/`transformer`, this module had *zero*
+spatial/physical metaphor anywhere (voice rule 2), going straight from crisis to formula. No scene built
+for it (deferred, same open status as `attention`'s 0-scenes gap — scene-building for both is still an
+undecided, unscheduled question). esbuild clean; KV/GQA/0.33MB/PagedAttention terms all confirmed present.
+
+## 2026-07-08 (later still) — sampling module: third application, heaviest fix of the three
+
+Pass 2 found the most violations yet — "sampling," "temperature," "greedy decoding"/"temperature=0,"
+top-p, and top-k were all named before any concrete instance (rule 1), no metaphor existed anywhere
+(voice rule 2, same gap as kv-cache's original state), softmax's bracket-reminder relied on carryover
+from a different module (rule 9), the illustration's intermediate "scaled logits" step was unlabeled
+(rule 7), tail-controls read as a bolted-on list with no driving question (rule 2), order of operations
+between temperature/top-p/top-k/repetition-penalty was never stated (audit smell 9), and "creative
+generation" temperature lacked the concrete range its siblings had (smell 3/8). One audit item was a
+false positive — "(tempgame)" is a real, deliberate internal module-ID cross-reference, not a leftover
+placeholder — left as-is.
+
+Full metaphor built this time (marble jar + heat/cold): probability distribution = jar of marbles (more
+marbles = higher probability), sampling = reaching in, temperature = how much the jar jostles (hot =
+spreads chances to smaller piles, cold = settles onto the biggest pile, T→0 = frozen = greedy). Reused
+the SAME already-computed toy numbers (87/12/2 confident jar, 51/31/19 flat jar) as the required second
+concrete instance for top-p/top-k/min-p — no new numbers fabricated, satisfies rule 1's twice-requirement
+via reuse rather than invention. Also caught and fixed a real terminology bug introduced mid-edit: the
+illustration's percentages were mislabeled "attention weights" (a different module's term) instead of
+"sampling probabilities" — fixed before it shipped. esbuild clean; all technical terms (logits, softmax,
+greedy decoding, temperature=0, top-p, top-k, min-p, repetition penalty, nucleus sampling, both numeric
+ranges) confirmed present via grep.
+
+Three modules in (attention, kv-cache, sampling): every one so far had zero pre-existing scene/metaphor
+in groundUp before this pass — worth flagging as a pattern, not a coincidence, when scene-building for
+these gets scheduled.
+
+## 2026-07-08 (final) — tokenizer module: fourth application, live tiktoken re-verification
+
+No cross-module bridge added — `tokenizer` genuinely has no conceptual predecessor in the gym (it's the
+true pipeline entry point; `seq-parallel` is adjacent in the flat moduleIds list but is actually about
+training/generation parallelism and ends by motivating the KV cache, an unrelated topic — same
+flat-list-vs-true-dependency gap as kv-cache's `hallucination` neighbor). Rule 11 judged not applicable
+here rather than forced.
+
+Pre-existing "Hands-On tab below" Definition-of-Done violation (flagged in the 2026-07-08 late-session
+entry, deferred at the time) fixed now. Pass 1 fixed the two most load-bearing naming-order violations
+myself before dispatching Pass 2: "tokenizer" and "BPE" were already correctly demonstrated-then-named
+after these fixes. Pass 2 (separate agent) caught the remaining rule-1 violations I'd missed — WordPiece,
+Unigram/SentencePiece, and byte-level BPE were each still named-then-described with zero prior concrete
+instance — all three fixed with a real demonstrating example before naming (un+happy pair for WordPiece,
+start-big-then-delete for Unigram, byte-fallback-on-an-emoji for byte-level BPE). Also fixed: OOV
+parenthetical landing with no lead-in, the groundUp "chop" metaphor being introduced then abandoned at
+the BPE transition (added an explicit bridge clause), a mislabeled "UUID" example that isn't RFC4122-valid
+(relabeled "identifier string," token count unchanged since it was already correct for the literal
+string), and the 1.0–1.35 tokens/word range's origin left unstated (tied explicitly to the measured 1.2
+tokens/word figure appearing right after it).
+
+**Live-verified via tiktoken (cl100k_base), not trusted from memory** — this exact module had a real
+previously-caught error (`CONTENT-AUDIT-RUBRIC.md`'s "Quantization" 3-vs-2-token bug) so every numeric
+claim in this module got re-checked against the actual encoder rather than assumed correct: emoji
+"🎉" = 4 bytes → 3 tokens ✓, "नमस्ते" = 18 bytes/6 chars → 6 tokens ✓, "a3f2-b891-4c12-9d03" → 14 tokens ✓,
+"USD 4,832,190.00" → 9 tokens ✓, the JSON example → 8 tokens ✓, "§ 14.2(b)(iii)" → 9 tokens ✓, "The
+defendant agreed to indemnify" → 6 tokens ✓ (1.2/word, exactly as claimed). All numbers in the shipped
+module are now confirmed accurate, zero fabricated or misremembered.
+
+One audit item deliberately NOT changed: Pass 2 flagged the module's 3 separate illustration blocks (BPE
+merge trace / byte fallback / content-type efficiency) as a possible rule-8 "scattered, not one worked
+illustration" violation. Judgment call: rule 8 is about not fragmenting the demonstration of ONE mechanism
+(the failure mode `attention` originally had — dot-product/softmax/weighted-sum split with no consolidated
+trace), not a ban on multiple illustrations for genuinely distinct claims in a longer module. Each of
+tokenizer's 3 illustrations demonstrates a different claim end-to-end on its own. Left as-is; noting the
+distinction here so it's a recorded interpretation, not a silent judgment call.
+
+---
+
+**Rollout status: attention, kv-cache, sampling, tokenizer — all 4 done, all esbuild-clean, all technical
+claims grep-verified, all sit only in the sandbox (not pushed).** Per 3B1B-STANDARD.md's stated rollout
+order, Retrieval track is next if this continues. Zero scenes exist yet for any of the 4 (all pre-dated
+`transformer`'s scene-registry pattern) — scene-building for all 4 remains an open, unscheduled question,
+consistent across every module touched this session.
