@@ -10,3 +10,4 @@ public/gt/
 # repo hygiene (overlap-pass cleanup)
 *.bak
 __pycache__/
+.fuse_hidden*

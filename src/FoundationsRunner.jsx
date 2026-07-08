@@ -1,8 +1,9 @@
 // src/FoundationsRunner.jsx — single-scroll layout, no step nav, no unlock buttons (sprint 93s)
 // Schema: runnerData.mcqs (array) preferred; runnerData.mcq (object) supported for compat.
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FOUNDATION_SCENES } from "./components/nicheViz/foundationScenes.jsx";
+import HighlightPopover from "./components/HighlightPopover.jsx";
 
 export default function FoundationsRunner({
   moduleId,
@@ -15,7 +16,11 @@ export default function FoundationsRunner({
   markComplete,
   onBack,
   gymLabel,
+  gymId,
 }) {
+  // Scopes the highlight-to-track selection listener to this module's own
+  // rendered content — never the app shell/sidebar/nav (see HighlightPopover.jsx).
+  const contentRef = useRef(null);
   const alreadyDone = mastery?.has(moduleId);
   const hasInteractive = !!Component;
 
@@ -76,7 +81,13 @@ export default function FoundationsRunner({
   const allSubmitted = mcqList.length === 0 || submitted.every(Boolean);
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div className="max-w-3xl mx-auto px-6 py-8" ref={contentRef}>
+      <HighlightPopover
+        containerRef={contentRef}
+        moduleId={moduleId}
+        gymId={gymId}
+        sourceLabel={module?.title}
+      />
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="mb-10">

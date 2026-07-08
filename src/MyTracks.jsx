@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   getTracks, createTrack, renameTrack, deleteTrack,
-  addNote, updateNote, removeItem, reorderItems, moveItem, seedTierTracks,
+  addNote, updateNote, updateItemMeta, removeItem, reorderItems, moveItem, seedTierTracks,
 } from "./utils/tracks.js";
 import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
+import { highlightColorHex } from "./utils/highlightColors.js";
 
 // moduleId → foundation/gym label, so saved Foundation modules group by their
 // foundation (Language Models, Retrieval, NLP Foundations…) not their raw tag.
@@ -38,6 +39,7 @@ const TYPE_LABELS = {
   cheatsheet: "Quick Reference", sd_scenario: "System Design",
   code_exercise: "Code Exercises", code_lab: "Code Labs",
   company_track: "Company Tracks", judgment: "Judgment",
+  highlight: "Highlights",
 };
 
 // Group items by category (meta.category) or a readable type label, keeping
@@ -184,7 +186,7 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveIte
   );
 }
 
-function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddNote, onUpdateNote, onRemoveItem, onReorderItems }) {
+function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddNote, onUpdateNote, onUpdateHighlightNote, onRemoveItem, onReorderItems }) {
   const [editingName, setEditingName] = useState(false);
   const [editNoteIdx, setEditNoteIdx] = useState(null);
   const [editNoteDraft, setEditNoteDraft] = useState("");
@@ -284,12 +286,76 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
               style={{
                 background: dragFrom === idx ? "rgba(124,58,237,0.15)" : "rgba(24,24,27,0.9)",
                 border: `1px solid ${dragFrom === idx ? "rgba(139,92,246,0.5)" : "rgba(63,63,70,0.6)"}`,
+                borderLeft: item.type === "highlight" ? `3px solid ${highlightColorHex(item.meta?.color)}` : undefined,
                 cursor: "grab",
               }}
             >
               <span className="text-zinc-700 text-xs mt-0.5 shrink-0 select-none">⠿</span>
 
-              {item.type === "preplab" ? (
+              {item.type === "highlight" ? (
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                    <span style={{
+                      fontSize: "0.62rem", fontWeight: 700, color: highlightColorHex(item.meta?.color),
+                      background: "rgba(139,92,246,0.10)", border: `1px solid ${highlightColorHex(item.meta?.color)}55`,
+                      borderRadius: "4px", padding: "0.05rem 0.35rem",
+                      textTransform: "uppercase", letterSpacing: "0.04em",
+                    }}>
+                      Highlight
+                    </span>
+                    {item.meta?.sourceLabel && (
+                      <span className="text-[10px] font-mono text-zinc-600 truncate">{item.meta.sourceLabel}</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-zinc-200 leading-snug italic mb-2">“{item.meta?.text || item.label}”</p>
+
+                  {editNoteIdx === idx ? (
+                    <div className="mb-2">
+                      <textarea
+                        value={editNoteDraft}
+                        onChange={e => setEditNoteDraft(e.target.value)}
+                        rows={3}
+                        autoFocus
+                        placeholder="Add a note…"
+                        className="w-full text-sm rounded-lg px-2 py-1.5 outline-none leading-relaxed"
+                        style={{ background: "rgba(39,39,42,0.9)", border: "1px solid #7c3aed", color: "#f4f4f5", resize: "vertical" }}
+                        onKeyDown={e => { if (e.key === "Escape") setEditNoteIdx(null); }}
+                      />
+                      <div className="flex gap-2 mt-1.5">
+                        <button onClick={() => { onUpdateHighlightNote(idx, editNoteDraft.trim()); setEditNoteIdx(null); }}
+                          className="px-2.5 py-1 text-xs font-semibold rounded-lg text-white"
+                          style={{ background: "#7c3aed", cursor: "pointer", border: "none" }}>Save</button>
+                        <button onClick={() => setEditNoteIdx(null)}
+                          className="px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200"
+                          style={{ background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 mb-2">
+                      {item.meta?.note ? (
+                        <p className="text-xs text-zinc-500 leading-relaxed whitespace-pre-wrap flex-1">{item.meta.note}</p>
+                      ) : (
+                        <p className="text-xs text-zinc-700 italic flex-1">No note yet.</p>
+                      )}
+                      <button onClick={() => { setEditNoteIdx(idx); setEditNoteDraft(item.meta?.note || ""); }}
+                        title="Edit note"
+                        className="text-zinc-600 hover:text-violet-400 text-xs transition-colors shrink-0"
+                        style={{ background: "none", border: "none", cursor: "pointer" }}>✎ Edit</button>
+                    </div>
+                  )}
+
+                  {(item.meta?.moduleId || item.meta?.gymId) && (
+                    <button
+                      onClick={() => (onNavigateTo
+                        ? onNavigateTo({ tab: "concepts", gymId: item.meta.gymId, moduleId: item.meta.moduleId })
+                        : onNavigate?.("concepts"))}
+                      title="Jump back to where this was highlighted"
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                      style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >Jump to source →</button>
+                  )}
+                </div>
+              ) : item.type === "preplab" ? (
                 <>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
@@ -532,6 +598,7 @@ export default function MyTracks({ onNavigate, onNavigateTo }) {
             onRename={name => { renameTrack(selectedTrack.id, name); refresh(); }}
             onAddNote={content => { addNote(selectedTrack.id, content); refresh(); }}
             onUpdateNote={(idx, content) => { updateNote(selectedTrack.id, idx, content); refresh(); }}
+            onUpdateHighlightNote={(idx, content) => { updateItemMeta(selectedTrack.id, idx, { note: content }); refresh(); }}
             onRemoveItem={idx => { removeItem(selectedTrack.id, idx); refresh(); }}
             onReorderItems={(from, to) => { reorderItems(selectedTrack.id, from, to); refresh(); }}
           />

@@ -153,6 +153,16 @@ export function addItem(trackId, type, itemId, label, meta = {}) {
   setLastTrackId(trackId)
 }
 
+// Edit an existing generic item's meta in place (by item index). Mirrors
+// updateNote's shape/semantics — used e.g. by highlight notes so the
+// editable-note UX in MyTracks.jsx works the same for both item kinds.
+export function updateItemMeta(trackId, index, metaPatch) {
+  save(getTracks().map(t => {
+    if (t.id !== trackId) return t
+    return { ...t, items: t.items.map((it, i) => (i === index) ? { ...it, meta: { ...(it.meta || {}), ...metaPatch }, updatedAt: Date.now() } : it) }
+  }))
+}
+
 // Returns array of track IDs containing this generic item
 export function getTracksForItem(type, itemId) {
   return getTracks()

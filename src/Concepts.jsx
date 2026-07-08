@@ -12629,6 +12629,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
             markComplete={markComplete}
             onBack={handleBack}
             gymLabel={openedFromTracks ? "My Tracks" : currentGym?.label}
+            gymId={activeGym}
           />
         </div>
       </div>
