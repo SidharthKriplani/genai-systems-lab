@@ -705,3 +705,487 @@ claims grep-verified, all sit only in the sandbox (not pushed).** Per 3B1B-STAND
 order, Retrieval track is next if this continues. Zero scenes exist yet for any of the 4 (all pre-dated
 `transformer`'s scene-registry pattern) — scene-building for all 4 remains an open, unscheduled question,
 consistent across every module touched this session.
+
+## 2026-07-08 (session cont.) — Triage + exhaustive duplicate-key audit, GSL S-tier + verification
+
+Two-stage process, both stages now closed and safe to build a rewrite plan from without re-deriving:
+(1) condensed 3B1B triage of the 21 remaining S-tier modules, done via parallel agents; (2) independent
+verification of that triage, because agents auditing prose can silently audit the wrong (dead-code)
+version of a module — found real errors, corrected below. Do not re-run either stage; read this entry.
+
+### STRUCTURAL BUG (verified, exhaustive, closed) — silent duplicate-key overrides in RUNNER_DATA
+GSL's `foundationsRunnerData.js` builds `RUNNER_DATA` by inline object literal + ~25 `...RUNNER_X` spreads
+from other files (spread order = override order, last one wins, matching real JS semantics). Ran an
+exhaustive script over **all 138 keys** in the fully-assembled object (not a sample) — confirmed via
+regex-extraction of every source in true spread order and simulating last-write-wins. Result: **8 real
+duplicate keys**, every one following the identical pattern — a good, newer inline definition (has
+`groundUp`) sits dead in `foundationsRunnerData.js`, silently overridden by an older definition (no
+`groundUp`) that gets spread in later from `deepen-thin.js`, `production-tone.js`, or `agent-eco.js`:
+
+| key | dead (good) source | LIVE (winning) source | live version has groundUp? |
+|---|---|---|---|
+| `chunking` | inline | `foundations/deepen-thin.js` | NO |
+| `reranking` | inline | `foundations/deepen-thin.js` | NO |
+| `rag-eval` | inline | `foundations/deepen-thin.js` | NO |
+| `llm-as-judge` | inline | `foundations/deepen-thin.js` | NO |
+| `cost-latency-concepts` | inline | `foundations/production-tone.js` | NO |
+| `context` | inline | `agents/agent-eco.js` | NO |
+| `latency-planner` | inline | `foundations/production-tone.js` | NO |
+| `observability-concepts` | inline **+ deepen-thin.js (also dead)** | `foundations/production-tone.js` | NO |
+
+`observability-concepts` is a **triple** definition (inline, deepen-thin.js, AND production-tone.js) — the
+production-tone.js copy wins, both others are fully dead.
+
+**Important, verified directly (not assumed):** the live (winning) versions of all 8 are NOT low-quality —
+`chunking` and `reranking` in particular have real worked illustrations, correct math, and (`reranking`)
+an actual funnel metaphor already. The problem is structural, not necessarily contentless: each is missing
+the `groundUp`/"Start Here" field entirely (they predate that convention), and to a lesser extent may be
+missing a fully-developed metaphor. **Fix shape for all 8 is the same, smaller job**: keep the live
+version's explanation/scenario/illustrations (don't discard — they're good), add `groundUp` (+ metaphor
+where thin), then delete the dead duplicate from `foundationsRunnerData.js` so there's one source of
+truth per key. This is NOT "needs a full rewrite from zero" for these 8 — flag clearly in any future
+plan so effort isn't wasted re-deriving content that already exists and works.
+
+**False positive, checked and dismissed:** `parameters` also showed as duplicated (twice, both inside
+`agents/agent-core.js` itself) — confirmed this is ordinary repeated tool-schema example content
+(`"parameters": { "query": {...} }`), not a module key. No action needed.
+
+**Not yet done:** this exhaustive scan covers GSL only. MSL was separately checked to confirm its
+Deep Learning foundation file (`deepLearningModules.js`) uses a single flat imported array with no
+multi-file spread/merge system, so this exact bug class cannot occur there — but MSL's *other* data
+files (beyond Deep Learning) have not been scanned for an analogous pattern. Open question, not yet
+answered by the user: whether to run that MSL-wide scan before treating MSL findings as final.
+
+### Corrected S-tier triage verdicts (supersedes the raw agent output — this table is the source of truth)
+**Needs a fix pass, priority order:**
+1. `llm-as-judge` — duplicate-key bug (see table) + missing groundUp. Dead duplicate at old L1405 in
+   `foundationsRunnerData.js` has a real cross-module bridge to `eval-loop` the live version lacks —
+   salvage that bridge sentence into the fix, then delete the dead copy.
+2. `rag-eval` — duplicate-key bug + missing groundUp. Same salvage-then-delete shape.
+3. `chunking` — duplicate-key bug + missing groundUp + no real metaphor. Explanation content itself
+   (ladder of strategies, lost-boundary illustration, size/overlap grid) is strong — keep it.
+4. `reranking` — duplicate-key bug + missing groundUp. Already has a decent funnel metaphor — just needs
+   groundUp + delete dead copy.
+5. `cost-latency-concepts` — duplicate-key bug + missing groundUp. Already has a real cross-module bridge
+   *inside* explanation[0] ("You already know from KV cache...") — just needs it promoted into a proper
+   groundUp field + delete dead copy.
+6. `rlhf` — NOT a duplicate-key issue (single clean source). Real content gap: "reward hacking" named with
+   zero prior demonstration; core claim ("move a preference into the weights") has no developed metaphor
+   at all. Highest interviewWeight of the batch — prioritize content-wise once 1-5's mechanical fix is done.
+7. `finetuning-vs-rag` — single clean source. Has one candidate metaphor (the two support agents) that's
+   introduced then dropped — rest of the module goes straight to a bullet/table comparison, no scene.
+8. `few-shot` — single clean source. Only 1 of 3 claimed failure modes (category imbalance) is actually
+   demonstrated; "unrepresentative examples" and "recency bias" are asserted, never shown.
+9. `dpo` — single clean source. No metaphor (scattered words — "anchor," "tether," "drift" — never
+   assembled into one scene); "reward hacking" named in the same breath as its one demonstration.
+10. `eval-loop` — single clean source. Jargon named in groundUp itself before any demonstration; zero
+    illustration blocks; four required properties presented as a definition list, not forced by a crisis.
+11. `rag-pipeline` — single clean source. No metaphor anywhere (crisis straight to a diagnostic formula);
+    weak continuity (doesn't reference chunking/embeddings despite sitting right after them).
+
+**Reasonably clean, no action needed (verified from correct/undisputed single source):**
+`embeddings` (minor: term named right after metaphor asserted, not twice-demonstrated — low priority),
+`hallucination` (best cross-module bridge of the batch; only gap is no metaphor at all — worth a
+metaphor-only pass, not a rewrite), `dense-vs-sparse-retrieval`, `zero-shot` (needs metaphor only),
+`chain-of-thought` (best of the prompt-engineering batch), `prompt-security`, `lora`, `agent-react`,
+`agent-tool-design`, `agent-eval-trajectory` (strongest of the agents batch — explicit bridge, real
+recalled metaphor, correctly-ordered term naming).
+
+### Method note for future audits (so this doesn't get re-litigated)
+Two categories of finding, handled differently: (a) **structural/mechanical** (duplicate keys, missing
+required fields, broken cross-file refs) — checked exhaustively over the whole `RUNNER_DATA` object once;
+this category is closed for GSL, not just sampled. (b) **editorial/qualitative** (metaphor quality,
+illustration consolidation, priority ranking) — rests on the triage agents' reads of the confirmed-correct
+live source; not re-litigated line-by-line, lower stakes since fixable in place. Any future full-codebase
+change (new modules added to the spread chain, new sub-files) should re-run the duplicate-key script
+(logic: extract all `"key": {` occurrences per source file, in true spread order, last-source-wins) before
+trusting a fresh triage — this is a 5-minute script, not a manual re-audit.
+
+### CORRECTION to the duplicate-key table above (found immediately after logging it — same session)
+The original regex (`^\s*"key":\s*\{`) had two false positives, caught by re-running with a stricter
+check requiring `depthTier:` on the following line (only real module objects have that shape):
+- **`context` was NOT a real duplicate** — the second "hit" was a nested `"context": {"sessionId":...}`
+  JSON field inside an illustration's example payload in `agent-eco.js`, not a competing module definition.
+  `context` has exactly one real definition (inline in `foundationsRunnerData.js`) — no bug, no action needed.
+- **`parameters`** — already correctly identified as a false positive in the original entry (nested
+  tool-schema example content) — confirmed again, still correct.
+- **One NEW real duplicate found by the stricter re-check: `safety-measurement`** (B-tier, not in the
+  original 21 S-tier batch) — inline vs. `foundations/deepen-thin.js`, same pattern, deepen-thin wins.
+
+**Corrected final count: 7 real duplicates in the original S/A-tier batch** (chunking, reranking, rag-eval,
+llm-as-judge, cost-latency-concepts, latency-planner, observability-concepts) **+ 1 more found on re-check**
+(safety-measurement, B-tier) **= 8 confirmed real, exhaustively verified with a false-positive-resistant
+check.** This replaces the "8" count in the entry above — same number, different membership (swap `context`
+out, `safety-measurement` in). Verification method itself (requiring `depthTier:` on the next line) is now
+the correct one to reuse for any future scan; the looser version produces false positives from nested
+JSON-in-illustration-string content and should not be reused as-is.
+
+## 2026-07-08 (session cont.) — Language Models gym: remaining A-tier triaged, found a real content-duplication issue
+
+Triaged the 4 Language Models A-tier modules not yet in scope (`positional-encoding`, `rope`,
+`speculative-decoding`, `tempgame`) — confirmed via the exhaustive duplicate-key scan none have the
+dead-code bug, so this was pure content triage.
+
+**`speculative-decoding` — REASONABLY CLEAN**, strongest of the four. One fully-labeled worked example
+(q(a)=0.7/p(a)=0.9→accept, α≈0.75, k=4→3.05 tokens/pass), correct crisis→term ordering. Only gap: opens
+generically instead of bridging from `sampling` (its actual predecessor) — low-priority continuity fix.
+
+**`tempgame` — NEEDS WORK.** Good worked example (2-beam trace, cumulative log-probs) but zero metaphor
+anywhere — goes crisis straight to abstract claim with nothing to visualize. Also generic opening, doesn't
+bridge from `speculative-decoding`.
+
+**`positional-encoding` — NEEDS WORK.** Decent worked table (θ_i values), but doesn't bridge from
+`attention` (its actual predecessor) — re-derives the bag-of-words/order-blindness crisis from scratch
+instead of picking up where attention left off. Metaphor ("stamping 'you are word number 3'") appears once
+then dropped in favor of pure rotation math.
+
+**`rope` — NEEDS WORK, and it's a bigger issue than a voice-rule gap.** Verified directly (not just taking
+the triage agent's word): `rope`'s groundUp opens with the *identical* crisis to `positional-encoding`
+("attention can't tell word order... bag of words... dog bites man / man bites dog" vs.
+"cat sat on mat... bag of words tipped onto a table") — near-verbatim re-teaching of the same founding
+fact, not a deep-dive building on it. Per the triage agent's deeper read: both modules independently
+re-derive the same θ-frequency table and reach the same PI/NTK/YaRN conclusions, differing mainly in
+scenario wrapper (4K→128K legal docs vs. 4K→32K product docs). This is content duplication at the
+curriculum level, not a targeted-fix item — **flagged to the user as a decision point rather than silently
+resolved**: either (a) merge the two modules into one, or (b) keep both but redirect `rope` to skip the
+already-covered crisis recap and go genuinely deeper (e.g. the rotation-matrix algebra derivation,
+`⟨R(m)q,R(n)k⟩=⟨q,R(n−m)k⟩`, rather than re-deriving the frequency table). Decision pending.
+
+**Updated Language Models gym status:** 15 total modules (5 S-tier, 5 A-tier, 5 B-tier). Done: tokenizer,
+attention, transformer(template), sampling, kv-cache (5). S-tier remaining: hallucination (1, needs
+metaphor only). A-tier remaining: positional-encoding, rope (duplication issue, pending decision),
+speculative-decoding (continuity fix only), tempgame (metaphor + continuity). B-tier (seq-parallel,
+gqa-mqa, sparse-attention, training-signal, nextoken) not yet triaged — out of current scope per user's
+S-then-A instruction.
+
+**Decision (user, 2026-07-08): redirect rope, don't merge.** `positional-encoding` stays the intro (keeps
+the bag-of-words crisis + basic rotation idea). `rope` gets rewritten to: drop the crisis recap entirely,
+open with an explicit bridge from `positional-encoding` ("we already established attention can't tell word
+order and RoPE rotates Q/K to fix it — now go deeper"), and replace the re-derived frequency table with
+genuinely new material: the rotation-matrix algebra itself, why relative offset falls out of
+`⟨R(m)q,R(n)k⟩=⟨q,R(n−m)k⟩`, and a deeper treatment of PI/NTK/YaRN tradeoffs than positional-encoding gives.
+
+**Phase 0 — mechanical duplicate-key fix, DONE 2026-07-08.** All 8 confirmed duplicate-key bugs fixed:
+for each, the dead inline block was removed from `foundationsRunnerData.js`, keeping the live (winning)
+version untouched except for adding a `groundUp` field where one was missing. Per-module detail:
+- `chunking`, `reranking`, `rag-eval`, `llm-as-judge` — live version is in `foundations/deepen-thin.js`;
+  each got a `groundUp` salvaged from the dead inline copy (verbatim for `reranking`/`rag-eval`, plus a
+  newly-composed bridge paragraph for `chunking` and `llm-as-judge` connecting to `embeddings`/`eval-loop`
+  respectively). Dead inline blocks deleted from `foundationsRunnerData.js` (lines 1057–1549 of the
+  pre-fix file, contiguous span covering all 4).
+- `cost-latency-concepts`, `latency-planner` — live version is in `foundations/production-tone.js`; each
+  got a `groundUp` salvaged verbatim from the dead inline copy. `cost-latency-concepts`'s existing
+  KV-cache continuity bridge (in `explanation[0]`: "You already know from KV cache that token count is
+  what drives inference memory...") was deliberately left in place rather than folded into groundUp —
+  groundUp opens from a clean first-principle (the two-meter billing model), the KV-cache bridge still
+  does its continuity job one step later in the causal chain. Dead inline blocks deleted (lines
+  1552–1708 of the pre-fix file, contiguous span covering both plus `observability-concepts`, see below).
+- `observability-concepts` — this one was a **triple**, not a double: dead copies existed both inline in
+  `foundationsRunnerData.js` AND in `foundations/deepen-thin.js` (a genuinely different angle — tracing/
+  spans framing vs. the live copy's error-rate-vs-quality-drift framing); `foundations/production-tone.js`
+  wins both because it's spread last (`RUNNER_PRODUCTION_TONE` spreads after `RUNNER_DEEPEN_THIN` at
+  line 2891 vs 2879 pre-fix). Added a fresh `groundUp` (composed new, since neither dead copy's opening
+  fit the live copy's framing cleanly) to the live copy, then deleted BOTH dead copies (the inline one as
+  part of the same 1552–1708 span above, and the `deepen-thin.js` one separately, lines 354–434 of that
+  file's pre-fix state).
+- `safety-measurement` — live version is in `foundations/deepen-thin.js`; neither the dead nor live copy
+  had a `groundUp`, so one was composed fresh from the live copy's own scenario (99%-safety-benchmark vs.
+  nurse-dosage-refusal vs. roleplay-jailbreak) and its `explanation[0]` thesis (safety as a tension between
+  over-refusal and under-refusal, not a scalar). Dead inline block deleted (lines 2883–2929 of the pre-fix
+  `foundationsRunnerData.js`).
+
+Verification performed (not just claimed): re-grepped all 8 keys across every file in `src/data/` +
+`src/data/foundations/` post-fix — each now resolves to exactly 1 definition (was 2, or 3 for
+`observability-concepts`). Ran `npx -y esbuild@0.21.5` against `foundationsRunnerData.js` before and
+after — clean bundle both times, no syntax breakage from the sed-based line deletions. Section-header
+comments (`// ── Production Systems track ──`, `// ── New modules — sprint 93n ──`) that sat adjacent to
+deleted dead blocks were preserved and re-checked to still precede the correct next surviving module.
+
+Files touched this pass: `foundationsRunnerData.js`, `foundations/deepen-thin.js`,
+`foundations/production-tone.js`. Not yet pushed — bundled into the next GSL commit alongside whatever
+Phase 1 content work lands first.
+
+**Next: Phase 1** — content fixes for `rlhf`, `finetuning-vs-rag`, `few-shot`, `dpo`, `eval-loop`,
+`rag-pipeline`, `hallucination` (metaphor only), `positional-encoding` (bridge from attention), `rope`
+(redirect per the decision above), `speculative-decoding` (continuity only), `tempgame` (metaphor +
+continuity). Not yet started.
+
+## Two bugs caught by user review of already-shipped content — fixed 2026-07-08
+
+User spot-checked the 4 already-rewritten modules (`attention`, `kv-cache`, `sampling`, `tokenizer`) via
+screenshots and caught two real problems this session's writer+adversarial pass had both missed:
+
+1. **Rendering gap, not content**: the "In Production — Apply It" scenario block (the demoted production
+   scenario shown after a `groundUp`-carrying module's teaching section) rendered as one flat `<p>` with no
+   paragraph break — confirmed in `FoundationsRunner.jsx` line ~259, which used a single `<InlineMd>` call
+   on the whole `scenario` string, unlike the "Start Here" block just above it (line ~205) which already
+   split on `\n\n`. Every pause-and-predict cue ("Take a moment before reading on... Here's the
+   reasoning...") in a groundUp'd module's scenario was running the question and the answer together with
+   no visual break — undermining the whole point of the pause. Fixed at the source: the render block now
+   splits `scenario` on `\n\n` identically to the Start Here block, and a literal `\n\n` was inserted right
+   before the "Here's the..." resumption clause in all 4 shipped modules' scenario text (`attention`,
+   `kv-cache`, `sampling`, `tokenizer`). This is a shared-component fix, so it automatically applies to
+   every future groundUp'd module too — no per-module follow-up needed going forward.
+2. **Real math error, `sampling` module**: the top-p/min-p paragraph (explanation array, the "Temperature
+   reshapes the *whole* jar uniformly..." block) claimed top-p=0.90 keeps "just the top pile alone" on the
+   confident 87/12/2 jar. Wrong — 87% < 90%, so top-p actually needs the top *two* piles (87+12=99%) before
+   it clears the threshold. Same error in the min-p paragraph: floor = 10% of 87 = 8.7, and the second pile
+   (12) clears that floor, so min-p also keeps the top *two* piles on that jar, not just one. Verified both
+   corrected claims programmatically (see the python check run against both jars/both rules — top-p and
+   min-p each keep 2 piles on the confident jar, 3 on the flat jar). Rewrote the paragraph to state the
+   correct counts, and turned the fact that top-p and min-p land on the *same* candidate set here into an
+   honest observation (they're different formulas that can diverge on other distributions; they happen to
+   agree on these two jars) rather than silently sweeping past the coincidence.
+
+**Standing lesson for the writer+adversarial process**: neither pass caught the arithmetic error, because
+`THE PRECISION RULE` verification during authoring checked that numbers were internally consistent-*looking*,
+not that they were independently recomputed against the stated thresholds. Numeric claims involving a
+threshold comparison (cumulative sum vs. a cutoff, floor vs. a value) should be spot-checked with actual
+arithmetic — mental "looks about right" is not enough, exactly the kind of gap a quick Python one-liner
+closes for free. Re-verify the other 3 shipped modules' numeric claims the same way if similar threshold-
+style comparisons show up in future spot-checks (none were found on this pass — `attention`, `kv-cache`,
+`tokenizer` don't carry cumulative-threshold-style arithmetic).
+
+Files touched: `src/FoundationsRunner.jsx`, `src/data/foundationsRunnerData.js`. Both esbuild-verified
+clean. Not yet pushed — bundled with Phase 0 + whatever Phase 1 content lands first.
+
+## Four-tier depth system — skeleton + keyword-spine recap rollout, 2026-07-08
+
+User asked for 4 depth tiers per module (baby / senior / academic / ultra-compressed recap) and, rather
+than committing to full content for all 4 everywhere, agreed to: build the structural skeleton for all
+four now, but actually finish the keyword-spine recap tier for every GSL foundation module right away
+(in parallel with Phase 1), scoped to GSL only (not MSL/PAL).
+
+**Mapping onto what already existed**: baby = `groundUp` (Start Here) — already exists. Senior =
+`explanation[]` — already exists, this is where the causal-chain rigor lives. These two needed no new
+schema, just confirmation the pattern holds (see the reassurance check above — kv-cache/sampling/
+tokenizer/rope-planned all keep full technical depth, nothing was thinned).
+
+**New skeleton — Go Deeper / academic tier**: added `deeperMath` (array, same item shapes as
+`explanation`) to the runner schema. Rendered by `FoundationsRunner.jsx` as a collapsed "Go Deeper —
+Academic" section between Explanation and Key Points, closed by default (doesn't slow the default
+reader), amber-accented to visually distinguish from the main teaching content. Pure skeleton — no
+module populates it yet. Documented in `3B1B-STANDARD.md` as a new section; `rope` is the committed
+pilot (the rotation-matrix derivation `positional-encoding` deliberately skips) — populate there first,
+during Phase 1, before deciding on wider rollout.
+
+**Keyword-spine recap standard**: added to `3B1B-STANDARD.md` as its own section — recap bullets reduced
+to bare causal spine (arrow/chain notation, connective filler like "so"/"this means" stripped wherever
+the link is recoverable without it, every number/term must match explanation/groundUp exactly, target
+~half the word count of the equivalent keyPoints bullet). Explicitly NOT the narrative voice rules —
+recap stays reference-grade, this just raises how tight "reference-grade" means.
+
+**Rollout — done, all GSL foundation modules**: first mapped which files are actually authoritative for
+each module's `recap` (same class of landmine as Phase 0's duplicate-key bug — a module's `recap` can be
+silently overridden by `recap-patch-a.js`/`recap-patch-b.js`'s merge-patch loop even if an inline copy
+exists elsewhere). Found exactly one dead inline recap this way: `vector-migration-patterns` in
+`foundationsRunnerData.js` (recap-patch-b.js wins) — deleted the dead copy rather than editing it.
+Confirmed via the existing exhaustive duplicate-key scan that no other module has this ambiguity.
+
+Dispatched 7 parallel agents, one per file-group, each given the keyword-spine spec directly + an exact
+module-key list + an explicit note on any file-specific landmine (dead vector-migration-patterns entry;
+the nested `"parameters": {...}` JSON example inside `agent-core.js` that looks like a module key but
+isn't). Results, all esbuild-verified clean:
+- Batch A (`foundationsRunnerData.js`, 18 keys): all 18 rewritten, dead `vector-migration-patterns` entry deleted.
+- Batch B (`recap-patch-a.js` + `recap-patch-b.js`, 30 keys): 28 rewritten, 2 (`red-teaming`,
+  `jailbreak-taxonomy`) left as-is — agent judged them already at spec.
+- Batch C (breadth-2/deepen-thin/market-gap/retrieval-breadth/production-tone, 19 keys): all 19 rewritten.
+- Batch D (7 single/dual-module gap+misc files, 9 keys): all 9 rewritten; caught and fixed 2 real
+  precision gaps in the same pass — distillation's KL term now matches the explanation's exact
+  `soft_teacher‖soft_student` notation, DPO's recap now carries the full `−log σ(β·(s_chosen−s_rejected))`
+  instead of a paraphrase.
+- Batch E (4 NLP foundations files, 12 keys): found these already largely keyword-spine (prior same-day
+  authoring), made 3 small filler-word fixes rather than rewriting working content — judgment call to
+  avoid gratuitous factual-drift risk, logged as a deliberate light-touch pass, not a skipped task.
+- Batch F (4 tracks files, 20 keys): all 20 rewritten.
+- Batch G (4 agents files + playground-labs.js, 23 keys — the task briefing said 24 but the 5 files only
+  list 23 real module keys, confirmed by direct count): all 23 rewritten; caught and fixed one real factual
+  bug in the same pass — `agent-long-running`'s recap said "resume at step 181, not step 1," but that
+  module's own illustration/MCQ explanation both say the correct resume point is **step 180**; recap now
+  matches.
+
+Post-rollout verification (done by me, not just trusting agent self-reports): re-ran esbuild on
+`foundationsRunnerData.js` — clean. Re-counted module keys (`44`, unchanged from pre-rollout) to confirm
+no module was accidentally dropped. `git diff --stat` across `src/data/` shows edits scoped to the
+26 files the 7 batches were assigned, consistent with a recap-only sweep plus Phase 0's earlier deletions.
+
+Not yet pushed — this bundles with Phase 0 + the sampling/FoundationsRunner fixes into whatever commit
+lands first. Independently re-verified both flagged fixes myself (not just trusting the batch reports):
+grepped `agent-sim.js` directly — the illustration and both prose lines say "OOM at 180 → ... rehydrate
+last checkpoint (step 179 done)" / "resume at step 180, not step 1," confirming the recap fix was correct,
+not a new error. Grepped `distillation.js` directly — `explanation`/`keyPoints` both already read
+`KL(soft_teacher‖soft_student)`, confirming the recap now matches exactly. Both fixes hold.
+
+## GSL Phase 1 — `rlhf` full writer+adversarial two-pass, 2026-07-08
+
+First Phase 1 module. Started from the module's pre-existing `groundUp`/`scenario` (written in an
+earlier, pre-3B1B mega-session per project memory) plus the original triage finding: "reward hacking"
+named with zero prior demonstration, and the core "move a preference into the weights" claim had no
+developed metaphor at all.
+
+**Writer pass 1 (targeted, not full rewrite)**: rewrote the reward-hacking paragraph to demonstrate two
+concrete behaviors (verbose padding, sycophantic agreement) *before* naming the term — this is now the
+one part of the module an independent auditor called out as the exemplary case, template for the rest.
+Added a river/current/riverbed metaphor (weights = river's default current; a system prompt = someone
+shouting swimming instructions from the bank; RLHF = rerouting the riverbed itself) to `groundUp` and
+threaded it into `explanation[1]`, closing it out later. Ran esbuild clean.
+
+**Adversarial audit 1 (genuinely separate agent, no visibility into the writer's reasoning)**: found real,
+specific gaps the targeted fix didn't touch — SFT/reward-model/PPO/KL-β-π notation all named with zero
+demonstration (only reward-hacking was fixed); the river metaphor overclaimed completeness in `groundUp`
+("now the safe one") against the later concession that the base prior "never fully goes away"; Stage
+1→2→3 read as an enumerated list, not forced next-steps; `groundUp`'s opening was a generic gesture at
+"pretraining," not a specific prior-module callback; zero worked illustration existed anywhere in the
+module (confirmed by direct comparison against sibling modules `scaling-laws`/`lora`, which both have
+one); β's stated range, "typically 0.1–0.5," was flagged as suspect — not sourced, and the auditor's
+domain knowledge placed that range closer to DPO's β, a different technique.
+
+**Verified the β claim independently rather than trusting the auditor's suspicion** — used WebSearch +
+fetched arxiv's "Secrets of RLHF in LLMs Part I: PPO" (Zheng et al., 2307.04964). Confirmed: real RLHF/PPO
+KL coefficients are commonly ~0.001–0.03, often tuned adaptively toward a target KL budget, not a fixed
+0.1–0.5 — that range is indeed closer to what's typically cited for DPO's differently-shaped objective.
+Corrected the module to "often well under 0.1," stated as a tunable hyperparameter, and used a deliberately
+different value (0.02) in the new illustration so the wrong number couldn't survive by inertia.
+
+**Writer pass 2**: added a full worked illustration (two toy responses, real reward-model scores, real KL
+values, the R−β·KL objective computed at two different β values, showing the exploit's margin narrow from
+0.188 to 0.180 as β increases 5×) — arithmetic checked in Python before and after both adversarial passes.
+Restructured Stage 1/2/3 into forcing-question transitions (each stage opens by naming the specific gap
+the previous one left, not just "Stage N"). Qualified the metaphor's overclaim ("now *mostly* the safe
+one — not perfectly, we'll come back to why not") and paid it off explicitly at the close ("the riverbed
+got rerouted, but the old channel is still there, faint"). Extended the metaphor into `scenario` itself
+(previously dropped there entirely). Fixed the MCQ1 answer explanation, which had introduced an untaught
+"10,000+ tokens" figure nowhere established in the teaching content.
+
+**Adversarial audit 2 (fresh agent, no context from audit 1 or the fixes)**: confirmed clean on precision
+rule, pause-and-predict, persistent object through `scenario`, crisis→inevitability arc, mechanical
+labeling, single illustration, β's origin, and — independently recomputed from scratch — the illustration
+arithmetic and the InstructGPT 1.3B/175B claim (both correct). Found 4 more real, smaller gaps: "nats"
+used undefined; a directional "the interactive just below" reference (breaks on the prerendered static
+page per 3B1B-STANDARD.md's Definition of Done); reward-model frozen-vs-co-trained during Stage 3 left
+fully ambiguous (a genuinely confusable real-RLHF-pipeline detail); and — the one I independently verified
+before trusting it — a cross-module continuity claim that `groundUp`'s "you already know, from
+pretraining" callback wasn't actually the immediately-preceding module in the real rendered gym order.
+
+**Verified the module-order claim myself** rather than taking the auditor's word: reconstructed the actual
+`sortIdsByLevel`-stable-sorted order of the `foundation-models` gym's 12 modules by grepping every
+module's `level` field out of `Concepts.jsx` and hand-sorting BEG→INT→ADV. Confirmed: the module
+immediately preceding `rlhf` is genuinely `finetuning-vs-rag`, not `pretraining` — the auditor was right.
+Rewrote the opening to bridge from `finetuning-vs-rag`'s actual conclusion ("fine-tuning changes weights
+to shift behavior — tone, format, reasoning — not knowledge") into RLHF's specific question (same
+weight-level lever, different behavioral target: a preference for helpful/safe at all).
+
+**Writer pass 3 (small, surgical)**: fixed cross-module opening (above); defined "nat" inline; removed the
+directional interactive reference (matched to `scaling-laws`'s compliant phrasing); stated the reward
+model is frozen during Stage 3 explicitly, and that π_SFT is a frozen copy that never updates; added a
+citation (Ouyang et al., 2022) for the InstructGPT claim; gave PPO's "proximal" naming an actual mechanical
+tie (the clip, not just the KL term) instead of a bare assertion. **Caught my own syntax bug during this
+pass** — unescaped double-quotes inside a double-quoted string broke the whole file's esbuild bundle;
+fixed immediately, re-verified clean before moving on.
+
+**Stopping point, not "fully clean"**: two lower-priority findings remain open by design rather than
+oversight — (a) SFT/reward-model/PPO are still named with one demonstration rather than a strict two, which
+reads correctly as a real voice-rule-1 gap on both audits, but applying the rule's "two separate concrete
+behavioral instances" bar to what are essentially single-shot pipeline-stage labels (not multi-shaped
+behaviors like reward hacking) is a judgment call about how literally to read the rule for this kind of
+term; (b) β/KL's later reuse (in the reward-hacking paragraph) lacks explicit recall-signal language.
+Per `3B1B-STANDARD.md`'s own loop cap ("repeat until clean, or after 3 loops surface what's left to a
+human"), this is the natural stopping point for `rlhf` — flagged here rather than either silently declared
+"done" or looped a third time for diminishing returns.
+
+Files touched: `src/data/foundationsRunnerData.js` only. esbuild-verified clean after every pass (one
+real syntax break caught and fixed mid-pass, noted above). Not yet pushed.
+
+## User's independent study-session findings — verified 2026-07-08, BRAINSTORMING ONLY, nothing executed
+
+While Phase 1 was in progress, the user independently studied the app and reported 15 things. All 15 were
+investigated via read-only agents (grep + read, no edits) before being trusted — several turned out
+different from how they were originally described. Logged here as a dated backlog; nothing below has been
+fixed yet, this is planning input only.
+
+### Confirmed real bugs (code), not yet fixed
+1. **`markComplete` broken for the majority of modules.** `FoundationsRunner.jsx`'s complete button calls
+   `markComplete?.()` with no argument; the real signature is `markComplete(id)` (defined in `Concepts.jsx`
+   ~line 12570). Every runnerData-driven module (most of them, post-3B1B) gets added to the mastery Set as
+   literal `undefined`, not its real id — completion silently never persists per-module. One-line fix
+   (`markComplete?.(moduleId)`), high value, good first thing to actually execute.
+2. **Tab/window-switch jumps to GroundTruth.** No visibility/focus listener exists, but `App.jsx` has a
+   global unscoped `keydown` shortcut listener (`TAB_KEYS`, ~line 1441) where `g` → `groundtruth` (also
+   digit `9` via `SHORTCUT_TABS[8]`). Hypothesis, not yet reproduced live: switching windows/tabs drops
+   focus off whatever input was active; the next keystroke (often a common letter) lands on `window`
+   instead of the now-unfocused field and fires the shortcut. A near-identical bug ("typing 'g' in a note
+   box navigated to GT") was already patched once, 2026-07-03 — this looks like the same class not fully
+   closed. Needs live reproduction to confirm the exact trigger before fixing.
+3. **Question bank: ~16 topics have no entry in `TOPIC_LABELS`/`TOPIC_COLORS`** (PrepLab.jsx ~126-156,
+   which only defines ~24 keys) — chips render `undefined` for these. Topics affected include `attention`,
+   `quantization`, `caching`, `alignment`, `context`, `transformers`, `inference`, `sysdesign`,
+   `recommendations`, `ml-fundamentals`, `leadership`, `production`, among others.
+4. **Difficulty taxonomy has 3 overlapping, inconsistent vocabularies**, confirmed worse than it looked:
+   `leaderboardUtils.js`'s `DIFF_SCORE` has literal duplicate mixed-case keys (`easy`/`Easy`,
+   `medium`/`Medium`, `hard`/`Hard`); PrepLab.jsx's `DIFF_ACCENT`/`DIFF_CHIP` use a different vocabulary
+   (`beginner`, `beginner-intermediate`, `intermediate`, `easy`, `medium`, `hard`, `staff`, `daunting`);
+   `Concepts.jsx` module-level `level:` fields use a third (`beginner`/`intermediate`/`advanced`). Needs a
+   single canonical taxonomy decision before any cleanup — a real product decision, not just a bug fix.
+5. **73 orphaned question-bank questions with zero backing content**: `ml-fundamentals` (61) and
+   `recommendations` (12) topics exist in `preplabQuestions.js` but grep for `recsys`/`recommender`/
+   `ml fundamentals`/`classical ml` across `Concepts.jsx` returns zero matches — no gym/module backs them.
+   Reads like MSL content that leaked into GSL's question bank. Needs a decision: remove from GSL's bank,
+   reclassify, or actually build GSL-side content (my instinct: these are MSL's territory and should be
+   removed from GSL, but this is the user's call, not mine to decide).
+6. **No per-question or per-set reset** in the question bank — only a full-history wipe (`clearHistory()`
+   in both `WeaknessHeatmapMode` and `TrainerMode`). Confirmed gap, no partial-reset path exists anywhere.
+7. **No multi-topic select** — confirmed single-select only, both the group-tile filter (`groupFilter`)
+   and BrowseMode's topic `<select>` hold one string value each.
+
+### Not a bug, but the UX complaint is valid
+8. **"Pre-selected answer" in the question bank** — not a state bug. It's a separate, deliberate read-only
+   `BrowseMode` ("Expand to see answer + trap"), distinct from the real blind-attempt `TrainerMode` (which
+   does work correctly — attempt first, reveal after, confirmed via the `answer`/`submitted` state and a
+   code comment: "attempt first, reveal after (answer is NOT pre-selected)"). Scoring/leaderboard already
+   exists for Trainer/Exam/Scenario attempts (`gsl-preplab-history` → `computeBreakdown()` →
+   `gsl_leaderboard` Supabase table) — it just doesn't cover BrowseMode, which is correct since BrowseMode
+   isn't an attempt. The real gap: BrowseMode isn't labeled clearly enough as a spoiler/review view, so it
+   reads like a broken quiz rather than an intentional one.
+
+### Content gaps — smaller than they looked once checked
+9. **GQA/MQA/MHA** — good news: a genuinely solid `gqa-mqa` module already exists
+   (`foundations/market-gap.js:117-224`), covering why 8 KV heads specifically (derived from the general
+   `G` dial), the real query-to-KV-head sharing mechanics with an ASCII grouping diagram, MHA/MQA/GQA
+   tradeoffs, and named real models (Llama-2/3, Mistral 7B, PaLM, Falcon). The actual bug is `kv-cache`'s
+   pointer to it — text says GQA mechanics are "coming up next" (`foundationsRunnerData.js` ~line 946), but
+   per the real gym order `gqa-mqa` is already *earlier* in sequence than `kv-cache` — the pointer aims the
+   wrong direction in time and needs to become a recall ("as covered in gqa-mqa"), not a forward promise.
+10. **Sliding-window attention** doesn't need its own module — already well-covered as a sub-topic inside
+    `sparse-attention` (`foundations/breadth-2.js:3-67`): full O(n²)→O(n·w) derivation, diagram,
+    Longformer/BigBird/StreamingLLM siblings.
+11. **Prompt caching** doesn't need its own module either — already solid in `breadth-2.js:325-379`
+    (prefill/decode framing, worked cache-hit numbers, static-first/dynamic-last layout rule, provider
+    differences, TTL/invalidation). But neither `kv-cache` nor `cost-latency-concepts` actually link to it,
+    both just mention "prompt caching" in passing with no pointer.
+12. **`kv-cache`'s closing paragraph, precisely diagnosed**: asserts a "fix stack" (PagedAttention, KV
+    quantization, max-context cap) with zero worked numbers for any of the three, unlike the rest of the
+    module (which does derive the 0.33MB/token figure and the GQA reduction factor). Worse: **"max-context
+    cap" is introduced in the closing/scenario/keyPoints as if it were already one of the explained
+    mitigations, but the actual mitigations list only ever named PagedAttention, KV quantization,
+    sliding-window attention, and prompt caching** — a real internal inconsistency, not just weak prose.
+    Next module in the real gym order is `attention` (Self-Attention), which the closing doesn't set up —
+    but that's structurally moot, since Self-Attention is kv-cache's prerequisite, not a topical sequel.
+13. **`kv-cache`'s `keyPoints` leans on "batching capacity"** (bullet 3) and repeats the "max-context cap"
+    conflation (bullet 6) — `groundUp`/`explanation` never actually explain why memory pressure shrinks
+    GPU batch size, so keyPoints is assuming knowledge the module itself never taught.
+
+### Feature requests — need explicit scoping/sign-off before any planning, not investigated further
+14. Highlight-to-track redesign: dedicated "Highlights" track with foundation-family sub-categories, one
+    aggregating note per module, and highlights should reflect back onto the Foundations page itself.
+    Bigger than the highlight-to-track MVP already shipped (2026-07-08 session) — needs explicit scoping.
+15. Hover-to-define term glossary (needs a canonical definition source — reuse module prose? new data?),
+    and a checklist/todo layer alongside the existing Tracks system (new Track item type?) — both net-new
+    features, no investigation done, pure product decisions pending.
+
+### Also open (raised but not yet independently investigated)
+- Whether all interview-bank questions have their tested topics actually covered somewhere in Foundations
+  — a real coverage audit, not yet run (related to finding #5 above, but broader — needs a full topic-by-
+  topic cross-check, not just the ml-fundamentals/recommendations case already found).
+
+Nothing in this section has been fixed. Per the user's explicit "no execution yet, only brainstorming" —
+this is the living record so none of it gets lost before a fix plan is actually built and approved.

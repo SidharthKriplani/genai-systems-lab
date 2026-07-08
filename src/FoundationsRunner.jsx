@@ -34,8 +34,9 @@ export default function FoundationsRunner({
   const [submitted, setSubmitted] = useState(() => Array(mcqList.length).fill(false));
   const [recapMode, setRecapMode] = useState(false);
   const [tab, setTab]             = useState("lesson"); // "lesson" | "code"
+  const [deeperOpen, setDeeperOpen] = useState(false);
 
-  const { scenario, groundUp, explanation, takeaway, keyPoints, recap } = runnerData;
+  const { scenario, groundUp, explanation, takeaway, keyPoints, recap, deeperMath } = runnerData;
 
   // ── Code tab (2026-07-03, amended 2026-07-08): the tab exists ONLY when the module carries an
   //    explicit runnerData.code field. Illustrations JOIN an existing Code tab (they're often
@@ -235,6 +236,48 @@ export default function FoundationsRunner({
           </div>
         </section>
 
+        {/* ── Go Deeper — Academic (skeleton, added 2026-07-08): optional formal/derivation-grade
+             tier above Explanation. Collapsed by default so it never slows down the default reader;
+             only renders at all when a module supplies `deeperMath` (array, same item shapes as
+             `explanation`: string | {type:"illustration",...} | {type:"scene",...}). No module
+             populates this yet — `rope` is the planned pilot. ──────────────────────────────────── */}
+        {deeperMath?.length > 0 && (
+          <section>
+            <button
+              type="button"
+              onClick={() => setDeeperOpen(v => !v)}
+              className="w-full flex items-center gap-2 text-left text-xs font-mono uppercase tracking-widest text-amber-400/80 hover:text-amber-300 transition-colors"
+            >
+              <span>{deeperOpen ? "▾" : "▸"}</span>
+              <span>Go Deeper — Academic</span>
+            </button>
+            {deeperOpen && (
+              <div className="mt-4 space-y-4 rounded-xl border border-amber-900/40 bg-amber-950/10 p-5">
+                {deeperMath.map((item, i) => {
+                  if (typeof item === "string") {
+                    return <p key={i} className="text-sm text-zinc-200 leading-relaxed"><InlineMd text={item} /></p>;
+                  }
+                  if (item?.type === "illustration") {
+                    return (
+                      <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 mt-2">
+                        {item.label && (
+                          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">{item.label}</p>
+                        )}
+                        <pre className="text-xs font-mono text-zinc-300 leading-relaxed overflow-x-auto whitespace-pre">{item.content}</pre>
+                      </div>
+                    );
+                  }
+                  if (item?.type === "scene") {
+                    const Scene = FOUNDATION_SCENES[`${moduleId}/${item.sceneId}`];
+                    return Scene ? <div key={i} className="my-2"><Scene /></div> : null;
+                  }
+                  return null;
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* ── Key points ───────────────────────────────────────────────────── */}
         {keyPoints?.length > 0 && (
           <section>
@@ -255,8 +298,10 @@ export default function FoundationsRunner({
         {groundUp && scenario && (
           <section>
             <SectionRule label="In Production — Apply It" />
-            <div className="mt-4 rounded-xl p-5 border border-zinc-800 bg-zinc-900/50">
-              <p className="text-sm text-zinc-200 leading-relaxed font-medium"><InlineMd text={scenario} /></p>
+            <div className="mt-4 rounded-xl p-5 border border-zinc-800 bg-zinc-900/50 space-y-3">
+              {String(scenario).split("\n\n").map((para, i) => (
+                <p key={i} className="text-sm text-zinc-200 leading-relaxed font-medium"><InlineMd text={para} /></p>
+              ))}
             </div>
           </section>
         )}
