@@ -621,6 +621,11 @@ const BPE_STEPS = [
 
 const TOK_COLORS = ["bg-violet-900/60 border-violet-700 text-violet-200", "bg-blue-900/60 border-blue-700 text-blue-200", "bg-emerald-900/60 border-emerald-700 text-emerald-200", "bg-amber-900/60 border-amber-700 text-amber-200", "bg-rose-900/60 border-rose-700 text-rose-200", "bg-cyan-900/60 border-cyan-700 text-cyan-200", "bg-orange-900/60 border-orange-700 text-orange-200"];
 
+// How many times each word appears in the toy training corpus — this is what the "×5" etc. pair
+// frequencies in BPE_STEPS.topPairs actually count. Shown explicitly in the UI so the frequency
+// numbers aren't a mystery: (n,e) = 5 comes from new×3 + newest×2; (l,o) = 2 comes from low×1 + lowest×1.
+const BPE_CORPUS_COUNTS = { new: 3, newest: 2, low: 1, lowest: 1 };
+
 // Phase 0.3 widget dedupe (2026-07-03): Concepts is the CANONICAL interactive teaching home for the
 // core widgets — TokenizerModule, EmbeddingModule, AttentionModule, ChunkingModule, RerankingModule,
 // SamplingModule. Thinner copies of these concepts live in Playground (hands-on sandbox) and Explore
@@ -750,7 +755,7 @@ function TokenizerModule({ onNavigate }) {
         <div className="space-y-4">
           <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
             <p className="text-xs text-zinc-300 leading-relaxed">
-              GPT-4 and most LLMs use <strong className="text-white">Byte-Pair Encoding (BPE)</strong> to build their vocabulary from raw text. It starts with individual characters and iteratively merges the most frequent adjacent pair — until the vocabulary reaches the target size (GPT-4: ~100k). Below: watch BPE build vocabulary from corpus "new, newest, low, lowest." Move through the merge steps.
+              GPT-4 and most LLMs use <strong className="text-white">Byte-Pair Encoding (BPE)</strong> to build their vocabulary from raw text. It starts with individual characters and iteratively merges the most frequent adjacent pair — until the vocabulary reaches the target size (GPT-4: ~100k). Below: watch BPE build vocabulary from a toy training corpus of 7 word-occurrences — <strong className="text-white">new×3, newest×2, low×1, lowest×1</strong> — the counts you'll see driving every "top pair frequency" number on the right. Move through the merge steps.
             </p>
           </div>
 
@@ -775,6 +780,7 @@ function TokenizerModule({ onNavigate }) {
                 <div key={word} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono font-bold text-zinc-300 w-16">{word}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400 font-mono" title="How many times this word appears in the toy training corpus — this is what drives the pair-frequency counts on the right">×{BPE_CORPUS_COUNTS[word]} in corpus</span>
                     <span className="text-xs text-zinc-500">({toks.length} token{toks.length !== 1 ? "s" : ""})</span>
                     {toks.length === 1 && <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-900/50 border border-emerald-700 text-emerald-400 font-mono">single token</span>}
                   </div>
@@ -835,15 +841,22 @@ function TokenizerModule({ onNavigate }) {
           <div className="rounded-xl border border-blue-800/40 bg-blue-950/15 px-4 py-3 space-y-2">
             <div className="text-xs font-bold text-blue-400 uppercase tracking-wide">Why this matters in production</div>
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Words that appear often in training data become single tokens — cheap, coherent. Rare words, technical jargon, and names get split into multiple subword pieces — expensive, sometimes semantically broken. "ChatGPT" = 3 tokens. "Quantization" = 3 tokens. "Avinash" = 3 tokens. A word the tokenizer has never seen gets split character-by-character. This is why domain-adapted tokenizers exist for medical/legal/code domains.
+              Words that appear often in training data become single tokens — cheap, coherent. Rare words, technical jargon, and names get split into multiple subword pieces — expensive, sometimes semantically broken. Real GPT-4 (cl100k_base) splits: <code className="text-amber-300">"ChatGPT"</code> → <strong className="text-white">["Chat","G","PT"]</strong> (3 tokens) — even OpenAI's own product name isn't one token. <code className="text-amber-300">"Quantization"</code> → <strong className="text-white">["Quant","ization"]</strong> (2 tokens) — a common technical suffix merged cleanly. <code className="text-amber-300">"Avinash"</code> → <strong className="text-white">["A","vin","ash"]</strong> (3 tokens) — an under-represented name gets no merges at all. A word the tokenizer has truly never seen gets split character-by-character. This is why domain-adapted tokenizers exist for medical/legal/code domains.
             </p>
           </div>
         </div>
       )}
 
+      <div className="rounded-xl border border-violet-800/40 bg-violet-950/15 px-4 py-3 space-y-2">
+        <div className="text-xs font-bold text-violet-400 uppercase tracking-wide">The tokenizer and the model are one package, not two</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">
+          Every token ID is just an integer — token 9519 means nothing on its own. What makes it mean "low" is a single row in the model's embedding matrix, learned jointly with every other weight during pretraining. Swap in a different tokenizer and token 9519 now points at a completely different subword, but the embedding row at index 9519 still encodes whatever the old tokenizer's 9519 meant — the model's very first layer is now reading noise. That's why you can't bolt a new tokenizer onto a pretrained model: the vocabulary, the embedding table, and every layer downstream of it were trained as one coupled system. (Vocabulary-transfer techniques like WECHSEL and FOCUS exist to re-initialize embeddings for a new tokenizer from the old ones — but they're specialized, lossy workarounds, not a drop-in swap.)
+        </p>
+      </div>
+
       {/* Synthesis close */}
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
-        <p className="text-sm text-zinc-400 leading-relaxed italic">Token cost is an engineering constraint, not a footnote. On any system processing over 1M tokens per day, a ratio of 3.5 chars/token versus 4.2 chars/token is a 20% cost difference. Run your actual production samples through the tokenizer of your target model before committing to an architecture. The model you choose is also the tokenizer you choose.</p>
+        <p className="text-sm text-zinc-400 leading-relaxed italic">Token cost is an engineering constraint, not a footnote. On any system processing over 1M tokens per day, a ratio of 3.5 chars/token versus 4.2 chars/token is a 20% cost difference. Run your actual production samples through the tokenizer of your target model before committing to an architecture. The model you choose is also the tokenizer you choose — and, per the box above, you can't unchoose it later without retraining.</p>
       </div>
 
       {onNavigate && (
