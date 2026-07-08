@@ -44,11 +44,11 @@ Same weights, same GPU — the phase decides the bottleneck.` },
       "**The framing dictates the fix.** Decode's idle compute is what makes continuous batching and speculative decoding work; prefill's compute cost is what prefix caching and chunked prefill attack. Name the phase before you name the optimization.",
     ],
     recap: [
-      "**Two phases, opposite bottlenecks:** prefill = whole prompt in parallel, compute-bound, sets TTFT; decode = one token at a time, memory-bandwidth-bound, sets inter-token latency (TPOT).",
-      "**Decode is slow because arithmetic intensity is low:** stream ~all the weights from HBM to emit one token. You're waiting on memory, not FLOPs — so faster-FLOPS GPUs don't fix slow streaming.",
-      "**SLA math:** total ≈ TTFT + tokens × TPOT. TTFT scales with prompt length (compute); TPOT is near-constant per token (bandwidth). Long generations live on TPOT.",
-      "**KV cache** caches past keys/values to avoid recompute; grows linearly with seq_len × concurrency; can exceed weight memory at long context and drives decode's per-step traffic.",
-      "**Optimizations target a specific phase:** continuous batching + speculative decoding exploit decode's idle compute; prefix caching + chunked prefill + FlashAttention attack prefill's compute cost. Always know which phase you're optimizing.",
+      "**Two phases, opposite bottlenecks**: prefill → whole prompt in parallel, compute-bound, sets TTFT. Decode → one token at a time, memory-bandwidth-bound, sets TPOT.",
+      "**Decode's low arithmetic intensity**: streams ~all weights from HBM per single token → memory-bound, not compute-bound; more FLOPS doesn't fix it.",
+      "**Latency ≈ TTFT + tokens × TPOT.** TTFT scales with prompt length (compute); TPOT near-constant per token (bandwidth) → long generations live on TPOT.",
+      "**KV cache** stores past keys/values to skip recompute; grows linearly with seq_len × concurrency → can exceed weight memory at long context, driving decode's per-step traffic.",
+      "**Match fix to phase**: decode's idle compute → continuous batching + speculative decoding; prefill's compute cost → prefix caching + chunked prefill + FlashAttention.",
     ],
     mcqs: [
       {
@@ -126,11 +126,11 @@ CONTINUOUS (IN-FLIGHT) BATCHING (finished slots freed, new work admitted):
       "**It's a throughput-vs-latency dial capped by KV memory.** Bigger batches mean lower cost/token but higher tail latency; you cap batch size for interactive SLAs and max it for offline jobs. The batch-size ceiling is usually KV-cache memory, not compute.",
     ],
     recap: [
-      "**Single-stream decode wastes the GPU** (memory-bound, idle compute). Batching makes one weight-stream serve N requests' next-tokens, raising throughput ~linearly with batch size.",
-      "**Static batching = head-of-line blocking:** variable, unknown output lengths mean the batch runs until the slowest member finishes; early finishers idle and no one can join mid-flight.",
-      "**Continuous / in-flight batching** manages the batch per decode step: finished sequences drop out and free KV memory immediately, new requests join next step. The default in vLLM/TGI; ~5–20× over naive.",
-      "**Chunked prefill + priority scheduling** stop a long prompt's compute-heavy prefill from stalling in-flight decode, keeping TTFT and TPOT bounded.",
-      "**Throughput-vs-latency dial capped by KV memory:** bigger batch = lower cost/token but worse tail latency. Cap for interactive SLAs, max for offline. KV-cache memory (not compute) is the usual ceiling — which PagedAttention exists to relax.",
+      "**Single-stream decode wastes idle compute** (memory-bound) → batching makes one weight-stream serve N requests' next-tokens, throughput ~linear in batch size.",
+      "**Static batching → head-of-line blocking**: unknown, variable output lengths force lockstep until the slowest member finishes; early finishers idle, no mid-flight joins.",
+      "**Continuous (in-flight) batching** schedules per decode step: finished sequences drop out, free KV memory instantly; new requests join next step. vLLM/TGI default, ~5–20× over naive.",
+      "**Chunked prefill + priority scheduling**: split a long prompt's prefill into chunks interleaved with decode → bounds both TTFT and TPOT instead of stalling everyone.",
+      "**Throughput-vs-latency dial, capped by KV memory**: bigger batch → lower cost/token, worse tail latency. Cap for interactive SLAs, max for offline; KV-cache (not compute) is the usual ceiling — PagedAttention's target.",
     ],
     mcqs: [
       {
@@ -206,12 +206,12 @@ Shared prefix (copy-on-write): system prompt lives in blocks [b0,b1];
       "**Paging turns KV into a managed resource.** Once blocked, KV can also be quantized (int8/FP8 KV), windowed/evicted (sliding-window, heavy-hitter), or preempted/swapped to CPU under pressure — layered levers on the same memory budget.",
     ],
     recap: [
-      "**KV cache is the serving memory ceiling:** bytes/token ≈ 2 × layers × kv_heads × head_dim × bytes, × seq_len × concurrency. Efficient storage decides concurrency.",
-      "**Naive contiguous max-length reservation fragments memory:** internal (short requests hold empty reservations) + external (gaps too small to reuse) → OOM while the card looks half-used.",
-      "**PagedAttention = OS-style paging for KV:** fixed-size blocks + block table map logical→physical, non-contiguous, allocated on demand. Waste ≤ one partial block/request; no external fragmentation.",
-      "**Complements continuous batching:** reclaimed KV memory → bigger batch → ~2–4× throughput at equal latency in vLLM. Batching wants sequences; paging holds them.",
-      "**Prefix sharing via copy-on-write:** shared system prompt / few-shot / beam branches stored once, copied only on divergence — big savings for common prefixes.",
-      "**KV becomes a managed resource:** stack KV quantization (int8/FP8), windowing/eviction, and CPU swap/preemption on top of paging when memory is still tight.",
+      "**KV cache = the serving memory ceiling**: bytes/token ≈ 2 × layers × kv_heads × head_dim × bytes, × seq_len × concurrency — storage efficiency decides concurrency.",
+      "**Naive contiguous max-length reservation fragments memory**: internal (short requests hold empty reservations) + external (gaps too small to reuse) → OOM while the card looks half-used.",
+      "**PagedAttention = OS paging for KV**: fixed-size blocks + block table map logical→physical, non-contiguous, on demand → waste ≤ one partial block/request, no external fragmentation.",
+      "**Complements continuous batching**: reclaimed KV memory → bigger batch → ~2–4× throughput at equal latency in vLLM.",
+      "**Prefix sharing via copy-on-write**: shared system prompt/few-shot/beam branches stored once, copied only on divergence.",
+      "**KV becomes a managed resource**: stack quantization (int8/FP8), windowing/eviction, CPU swap/preemption on top of paging when memory is still tight.",
     ],
     mcqs: [
       {
@@ -289,12 +289,12 @@ Real 70B recipe: TP within a node (fit + latency), PP across nodes only if neede
       "**Stack selection is SLA + hardware + team, and build-vs-buy is upstream.** A managed API removes parallelism/engine/autoscaling/cold-start surface at a per-token premium; self-hosting wins on high steady volume, data control, and unavailable configurations (see the Production track).",
     ],
     recap: [
-      "**Parallelism axes:** tensor (split matrices in a layer; low latency; all-reduce/layer; in-node), pipeline (split layers across GPUs; cheap comms; cross-node; bubble risk), expert (spread MoE experts; all-to-all). They compose.",
-      "**70B recipe:** TP within a node to fit + cut inter-token latency; add PP across nodes only when memory demands it.",
-      "**Stacks differ on kernels + ops cost:** vLLM (easy, high throughput, low ops), TensorRT-LLM (compiled fused engine, lowest latency, high ops — per-model builds), Triton (multi-model orchestration, backends onto vLLM/TRT-LLM).",
-      "**Kernels = IO-awareness:** FlashAttention keeps attention tiles in SRAM and skips the HBM N×N matrix; fusion keeps intermediates off HBM; CUDA graphs cut launch overhead — all attack decode's memory/launch bottleneck.",
-      "**Infra:** autoscale on leading signals (queue depth) with warm replicas because cold starts load tens of GB; disaggregate prefill/decode to protect tail latency; right-size GPUs to the SLA.",
-      "**Selection is SLA + hardware + team; build-vs-buy is upstream** (managed API removes ops surface at a per-token premium; self-host wins on steady volume, data control, custom configs — see Production track).",
+      "**Three parallelism axes** (compose): tensor → split matrices in a layer, low latency, all-reduce/layer, in-node. Pipeline → split layers across GPUs, cheap comms, cross-node, bubble risk. Expert → spread MoE experts, all-to-all.",
+      "**70B recipe**: TP within a node → fit + cut inter-token latency; add PP across nodes only when memory demands it.",
+      "**Stacks differ on kernels + ops cost**: vLLM (easy, high throughput, low ops) vs TensorRT-LLM (compiled fused engine, lowest latency, high ops — per-model builds) vs Triton (multi-model orchestration, fronts vLLM/TRT-LLM).",
+      "**Kernels = IO-awareness**: FlashAttention tiles attention in SRAM, skips the HBM N×N matrix; fusion keeps intermediates off HBM; CUDA graphs cut launch overhead — all attack decode's memory/launch bottleneck.",
+      "**Infra**: autoscale on leading signals (queue depth), keep warm replicas (cold starts load tens of GB); disaggregate prefill/decode for tail latency; right-size GPUs to the SLA.",
+      "**Selection = SLA + hardware + team; build-vs-buy is upstream**: managed API removes ops surface at a per-token premium, self-host wins on steady volume/data control/custom configs.",
     ],
     mcqs: [
       {
@@ -366,11 +366,11 @@ Edge inference = (int4 quantization) + (small/distilled model) + (edge runtime).
       "**The real architecture is hybrid with a router.** Run the small local model for common/simple/private/offline queries and escalate hard ones to a frontier cloud model; decide per-query on difficulty, privacy, connectivity, and cost — build-vs-buy resolved per request rather than once.",
     ],
     recap: [
-      "**Datacenter recipe doesn't transport:** ~8GB shared unified RAM, low bandwidth, thermal/battery limits. Memory is the wall; quantization is the ladder — the enabling tech, not an optional optimization.",
-      "**`params × bytes` decides what fits:** 7B fp16 = 14GB (crash), int8 = 7GB (no headroom), int4 = ~3.5GB (fits + KV room). On-device standardizes on int4 (NF4 / k-quant) with outlier-aware methods.",
-      "**Match model to budget:** small capable models (1–8B) or distilled students beat a heavily-quantized giant on the actual task while fitting comfortably.",
-      "**Edge runtimes:** llama.cpp/GGUF (portable standard), MLX (Apple Silicon unified memory), ONNX Runtime / NPU vendor stacks. Prefer NPU > GPU > CPU; keep weights in unified memory to avoid copies.",
-      "**Hybrid + router:** small model on-device for common/private/offline/cheap; escalate hard queries to a frontier cloud model. Per-query routing on difficulty/privacy/connectivity/cost — build-vs-buy resolved per request.",
+      "**Datacenter recipe doesn't transport**: ~8GB shared unified RAM, low bandwidth, thermal/battery limits → memory is the wall, quantization is the ladder over it (enabling tech, not optimization).",
+      "**`params × bytes` decides what fits**: 7B fp16 = 14GB (crash) → int8 = 7GB (no headroom) → int4 = ~3.5GB (fits + KV room) → on-device standardizes on int4 (NF4/k-quant) with outlier-aware methods.",
+      "**Match model to budget**: small capable models (1–8B) or distilled students beat a heavily-quantized giant on the actual task while fitting comfortably.",
+      "**Edge runtimes**: llama.cpp/GGUF (portable standard), MLX (Apple Silicon unified memory), ONNX Runtime/NPU vendor stacks — prefer NPU > GPU > CPU, keep weights in unified memory to avoid copies.",
+      "**Hybrid + router**: small model on-device for common/private/offline/cheap; escalate hard queries to a frontier cloud model — per-query routing on difficulty/privacy/connectivity/cost.",
     ],
     mcqs: [
       {

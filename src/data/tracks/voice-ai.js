@@ -38,12 +38,12 @@ the assistant literally cannot begin until you stop talking.` },
       "**Choose the stack from the deployment constraint, not the leaderboard.** Does it need to stream? That single question rules out offline Whisper for live calls regardless of its offline WER. Managed API vs self-hosted RNN-T vs self-hosted Whisper is an accuracy/latency/cost/residency tradeoff.",
     ],
     recap: [
-      "**Front-end:** waveform → 25ms/10ms frames → log-mel spectrogram, ~100 frames/sec at 16kHz mono (Nyquist → 8kHz band covers all phonemes). Lossy on purpose.",
-      "**Alignment decides streaming:** CTC (per-frame, fast, no context), RNN-T (predictor over prior tokens → streaming-native + context-aware, the real-time default), Whisper/AED (full-clip attention → most accurate but offline).",
-      "**Whisper:** 680k hrs weak supervision → robust + multitask via special tokens; but hallucinates on silence because it was only trained on speech-filled 30s windows.",
-      "**The scenario:** Whisper can't stream — full-utterance attention forces wait-then-decode → 'frozen then a pause.' Live calls need RNN-T / a streaming API; Whisper belongs on offline transcription.",
-      "**Decoding + jargon:** greedy vs beam; shallow fusion with a domain LM (or word boosting) biases decoding so rare medical terms win the beam — no acoustic-model retrain needed.",
-      "**Stack choice = accuracy vs latency vs cost vs residency.** Pick from 'does it need to stream?', not from best offline WER.",
+      "**Front-end**: waveform → 25ms/10ms frames → log-mel spectrogram, ~100 frames/sec at 16kHz mono (Nyquist → 8kHz band covers all phonemes) — lossy on purpose.",
+      "**Alignment decides streaming**: CTC (per-frame, fast, no context) → RNN-T (predictor over prior tokens, streaming-native + context-aware, the real-time default) → Whisper/AED (full-clip attention, most accurate but offline).",
+      "**Whisper**: 680k hrs weak supervision → robust + multitask via special tokens; hallucinates on silence because it only trained on speech-filled 30s windows.",
+      "**The scenario**: Whisper can't stream — full-utterance attention forces wait-then-decode → 'frozen then a pause.' Live calls need RNN-T/a streaming API; Whisper belongs on offline transcription.",
+      "**Decoding + jargon**: greedy vs beam; shallow fusion with a domain LM (or word boosting) biases decoding so rare terms win the beam — no acoustic-model retrain.",
+      "**Stack choice = accuracy vs latency vs cost vs residency** — pick from 'does it need to stream?', not from best offline WER.",
     ],
     mcqs: [
       {
@@ -131,12 +131,12 @@ The two rules the budget encodes:
       "**Stream everything** — partial ASR, LLM token streaming, sentence-chunked TTS — to turn a sum of full-stage latencies into a sum of first-chunk latencies (often 3–5× smaller). Over budget? Find the dominant stage and stream it, or collapse the pipeline with a speech-to-speech model.",
     ],
     recap: [
-      "**Pipeline latency is additive:** mic → VAD → ASR → endpointing → LLM → TTS → speaker. Measure total end-of-speech → first-audio, not one stage.",
-      "**First-audio is the perception metric:** human turn gaps ~200ms; >500–700ms feels dead. Start fast, don't just finish fast.",
-      "**Use p95/p99, not the mean:** a good average with a bad tail feels broken on the ~1% of turns users remember and interrupt.",
-      "**Endpointing dominates controllable latency:** silence timeout trades latency vs cutting people off; semantic endpointing fires on complete utterances → shorter timer, no cutoffs.",
-      "**Barge-in = full-duplex + echo cancellation:** detect user speech over agent audio, cancel in-flight TTS, re-plan. Uninterruptible = robotic.",
-      "**Stream everything** (partial ASR, token streaming, sentence-chunked TTS) → sum of first-chunk latencies, ~3–5× smaller. Escape hatch: speech-to-speech collapses the hops for a lower floor.",
+      "**Pipeline latency is additive**: mic → VAD → ASR → endpointing → LLM → TTS → speaker — measure end-of-speech → first-audio, not one stage.",
+      "**First-audio is the perception metric**: human turn gaps ~200ms; >500–700ms feels dead — start fast, don't just finish fast.",
+      "**Budget at p95/p99, not the mean** — a good average with a bad tail feels broken on the ~1% of turns users remember and interrupt.",
+      "**Endpointing dominates controllable latency**: silence timeout trades latency vs cutting people off; semantic endpointing fires on complete utterances → shorter timer, no cutoffs.",
+      "**Barge-in = full-duplex + echo cancellation**: detect user speech over agent audio, cancel in-flight TTS, re-plan — uninterruptible feels robotic.",
+      "**Stream everything** (partial ASR, token streaming, sentence-chunked TTS) → sum of first-chunk latencies, ~3–5× smaller; escape hatch: speech-to-speech collapses the hops for a lower floor.",
     ],
     mcqs: [
       {
@@ -224,12 +224,12 @@ The two rules the budget encodes:
       "**Choose TTS from the deployment constraint, not the naturalness leaderboard.** Real-time agents weight streaming first-audio latency and SSML control heavily; offline audiobooks weight raw naturalness — so the leaderboard winner can be the wrong pick for a live agent.",
     ],
     recap: [
-      "**Neural TTS = acoustic model (words, prosody, speaker identity) + vocoder (waveform + first-audio latency).** Concatenative → parametric → neural → codec/LLM-style.",
-      "**Streaming vocoder = low first-audio latency:** emits audio in chunks as frames are produced; generate-then-vocode pays full-sentence synthesis first (the '>1s first word' bug).",
-      "**Zero-shot cloning = speaker embedding** from 3–10s reference audio conditions the model; no per-voice training. More/cleaner audio → better clone; fine-tune for higher fidelity.",
-      "**Flat intonation = uncontrolled prosody:** neural TTS predicts one average prosody; fix with SSML / control tokens for emphasis, pauses, pacing (in the acoustic model).",
-      "**Governance is ship-blocking:** cloning enables impersonation/deepfakes → consent, watermarking, and AI disclosure are requirements, not nice-to-haves.",
-      "**Pick TTS from the deployment constraint:** real-time → streaming vocoder + SSML control; offline → raw naturalness. Leaderboard winner ≠ right agent voice.",
+      "**Neural TTS = acoustic model** (words, prosody, speaker identity) **+ vocoder** (waveform + first-audio latency). Concatenative → parametric → neural → codec/LLM-style.",
+      "**Streaming vocoder = low first-audio latency**: emits audio in chunks as frames are produced; generate-then-vocode pays full-sentence synthesis first (the '>1s first word' bug).",
+      "**Zero-shot cloning**: a speaker embedding from 3–10s reference audio conditions the model, no per-voice training. More/cleaner audio → better clone; fine-tune → higher fidelity.",
+      "**Flat intonation = uncontrolled prosody**: neural TTS predicts one average prosody; fix with SSML/control tokens for emphasis, pauses, pacing (in the acoustic model).",
+      "**Governance is ship-blocking**: cloning enables impersonation/deepfakes → consent, watermarking, and AI disclosure are requirements, not nice-to-haves.",
+      "**Pick TTS from the deployment constraint**: real-time → streaming vocoder + SSML control; offline → raw naturalness — leaderboard winner ≠ right agent voice.",
     ],
     mcqs: [
       {
@@ -313,12 +313,12 @@ Pick from requirements, not hype:
       "**Barge-in needs full-duplex + echo cancellation.** Cancel in-flight TTS, discard/re-plan the response, and reconsider any in-flight tool call. Half-duplex strict-alternation feels robotic; full-duplex with clean barge-in is what makes the agent feel present in the conversation.",
     ],
     recap: [
-      "**The core lesson:** strong ASR + strong TTS don't make a good agent; the conversation layer (turn-taking, error recovery, dialogue mgmt) does — and component benchmarks miss it.",
-      "**Turn-taking = endpointing + barge-in + backchannels.** Wrong here → talks over people / dead air, no matter how good ASR/TTS is.",
-      "**Cascaded vs speech-to-speech:** cascaded = control + logging + reliable tool-calls, higher latency, loses prosody; speech-to-speech = lowest latency + prosody, harder to guardrail, tool-calling maturing.",
-      "**Robustness to ASR errors:** transcripts are probabilistic — use confidence scores, confirm critical slots before acting, re-prompt gracefully. Never silently act on a mis-heard 'Tuesday.'",
-      "**Voice tool-calling:** slot-fill + confirm + mask tool latency (filler/streaming) + track dialogue state across turns.",
-      "**Barge-in = full-duplex + echo cancellation:** cancel in-flight TTS, re-plan, reconsider in-flight tool calls. Half-duplex feels robotic; full-duplex feels present.",
+      "**Core lesson**: strong ASR + strong TTS ≠ a good agent — the conversation layer (turn-taking, error recovery, dialogue management) is what fails, and component benchmarks miss it.",
+      "**Turn-taking = endpointing + barge-in + backchannels** — get it wrong and the agent talks over people / leaves dead air, regardless of ASR/TTS quality.",
+      "**Cascaded vs speech-to-speech**: cascaded → control + logging + reliable tool-calls, higher latency, loses prosody. Speech-to-speech → lowest latency + prosody, harder to guardrail, tool-calling maturing.",
+      "**Robustness to ASR errors**: transcripts are probabilistic — confidence scores, confirm critical slots before acting, re-prompt gracefully. Never silently act on a mis-heard 'Tuesday.'",
+      "**Voice tool-calling** = slot-fill + confirm + mask tool latency (filler/streaming) + track dialogue state across turns.",
+      "**Barge-in = full-duplex + echo cancellation**: cancel in-flight TTS, re-plan, reconsider in-flight tool calls — half-duplex feels robotic, full-duplex feels present.",
     ],
     mcqs: [
       {
@@ -406,12 +406,12 @@ Same WER. Opposite product result. WER cannot tell these apart.
       "**Component-vs-system trap: strong ASR + strong TTS can still be a bad agent.** Evaluate end-to-end — task success rate, p95 turn/first-audio latency, barge-in handling, conversation-level success. Task success rate is what catches components-good, calls-bad.",
     ],
     recap: [
-      "**WER = (S+I+D)/reference words**, an equal-weight edit distance — tells you the rate of errors, never which words.",
-      "**The WER trap:** a 5% WER on the critical entity (date, account number) is worse than a 15% WER on filler. WER is entity-blind.",
-      "**Fix WER** with entity/keyword error rate, semantic accuracy, and consistent normalization (numbers/punctuation/casing) so you don't measure formatting.",
-      "**MOS = subjective 1–5 naturalness**, averaged over listeners — gold standard for TTS but slow, costly, and relative across studies; not a conversational-success metric.",
-      "**MOS proxies:** MCD (needs reference, loose correlation) and neural predictors like UTMOS (fast, reference-free) gate CI; human MOS confirms before ship.",
-      "**Component-vs-system trap:** strong ASR + strong TTS ≠ good agent. Ship on end-to-end task success rate, p95 latency, barge-in, and conversation success — not component metrics alone.",
+      "**WER = (S+I+D)/reference words** — an equal-weight edit distance; tells you the rate of errors, never which words.",
+      "**The WER trap**: 5% WER on the critical entity (date, account number) is worse than 15% WER on filler — WER is entity-blind.",
+      "**Fix WER**: entity/keyword error rate, semantic accuracy, consistent normalization (numbers/punctuation/casing) so you measure accuracy, not formatting.",
+      "**MOS = subjective 1–5 naturalness**, averaged over listeners — TTS gold standard, but slow, costly, relative across studies; not a conversational-success metric.",
+      "**MOS proxies**: MCD (needs reference, loose correlation), neural predictors like UTMOS (fast, reference-free) → gate CI; human MOS confirms before ship.",
+      "**Component-vs-system trap**: strong ASR + strong TTS ≠ good agent — ship on end-to-end task success rate, p95 latency, barge-in, conversation success, not component metrics alone.",
     ],
     mcqs: [
       {

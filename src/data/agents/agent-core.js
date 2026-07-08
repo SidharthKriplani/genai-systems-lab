@@ -45,11 +45,11 @@ Action:      refund({ id: 4471 })                <-- real action on a hallucinat
       "**Failure localises to a slot:** bad Thought = planning fault (fix prompt), bad Action = interface fault (fix schema), bad Observation = execution/fabrication fault (fix tool reliability + stop at Action). Knowing which slot failed is the whole debugging win.",
     ],
     recap: [
-      "**ReAct = Thought → Action → Observation, looped** until a final answer — the primitive that makes an LLM an agent.",
-      "**Model writes Thoughts + Actions; runtime writes Observations.** Fabricated Observations are the #1 production bug.",
-      "**Grounding via interleaving:** each step's reasoning is conditioned on real tool results, so the loop can recover from errors.",
-      "**Stop generation at the Action** (native in function-calling) so the model can't also emit the Observation.",
-      "**Guardrails:** max-step cap, reliable tool outputs, precise schemas. Debug by asking which of the three slots failed.",
+      "**ReAct = Thought → Action → Observation**, looped until a final answer — the primitive that turns an LLM into an agent.",
+      "**Model owns Thought + Action; runtime owns Observation.** A fabricated Observation is the #1 production bug.",
+      "**Grounding via interleaving:** each Thought conditions on a real prior Observation — recovers from a 404 or wrong guess.",
+      "**Action = a generation stop point** (native in function-calling) — nothing lets the model also write the Observation.",
+      "**Guardrails:** max-step cap, reliable tool outputs, precise schemas. Debug by naming which of the three slots failed.",
     ],
     mcqs: [
       {
@@ -129,11 +129,11 @@ STRONG — every field steers behaviour:
       "**MCP standardises the tool interface** so a well-authored tool is reusable across any client. The design principles are unchanged — MCP just formalises the schema grammar and makes tools portable.",
     ],
     recap: [
-      "**Schema = the model's only view of a tool.** Reliability lives in schema authoring, not the model.",
-      "**Description drives WHETHER to call** — always include an explicit 'Do NOT use for…' clause.",
-      "**Params drive the arguments** — constrain with examples, use enums, give defaults, keep count low.",
-      "**Granularity:** one verb over one noun; avoid both mode-flag mega-tools and colliding micro-tools.",
-      "**Return structured, actionable errors** so the agent loop can recover; MCP makes good tools portable across clients.",
+      "**Schema = the model's only view of a tool** — reliability lives in schema authoring, not model weights.",
+      "**Description decides WHETHER to call** — the highest-leverage line is an explicit 'Do NOT use for…' clause.",
+      "**Parameters decide the ARGUMENTS** — constrain with examples, prefer enums, give defaults, keep count low.",
+      "**Granularity: one verb, one noun** — avoid mode-flag mega-tools and colliding micro-tools alike.",
+      "**Structured, actionable errors** let the agent recover; MCP makes a well-authored schema portable across clients.",
     ],
     mcqs: [
       {
@@ -198,11 +198,11 @@ Reading the table:
       "**Match the mechanism to the information's change-rate:** fast-changing/session-scoped facts belong in working memory + stores, not the weights. Fine-tuning is for stable skills/style, never for per-turn facts.",
     ],
     recap: [
-      "**LLMs are stateless; all memory is layered on.** First split: working (in-context) vs long-term (outside it).",
-      "**The context window is a finite, volatile, per-token-expensive scratchpad.** Context-overflow = scratchpad full.",
-      "**Long-term memory must be re-injected** into working memory to be used — nothing outside the prompt is 'live.'",
-      "**Manage context with truncation + summarization + retrieval.** Summaries are lossy bets — keep decisions, drop verbosity.",
-      "**Fine-tuning is for stable skills, never per-turn facts.** Match the memory mechanism to how fast the info changes.",
+      "**LLMs are stateless — all memory is layered on.** First split: working (in-context) vs long-term (outside it).",
+      "**Working memory = the context window** — finite, volatile, per-token-expensive. Context-overflow = scratchpad full.",
+      "**Long-term memory must be re-injected** into working memory to be used — nothing outside the prompt is live.",
+      "**Context management = truncation + summarization + retrieval.** Summaries are lossy bets: keep decisions, drop verbosity.",
+      "**Fine-tuning suits stable skills, never per-turn facts** — match the mechanism to the info's change-rate.",
     ],
     mcqs: [
       {
@@ -268,11 +268,11 @@ MEMORY LIBRARY (Mem0 / Zep / LangMem):
       "**Escalation, not custom-first:** start in-context only → add Mem0/LangMem for cross-session recall → Zep for temporal/relational structure → custom vector store only for access control, metadata filtering, or scale.",
     ],
     recap: [
-      "**Memory libraries are the implementation layer** for long-term memory types — don't hand-roll what they already solve.",
-      "**A raw vector store = storage + top-k only:** no time, identity, change, or importance — so it returns stale/duplicate facts.",
+      "**Memory libraries are the implementation layer** for long-term memory — don't hand-roll what they already solve.",
+      "**A raw vector store = storage + top-k only:** no time, identity, change, or importance — returns stale/duplicate facts.",
       "**Libraries add extraction, conflict resolution, temporal awareness, and TTL/importance** — an evolving profile, not a chunk pile.",
-      "**Match the tool:** Mem0/LangMem for recall+personalization, Zep for temporal graphs, MemGPT/Letta for context paging, custom for access/scale.",
-      "**Escalate, don't over-build:** in-context → Mem0/LangMem → Zep → custom store only when forced. Building custom first is the anti-pattern.",
+      "**Match the tool:** Mem0/LangMem for recall + personalization, Zep for temporal graphs, MemGPT/Letta for context paging, custom for access/scale.",
+      "**Escalate, don't over-build:** in-context → Mem0/LangMem → Zep → custom store only when forced — custom-first is the anti-pattern.",
     ],
     mcqs: [
       {

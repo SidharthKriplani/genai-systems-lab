@@ -61,10 +61,10 @@ Naive fix "just raise max_position_embeddings":
     ],
     recap: [
       "**Attention has no built-in order** — position must be injected. Absolute/additive PE ties you to the index; RoPE ties you to the *gap between* tokens.",
-      "**RoPE rotates Q and K only** (not V) by `m·θ_d` per 2-D pair; the dot product then depends only on **(m − n)**, the relative offset.",
-      "**Why it extends better:** relative offsets were seen at every absolute location, so there's no 'undefined position 8000' — but raw RoPE still drifts out-of-distribution at large offsets.",
-      "**The real lever is base/theta:** PI (squeeze positions), NTK-aware (raise base), YaRN (per-frequency, best). Raising `max_position_embeddings` does nothing for a RoPE model.",
-      "**vs ALiBi:** ALiBi = linear distance penalty, cheap but recency-biased; RoPE = relative position without forced decay, better long-range retrieval. Frontier models use RoPE.",
+      "**RoPE rotates Q and K only** (not V) by `m·θ_d` per 2-D pair → dot product depends only on **(m − n)**, the relative offset.",
+      "**Extends better**: relative offsets were seen at every absolute location → no 'undefined position 8000' — but raw RoPE still drifts out-of-distribution at large offsets.",
+      "**Real lever = base/theta**: PI (squeeze positions), NTK-aware (raise base), YaRN (per-frequency, best). Raising `max_position_embeddings` does nothing for RoPE.",
+      "**vs ALiBi**: linear distance penalty, cheap but recency-biased. RoPE = relative position, no forced decay → better long-range retrieval. Frontier models use RoPE.",
     ],
     mcqs: [
       {
@@ -168,11 +168,11 @@ GQA (G groups, here G=2):  8 query heads -> 2 KV heads (4 queries share each)
       "**Query-head count and KV-head count are decoupled.** Quality wants many Q heads; the cache wants few KV heads. GQA is a pretraining-time choice (you can't just drop KV heads from a trained MHA model — 'uptraining' converts, at a retraining cost). Users: MQA (PaLM, Falcon); GQA (Llama-2/3, Mistral).",
     ],
     recap: [
-      "**KV cache, not weights, is the inference bottleneck.** Caching K/V avoids O(t²) recompute; its size scales with num_KV_heads × layers × head_dim × **seq_len × batch** — grows with context and users.",
-      "**MQA:** keep all H query heads, share **1** K/V head → ~H× smaller cache and bandwidth, but K/V-diversity loss dents quality.",
-      "**GQA:** **G** groups (1 < G < H), each sharing one K/V head → store G KV heads. **G = H ⇒ MHA, G = 1 ⇒ MQA.**",
-      "**GQA wins** because it keeps most memory/bandwidth savings with near-MHA quality. Llama-2/3-70B = 64 Q heads / 8 KV heads = **GQA-8** (8× cut).",
-      "**Q heads ≠ KV heads.** Quality wants many Q; cache wants few KV. GQA is chosen at pretraining (or via 'uptraining' conversion), not a runtime flag.",
+      "**KV cache**, not weights, is the inference bottleneck. Caching K/V avoids O(t²) recompute; size ∝ KV_heads × layers × head_dim × **seq_len × batch** — grows with context & users.",
+      "**MQA**: keep all H query heads, share **1** K/V head → ~H× smaller cache/bandwidth, but K/V-diversity loss dents quality.",
+      "**GQA**: **G** groups (1 < G < H), each sharing one K/V head → store G KV heads. **G = H ⇒ MHA, G = 1 ⇒ MQA.**",
+      "**GQA wins**: keeps most memory/bandwidth savings at near-MHA quality. Llama-2/3-70B = 64 Q heads / 8 KV heads = **GQA-8** (8× cut).",
+      "**Q heads ≠ KV heads.** Quality wants many Q; cache wants few KV. GQA is a pretraining-time choice ('uptraining' converts an MHA checkpoint), not a runtime flag.",
     ],
     mcqs: [
       {
@@ -279,11 +279,11 @@ Common modern recipe:  GRPO (critic-free optimizer)
       "**A learned RM still wins for subjective/open-ended goals** (helpfulness, tone, style, safety) where no verifier exists. Related: **DPO** skips both the RM and the RL loop, optimizing directly on preference pairs. Don't conflate GRPO (drops critic) with RLVR (drops learned RM).",
     ],
     recap: [
-      "**RLHF+PPO = up to 4 models:** policy, frozen reference (KL), **learned reward model**, **critic**. GRPO and RLVR each remove one.",
-      "**GRPO drops the critic:** sample **G outputs/prompt**, baseline = **group mean**, advantage = (r − mean)/std — group-relative, critic-free (DeepSeek).",
-      "**RLVR drops the learned RM:** reward = a **verifier/rule** (answer correct? tests pass? schema valid?) → 1/0, not a neural preference guess. Used by Sarvam, DeepSeek-R1.",
-      "**Orthogonal & combined:** GRPO = optimizer, RLVR = reward source. R1-style RL = GRPO + RLVR.",
-      "**Verifiable > learned RM when correctness is checkable** (math/code/logic): exact, ungameable, no labels. **Learned RM wins for subjective goals** (tone/safety). **DPO** = no RM, no RL loop.",
+      "**RLHF+PPO** = up to 4 models: policy, frozen reference (KL), **learned reward model**, **critic**. GRPO and RLVR each remove one.",
+      "**GRPO drops the critic**: sample **G outputs/prompt**, baseline = group mean, advantage = (r−mean)/std — group-relative, critic-free (DeepSeek).",
+      "**RLVR drops the learned RM**: reward = a **verifier/rule** (answer correct? tests pass? schema valid?) → 1/0, not a neural preference guess. Used by Sarvam, DeepSeek-R1.",
+      "**Orthogonal & combined**: GRPO = optimizer, RLVR = reward source. R1-style RL = GRPO + RLVR.",
+      "**Verifiable > learned RM** when correctness is checkable (math/code/logic): exact, ungameable, no labels. **Learned RM** wins for subjective goals (tone/safety). **DPO** = no RM, no RL loop.",
     ],
     mcqs: [
       {

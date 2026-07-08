@@ -54,11 +54,11 @@ RRF (k=60):
       "**Per-query-type routing is a cheaper alternative to always running both.** Classify keyword-y (IDs/codes → BM25) vs semantic (conversational → dense) and send to the fitting retriever — one search, not two. Riskier: misrouting hits the wrong blind spot, and many queries are mixed. Default to hybrid+RRF for robustness.",
     ],
     recap: [
-      "**Sparse/BM25 = exact-token match** (IDF rewards rare terms) → wins on error codes, IDs, code, jargon; blind to synonyms.",
-      "**Dense/embeddings = semantic match** → wins on paraphrase ('reset password' ≈ 'recover credentials'); *blurs* rare exact tokens into their neighborhood (the near-miss).",
-      "**Failures are mirror images** — which is why you often want both, not one.",
-      "**Hybrid + RRF:** scores aren't comparable, so fuse by RANK: RRF(d) = Σ 1/(k+rank_d), k≈60. Scale-free; strong if either retriever ranks it high, strongest if both.",
-      "**Routing** (keyword-y → BM25, semantic → dense) is cheaper (one search) but riskier (misroute = wrong blind spot, mixed queries). Default hybrid+RRF; route only clean high-volume patterns.",
+      "**Sparse/BM25** = exact-token match (IDF rewards rare terms) → wins on error codes, IDs, code, jargon; blind to synonyms.",
+      "**Dense/embeddings** = semantic match → wins on paraphrase ('reset password' ≈ 'recover credentials'); blurs rare exact tokens into their neighborhood (the near-miss).",
+      "**Failures are mirror images** — why you often want both, not one.",
+      "**Hybrid + RRF**: scores aren't comparable → fuse by rank: RRF(d) = Σ 1/(k+rank_d), k≈60. Scale-free; strong if either retriever ranks it high, strongest if both.",
+      "**Routing** (keyword-y → BM25, semantic → dense) is cheaper (one search) but riskier (misroute = wrong blind spot; mixed queries). Default hybrid+RRF; route only clean high-volume patterns.",
     ],
     mcqs: [
       {
@@ -158,11 +158,11 @@ THE MISSING LINK:  VP ──(based in)──► Germany ──(leave policy)─�
       "**Cost two — serial latency, and knowing when to use it.** Hops can't parallelize (hop 2 needs hop 1's answer), so N hops = N sequential retrieve+reason round-trips. Use multi-hop only for genuine dependency chains; when facts are co-located/jointly similar, just raise top-k and let the LLM stitch — far cheaper.",
     ],
     recap: [
-      "**Multi-hop = answer needs 2+ chained docs**, and hop 2's query depends on hop 1's answer (VP → Germany → leave policy).",
-      "**Single-shot fails structurally:** one query vector is a blurry average of two needs; the two chunks that jointly answer are never both in top-k.",
-      "**Fix = iterative loop:** decompose → retrieve → reason (extract intermediate answer) → substitute into next query → retrieve → compose. Each hop is a concrete single-fact match. (IRCoT / Self-Ask.)",
-      "**Compounding error:** per-hop reliability multiplies (0.9²=0.81, 0.9³=0.73); a hop-1 error poisons all later hops with confidence.",
-      "**Serial latency:** hops can't parallelize → N× round-trips + tokens. Use only for true dependency chains; if facts are co-located, just raise top-k and let the LLM stitch — cheaper.",
+      "**Multi-hop** = answer needs 2+ chained docs; hop 2's query depends on hop 1's answer (VP → Germany → leave policy).",
+      "**Single-shot fails structurally**: one query vector is a blurry average of two needs — the two chunks that jointly answer are never both in top-k.",
+      "**Fix = iterative loop**: decompose → retrieve → reason (extract intermediate answer) → substitute into next query → retrieve → compose. Each hop is a concrete single-fact match (IRCoT / Self-Ask).",
+      "**Compounding error**: per-hop reliability multiplies (0.9²=0.81, 0.9³=0.73); a hop-1 error poisons all later hops with confidence.",
+      "**Serial latency**: hops can't parallelize → N× round-trips + tokens. Use only for true dependency chains; co-located facts → just raise top-k, let the LLM stitch.",
     ],
     mcqs: [
       {
@@ -255,11 +255,11 @@ rewrite              into a standalone query              follow-ups
       "**Universal tradeoff: every technique adds an LLM call before retrieval** (latency + cost on the critical path, before the user sees any answer). Worth it on terse/ambiguous/conversational queries, pure overhead (or mild harm) on clean ones. Be selective: always-on cheap conversational rewrite; gate HyDE/step-back behind ambiguity/low-confidence signals.",
     ],
     recap: [
-      "**Query rewriting = fix the search key before retrieval.** Real queries are terse, conversational, context-dependent; the embedder encodes the ambiguity faithfully.",
-      "**Expansion:** add synonyms/related terms → bridges vocabulary mismatch, raises recall (precision risk if over-aggressive).",
-      "**HyDE:** LLM writes a hypothetical *answer*, you embed THAT (not the question) — because answer-shaped text matches the answer-shaped docs in your corpus. Wrong facts fine; shape/vocab does the work.",
-      "**Step-back:** generalize → retrieve governing context → answer the specific. **Conversational rewrite:** resolve 'it'/'that' from history into a standalone query ('does it include SSO' → 'does the Pro plan include SSO').",
-      "**Tradeoff:** each technique = an extra LLM call before retrieval (latency + cost on the critical path). Worth it on ambiguous/conversational queries, overhead on clean ones. Be selective; always-on conversational rewrite, gate HyDE/step-back.",
+      "**Query rewriting** = fix the search key before retrieval. Real queries are terse, conversational, context-dependent; the embedder encodes the ambiguity faithfully.",
+      "**Expansion**: add synonyms/related terms → bridges vocabulary mismatch, raises recall (precision risk if over-aggressive).",
+      "**HyDE**: LLM writes a hypothetical answer, embed *that* (not the question) — answer-shaped text matches the answer-shaped docs in your corpus. Wrong facts fine; shape/vocab does the work.",
+      "**Step-back**: generalize → retrieve governing context → answer the specific. **Conversational rewrite**: resolve 'it'/'that' from history into a standalone query ('does it include SSO' → 'does the Pro plan include SSO').",
+      "**Tradeoff**: each technique = an extra LLM call before retrieval (latency + cost on the critical path). Worth it on ambiguous/conversational queries, overhead on clean ones. Always-on conversational rewrite; gate HyDE/step-back.",
     ],
     mcqs: [
       {

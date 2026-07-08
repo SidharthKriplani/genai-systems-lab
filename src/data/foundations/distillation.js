@@ -47,12 +47,12 @@ blend them. Drop the T^2 and the soft term is silently down-weighted ~9x at T=3.
       "**Distillation composes with quantization:** distill 70B→8B for quality-per-parameter, then quantize to int4 for bytes-per-parameter. Limits: student can't exceed the teacher, transfers only what the data covers, and plateaus if too small.",
     ],
     recap: [
-      "**Hard labels are impoverished:** one-hot targets discard which classes are near-neighbors; the from-scratch small model plateaus partly from a poorer signal.",
-      "**Dark knowledge = the teacher's non-top probabilities** — graded similarity structure the student learns to copy, beating a same-size model trained from scratch.",
-      "**Loss:** `α·T²·KL(teacher‖student) + (1−α)·CE(hard_label)` — KL moves dark knowledge, CE keeps ground-truth anchoring.",
-      "**Temperature exposes the signal:** T>1 flattens both distributions so near-zero classes carry gradient; the T² factor rescales the soft term after ~1/T² shrinkage.",
-      "**Variants:** response/logit, feature-based (DistilBERT), relation-based, sequence-level → modern LLM pattern is fine-tuning on teacher-generated data/rationales (black-box).",
-      "**Distill vs quantize:** distillation buys quality-per-parameter (needs training + teacher), quantization buys bytes-per-parameter (cheap); stack them. Student can't beat the teacher, is bounded by data coverage, and needs enough capacity.",
+      "**Hard labels are impoverished:** one-hot targets discard which classes are near-neighbors — the from-scratch small model plateaus partly from a poorer signal, not just fewer parameters.",
+      "**Dark knowledge = the teacher's non-top probabilities** — graded similarity structure the student copies, beating a same-size model trained from scratch.",
+      "**Loss:** `α·T²·KL(soft_teacher‖soft_student) + (1−α)·CE(hard_label)` — KL moves dark knowledge, CE anchors ground truth.",
+      "**Temperature exposes the signal:** T>1 flattens both distributions → near-zero classes carry gradient; T² rescales the soft term after its ~1/T² shrinkage.",
+      "**Variants:** response/logit, feature-based (DistilBERT), relation-based, sequence-level → modern LLM pattern = fine-tune on teacher-generated data/rationales (black-box).",
+      "**Distill vs quantize:** distillation buys quality-per-parameter (needs training + teacher), quantization buys bytes-per-parameter (cheap) — stack them. Student can't beat the teacher, bounded by data coverage, needs enough capacity.",
     ],
     mcqs: [
       {

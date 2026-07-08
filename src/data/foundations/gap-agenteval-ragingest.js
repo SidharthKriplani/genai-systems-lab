@@ -54,11 +54,11 @@ TRAJECTORY 1 (correct path)          TRAJECTORY 2 (broken path, lucky)
       "**The harness runs the agent in a controlled env (mocked/recorded tools → reproducible), captures every trajectory, and reports outcome AND process metrics.** Ship on outcome; debug, gate releases, and catch silent-safety regressions on trajectory — because 'right for the wrong reasons' is an incident waiting for the input that breaks the luck.",
     ],
     recap: [
-      "**Outcome eval = final-answer pass/fail; an agent is a trajectory of steps** — outcome-only throws away the path.",
-      "**Two opposite failures:** false PASS (right answer, broken/lucky/unsafe path — e.g. rogue refund) and false FAIL (right path, wrong answer from stale data / API error).",
-      "**Trajectory eval scores each step:** tool-selection + tool-argument accuracy, step success rate, redundant/hallucinated calls, and error-recovery rate (adapt on failure, don't barrel ahead).",
-      "**Score with two mechanisms:** golden-trajectory per-step assertions (facts, deterministic, = regression suite) + LLM-as-judge over the trace (taste, open-ended, but biased/non-deterministic → anchor with goldens + human audits).",
-      "**Harness = controlled env (mocked tools, reproducible) + captured trajectories + outcome AND process metrics.** Ship on outcome, debug/gate/safety-check on trajectory.",
+      "**Outcome eval = final-answer pass/fail; an agent is a trajectory** (Thought → Action → Observation, repeated) — outcome-only discards the path.",
+      "**Two opposite failures:** false PASS (right answer, broken/lucky/unsafe path — e.g. rogue refund) vs false FAIL (right path, wrong answer from stale data / API error).",
+      "**Trajectory eval scores each step:** tool-selection + tool-argument accuracy, step success rate, redundant/hallucinated calls, error-recovery (adapt on failure, don't barrel ahead).",
+      "**Two scoring mechanisms:** golden-trajectory per-step assertions (facts → regression suite) + LLM-as-judge over the trace (taste; biased/non-deterministic → anchor with goldens + audits).",
+      "**Harness:** controlled env (mocked tools) + captured trajectories + outcome AND process metrics — ship on outcome, debug/gate/safety-check on trajectory.",
     ],
     mcqs: [
       {
@@ -146,11 +146,11 @@ INCREMENTAL UPSERT (by doc id)
       "**Freshness SLAs and cost/latency asymmetry are design levers.** The SLA (minutes vs. nightly) drives event-driven vs. batch ingestion and must be elicited, not assumed. Ingestion is throughput-bound and off the critical path, retrieval is latency-bound per query — so push expensive work (rich parsing, metadata, per-chunk summaries) to ingestion; you pay once and amortize over every query.",
     ],
     recap: [
-      "**Two pipelines:** offline ingestion (parse → clean/dedup → metadata → chunk → embed → index, background) vs. online query path (embed → search → generate, per request). Retrieval quality is CAPPED by ingestion quality.",
+      "**Two pipelines:** offline ingestion (parse → clean/dedup → metadata → chunk → embed → index, background) vs online query path (embed → search → generate, per request). Retrieval quality is CAPPED by ingestion quality.",
       "**Parse is the most underestimated stage** — PDF columns, HTML boilerplate, tables → garbage-out poisons everything; retrieval can't recover a mangled parse.",
-      "**Metadata (source, section, timestamp, ACLs) lets retrieval filter before ranking** — skipping ACLs at ingestion leaks docs a user can't see; you can't add permissions at query time if the index lacks them.",
-      "**Incremental re-index by stable doc id:** on edit upsert only that doc's chunks, on delete remove them (or a deleted doc keeps being cited), on supersession upsert v2 + delete v1. Cost ∝ change, not corpus. Full rebuild = model/schema migration only.",
-      "**Freshness SLA (minutes vs. nightly) drives event-driven vs. batch;** ingestion is off the critical path, so push expensive work (rich parse, metadata, per-chunk summaries) there — pay once, amortize over every query.",
+      "**Metadata (source, section, timestamp, ACLs) lets retrieval filter before ranking** — skipping ACLs at ingestion leaks docs a user can't see; permissions can't be bolted on at query time.",
+      "**Incremental re-index, keyed by doc id:** edit → upsert that doc's chunks; delete → remove them (else it keeps being cited); supersession → upsert v2 + delete v1. Cost ∝ change, not corpus — full rebuild = model/schema migration only.",
+      "**Freshness SLA (minutes vs nightly) drives event-driven vs batch.** Ingestion is off the critical path — push expensive work (rich parse, metadata, per-chunk summaries) there: pay once, amortize over every query.",
     ],
     mcqs: [
       {

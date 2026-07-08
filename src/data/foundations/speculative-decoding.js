@@ -24,9 +24,9 @@ export const RUNNER_SPECDECODE = {
     ],
     recap: [
       "**Decode is sequential + memory-bound:** one target forward pass per token, GPU mostly idle — spare compute is what speculation reclaims.",
-      "**Draft/verify split:** cheap draft proposes k tokens; target verifies all k in one parallel pass because the tokens are already committed.",
-      "**Lossless by construction:** accept w.p. min(1,p/q), resample from (p−q)⁺ on first rejection → emitted tokens are exactly the target's distribution.",
-      "**α governs the win:** α is draft–target alignment; high α → 2.5–3×, low α → overhead, net-neutral or slower. k trades tokens-per-round vs wasted tail work.",
+      "**Draft/verify split:** cheap draft proposes k tokens; target verifies all k in one parallel pass, since the tokens are already committed.",
+      "**Lossless by construction:** accept w.p. min(1,p/q) → resample from (p−q)⁺ on first rejection → emitted tokens are exactly the target's distribution.",
+      "**α governs the win** (draft–target alignment): high α → 2.5–3×, low α (≈0.4) → overhead, net-neutral or slower. k trades tokens-per-round vs wasted tail work.",
       "**Batch regime decides value:** big win at batch-1/latency-sensitive; barely helps under compute-saturated high-throughput serving.",
       "**Variants:** self-speculative, Medusa, EAGLE — different proposal mechanisms, same lossless verify-and-accept core.",
     ],

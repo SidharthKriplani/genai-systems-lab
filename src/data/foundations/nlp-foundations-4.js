@@ -154,7 +154,7 @@ foundation models + prompting / PEFT (today)` },
     ],
     recap: [
       "**Pretrain-then-adapt:** self-supervised pretraining on massive *unlabeled* text, then fine-tune on a *small* labeled set. Language learned once (free text); labels only teach the final task -> data efficiency.",
-      "**Why it works:** solving masked-word prediction *forces* learning of syntax/semantics/world knowledge, which transfers -> high accuracy from few labels.",
+      "**Why it works:** solving masked-word prediction *forces* learning of syntax/semantics/world knowledge -> that transfers -> high accuracy from few labels.",
       "**Lineage:** word2vec/GloVe (static, feature-based) -> ELMo (deep contextual, biLSTM LM) -> ULMFiT (fine-tune whole LM; discriminative LR + gradual unfreezing + slanted triangular LR) -> BERT (masked-LM, understanding) & GPT (causal-LM, generation). 'NLP's ImageNet moment.'",
       "**Feature-extraction (freeze + head)** = cheap, overfit-resistant, no deep adaptation; **full fine-tuning** = higher ceiling, adapts to domain shift, risks overfit/forgetting. More data/shift -> full FT.",
       "**Leads to today:** foundation models + prompting (no updates) + PEFT/LoRA (tiny parameter set). One idea: learn general capability once, adapt cheaply.",
@@ -253,7 +253,7 @@ MAX pooling   : take the elementwise max across tokens
     ],
     recap: [
       "**Don't mean-pool vanilla BERT for cosine:** its masked-LM vectors aren't cosine-comparable and are *anisotropic* (narrow cone) -> unrelated sentences score ~0.9. Fast, not meaningful.",
-      "**SBERT = bi-encoder, siamese/triplet-trained** so cosine actually means semantic similarity; encode each sentence once into one vector.",
+      "**SBERT = bi-encoder, siamese/triplet-trained** -> cosine actually means semantic similarity; encode each sentence once into one vector.",
       "**Bi-encoder vs cross-encoder:** cross-encoder feeds the *pair* in (accurate, but per-pair -> N passes for 1-vs-N, O(n^2) clustering); bi-encoder encodes once -> O(1) dot products / ~O(log n) ANN. Little accuracy for huge scale.",
       "**Pooling (CLS / mean / max):** collapse per-token vectors into one. Mean pooling usually wins for SBERT (smoother, more robust than CLS slot or spiky max).",
       "**Contrastive/triplet** = relative 'closer to positive than negative by a margin.' Production: bi-encoder retrieve -> cross-encoder rerank. Measured on STS via cosine; powers RAG, search, clustering, dedup, paraphrase.",

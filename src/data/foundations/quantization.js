@@ -52,12 +52,12 @@ Why the cliff: outlier activations mean a few channels carry most of the signal.
       "**A mismatched calibration set is a correctness bug.** PTQ estimates which channels are salient from the calibration corpus — calibrate on the real production distribution, or it protects the wrong channels.",
     ],
     recap: [
-      "**Quantization = fewer bits per weight.** Precision needed for training isn't needed for a forward pass; store weights lossier and the model still runs.",
-      "**Memory is linear in bit-width:** fp16 2B → int8 1B → int4 0.5B. 70B: 140GB → 70GB → 35GB — this decides which GPU it fits on.",
-      "**int8 near-lossless, int4 dangerous with naive RTN:** 256 vs 16 grid levels. Outlier-driven channels get rounded crudely, error compounds across layers → multi-step reasoning collapses, smoke tests still pass.",
+      "**Quantization = fewer bits per weight.** Training needs fp16/bf16 precision; a forward pass doesn't — store weights lossier and the model still runs.",
+      "**Memory is linear in bit-width:** fp16 2B → int8 1B → int4 0.5B. 70B: 140GB → 70GB → 35GB — decides which GPU it fits on.",
+      "**int8 near-lossless, int4 dangerous under naive RTN:** 256 vs 16 grid levels → outlier-driven channels rounded crudely → error compounds across layers → multi-step reasoning collapses while smoke tests pass.",
       "**Fix int4 with outlier-aware methods:** GPTQ (Hessian error compensation), AWQ (scale up salient channels), NF4 (distribution-matched grid) — all ~97–99% of fp16.",
       "**KV cache is a separate knob:** grows with context length + concurrency, can exceed weights; quantize FP8/int8 KV independently for long-context serving.",
-      "**Calibrate on production-representative data** — a mismatched calibration set makes PTQ protect the wrong channels and is a correctness bug, not a detail.",
+      "**Calibrate on production-representative data** — a mismatched calibration set makes PTQ protect the wrong channels; a correctness bug, not a detail.",
     ],
     mcqs: [
       {

@@ -35,12 +35,12 @@ API-tool equivalent that CANNOT happen this way:
       "**Prefer API/function-calling tools whenever they exist** — they are transactional, faster, cheaper, safer. Computer use is the last-resort universal interface for software with no programmatic surface.",
     ],
     recap: [
-      "**Loop:** screenshot → ground to a coordinate → act → screenshot again. Feedback is a *picture to re-perceive*, not a *fact handed back* — that is the whole difference from API tools.",
-      "**Grounding breaks** two ways: wrong pixel across resolutions (coordinate) or right element gone stale after a reflow (element). Coordinates are single-frame-valid.",
-      "**Stale-frame race** = the double-submit: non-transactional screenshot lags the action → model re-clicks. Fix with an **idempotency key**, not with 'try harder to see'.",
-      "**Costs:** 2–10s per action × dozens of actions; screenshots bloat context → pruned history → weak memory.",
+      "**Loop:** screenshot → ground to a coordinate → act → screenshot again. Feedback is a picture to re-perceive, not a fact handed back — the whole gap vs API tools.",
+      "**Grounding breaks two ways:** wrong pixel across resolutions (coordinate) or right element gone stale after a reflow (element). A coordinate is valid for one frame only.",
+      "**Stale-frame race = the double-submit:** a non-transactional screenshot lags the action → model re-clicks. Fix with an **idempotency key**, not sharper perception.",
+      "**Costs:** 2–10s per action × dozens of actions; screenshots bloat context → pruned history → weak long-horizon memory.",
       "**Safety stack for irreversible actions:** idempotency + human confirmation gate + sandboxed VM/throwaway account (also blocks on-screen prompt injection).",
-      "**Default to APIs.** Use computer use only when no programmatic interface exists — you trade structured reliability for human-like universality.",
+      "**Default to APIs** — reach for computer use only when no programmatic interface exists; you trade structured reliability for human-like universality.",
     ],
     mcqs: [
       {
@@ -105,12 +105,12 @@ opens it once. Durability protects your OWN state; idempotency protects the WORL
       "**Cost is a first-class failure mode:** each step re-sends context, so a 6-hour run costs real money and an un-checkpointed restart re-spends it. Checkpoint + manage context to keep per-step cost flat, and enforce a budget cap. Human gates suspend the workflow durably rather than blocking a paying live process.",
     ],
     recap: [
-      "**Premise:** run long enough and you *will* be interrupted — so survivability, not features, is the design center. Don't lose steps 1–179 when step 180 dies.",
-      "**Checkpoint** state (scratchpad + tool results + plan + done marker) to durable storage each step → rehydrate → resume at step 181, not step 1.",
-      "**Durability ≠ idempotency.** Resume re-does the crashed step; give external side effects stable keys so 'open PR' twice opens it once. (The duplicate-PR bug.)",
-      "**Engines:** Temporal (replay), Step Functions (managed state machine), LangGraph (graph state + HITL interrupts) so you don't hand-roll persistence.",
-      "**Context bloats over hours** → compact old turns, externalize big results to pointers, keep a durable scratchpad as source of truth (not the raw transcript).",
-      "**Cost is a failure mode:** per-step context re-send makes long runs expensive; an un-checkpointed restart re-spends it. Budget-cap the run; suspend durably at human gates instead of holding a live process open.",
+      "**Premise:** run long enough and you *will* be interrupted — survivability, not features, is the design center. Don't lose steps 1–179 when step 180 dies.",
+      "**Checkpoint** state (scratchpad + tool results + plan + done marker) to durable storage each step → rehydrate → resume at step 180, not step 1.",
+      "**Durability ≠ idempotency.** Resume redoes only the crashed step; external side effects need stable keys so 'open PR' twice opens it once — the duplicate-PR bug.",
+      "**Engines:** Temporal (event-sourcing/replay), Step Functions (managed state machine), LangGraph (graph state + HITL interrupts) — so you don't hand-roll persistence.",
+      "**Context bloats over hours** → compact old turns, externalize big results to pointers, keep a durable scratchpad as source of truth, not the raw transcript.",
+      "**Cost is a failure mode:** per-step context re-send makes long runs expensive; an un-checkpointed restart re-spends it — budget-cap the run, suspend durably at human gates.",
     ],
     mcqs: [
       {
@@ -177,12 +177,12 @@ EVAL        offline: ticket replay set w/ graded resolutions
       "**Guardrails are layered (input/scope/output/action) with a defined fallback** — escalate-to-human on low confidence, tripped guardrail, or cap hit. And design **eval up front**: offline replay set + online metrics (resolution, escalation, wrong-action, cost) + full trace logging. Closing on 'how I'd know it works/fails' is the interview tell.",
     ],
     recap: [
-      "**Framework spine:** task & success → loop & autonomy → tools → memory → guardrails → eval. Order matters; the task drives all of it.",
-      "**Step 1 sets the rest:** define done/failure + cost asymmetry (wrong refund ≫ over-escalation) ⇒ pick autonomy and the safe fallback.",
-      "**Loop:** perceive→plan→act→observe, explicit stop + step/budget cap; single-agent unless decomposition earns its coordination cost.",
+      "**Framework spine:** task & success → loop & autonomy → tools → memory → guardrails → eval. Order matters — the task drives all of it.",
+      "**Step 1 sets the rest:** define done/failure + cost asymmetry (wrong refund ≫ over-escalation) → pick autonomy level and the safe fallback.",
+      "**Loop:** perceive → plan → act → observe, explicit stop + step/budget cap; single-agent unless decomposition earns its coordination cost.",
       "**Tools:** least privilege, prefer structured APIs, gate irreversible actions behind confirmation.",
       "**Memory:** working context + RAG for knowledge (don't memorize) + episodic per-user history.",
-      "**Guardrails layered (input/scope/output/action) with escalate-to-human fallback; eval designed up front** (offline replay + online metrics + trace logging). Justify every choice against the task's stakes.",
+      "**Guardrails layered** (input/scope/output/action) with an escalate-to-human fallback; **eval designed up front** (offline replay + online metrics + trace logging).",
     ],
     mcqs: [
       {
@@ -252,11 +252,11 @@ fed results back. The model only decided WHAT to do and WHEN to stop.` },
     ],
     recap: [
       "**Loop:** perceive → plan → act → observe, repeat. The **model decides**; the **runtime executes tools, appends results, and re-calls** — the model is stateless.",
-      "**Memory = the appended context**: turn 5 only 'remembers' because turns 1–4's results were re-shown to it.",
-      "**Stopping conditions (4):** goal/`finish` · step cap · budget cap · error exit. Only goal is the intended exit; the runtime must enforce the other three.",
+      "**Memory = the appended context** — turn 5 only 'remembers' because turns 1–4's results were re-shown to it.",
+      "**Stopping conditions (4):** goal/`finish` · step cap · budget cap · error exit. Only goal is the intended exit — the runtime enforces the other three.",
       "**Two failure modes, two rails:** looping/non-termination (→ step cap + repeat detection) vs. premature termination (→ stopping criteria + verification). Cap too low stops early; too high runs away.",
-      "**Planning axis:** interleaved ReAct (robust, more calls) vs. plan-then-execute (cheap, brittle). Production usually interleaves + re-plans.",
-      "**Everything hangs off the loop:** tools = act space · memory = perceive/observe context · guardrails = plan→act checks · stopping = runtime exit. Runtime owns termination + safety.",
+      "**Planning axis:** interleaved ReAct (robust, more calls) vs. plan-then-execute (cheap, brittle). Production usually interleaves and re-plans.",
+      "**Everything hangs off the loop:** tools = act space, memory = perceive/observe context, guardrails = plan→act checks, stopping = runtime exit.",
     ],
     mcqs: [
       {

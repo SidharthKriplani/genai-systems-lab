@@ -52,10 +52,10 @@ Take: both ~cut cost 2-3x. Router = lowest latency, riskier misroute.
     ],
     recap: [
       "**Core idea:** traffic is a difficulty distribution; route each query to the *cheapest model that can still answer it*, not the flagship for everything.",
-      "**Router** = cheap classifier decides *before* seeing an answer → one inference, lowest latency, but a misroute has no recovery. **Cascade** = small model first, escalate on a *confidence check* → decides *after* an attempt, more accurate, but escalated queries pay small+large serially (tail latency).",
+      "**Router** = decide *before* seeing an answer → one inference, lowest latency, but a misroute has no recovery. **Cascade** = small model first, escalate on a *confidence check* → decide *after* an attempt, more accurate, but pays small+large serially (tail latency).",
       "**Confidence signals** (the heart of a cascade): logprobs (cheap, misses confident-wrong), self-consistency (robust, costs more), verifier/judge (flexible, extra call). A bad signal escalates everything (no savings) or nothing (quality craters).",
-      "**Failover ≠ routing.** Failover keeps you up when the primary is down/rate-limited: fall back to another provider or a degraded model instead of erroring; mind tokenizer/context/format drift and degrade gracefully.",
-      "**Risks:** silent misroutes (cheap confident-wrong answers), cascade tail latency on your hardest queries, router drift, and over-confident models breaking the 'good enough' check.",
+      "**Failover ≠ routing.** Failover keeps you up when the primary is down/rate-limited: fall back to another provider or a degraded model instead of erroring; mind tokenizer/context/format drift, degrade gracefully.",
+      "**Risks:** silent misroutes (cheap confident-wrong answers), cascade tail latency on your hardest queries, router drift, over-confident models breaking the 'good enough' check.",
     ],
     mcqs: [
       {
@@ -149,11 +149,11 @@ LEAST PRIVILEGE (scope to the exact need):
       "**Least privilege is the top control for agents; compliance makes it mandatory.** Scope each agent to only the tools it needs and each tool to the narrowest credential (read-only, single-tenant), require approval for irreversible actions, sandbox code — so any compromise has a tiny blast radius. Compliance (data residency, audit logging with redaction, retention/minimisation) means a leaky or unauditable system fails even when every answer is correct.",
     ],
     recap: [
-      "**Frame:** an LLM app leaks at boundaries — input (PII pasted in), context (secrets, other tenants, system prompt, memorised data), output-to-user, output-to-tools. Injection = data IN (separate); this module = data/privilege OUT.",
+      "**Frame:** an LLM app leaks at its boundaries — input → context (secrets, other tenants, system prompt, memorised data) → output-to-user / output-to-tools. Injection = data IN (separate module); this module = data/privilege OUT.",
       "**PII redaction is two-sided:** filter *in* (don't spread PII into logs/vector DB/3rd-party APIs) and *out* (don't emit it to the user). Regex for structured PII + NER/classifier for names/addresses.",
       "**Exfiltration, 3 flavours:** system-prompt leakage; cross-tenant / memorised-training-data leakage; tool-mediated (agent smuggles secrets out via an outbound action).",
-      "**Guardrails wrap the model — and the OUTPUT guardrail must gate the TOOL CALL, not just the user reply** (the dangerous output is executed, not shown). Block PII/secrets/unsafe; layer rules + classifiers + judge.",
-      "**Least privilege (top agent control):** only the tools it needs, narrowest cred per tool (read-only/single-tenant), approval for irreversible actions, sandboxed code → tiny blast radius on compromise. **Compliance** (residency, redacted audit logs, retention) makes a leaky/unauditable system a failing one even if answers are correct.",
+      "**Guardrails wrap the model — the OUTPUT guardrail must also gate the TOOL CALL**, not just the user reply (the dangerous output is executed, not shown). Block PII/secrets/unsafe; layer rules + classifiers + judge.",
+      "**Least privilege (top agent control):** only needed tools, narrowest cred per tool (read-only/single-tenant), approval for irreversible actions, sandboxed code → tiny blast radius on compromise. **Compliance** (residency, redacted audit logs, retention) makes a leaky/unauditable system failing even when answers are correct.",
     ],
     mcqs: [
       {

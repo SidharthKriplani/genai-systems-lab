@@ -11,10 +11,10 @@ export const RECAP_PATCH_B = {
       "**Zero-shot failures are the example-curation guide** — they tell you exactly which boundary cases few-shot must cover.",
     ],
     recap: [
-      "**Zero-shot = describe-and-go**, powered by instruction-following; the baseline is a signal.",
-      "**Errors concentrate at ambiguous boundaries** where no rule resolves overlapping categories.",
-      "**More prose hurts; examples help** — length is not the lever.",
-      "**Run zero-shot first, curate few-shot from its failures** — they are layered, not competing.",
+      "**Zero-shot = describe-and-go**, via instruction-following — the baseline is signal, not failure.",
+      "**Errors concentrate at ambiguous boundaries** — no rule resolves overlapping categories.",
+      "**More prose hurts; examples help** — length isn't the lever.",
+      "**Zero-shot first → few-shot from its failures** — layered, not competing.",
     ],
   },
 
@@ -28,10 +28,10 @@ export const RECAP_PATCH_B = {
       "**Dynamic few-shot beats a static set** — retrieve the most similar labeled examples at inference so they're naturally balanced to the query (needs a labeled store + fast retrieval).",
     ],
     recap: [
-      "**Examples are a task spec, not decoration** — bad ones actively distort output.",
-      "**Imbalance, unrepresentativeness, and recency** are the three failure modes.",
+      "**Examples = task spec, not decoration** — bad ones distort output.",
+      "**Three failure modes:** imbalance, unrepresentativeness, recency.",
       "**Balance categories, include hard cases, watch ordering.**",
-      "**Retrieve similar labeled examples per query** for production classifiers — inherently balanced.",
+      "**Retrieve similar labeled examples per query** in production — inherently balanced.",
     ],
   },
 
@@ -45,10 +45,10 @@ export const RECAP_PATCH_B = {
       "**Self-consistency = majority vote over independent chains** — most robust for high-stakes math where one chain error is costly, at the cost of multiple inference calls.",
     ],
     recap: [
-      "**Direct answers have no structural consistency constraint**; multi-step errors compound.",
-      "**CoT conditions each step on prior correct steps**, following learned derivation patterns.",
-      "**Start with zero-shot CoT**; add few-shot for format.",
-      "**Add self-consistency (majority vote) when a single chain error carries real cost.**",
+      "**Direct answers have no consistency constraint** — multi-step errors compound.",
+      "**CoT conditions each step on the prior correct step** — follows learned derivation patterns.",
+      "**Zero-shot CoT first; few-shot CoT for format.**",
+      "**Self-consistency (majority vote)** when a single chain error is costly.",
     ],
   },
 
@@ -62,10 +62,10 @@ export const RECAP_PATCH_B = {
       "**Length is not the fix** — a poorly structured 2,000-word prompt dilutes attention; buried constraints get less weight. Make every constraint testable.",
     ],
     recap: [
-      "**System prompts steer distributions probabilistically** — not hard rules.",
-      "**Over-refusal = broad scope**, fixed by inclusion-based scope, not more words.",
+      "**System prompts steer probabilistically** — not hard rules.",
+      "**Over-refusal = broad scope** — fix with inclusion-based scope, not more words.",
       "**Bloated prompts dilute attention** — buried constraints weaken.",
-      "**For adversarial resistance, pair prompt hardening with input/output classifiers.**",
+      "**Adversarial resistance = prompt hardening + input/output classifiers.**",
     ],
   },
 
@@ -80,10 +80,10 @@ export const RECAP_PATCH_B = {
       "**Add a per-field confidence field** — route low-confidence extractions to human review without blocking the automated path.",
     ],
     recap: [
-      "**JSON emerges from token prediction** — no structural awareness during generation.",
+      "**JSON = token prediction** — no structural awareness during generation.",
       "**JSON mode fixes syntax, not schema** — fields/types still drift.",
-      "**Grammar-constrained decoding makes invalid output impossible** — the production fix.",
-      "**It also forces values for unknowns** — add a confidence field to catch them.",
+      "**Grammar-constrained decoding → invalid output impossible** — the production fix.",
+      "**It also forces values for unknowns** — add a confidence field.",
     ],
   },
 
@@ -97,10 +97,10 @@ export const RECAP_PATCH_B = {
       "**Supplement with input/output classifiers**, but the architecture matters more because it removes the LLM from the authorization path entirely.",
     ],
     recap: [
-      "**The model weighs all in-band text equally** — trusted and untrusted alike.",
-      "**Indirect injection via retrieved content** dodges input sanitization.",
-      "**In-band defensive instructions lose** to in-band attacks.",
-      "**Privilege separation — propose then validate — removes the LLM from the auth path.**",
+      "**Model weighs all in-band text equally** — trusted and untrusted alike.",
+      "**Indirect injection (via retrieved content)** dodges input sanitization.",
+      "**In-band defenses lose to in-band attacks.**",
+      "**Privilege separation** — propose, then validate — removes the LLM from the auth path.",
     ],
   },
 
@@ -114,10 +114,10 @@ export const RECAP_PATCH_B = {
       "**'Free' pgvector has a hidden cost** — a memory-resident HNSW index contends with relational workload, often forcing a bigger instance or a dedicated replica.",
     ],
     recap: [
-      "**pgvector's superpower is the relational JOIN pre-filter** in one query.",
-      "**Dedicated DBs win on pure ANN at scale** via in-memory horizontal sharding.",
-      "**~10M vectors is the crossover** where pgvector latency degrades.",
-      "**Default to pgvector, migrate at the ceiling** — and budget the instance contention 'free' hides.",
+      "**pgvector's edge: relational JOIN pre-filter**, one query.",
+      "**Dedicated DBs win pure ANN at scale** — in-memory, horizontally sharded.",
+      "**~10M vectors = crossover** where pgvector latency degrades.",
+      "**Default to pgvector, migrate at the ceiling** — budget the instance contention 'free' hides.",
     ],
   },
 
@@ -131,10 +131,10 @@ export const RECAP_PATCH_B = {
       "**Keep the old index warm 24-72h** as rollback insurance, then decommission.",
     ],
     recap: [
-      "**Switching models silently invalidates every stored vector** — spaces don't align.",
-      "**Dual-write keeps reads on the old index** while the new one fills.",
-      "**Backfill fully before querying the new index** — partial coverage = low recall.",
-      "**Cutover atomically, keep the old index warm, then delete.**",
+      "**Switching models invalidates every stored vector silently** — spaces don't align.",
+      "**Dual-write** — new docs to both, reads stay on old, no user impact.",
+      "**Backfill fully before querying new index** — partial coverage = low recall.",
+      "**Cutover atomically → keep old index warm → decommission.**",
     ],
   },
 
@@ -148,10 +148,10 @@ export const RECAP_PATCH_B = {
       "**Numeric hallucination** — on ambiguous OCR the model emits a plausible number from its prior; validate every numeric against business rules (do line items sum to total?).",
     ],
     recap: [
-      "**Image → patches → ViT tokens → projection → prepend to text** is the VLM path.",
-      "**Encoder training coverage decides document accuracy** — general VLMs weaken on dense/low-DPI docs.",
-      "**Low DPI blurs digits within a patch** — use ≥200 DPI.",
-      "**Numbers can be hallucinated** — validate every extracted figure against business rules.",
+      "**VLM path:** image → patches → ViT tokens → projection → prepend to text.",
+      "**Encoder training coverage caps document accuracy** — general VLMs weaken on dense/low-DPI docs.",
+      "**Low DPI blurs digits per patch** — use ≥200 DPI.",
+      "**Numbers can be hallucinated** — validate every figure against business rules.",
     ],
   },
 
@@ -165,10 +165,10 @@ export const RECAP_PATCH_B = {
       "**Evaluate retrieval per modality** — text vs figure vs table misses are different problems with different fixes.",
     ],
     recap: [
-      "**Non-text content isn't retrievable without a text handle** — captions or structured extraction.",
+      "**Non-text content needs a text handle to be retrievable** — caption or structured extraction.",
       "**Caption fidelity caps figure answers** — enumerate values, not just structure.",
-      "**Tables → structured JSON**, not captions, to keep exact lookups.",
-      "**Score modalities separately** to see which one is underperforming.",
+      "**Tables → structured JSON**, not captions — keeps exact lookups.",
+      "**Score modalities separately** — isolates which one underperforms.",
     ],
   },
 
@@ -182,10 +182,10 @@ export const RECAP_PATCH_B = {
       "**Use adaptive resolution if a subset degrades** — a cheap binary classifier routes 'complex' images to high-res and 'standard' images to low-res.",
     ],
     recap: [
-      "**Tokens scale with area** — 4× linear = 16× tokens = ~16× cost.",
-      "**Dropping 2048→512 can cut the bill ~16×** at the same rate.",
-      "**Simple attributes rarely need full resolution** — validate on a labeled sample first.",
-      "**Route only complex images to high-res** with a cheap classifier.",
+      "**Tokens scale with area:** 4× linear → 16× tokens → ~16× cost.",
+      "**2048→512 cuts the bill ~16×** at the same rate.",
+      "**Simple attributes rarely need full resolution** — validate on a labeled sample.",
+      "**Route only complex images to high-res** via a cheap classifier.",
     ],
   },
 
@@ -199,10 +199,10 @@ export const RECAP_PATCH_B = {
       "**Blended cost ≈ 5-15× traditional** — most simple pages take the cheap path; only hard pages hit the vision LLM.",
     ],
     recap: [
-      "**Garbled OCR = confident hallucination** — the LLM can't tell good text from bad.",
-      "**Programmatic PDF? Extract directly** — free and exact, skip OCR.",
-      "**Traditional OCR is cheap but breaks on complex layouts** below ~50%.",
-      "**Hybrid: OCR everywhere, vision LLM only for low-confidence pages** — ~5-15× cost.",
+      "**Garbled OCR → confident hallucination** — the LLM can't tell good text from bad.",
+      "**Programmatic PDF → extract directly** — free, exact, no OCR.",
+      "**Traditional OCR is cheap but breaks on complex layouts** — accuracy can fall below ~50%.",
+      "**Hybrid:** OCR everywhere, vision LLM only for low-confidence pages — ~5–15× cost.",
     ],
   },
 
@@ -216,10 +216,10 @@ export const RECAP_PATCH_B = {
       "**For a Llama 3 checkpoint with no RL infra, DPO is the start** — 500-2,000 preference pairs make safe refusal the default across all future contexts; add CAI only if annotation cost becomes prohibitive.",
     ],
     recap: [
-      "**Alignment needs weight change** — RLHF works but is operationally heavy.",
+      "**Alignment = weight-level change** — RLHF works but is operationally heavy.",
       "**DPO = supervised learning on preference pairs** — no reward model, no PPO, comparable quality.",
-      "**CAI removes human labeling via constitution + self-critique**, gated on base-model capability.",
-      "**No RL infra? DPO first**, CAI only when annotation cost forces it.",
+      "**CAI = constitution + self-critique**, removing human labeling — gated on base-model capability.",
+      "**No RL infra → DPO first**; CAI only once annotation cost forces it.",
     ],
   },
 

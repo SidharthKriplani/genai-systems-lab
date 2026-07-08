@@ -38,12 +38,12 @@ Per-token routing (top-2 of 8 experts):
       "**MoE adds knowledge capacity at near-constant compute** but costs more memory + training instability. Provision by TOTAL params, never active. Families: Mixtral, DeepSeek-MoE, Grok, (rumored) GPT-4.",
     ],
     recap: [
-      "**MoE = dense FFN → N experts + top-k router.** Only k experts fire per token; the rest sit idle but resident.",
-      "**Two numbers split:** ACTIVE params drive FLOPs/latency, TOTAL params drive VRAM. Dense: equal. MoE: they diverge.",
-      "**Mixtral 8x7B:** ~47B total (shared attention + 8 FFN experts), ~13B active (top-2). Latency of a 13B, memory of a 47B.",
-      "**Per-token routing** (recomputed every layer) is why all experts must stay resident — you can't predict which the next token needs.",
-      "**Router collapse without a load-balancing loss:** a few experts hog tokens, the rest starve; overflow drops tokens and degrades quality. First suspect when an MoE underperforms its active-size dense peer.",
-      "**Trade:** more capacity at constant compute, paid for in memory + training instability. Provision by total params, not active.",
+      "**MoE = dense FFN → N expert FFNs + top-k router.** Only k experts fire per token; the rest sit idle but resident.",
+      "**Two numbers split:** ACTIVE drives FLOPs/latency, TOTAL drives VRAM. Dense: ACTIVE=TOTAL. MoE: they diverge.",
+      "**Mixtral 8x7B:** ~47B total (shared attention + 8 FFN experts), ~13B active (top-2 of 8). Latency of a 13B, memory of a 47B.",
+      "**Per-token routing, recomputed every layer** — the next token can need any expert, so all must stay resident.",
+      "**Router collapse without a load-balancing loss:** a few experts hog tokens, the rest starve; overflow drops tokens, degrades quality. First suspect when an MoE underperforms its active-size dense peer.",
+      "**Trade:** more capacity at constant compute, paid for in memory + training instability. Provision by TOTAL params, not active.",
     ],
     mcqs: [
       {

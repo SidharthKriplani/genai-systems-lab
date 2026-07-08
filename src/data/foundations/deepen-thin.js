@@ -3,6 +3,7 @@ export const RUNNER_DEEPEN_THIN = {
   "reranking": {
     depthTier: "deep",
     interviewWeight: "high",
+    groundUp: "Let's start with a question that sounds almost too simple. Your retriever pulls back ten chunks that all look relevant — but which one goes *first*? Getting the single best chunk into the top spot matters enormously, because in most systems the top result is what shapes the answer. And it turns out this \"which one is first\" job is genuinely harder than the \"grab ten roughly-relevant ones\" job that came before it.\n\nTo see why, we need one idea about *how* ordinary retrieval measures relevance. It squeezes each chunk down, ahead of time, into a single fixed vector — the query never actually gets to *look at* the chunk while that vector is being made. That's fast and wonderful for a first sweep, but it's a bit like ranking résumés you compressed to one number each before anyone told you what the job was. A tool that fixes the ordering by letting the query and the chunk finally read each other, together, is called a **reranker**.\n\nWe'll build this up gently: first see exactly what that pre-compression throws away, then meet the reranker that recovers it, and finally weigh what it costs — because a reranker is slower, and knowing *when* that slowness is worth it is the real skill. No rush.",
     scenario: "Your RAG support bot retrieves the top 5 chunks by vector similarity and stuffs them into the prompt. Eval says recall@50 is 0.94 — the right document is almost always somewhere in the top 50 — yet users complain the bot 'ignores the obvious answer.' You dig in: the correct chunk is frequently sitting at rank 18, well below the 5 you actually pass to the model. Widening to top-20 blows your context budget and *lowers* answer quality (more distractors). Someone suggests 'add a reranker.' You need to explain what that actually buys you and what it costs before you sign off on the extra latency.",
     explanation: [
       "Retrieval and reranking are two different scoring machines with two different cost/quality profiles, and RAG works best when you use each for what it is good at.\n\nYour first stage is a **bi-encoder** (the embedding model behind your vector DB). It encodes the query into a vector *once*, encodes every document into a vector *once* (offline, ahead of time), and scores a query-document pair by a cheap **dot product or cosine similarity** between the two vectors. Because the document vectors are precomputed and the comparison is just a distance in vector space, you can score *millions* of documents in milliseconds via an ANN index (HNSW, IVF). ==That speed is the entire reason bi-encoders exist — but it comes from a compression you should be suspicious of.==",
@@ -43,11 +44,11 @@ Cross-encoder cost is ~LINEAR in k (one forward pass per candidate):
       "**A reranker can only reorder what retrieval returned.** If recall@k is poor (right chunk not in top-k), reranking cannot recover it — fix embeddings/chunking/hybrid search first. Reranking is worth it precisely when recall is high but top-n precision is low.",
     ],
     recap: [
-      "**Bi-encoder** embeds query & doc separately → cheap, indexable, high recall, mediocre top precision. **Cross-encoder** reads the concatenated pair → accurate top ordering, no precompute, one pass per pair.",
-      "**Recall ≠ precision:** answer *in* top-50 but at rank 18 is a precision bug, not a recall bug. Widening context is the wrong fix (more distractors).",
-      "**retrieve-k-then-rerank-to-n:** wide cheap net (k≈50–100) → careful expensive reorder → keep top n≈3–5 for the prompt.",
-      "**Cost:** rerank latency ~linear in k, tens–hundreds of ms; ColBERT / hosted rerankers are middle grounds.",
-      "**A reranker only reorders stage-1 output** — it can't surface a chunk retrieval never returned. Use it when recall@k is high but precision@n is low.",
+      "**Bi-encoder** embeds query & doc separately → cheap, indexable, high recall, mediocre top precision. **Cross-encoder** reads the concatenated pair → accurate ordering, no precompute, one pass/pair.",
+      "**Recall ≠ precision**: answer *in* top-50 but at rank 18 is a precision bug, not a recall bug. Widening context is the wrong fix (more distractors).",
+      "**Retrieve-k-then-rerank-to-n**: wide cheap net (k≈50–100) → careful expensive reorder → keep top n≈3–5 for the prompt.",
+      "**Cost**: rerank latency ~linear in k, tens–hundreds of ms; ColBERT / hosted rerankers are middle grounds.",
+      "**A reranker only reorders stage-1 output** — can't surface a chunk retrieval never returned. Use when recall@k is high but precision@n is low.",
     ],
     mcqs: [
       {
@@ -90,6 +91,7 @@ Cross-encoder cost is ~LINEAR in k (one forward pass per candidate):
   "rag-eval": {
     depthTier: "deep",
     interviewWeight: "high",
+    groundUp: "Let's start with the most tempting number in the world and why it lies to you. You have a RAG system, and the obvious way to grade it is one score: *what fraction of answers were correct?* Say it's 78%. Feels informative. It isn't — at least not for the thing you actually need, which is *knowing what to fix*.\n\nHere's the reason, and it's the spine of this module. A RAG system is really three smaller machines in a row: one that *finds* the right passage, one that *stays faithful* to what it found, and one that *writes* a correct answer from it. Any of the three can break on its own. So a single blended 78% is like a car dashboard with one lamp labeled \"something's off\" — true, useless. You can't tell whether the finder missed the page, or the writer ignored a page it *did* get.\n\nSo we'll build up how to *decompose* that one number into stage-specific measurements, and how to gather the small ground-truth set that powers them. Take your time. The reward is turning \"it's 78%\" — a shrug — into \"retrieval is fine, faithfulness is the leak\" — a plan.",
     scenario: "Your RAG assistant scores 8.2/10 on a single 'answer quality' LLM-judge metric, and leadership is happy — until a customer catches it citing a policy that doesn't exist in any of your documents. You investigate and find two separate diseases wearing the same symptom: sometimes retrieval returns the wrong chunks (so even a perfect answer would be impossible), and sometimes retrieval is fine but the model ignores the context and invents a plausible answer from its parametric memory. Your one blended score cannot tell these apart. You need an eval design that pins the blame on the right component.",
     explanation: [
       "A RAG system is a **pipeline of two stages** — *retrieve* then *generate* — and the cardinal rule of evaluating it is that you must **measure the two stages separately**, because a single end-to-end score cannot localize failure. ==If retrieval feeds the generator garbage, even a flawless generator produces a wrong answer; if retrieval is perfect but the generator ignores it, you also get a wrong answer. Same symptom, opposite cure.== A blended 8.2/10 hides which disease you have.",
@@ -134,11 +136,11 @@ precision 0.40). A reranker would help; more retrieval breadth would not.` },
       "**RAGAS runs the triad with an LLM judge (often reference-free); retrieval metrics need a labeled gold set.** Bootstrap gold labels by generating questions from known chunks. Run retrieval and generation as separate CI gates so neither regression masks the other.",
     ],
     recap: [
-      "**Eval retrieval and generation separately** — one blended RAG score can't localize failure; the two stages fail identically but need opposite fixes.",
-      "**Generation triad:** faithfulness (answer grounded in context = anti-hallucination), answer relevance (answers the question), context relevance (retrieval gave pertinent chunks). Orthogonal.",
-      "**Retrieval metrics:** recall@k (found it), precision@k (noise), MRR (first hit ranked high), nDCG (all hits ranked high, graded + position-discounted).",
-      "**Localization rule:** low retrieval metrics → fix retrieval; good context + low faithfulness → fix the generator (it's hallucinating past its context).",
-      "**RAGAS** = LLM-judged triad, often reference-free; retrieval metrics need a labeled query→chunk gold set. Keep them as separate CI gates.",
+      "**Eval retrieval and generation separately** — one blended score can't localize failure; same symptom, opposite fixes.",
+      "**Triad**: **faithfulness** (answer↔context, anti-hallucination), **answer relevance** (answer↔question), **context relevance** (context↔question). Orthogonal — one number blurs all three.",
+      "**Retrieval metrics**: recall@k (found it), precision@k (noise), MRR (first hit ranked high), nDCG (all hits ranked high, graded + position-discounted).",
+      "**Localization**: bad retrieval metrics → fix retrieval; good context + low faithfulness → fix the generator (hallucinating past context).",
+      "**RAGAS** = LLM-judged triad, often reference-free; retrieval needs a labeled query→chunk gold set. Keep as separate CI gates.",
     ],
     mcqs: [
       {
@@ -181,6 +183,7 @@ precision 0.40). A reranker would help; more retrieval breadth would not.` },
   "llm-as-judge": {
     depthTier: "deep",
     interviewWeight: "high",
+    groundUp: "Let's start with a very human problem. You've built something that writes answers, and now you need to know: are the answers any good? The honest way is to have a person read each one and score it. That works — but it's slow and expensive, and every time you tweak your system you have to do it all over again. So a tempting idea shows up: what if we ask *another* model to be the grader? Show it the answer, hand it a rubric, let it assign a score. Suddenly you can grade thousands of answers in minutes. That's **LLM-as-judge** — a capable model grading another model's outputs.\n\nHere's the catch, and it's the whole reason this module exists. A judge that's fast but *biased* isn't measuring what you think it's measuring — it's measuring its own preferences dressed up as a score. So before we ever trust one of these judges, we have to understand exactly *how* it can quietly fool us.\n\nTake your time here. We'll build up the specific ways an LLM judge goes wrong — each one has a name and a clean fix — and by the end you'll be able to say precisely when a judge is safe to trust and when a human still has to be the floor. No rush.\n\nOne more thing worth naming up front, since it connects directly to eval-loop: eval-loop already established the deeper requirement — an evaluator has to be independent of the thing it's grading. An LLM judge is exactly the case where that independence is hardest to guarantee, which is why its failure modes deserve their own module.",
     scenario: "You've replaced slow, expensive human grading with an LLM judge that scores your chatbot's answers 1–10. It runs in CI on every deploy and everyone loves the speed. Then two things happen: a model update that shipped *longer, more verbose* answers mysteriously 'improved' the judge score by 0.6 with no real quality gain, and when you A/B two candidate answers by asking the judge which is better, you get *different winners depending on which answer you list first*. Your judge is measuring something, but it isn't quite quality. You need to understand its biases and how to make it trustworthy.",
     explanation: [
       "An **LLM-as-judge** uses a strong model to *evaluate* other models' outputs — scoring an answer, or picking the better of two — as a fast, cheap, scalable stand-in for human raters. It is genuinely useful: it can run on every commit, cover thousands of cases, and correlate reasonably with human judgment *when built carefully*. But it is a **model with the same failure modes as any LLM**, so an uncalibrated judge measures a mix of quality and its own biases. ==Treating the judge's number as ground truth is the core mistake; the judge is an instrument that must itself be validated.==",
@@ -222,11 +225,11 @@ overall              "score ≠ quality"           CALIBRATE against human label
       "**Calibrate against human labels or don't trust it.** Measure agreement/rank-correlation on a human-graded sample; a judge is only as good as its correlation with the humans it replaces. Unreliable when: subjective/expert tasks, judging its own family, adversarial/safety-critical calls, or never calibrated.",
     ],
     recap: [
-      "**Judge = fast scalable stand-in for humans, but it's still an LLM** — uncalibrated, it measures quality *plus* its own biases.",
-      "**G-Eval rubric = explicit criteria + anchored scale + CoT-before-score.** Vague 'rate 1–10' drifts; most 'noisy judge' issues are rubric issues.",
-      "**Biases (systematic):** position (favors a slot → flips on reorder), verbosity (longer wins free), self-preference (favors own family).",
+      "**Judge** = fast, scalable stand-in for humans — still an LLM: uncalibrated, it measures quality *plus* its own biases.",
+      "**G-Eval rubric** = explicit criteria + anchored scale + CoT-before-score. Vague 'rate 1–10' drifts; most 'noisy judge' complaints are rubric complaints.",
+      "**Biases (systematic)**: position (favors a slot → flips on reorder), verbosity (longer wins free), self-preference (favors own family).",
       "**Pointwise** = absolute, easy to track, hard to calibrate. **Pairwise** = relative, more reliable, but position-biased → judge both orderings, keep order-agnostic wins.",
-      "**Calibrate against human labels** (agreement / rank correlation) before trusting; re-validate on judge-model change. Distrust on subjective, expert, self-family, or safety-critical calls.",
+      "**Calibrate against human labels** (agreement/rank correlation) before trusting; re-validate on judge-model change. Distrust: subjective, expert, self-family, safety-critical calls.",
     ],
     mcqs: [
       {
@@ -269,6 +272,7 @@ overall              "score ≠ quality"           CALIBRATE against human label
   "chunking": {
     depthTier: "core",
     interviewWeight: "medium",
+    groundUp: "Pick up exactly where embeddings left off: the chunk closest to the query in vector space is what comes back. But that raises a question embeddings never answers on its own — closest chunk out of *which* chunks? Something upstream had to decide where one chunk ends and the next begins, before any of that geometry could even start.\n\nLet's start with a small, easy-to-picture fact. When you build a retrieval system, you don't hand the retriever whole documents — you first cut each document into pieces, and it's those *pieces* that get stored, searched, and handed back. Cutting a document into pieces is called **chunking**, and each piece is a **chunk**.\n\nHere's the idea that quietly runs this whole module: *whatever piece you cut becomes the unit of retrieval.* The retriever can only ever return a chunk — never half of one, never two stitched together. So if the answer a user needs happens to straddle the line where you made your cut, the retriever hands back one side of that line and the other side is simply gone, invisible to everything downstream. Where you place your cuts decides what answers are even *possible* to retrieve.\n\nWe'll build this up the way it actually developed — start with the most obvious way to cut (just chop every N tokens), watch it fail in a precise way, and let each fix grow out of the failure before it. No rush. By the end, a retrieval bug that looks baffling will resolve into a single sentence about where the boundaries fell.",
     scenario: "Your RAG bot answers well on FAQ-style questions but fails on anything that spans a boundary — a table split across two chunks, a definition whose 'it' refers to a sentence now in a different chunk, a procedure whose step 4 landed in one chunk and step 5 in the next. You're chunking at a fixed 512 characters with no overlap because that was the default. Retrieval recall looks fine on paper, yet the retrieved chunks are subtly *incomplete*. You need to decide how to chunk — and understand why the naive default is quietly costing you answers.",
     explanation: [
       "**Chunking is the step that decides what a 'retrievable unit' is** — you split source documents into pieces, embed each piece, and retrieve pieces. It sits *upstream* of everything else in RAG, which makes it deceptively high-leverage: a chunk is simultaneously (1) the thing that gets embedded (so it must be semantically coherent enough for one vector to represent it), and (2) the thing that gets handed to the LLM (so it must carry enough context to be *usable* on its own). ==Those two jobs pull in different directions, and every chunking decision is a negotiation between them.==",
@@ -314,11 +318,11 @@ WITH OVERLAP (e.g. 64-char stride back):
       "**The lost-boundary failure is why recall can look fine while answers are wrong.** Fixed-size cuts through meaning, so a 'relevant' chunk is incomplete (missing step, dangling antecedent). Fix by moving toward structural/semantic splits + overlap, and tune on *answer completeness*, not just recall — there's no universal best.",
     ],
     recap: [
-      "**A chunk is both the embedded unit and the LLM-fed unit** — coherent enough for one vector, complete enough to use. These pull apart.",
-      "**Ladder:** fixed-size (blind, cuts meaning) → sentence/recursive → semantic (topic-shift boundaries) → structural (headers/functions/tables). Up = more effort, more honest chunks.",
-      "**Size/overlap tradeoff:** small = precise but incomplete; large = self-contained but diluted + token-wasteful. Overlap = boundary facts survive whole, cost = redundancy.",
-      "**Interactions:** exceed the embedder's window → silent truncation (retrieve on unseen text); spread evidence → need higher k.",
-      "**Lost-boundary failure:** fixed-size cuts a table/procedure/antecedent → chunk is 'relevant' but incomplete, so recall@k lies. Fix with structural/semantic + overlap; tune on answer completeness. No universal optimum.",
+      "**A chunk is both the embedded unit and the LLM-fed unit** — coherent enough for one vector, complete enough to use. The two pull apart.",
+      "**Ladder**: fixed-size (blind, cuts meaning) → sentence/recursive → semantic (topic-shift boundaries) → structural (headers/functions/tables). Up = more effort, more honest chunks.",
+      "**Size/overlap tradeoff**: small = precise but incomplete; large = self-contained but diluted + token-wasteful. Overlap = boundary facts survive whole, cost = redundancy.",
+      "**Interactions**: exceed the embedder's window → silent truncation (retrieve on unseen text); spread evidence → need higher k.",
+      "**Lost-boundary failure**: fixed-size cuts a table/procedure/antecedent → chunk is 'relevant' but incomplete, so recall@k lies. Fix: structural/semantic + overlap; tune on answer completeness.",
     ],
     mcqs: [
       {
@@ -347,90 +351,10 @@ WITH OVERLAP (e.g. 64-char stride back):
     takeaway: "Chunking decides the retrievable unit, and a chunk must serve two conflicting masters — a coherent single embedding and a self-contained unit for the LLM. Fixed-size splitting is content-blind and causes the lost-boundary failure (a 'relevant' chunk that's incomplete, so recall lies); move up toward semantic/structural splitting, add overlap so straddling facts survive whole, keep chunks inside the embedder's window, and tune on answer completeness rather than retrieval recall alone.",
   },
 
-  "observability-concepts": {
-    depthTier: "core",
-    interviewWeight: "medium",
-    scenario: "Your LLM feature was fine for weeks, then support tickets spike: answers 'feel slower and dumber.' You have no idea where it broke. Was it a prompt someone edited? A model-provider silent update? A slow retrieval step buried in a multi-tool agent chain? A cost blowout from runaway token usage? You're staring at aggregate request logs that show a status 200 and nothing else. You need the observability layer that turns 'it feels worse' into 'span 3 of this trace — the retrieval call — went from 40 ms to 900 ms after the 2pm deploy.'",
-    explanation: [
-      "**LLM observability is the discipline of making a non-deterministic, multi-step system debuggable in production.** A single user request often fans out into a **chain** — retrieve, rerank, call the model, maybe call a tool, maybe call the model again — and any link can degrade. Classic request logging (status code, latency, a blob of text) tells you *that* something is wrong but never *where* in the chain or *why*. ==The whole point of LLM observability is to attach enough structured detail to each step that 'it feels worse' becomes a specific, addressable line item.==",
-      "The core data model is **traces and spans**, borrowed from distributed tracing (OpenTelemetry) and adapted for LLM chains:\n\n- A **trace** is the end-to-end record of one request — the whole journey from user input to final answer.\n- A **span** is one operation *within* that trace — a single retrieval call, one LLM invocation, one tool call — with its own start/end time, inputs, outputs, and metadata. Spans **nest** to mirror the call structure.\n\nSo a trace is a tree of spans. When answers 'feel slower,' you don't stare at an aggregate — you open a slow trace and read the span durations: the model span is 200 ms as always, but the *retrieval* span jumped from 40 ms to 900 ms. ==Traces/spans convert an opaque pipeline into a timeline you can point at.==",
-      { type: "illustration", label: "A trace is a tree of spans", content: `TRACE  (one user request, total 1180 ms)  ─ input → final answer
-  ├─ span: retrieval          40 ms → 900 ms  ⚠ regressed after 2pm deploy
-  ├─ span: rerank             60 ms
-  ├─ span: LLM call #1        200 ms | in 1,850 tok · out 120 tok · $0.004
-  │    └─ span: tool call     — (weather API)
-  └─ span: LLM call #2        180 ms | in 2,100 tok · out 90 tok · $0.005
-
-  Aggregate log said: 200 OK, 1180 ms.  ← useless for localization
-  The trace says: the RETRIEVAL span is the regression.  ← addressable` },
-      "**The metrics that matter are specific to LLM systems**, beyond generic latency:\n\n- **Tokens** — input and output token counts per call. The unit of both cost and (partly) latency; a prompt that silently grew from 800 to 3,000 tokens explains both a bill spike and a slowdown.\n- **Cost** — derived from tokens × per-token price, tracked per request / per feature / per user, so a runaway agent loop or a bloated prompt is visible as dollars, not just tokens.\n- **Latency, split into two LLM-specific numbers:** **TTFT (Time To First Token)** — how long until the *first* token streams back, which dominates *perceived* responsiveness; and **TPOT (Time Per Output Token)** — the steady-state generation speed after the first token. Total latency ≈ TTFT + TPOT × output_tokens. ==Two systems with the same total latency feel very different if one has a fast TTFT and streams — TTFT is the metric users actually feel.==",
-      { type: "illustration", label: "TTFT vs TPOT — why total latency hides the felt experience", content: `Latency ≈ TTFT + (TPOT × output_tokens)
-
-  System A:  TTFT 200 ms,  TPOT 20 ms/tok,  200 tok out
-             → 200 + 20×200 = 4200 ms total, but user sees words at 200 ms
-  System B:  TTFT 3000 ms, TPOT 6 ms/tok,   200 tok out
-             → 3000 + 6×200 = 4200 ms total, user stares at a spinner 3 s
-
-  SAME 4.2 s total. Wildly different FELT latency.
-  → alert on TTFT (perceived) AND TPOT (throughput), not just total.` },
-      "**Prompt and version tracking** is what makes regressions attributable. Every trace should record **which prompt template/version, which model, and which key parameters (temperature, top-p)** produced it. LLM systems break in ways code-only systems don't: someone edits a prompt, or the *provider silently updates the model behind the same name*, and behavior drifts with no code change. Without version tags on your traces you cannot answer 'did this get worse after the 2pm prompt edit?' — the single most common LLM incident. ==Versioning prompts and models turns 'something changed' into 'this specific change, at this time.'==",
-      "**Drift and regression detection** is the ongoing job on top of the data:\n\n- **Regression** — a discrete change (a deploy, a prompt edit, a model swap) made quality/latency/cost worse *now*. Caught by comparing metrics and eval scores before vs after the change — which is why version tags and offline evals in CI matter.\n- **Drift** — a *gradual* shift over time: input distribution changes (users ask new kinds of questions), or output quality slowly degrades. Caught by trending metrics and periodic eval runs, and by monitoring the *inputs*, not just outputs.\n\n**What to log and alert on:** log every trace with per-span timing, token/cost, prompt+model+params, and the full input/output; **sample** heavily for cost but always capture errors and slow traces. Alert on: **TTFT/latency percentiles** (p95, p99 — not the mean, which hides the tail), **error/timeout rate**, **cost per request** (runaway spend), **token-per-request** creep (prompt bloat), and **eval-score regressions** on a canary set. ==The mature setup pairs live traces with a small automated eval suite so a quality regression pages you before the support tickets do.==",
-    ],
-    keyPoints: [
-      "**LLM observability makes a non-deterministic, multi-step chain debuggable.** A request fans out (retrieve → rerank → call → tool → call), and classic status-200 logging tells you *that* it broke but never *where* or *why* in the chain.",
-      "**Traces and spans are the core data model (from OpenTelemetry).** A trace = one full request; a span = one nested operation (a retrieval call, an LLM call) with its own timing, I/O, and metadata. A trace is a tree of spans — you open a slow trace and read span durations to localize the regression.",
-      "**LLM-specific metrics: tokens, cost, and split latency.** Tokens (in/out) drive cost and partly latency; cost = tokens × price per request/feature/user; latency splits into TTFT (time to first token = perceived responsiveness) and TPOT (per-output-token throughput). Same total latency can feel completely different.",
-      "**Prompt/model/param version tracking makes regressions attributable.** LLM systems break via prompt edits and silent provider model updates with no code change — tag every trace with prompt version, model, and params, or you can't answer 'did the 2pm edit make it worse?'",
-      "**Drift (gradual) vs regression (discrete), and what to alert on.** Regression = a change made it worse now (compare before/after + CI evals); drift = slow input/output shift (trend metrics, monitor inputs). Alert on p95/p99 latency & TTFT, error/timeout rate, cost-per-request, token creep, and eval-score regressions on a canary set — not the mean.",
-    ],
-    recap: [
-      "**Observability turns 'it feels worse' into 'span 3, the retrieval call, regressed at 2pm.'** Status-200 logs can't localize a multi-step chain.",
-      "**Trace** = one full request; **span** = one nested op (retrieve, LLM call, tool) with its own timing/I-O. Trace = tree of spans → read span durations to localize.",
-      "**Metrics:** tokens (in/out) → cost & latency; **TTFT** = perceived speed (first token), **TPOT** = throughput. Same total latency, different felt experience.",
-      "**Version everything:** prompt template, model, temperature — LLM systems break via prompt edits & silent provider updates with no code change.",
-      "**Regression** (discrete change, compare before/after + CI evals) vs **drift** (gradual input/output shift). Alert on p95/p99 latency, TTFT, error rate, cost/request, token creep, eval regressions — not the mean.",
-    ],
-    mcqs: [
-      {
-        question: "Users report your multi-step LLM agent 'feels slower.' Your aggregate logs show 200 OK and a total latency. What observability structure lets you localize the slowdown to a specific step?",
-        options: [
-          "A single latency histogram, aggregated blindly across every request the whole service has handled",
-          "Traces and spans — open a slow trace and read per-span durations to see which nested step regressed",
-          "Turning the whole service's log level up to DEBUG and reading the resulting flood of unstructured lines",
-          "Latency figures averaged crudely by endpoint across the entire last day of production traffic",
-        ],
-        correct: 1,
-        explanation: "Option B is correct: traces and spans give you the structure to localize. A trace records one full request; each span is a nested operation with its own timing, so opening a slow trace shows exactly which step — e.g., retrieval jumping from 40 ms to 900 ms — accounts for the regression. Aggregate numbers can't do this. Option A (a latency histogram) shows the distribution of totals but not which step inside a request is slow. Option C (DEBUG logging) produces unstructured volume without the nested timing structure needed to attribute latency to a span. Option D (averaging by endpoint) is still an aggregate over whole requests and hides the per-step breakdown that localization requires.",
-      },
-      {
-        question: "Two LLM endpoints have identical total latency of 4.2 s for a 200-token response, but users find one far more responsive. Which metric explains the difference?",
-        options: [
-          "TTFT — the responsive endpoint streams its first token fast, so output appears almost immediately despite equal totals",
-          "Total token count, since a fixed 200-token response should feel identical regardless of which endpoint produced it",
-          "The number of spans recorded inside each request's own trace tree, which reflects pipeline complexity, not perceived speed",
-          "Cost per request, since a cheaper request is naively assumed to stream back to the end user noticeably faster",
-        ],
-        correct: 0,
-        explanation: "Option A is correct: total latency decomposes as roughly TTFT + TPOT × output_tokens, so two endpoints can share a total while differing sharply in TTFT. The one with low TTFT streams words almost immediately and feels responsive; the one with high TTFT leaves the user staring at a spinner before anything appears, despite the same total. TTFT is the metric that captures perceived responsiveness. Option B is wrong — both produce 200 tokens, so token count is identical and can't explain the felt difference. Option C (span count) reflects pipeline structure, not perceived generation speed. Option D confuses cost with latency; dollars per request don't determine how fast output appears to the user.",
-      },
-      {
-        question: "Your LLM feature degraded with no code deploy. Select the two pieces of trace data essential to even ask whether a 2pm prompt edit or a provider model update caused it.",
-        options: [
-          "The prompt template version (or hash) that produced each response, so you can compare behavior before and after edits",
-          "The user's IP address and approximate geolocation, logged in full detail for each individual request served",
-          "The model name and key generation parameters in effect per call, since providers can silently swap models",
-          "The total number of requests served per hour, aggregated coarsely across the entire running service overall",
-        ],
-        correct: [0, 2],
-        explanation: "Options A and C are correct together: LLM systems break in ways code-only systems don't — a prompt edit or a silent provider-side model update changes behavior with no code deploy. To attribute a regression to a specific change, every trace must record which prompt version (A) and which model/parameters (C) produced it; without both you can't compare before/after the 2pm edit or detect a swapped model. Option B (IP/geolocation) is unrelated to prompt or model attribution. Option D (aggregate request volume) is a traffic metric that says nothing about which prompt or model version was in effect for any given response.",
-      },
-    ],
-    takeaway: "LLM observability makes a non-deterministic, multi-step chain debuggable by structuring every request as a trace of nested spans, then attaching LLM-specific detail: token counts, cost, and split latency (TTFT for perceived speed, TPOT for throughput), plus prompt/model/param versions so regressions are attributable. Alert on p95/p99 latency, TTFT, error and cost per request, token creep, and canary eval-score regressions — and distinguish discrete regressions from gradual drift.",
-  },
-
   "safety-measurement": {
     depthTier: "core",
     interviewWeight: "medium",
+    groundUp: "Let's start with a number that looks reassuring and isn't. A vendor tells you their model scores 99% on a safety benchmark — refuses 99 out of 100 harmful requests. Feels like a green light. But ask the question that number can't answer: what happens to the request that *wasn't* harmful, the ones that just sound like it?\n\nPush a model hard enough toward 'never say anything harmful' and you get a model that also refuses a nurse asking about medication dosages, an author researching poisons for a novel, a security researcher asking about an exploit they're patching. A model that refuses everything scores perfectly on 'never harmful' — and is useless. A model that answers everything scores perfectly on 'always helpful' — and is dangerous. Notice what that means: safety isn't a single number you climb toward. It's a *tension* between two failure directions, over-refusal and under-refusal, and a single benchmark score can only ever see one side of it at a time.\n\nThere's a third wrinkle on top of that tension: people trying to get past a model's refusals don't ask nicely. They wrap the same harmful request in a fictional roleplay, a hypothetical, a multi-step conversation that arrives at the place a direct question would've been blocked from reaching. So safety measurement has to check not just 'does it refuse the obvious ask' but 'does it hold up against someone actively trying to route around the refusal.'\n\nWe'll build up what actually measuring safety requires: metrics on both failure directions, not just one, plus adversarial testing that tries to break it on purpose. Take your time — the payoff is being able to look at a single safety-score badge and say, precisely, what it does and doesn't tell you.",
     scenario: "Leadership wants your assistant to be 'safe,' and a vendor pitches a model that scores 99% on a public safety benchmark. You ship it, and two complaints arrive the same week: it refuses to answer a nurse's legitimate question about medication dosages (calling it 'medical harm'), and a hobbyist got it to output genuinely dangerous instructions by wrapping the request in a fictional roleplay. A single 'safety score' told you nothing about either failure. You need to measure safety as the multi-dimensional, adversarial thing it actually is.",
     explanation: [
       "**Safety is not one number — it's a set of competing quantities in tension**, and the first job is to stop treating 'safe' as a scalar. A model that refuses everything scores perfectly on 'never says anything harmful' and is useless; a model that answers everything is maximally helpful and dangerous. ==Real safety measurement lives in the *gap* between two failure directions — refusing too little and refusing too much — so you need metrics on both sides plus adversarial pressure, not a single benchmark percentage.==",
@@ -471,11 +395,11 @@ Trustworthy safety measurement instead:
       "**Quantify the helpfulness↔harmlessness tradeoff as a pair, not a pick.** Plot helpfulness (task success/non-refusal on benign) against harmful-compliance on the red-team set; a safety change is a real improvement only if it's Pareto — better on one axis without regressing the other. Report the whole profile and re-red-team on every change.",
     ],
     recap: [
-      "**Safety isn't a scalar** — refuse-everything scores 'safe' and is useless. Measure the gap between refusing too little and too much, under adversarial pressure.",
-      "**Two refusal failures:** refusal rate on a harmful set (want HIGH) vs over-refusal on benign-but-scary prompts / XSTest (want LOW). One number hides the direction.",
-      "**Adversarial metrics:** red-team pass rate + jailbreak robustness across a technique suite (roleplay, fiction-wrap, injection, obfuscation, suffixes). Static benchmarks miss these.",
-      "**Benchmark leakage:** public test prompts in training data → memorized, not safe. Use held-out private + fresh + rotating sets; never trust a leaderboard % alone.",
-      "**Helpfulness↔harmlessness:** measure as a pair; a change is real only if Pareto (better on one axis, no regression on the other). Report a profile; re-red-team on every change.",
+      "**Safety isn't a scalar** — refuse-everything scores 'safe' and is useless. Measure the gap between refusing too little and too much, under attack.",
+      "**Two refusal failures**: refusal rate on a harmful set (want HIGH) vs over-refusal on benign-but-scary prompts / XSTest (want LOW). One number hides the direction.",
+      "**Adversarial metrics**: red-team pass rate + jailbreak robustness across a technique suite (roleplay, fiction-wrap, injection, obfuscation, suffixes). Static benchmarks miss these.",
+      "**Benchmark leakage**: public test prompts in training data → memorized, not safe. Use held-out private + fresh + rotating sets; never trust a leaderboard % alone.",
+      "**Helpfulness↔harmlessness**: measure as a pair; a change is real only if Pareto (better on one axis, no regression on the other). Report a profile; re-red-team on every change.",
     ],
     mcqs: [
       {

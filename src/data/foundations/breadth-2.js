@@ -66,11 +66,11 @@ STREAMINGLLM = pin the sinks + slide the rest:
       "**The trade is exact global context for near-linear cost.** Sparse changes the *complexity class* (O(n²)→~O(n)); contrast FlashAttention, which keeps dense O(n²) FLOPs but slashes the *constant* by never materializing the full matrix. Different levers on the same wall.",
     ],
     recap: [
-      "**Attention is O(n²)** — n×n scores per head/layer. Long context is expensive because attention is quadratic in the input length you control (8K→128K ≈ 256× the entries).",
-      "**Sliding-window/local = O(n·w), linear.** Trade: no direct sight outside the window; depth propagates signal across windows to heal it.",
-      "**Longformer** = local + global hub tokens. **BigBird** = local + global + random links (≈ full-attention power, ~linear). Dilation widens reach for free.",
-      "**StreamingLLM / attention sinks:** the model dumps attention onto the first few tokens; evicting them (naive rolling cache) collapses quality. Pin the sinks + slide a recent window → unbounded length, bounded memory.",
-      "**Sparse changes the complexity class (O(n²)→~O(n)); FlashAttention changes the constant** (dense but never materializes the matrix). You give up some exact global reach for the linear-ish cost.",
+      "**Attention: O(n²)** — n×n scores/head/layer. 8K→128K: 256× entries for 16× input → the cost wall.",
+      "**Sliding-window** = O(n·w), linear. Token sees only window w; depth propagates signal across layers → indirect long-range reach.",
+      "**Longformer** = local + global hubs. **BigBird** = local + global + random links (≈ full-attention power, linear). Dilation widens reach free.",
+      "**StreamingLLM**: models dump attention on the first tokens (**attention sinks**); evicting them → collapse. Pin sinks + slide window → unbounded stream, bounded memory.",
+      "**Sparse** changes the complexity class (O(n²)→~O(n)); **FlashAttention** changes the constant (dense, never materializes). Trade: exact global reach for near-linear cost.",
     ],
     mcqs: [
       {
@@ -166,11 +166,11 @@ eval               contamination impossible          holder; can't be
       "**A model can ace MMLU and fail your task** because MMLU may have leaked and your task never did. Deployment decisions must ride on a private held-out set drawn from *your own distribution* — provably unseen and matching your task, not a generic academic one. Treat suspiciously large public wins with suspicion.",
     ],
     recap: [
-      "**Contamination = test set in the training set.** Public benchmarks are on the web → swept into pretraining → model recalls, not reasons. Score real, generalization-meaning meaningless.",
-      "**Goodhart / gaming:** when the benchmark becomes the target, it measures optimization-for-the-benchmark, not capability. Leaderboards drift from real usefulness.",
-      "**Canary strings:** unique GUID in the benchmark → crawlers exclude it, auditors detect leakage. Limits: only cooperative crawlers, paraphrases slip by, pre-existing leaks missed.",
-      "**Private/held-out eval = structural fix** (unpublished → can't leak). **Temporal split** (post-cutoff data) is a cheaper contamination-resistant proxy.",
-      "**Ace MMLU, fail your task** — because MMLU may have leaked and your data never did. Decide deployments on a private set drawn from *your* distribution; distrust suspiciously large public wins.",
+      "**Contamination**: benchmark Qs live on the web → swept into pretraining → model recalls, not reasons. Score real, generalization-meaning false.",
+      "**Goodhart's law**: benchmark becomes the target → measures optimization-for-the-benchmark, not capability (benchmark-shaped data, format tuning, checkpoint picks).",
+      "**Canary string**: unique GUID → crawlers exclude, auditors detect leakage. Limits: only cooperative crawlers, paraphrases slip past, pre-existing leaks missed.",
+      "**Private/held-out eval** = structural fix (unpublished → can't leak). **Temporal split** (post-cutoff data) = cheaper contamination-resistant proxy.",
+      "**Ace MMLU, fail your task**: MMLU may have leaked, your data never did. Decide deployment on a private set from *your* distribution; distrust large public wins.",
     ],
     mcqs: [
       {
@@ -278,11 +278,11 @@ FIX:  temperature scaling — divide logits by T>1 to soften; fit T on
       "**Calibration is load-bearing for routing, abstention, and human-in-the-loop.** An overconfident model floods an auto-answer path with confident wrong answers and starves the human queue (the scenario). Before automating on confidence: reliability diagram + ECE on your distribution, expect RLHF overconfidence, recalibrate, re-measure, then set thresholds.",
     ],
     recap: [
-      "**Calibration = confidence matches accuracy** (70%-conf preds are right ~70% of the time). Orthogonal to accuracy; it's whether the numbers can be *believed*.",
-      "**Reliability diagram:** conf (x) vs accuracy (y); diagonal = perfect, below = overconfident. **ECE** = Σ (bin/N)·|conf − acc|; 0 perfect, higher = more misleading.",
-      "**RLHF mis-calibrates → overconfidence:** base model often well calibrated, but preference tuning rewards assertive answers, so it *sounds* and *scores* too certain.",
-      "**Temperature scaling:** softmax(logits/T), fit T on held-out data; T>1 softens overconfidence. Doesn't change the top answer (accuracy safe), only rescales confidence.",
-      "**Routing/abstention/HITL all ride on calibration** — an overconfident model floods the auto path with confident wrong answers. Plot reliability + ECE on *your* data, recalibrate, then set thresholds.",
+      "**Calibration** = confidence matches accuracy (70%-conf preds right ~70% of the time). Orthogonal to accuracy — whether the numbers can be believed.",
+      "**Reliability diagram**: confidence (x) vs accuracy (y); diagonal = perfect, below = overconfident. **ECE** = Σ(bin/N)·|conf−acc|; 0 = perfect, higher = worse.",
+      "**RLHF → overconfidence**: base model often calibrated; preference tuning rewards assertive answers → model sounds and scores too certain.",
+      "**Temperature scaling**: softmax(logits/T), fit T on held-out data. T>1 softens overconfidence; top answer unchanged → accuracy preserved.",
+      "**Routing/abstention/HITL ride on calibration** — overconfidence floods the auto path with wrong answers. Plot reliability + ECE on your data, recalibrate, then set thresholds.",
     ],
     mcqs: [
       {
@@ -371,11 +371,11 @@ CACHE-FRIENDLY (static first, dynamic last):
       "**Provider differences + TTL/invalidation:** some cache automatically, others need explicit breakpoints (e.g., `cache_control`); caches expire on a TTL (inactivity → fresh prefill); invalidation is implicit and total — change any token in the cached region and you get a miss and rebuild. Cache value ∝ how stable and reused the prefix is.",
     ],
     recap: [
-      "**Prefill (build KV for the whole prompt) is the expensive phase** — it drives TTFT and most input cost, and you pay it in full every call even for the fixed preamble.",
-      "**Prompt caching = store & reuse the KV of a shared prefix**, skipping prefill for those tokens. Prefill the fixed 6,000-token prefix once; then only the ~50 varying tokens.",
-      "**Wins: lower TTFT + cached input billed at a big discount.** Caveat: the cache-write (first) call can cost a bit more → pays off when the prefix is reused enough.",
-      "**Layout = static first, dynamic last.** Cache matches only up to the first differing token; a timestamp at the top breaks the cache for everything after it.",
-      "**Providers differ** (automatic vs explicit `cache_control` breakpoints); caches have a **TTL** (expire on inactivity) and **implicit total invalidation** (any change → miss + rebuild). Value ∝ prefix stability × reuse.",
+      "**Prefill** (build KV for the whole prompt) is the expensive phase → drives TTFT + most input cost, paid in full every call even for the fixed preamble.",
+      "**Prompt caching** = store & reuse the KV of a shared prefix, skipping prefill for those tokens. 6,000-token prefix prefilled once; only ~50 varying tokens after.",
+      "**Two wins**: lower TTFT + cached input at a steep discount. Cache-write (first call) costs slightly more → pays off once the prefix is reused enough.",
+      "**Layout = static first, dynamic last.** Cache matches only up to the first differing token — a timestamp at the top breaks the cache for everything after.",
+      "**Providers differ** (automatic vs explicit `cache_control`); caches carry a **TTL** (expire on inactivity) and **total invalidation** (any change → miss + rebuild). Value ∝ prefix stability × reuse.",
     ],
     mcqs: [
       {
@@ -467,11 +467,11 @@ RETRIEVAL (history as a store): embed all past turns, fetch only the
       "**When to compress is the judgment call:** compress at a fraction of the window (~60–70% full, leaving answer headroom), every K turns, or at a cost budget — not every turn (it's a lossy, paid step). Keep effective context small and dense, and re-surface durable constraints at the start or near the end where attention is strong.",
     ],
     recap: [
-      "**LLMs are stateless** → you resend the whole transcript each turn → cost/latency climb (turn 51 re-prefills ~50 turns).",
-      "**Two walls:** hard finite context window + softer, earlier **lost-in-the-middle** (best attention at start/end, worst in the middle) — a turn-3 constraint is ignored even while it fits.",
+      "**LLMs are stateless** → resend the whole transcript each turn → cost/latency climb (turn 51 re-prefills ~50 turns).",
+      "**Two walls**: hard finite context window + softer **lost-in-the-middle** (best attention start/end, worst mid) — a turn-3 constraint ignored even though it fits.",
       "**Truncation** (last N turns): cheap, bounded, but drops the *earliest* turns = the durable constraints. **Summarization**: compress old turns, preserve load-bearing facts (extra LLM call, lossy) — the workhorse.",
-      "**Retrieval of history**: past turns as a searchable store, inject only relevant ones → unbounded history, but RAG miss-risk. Combine window+summary+retrieval; add **persistent cross-session memory** for always-true facts.",
-      "**When to compress:** at ~60–70% of the window (leave answer headroom) / every K turns / at a budget — not every turn. Keep durable constraints at start or re-surfaced near the end where attention is strong.",
+      "**Retrieval of history**: past turns as a searchable store, inject only relevant ones → unbounded history, RAG miss-risk. Combine window + summary + retrieval; add **persistent cross-session memory** for always-true facts.",
+      "**When to compress**: ~60–70% of the window / every K turns / at a budget — not every turn. Keep durable constraints at start or re-surfaced near the end.",
     ],
     mcqs: [
       {

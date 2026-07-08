@@ -55,7 +55,7 @@ same KL constraint RLHF enforced explicitly, now baked into the loss.` },
     ],
     recap: [
       "**DPO = RLHF's optimum, solved in closed form.** Reward expressed implicitly via the policy's log-ratio against a frozen reference — no reward net, no PPO.",
-      "**Loss is binary cross-entropy** over `β·(s_chosen − s_rejected)`, a supervised classification objective, not an RL update.",
+      "**Loss:** `−log σ(β·(s_chosen − s_rejected))` — binary cross-entropy, a supervised objective, not an RL update.",
       "**Z(x) cancels** (identical for both responses to a prompt) — that's what collapses the pipeline to four forward passes.",
       "**β = anchor temperature:** small β stays near SFT, large β lets preferences dominate; too-large β over-optimizes.",
       "**Over-optimization signature:** training loss keeps dropping while real quality collapses (short/repetitive/sycophantic).",

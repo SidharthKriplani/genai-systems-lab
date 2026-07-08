@@ -3,6 +3,7 @@ export const RUNNER_PRODUCTION_TONE = {
   "cost-latency-concepts": {
     depthTier: "standard",
     interviewWeight: "high",
+    groundUp: "Let's start with the simplest possible mental model of an LLM bill, because a surprising amount follows from it. When you call a model, you pay for tokens — the little pieces of text going in (your prompt) and the little pieces coming out (its answer). Two meters, ticking. That's it.\n\nNow here's the twist that trips almost everyone up, and it's the heart of this module. Those two meters run at different rates, and the cheaper one can still dominate your bill. Output tokens cost more each — but if your application sends a long prompt and gets back a short answer, the input meter runs so much longer that it quietly becomes the whole story. So 'which token is more expensive?' is the wrong question. The right one is 'which token type am I using more of?'\n\nWe'll build this up slowly and concretely — real numbers, a real bill that jumped — so that by the end, a scary line item resolves into a single sentence about which meter grew. And we'll do the same for latency, which turns out to have its own two-part structure. No rush.",
     scenario: "You open the monthly inference invoice expecting the usual $8K, and instead it reads $34K. Nothing shipped that should have done this — no new feature, no model swap, no traffic spike worth panicking over. Request volume is up a modest 20%. Average output length hasn't moved at all. The only number that changed is average input tokens per request, which crept from 800 up to 3,200. Before you can propose a single fix, someone in the room is going to ask the obvious question: why did a 4× jump in *input* tokens — the tokens that are supposed to be the cheap ones — nearly quadruple the bill? Let's answer that properly.",
     explanation: [
       "You already know from KV cache that token count is what drives inference memory. Here's the thing to sit with: the *same* token count drives cost too, just through a different door. LLM billing has two meters running at once. Input tokens tick over at one rate — typically **$2.50–5.00 per million**. Output tokens tick over at a much steeper rate — typically **$10–15 per million**. So the naive reading is 'output is the expensive one, watch the output.' And that reading is exactly what will mislead you here.\n\n==The rate per token and the share of the bill are two different things, and in a long-prompt application they point in opposite directions.==",
@@ -35,10 +36,10 @@ Per-token price is not per-request share.` },
     ],
     recap: [
       "**Per-token price ≠ per-request share.** Input is cheaper per token yet dominates the bill in long-prompt apps because there's so much more of it.",
-      "**The scenario's math:** 800→3,200 input tokens = 4× input cost = 2.7× per-request cost; +20% volume ⇒ ~4× bill. Output was never the problem.",
-      "**Cost and latency diverge:** cost tracks token *counts* at two rates; latency = TTFT + (output × TPOT). Input growth hits cost and TTFT, not generation time.",
-      "**Users feel TTFT.** A longer prompt lengthens the first-token wait, so streaming products feel slower even when total latency looks flat.",
-      "**Audit before you fix:** find which of the four prompt components grew, then apply caching → compression → right-sizing in that order.",
+      "**The math**: 800→3,200 input tokens = 4× input cost = 2.7× per-request cost; +20% volume ⇒ ~4× bill. Output was never the problem.",
+      "**Cost and latency diverge**: cost tracks token counts at two rates; latency = TTFT + (output × TPOT). Input growth hits cost and TTFT, not generation time.",
+      "**Users feel TTFT.** A longer prompt lengthens the first-token wait — streaming products feel slower even when total latency looks flat.",
+      "**Audit before you fix**: find which of the four prompt components grew, then apply caching → compression → right-sizing, in that order.",
     ],
     mcqs: [
       {
@@ -81,6 +82,7 @@ Per-token price is not per-request share.` },
   "observability-concepts": {
     depthTier: "standard",
     interviewWeight: "medium",
+    groundUp: "Let's start with the metric every engineer instinctively trusts: the error rate. If your system is throwing errors, something's broken; if the error rate is flat and low, everything's fine. That reflex has served software teams well for decades. So here's an uncomfortable question — what if your LLM system could be quietly failing while the error rate stays perfectly, reassuringly flat?\n\nThat's exactly the situation, and it's the whole point of this module. A traditional service fails loudly — a 500, a timeout, a stack trace. An LLM fails politely: it returns a clean HTTP 200 with a confident, grammatical, and completely wrong answer. To your error monitoring, that looks identical to a perfect response. The failure is invisible where you're looking.\n\nSo we need a different kind of watching — one that measures quality, not just success. We'll build up why status codes can't see quality, what actually changes when quality drifts, and the smallest set of signals that would catch it in hours instead of weeks. Take your time; the mindset shift here is worth more than any single metric.",
     scenario: "Your RAG pipeline for B2B analytics has been humming along for three months. Then customer success forwards a note: answers 'seem worse' over the last couple of weeks. You check the obvious things first. No code deployed. Error rate is flat at 0.1%. Request volume is steady. Every dashboard you own is green. And yet the customers are right — something has quietly gotten worse, and none of your monitoring caught it. Your job now is two-fold: design the minimal observability stack that *would* have caught this automatically, and be ready to explain why the metric everyone trusts — error rate — is the wrong one to lead with for an LLM system.",
     explanation: [
       "Start with why the green dashboards lied to you. From the eval loop you know how to catch *known* failure modes — score against a fixed dataset and watch for regressions. But that leaves two gaps. Between eval runs you're flying blind, and evals only ever catch the failures you thought to write a test for.\n\nNow picture the actual failure here. The model returns an HTTP 200. The answer is fluent, confident, well-formatted — and completely wrong. To your error-rate monitor, that response is *indistinguishable* from a perfect one. ==Error rate measures whether the request failed. It says nothing about whether the answer was true.== That is the whole trap: a status code is cheap to check and a correct answer is not, because judging correctness needs a human or a model, not an HTTP status.",
@@ -112,11 +114,11 @@ answer-length change within HOURS — not after weeks of support tickets.` },
       "**Silence from error monitoring is not proof of health.** Instrument quality directly, and a silent regression surfaces in hours instead of weeks.",
     ],
     recap: [
-      "**Green dashboards can lie:** HTTP 200 + fluent + wrong is invisible to error-rate monitoring, which only knows whether the request failed.",
-      "**The uncomfortable truth:** zero errors and normal latency can still mean confidently, silently wrong answers.",
-      "**Four suspects when nothing shipped:** silent model swap, stale index (data drift), new query cohort, third-party drift — observability isolates which.",
-      "**Log the right things:** retrieval scores, answer-length + format compliance, user feedback signals, and the model version from response headers.",
-      "**MVP stack:** per-request logs + ~5% LLM-as-judge sampling + alerts on distribution shifts ⇒ hours-to-detect, not weeks.",
+      "**Green dashboards can lie**: HTTP 200 + fluent + wrong is invisible to error-rate monitoring, which only knows whether the request failed.",
+      "**The uncomfortable truth**: zero errors and normal latency can still mean confidently, silently wrong answers.",
+      "**Four suspects** when nothing shipped: silent model swap, stale index (data drift), new query cohort, third-party drift — observability isolates which.",
+      "**Log the right things**: retrieval scores, answer-length + format compliance, user feedback signals, model version from response headers.",
+      "**MVP stack**: per-request logs + ~5% LLM-as-judge sampling + alerts on distribution shifts ⇒ hours-to-detect, not weeks.",
     ],
     mcqs: [
       {
@@ -159,6 +161,7 @@ answer-length change within HOURS — not after weeks of support tickets.` },
   "latency-planner": {
     depthTier: "standard",
     interviewWeight: "high",
+    groundUp: "Let's start with a trap almost everyone falls into when a tool feels slow: they ask 'what's the average response time?' Someone answers '2.8 seconds,' everyone relaxes — and then real users keep complaining. The average was fine. So what went wrong?\n\nHere's the idea that unlocks this whole module. 'How slow is it?' is the wrong question, because latency isn't one number — it's a distribution. Most requests are quick; a few are painfully slow; and the slow few are exactly the ones users remember. That's why engineers talk in percentiles: p50 is the typical request, p95 is the unlucky one-in-twenty, p99 is the rare disaster. And crucially, the gap between those percentiles isn't noise — it's a diagnostic. Where the curve bulges tells you what kind of problem you have.\n\nSo we'll build up two things, gently. First, how to read those percentile gaps to tell a generation-time problem from an infrastructure problem. Then, the small set of levers that move latency, and — just as important — which lever fixes which gap. No rush; the reward is never tuning blind again.",
     scenario: "You own a document Q&A tool with a hard promise: respond in under 3 seconds. The reality on your dashboard is less kind — p50 is 2.8s, p95 is 5.4s, p99 is 8.2s. Retrieval accounts for about 300ms of that; the LLM call is the rest. The target handed to you is p95 ≤ 3s. Before you touch a single knob, you want to know exactly which levers exist and, more importantly, what each one actually moves — because tuning the wrong one is how a week disappears with the p95 unchanged.",
     explanation: [
       "Carry over the equation from cost-and-latency: **total latency = TTFT + (output_tokens × TPOT)**. Now let the measurements make it concrete. At the median, p50 is 2.8s and retrieval eats 300ms, so the LLM contributes ~2.5s. At p95, total is 5.4s and retrieval is still ~300ms, so the LLM contributes ~5.1s — *more than double* its own median.\n\nThat doubling is the whole diagnostic, so linger on it. If longer generation were the culprit, p95 would rise only as much as output length rises at the tail — and output doesn't magically double for the 95th-percentile user. ==When the LLM's own latency more than doubles but output length doesn't, the extra time isn't generation — it's queuing and throttling on shared infrastructure.==",
@@ -191,11 +194,11 @@ LEVERS (by leverage)
       "**p99 is a different failure mode:** cold starts, queue spikes, and throttling are infra events no app-layer change fixes. Use provisioned throughput, timeout-plus-retry, or async callbacks.",
     ],
     recap: [
-      "**Split the budget:** retrieval ~300ms; LLM contributes ~2.5s at p50 and ~5.1s at p95 — more than double its own median.",
-      "**Read the tail:** LLM latency doubling while output length doesn't ⇒ shared-infra queuing/throttling, not longer generation.",
-      "**Lever order:** shorter output → streaming → shorter input → smaller/faster model. First three are app-layer; the last is a swap.",
-      "**Streaming ≠ faster wall clock; it's faster *felt* time.** TTFT is what the user experiences, so start rendering early.",
-      "**p95 vs p99 are different jobs:** p95≤3s comes from streaming + shorter output; p99 needs a serving-infra change (provisioned throughput, retry-with-fallback, async).",
+      "**Split the budget**: retrieval ~300ms; LLM contributes ~2.5s at p50 and ~5.1s at p95 — more than double its own median.",
+      "**Read the tail**: LLM latency doubling while output length doesn't ⇒ shared-infra queuing/throttling, not longer generation.",
+      "**Lever order**: shorter output → streaming → shorter input → smaller/faster model. First three are app-layer; the last is a swap.",
+      "**Streaming ≠ faster wall clock** — it's faster *felt* time. TTFT is what the user experiences, so start rendering early.",
+      "**p95 vs p99 are different jobs**: p95≤3s comes from streaming + shorter output; p99 needs a serving-infra change (provisioned throughput, retry-with-fallback, async).",
     ],
     mcqs: [
       {

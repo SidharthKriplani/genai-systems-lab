@@ -61,7 +61,7 @@ HIERARCHICAL SOFTMAX (tree instead of flat list):
       "**Word2Vec:** Skip-gram (center→context, better for rare words/small data) vs CBOW (context→center, faster, better on big data). Vectors are the by-product of prediction.",
       "**Softmax over all V is too costly** → negative sampling (binary real-vs-noise logistic, ~k+1 updates) or hierarchical softmax (binary tree, ~log V).",
       "**Analogies = vector math:** king − man + woman ≈ queen → the space has emergent linear structure (a 'gender' direction, a 'capital-of' direction).",
-      "**GloVe** = factorize the global co-occurrence matrix (ratios of probabilities); Word2Vec = local windows. Both STATIC — one vector per word, so 'bank' collapses → motivates contextual (ELMo/BERT).",
+      "**GloVe** = factorize the global co-occurrence matrix (ratios of probabilities); Word2Vec = local windows. Both STATIC — one vector per word → 'bank' collapses → motivates contextual (ELMo/BERT).",
     ],
     mcqs: [
       {

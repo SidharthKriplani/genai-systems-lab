@@ -42,11 +42,11 @@ Rule of thumb:
       "**Pick by the shape of the problem:** orchestration for complex control flow, a runtime SDK for a fast batteries-included loop in one model family, LangSmith for observability regardless, hand-roll when the loop is genuinely linear.",
     ],
     recap: [
-      "**The agent is small; the framework wraps what surrounds it** — state machine, persistence, retries, handoffs, traces. Value scales with control-flow complexity, not with 'is it an agent.'",
+      "**The agent is a ~30-line loop; the framework wraps what surrounds it** — state, persistence, retries, handoffs, traces.",
       "**Different layers, not rivals:** LangGraph/AutoGen = orchestration, LangChain = tool/chain glue, OpenAI SDK/ADK/CrewAI = runtime, LangSmith = observability.",
       "**Framework earns its cost** on multi-agent handoffs, cycles, HITL, resume-after-crash; **hand-roll** a linear single-tool loop.",
-      "**Costs:** debuggability (you debug the framework's execution model), lock-in (logic-as-primitives = rewrite to migrate), model-coupling (OpenAI SDK/ADK), version churn.",
-      "**Interview answer is never 'always use X'** — name the surrounding concerns, map each to the layer that owns it, justify the abstraction cost.",
+      "**Costs:** debuggability (now debugging the framework's execution model), lock-in (logic-as-primitives → rewrite to migrate), model-coupling, version churn.",
+      "**Never 'always use X'** — name the surrounding concerns, map each to the layer that owns it, justify the abstraction cost.",
     ],
     mcqs: [
       {
@@ -114,11 +114,11 @@ Key: the SERVER owns its credentials; the HOST never sees them.` },
       "**MCP is a protocol, not a runtime and not the model's tool-calling.** It standardizes how tools are described/discovered/reached — orthogonal to orchestration frameworks, complementary to A2A (agent-to-agent).",
     ],
     recap: [
-      "**MCP collapses N×M tool integrations to N+M** — one server, any host. USB-C of agent tools.",
-      "**Roles:** Host (LLM+UI) → Client (per-server connector) → Server (exposes capabilities, owns its credentials). Wire = JSON-RPC 2.0; transport = stdio or HTTP/SSE; discovery at connect time.",
+      "**MCP collapses N×M tool integrations to N+M** — one server, any host. The USB-C of agent tools.",
+      "**Roles:** Host (LLM+UI) → Client (per-server connector) → Server (owns its credentials). Wire = JSON-RPC 2.0; transport = stdio or HTTP/SSE; discovery at connect.",
       "**Four primitives:** Tools (DO, model-controlled), Resources (READ by URI, app-controlled), Prompts (templates, user-controlled), Sampling (server → host LLM call, inverted).",
-      "**vs. function calling:** inline-in-one-app vs. reusable server with auth + resources/prompts/sampling. One tool, one app → function calling; share across hosts/teams → MCP.",
-      "**It's a protocol, not a runtime or the model's tool-calling** — orthogonal to orchestration, complementary to A2A.",
+      "**vs. function calling:** inline-in-one-app vs. reusable server with auth + resources/prompts/sampling. One tool/app → function calling; many hosts/teams → MCP.",
+      "**A protocol, not a runtime or the model's tool-calling** — orthogonal to orchestration, complementary to A2A.",
     ],
     mcqs: [
       {
@@ -187,11 +187,11 @@ Transport: HTTPS + JSON, sync request/response OR async webhook/SSE` },
       "**Decision signals:** multiple frameworks + long tasks + cross-team discovery → A2A. Adoption is uneven — native in ADK, added to CrewAI, roadmap for LangGraph/AutoGen, absent from the (MCP-first) OpenAI Agents SDK. A2A = agent↔agent; MCP = agent↔tool.",
     ],
     recap: [
-      "**A2A = agent↔agent standard** (Google, ~May 2025): cross-framework discovery + delegation. Complementary to MCP (agent↔tool), not a competitor.",
+      "**A2A = agent↔agent standard** (Google, ~May 2025): cross-framework discovery + delegation — complementary to MCP (agent↔tool), not a rival.",
       "**Agent Card:** published JSON manifest (name, version, capabilities, endpoint, I/O formats) — discovery starts here.",
-      "**Tasks, not calls:** stateful units with ID/input/context/expected-output and a submitted→working→completed lifecycle. Long-running is first-class via push notifications (webhooks/SSE) over HTTPS+JSON.",
-      "**Trust boundary:** OAuth 2.0 / bearer tokens + per-task authorization + input validation; cross-agent inputs are untrusted. Advertising a capability ≠ letting every caller use it.",
-      "**Use A2A when:** multiple frameworks + long tasks + cross-team discovery. Uneven adoption: ADK native, CrewAI added, LangGraph/AutoGen roadmap, OpenAI SDK (MCP-first) absent.",
+      "**Tasks, not calls:** stateful units (ID, input, context, expected-output) with a submitted → working → completed lifecycle; long-running work uses push notifications (webhooks/SSE) over HTTPS+JSON.",
+      "**Trust boundary:** OAuth 2.0/bearer tokens + per-task authorization + input validation — cross-agent input is untrusted. Advertising ≠ authorizing.",
+      "**Use A2A when:** multiple frameworks + long tasks + cross-team discovery. Adoption is uneven: ADK native, CrewAI added, LangGraph/AutoGen roadmap, OpenAI SDK (MCP-first) absent.",
     ],
     mcqs: [
       {
@@ -260,11 +260,11 @@ THE PAGED INCIDENT (composed failure):
       "**Failures come from knob *combinations*, not single settings:** unlimited retries × no memory = guaranteed infinite loop; large context × external data × no isolation = tool/prompt-poisoning path. Read the interaction, not each field alone.",
     ],
     recap: [
-      "**Config bug ≠ model bug:** the model is correct *given its knobs*. Predict failure from config; trace failure back to the knob combination.",
-      "**Tools:** 5–7 ceiling before hallucinated calls; route to sub-agents past it. **Temperature:** low for tool-calling/extraction, high only for creative gen.",
-      "**Caps:** bounded retries (≈3/tool, ≈30 total) + step/token/wall-clock limits + explicit stop conditions → every run bounded and escalatable. Never unlimited.",
-      "**Memory + context match the task:** pipelines/long tasks need checkpoints (else state amnesia); context sized to tool-output volume (else overflow).",
-      "**Combinations cause failures:** unlimited retries × no memory = infinite loop; big context × external data × no isolation = poisoning. Read the interaction.",
+      "**Config bug ≠ model bug** — the model is correct *given its knobs*. Predict failure from config; trace failure back to the knob combo.",
+      "**Tools:** 5–7 ceiling before hallucinated calls — route to sub-agents past it. **Temperature:** low for tool-calling/extraction, high only for creative gen.",
+      "**Caps:** bounded retries (≈3/tool, ≈30 total) + step/token/wall-clock limits + explicit stop conditions — every run bounded and escalatable, never unlimited.",
+      "**Memory + context match the task:** pipelines need checkpoints (else state amnesia); context sized to tool-output volume (else overflow).",
+      "**Combinations cause failures:** unlimited retries × no memory = infinite loop; big context × external data × no isolation = poisoning.",
     ],
     mcqs: [
       {

@@ -61,11 +61,11 @@ What the model ACTUALLY sees — one flat token stream:
       "**Defense-in-depth + least privilege.** The two layers' union shrinks the attack surface but never zeroes it. Combine with least-privilege tooling (no unsupervised high-stakes actions) and treat every retrieved/pasted byte as untrusted data.",
     ],
     recap: [
-      "**Prompt injection = data interpreted as instruction**, because the LLM has one input channel with no trust separation. Mitigated, never solved.",
-      "**Later + authoritative wins:** recency weighting plus obedience training make a late override beat the system prompt.",
+      "**Prompt injection = data interpreted as instruction** — one input channel, no trust separation. Mitigated, never solved.",
+      "**Later + authoritative wins:** recency weighting plus obedience training let a late override beat the earlier system prompt.",
       "**Taxonomy:** direct → roleplay/DAN → indirect (in retrieved/pasted content, hardest) → PII extraction.",
-      "**Input classifier** catches explicit attacks pre-model; **output validator** catches by effect post-model. Each has blind spots; you need both.",
-      "**The middle gap** — a missed attack executing inside the LLM — is where incidents happen. Add least-privilege tooling so a hijack can't take a dangerous action.",
+      "**Input classifier** catches explicit attacks pre-model; **output validator** catches by effect post-model — each has blind spots, you need both.",
+      "**The middle gap** — a missed attack executing inside the LLM — is where incidents happen. Least-privilege tooling stops a hijack from taking a dangerous action.",
     ],
     mcqs: [
       {
@@ -141,11 +141,11 @@ PRODUCTION:
       "**Prompts are code: version, diff, regression-test.** Adapt a template by preserving the skeleton, swapping domain specifics, re-validating examples, and re-running evals — behavior is coupled to model + temperature + example set + downstream contract.",
     ],
     recap: [
-      "**Every unspecified behavior becomes a distribution the model samples** — robust prompts close gaps on purpose.",
-      "**Five-part anatomy:** role, constraints, output contract, few-shot, refusal path — each removes a specific failure mode.",
+      "**Every unspecified behavior becomes a distribution the model samples** — robust prompts close gaps on purpose, not with longer prose.",
+      "**Five-part anatomy:** role → constraints → output contract → few-shot → refusal path — each removes a specific failure mode.",
       "**A refusal path** ('say NOT_FOUND if unsupported') is one of the cheapest, biggest hallucination reducers.",
-      "**Patterns:** RAG, LLM-as-judge, CoT, structured output, ReAct — all built on the same skeleton.",
-      "**Enforce structure structurally** (function-calling / constrained decoding), and **version + regression-test prompts like code** before every change.",
+      "**Patterns:** RAG, LLM-as-judge, CoT, structured output, ReAct — all built on the same role+constraints+contract+few-shot+refusal skeleton.",
+      "**Enforce structure structurally** (function-calling/constrained decoding) and **version + regression-test prompts like code** before every change.",
     ],
     mcqs: [
       {
@@ -215,11 +215,11 @@ PRODUCTION:
       "**The fix is abstention, not a bigger model.** Route low-certainty / low-retrieval-support queries to 'I don't know / escalate.' A system that abstains on the unknowable 5% beats one that confidently fabricates on it.",
     ],
     recap: [
-      "**Fluency ≠ truth:** the model optimizes probable continuations, not correct ones; a hallucination is that objective producing a false claim.",
-      "**Parametric (weight-memory) vs. grounded (in-context evidence)** — hallucination is a parametric guess dressed as a grounded fact.",
-      "**Tells:** unsourced plausible specifics, citations/attributions that don't check out, numbers to false precision — all in a confident register.",
-      "**It clusters:** thin retrieval, long-tail queries, numeric answers, 'always answer' pressure — aim verification there.",
-      "**Mitigate with grounding + citation-first + abstention/confidence routing**, not by upgrading the model.",
+      "**Fluency ≠ truth** — the model optimizes probable continuations, not correct ones; a hallucination is that objective producing a false claim.",
+      "**Parametric (weight-memory) vs grounded (in-context evidence)** — hallucination is a parametric guess dressed as a grounded fact.",
+      "**Tells:** unsourced plausible specifics, citations/attributions that don't check out, numbers stated to false precision — all in a confident register.",
+      "**It clusters:** thin retrieval → long-tail queries → numeric answers → 'always answer' pressure. Aim verification there.",
+      "**Mitigate with grounding + citation-first + abstention/confidence routing** — not by upgrading the model.",
     ],
     mcqs: [
       {
@@ -287,11 +287,11 @@ CONTRASTIVE / PAIRED TEST (the correct design):
       "**The prompt is almost never the real lever.** Most teams build only the output-eval layer and stop; the fix flows back through the fine-tuning feedback loop, not through more prompt instructions.",
     ],
     recap: [
-      "**Bias = the model reproducing training-corpus correlations**, with no separate fairness objective — surfaced whenever context carries a demographic signal.",
-      "**Four sources:** training data, RLHF/fine-tuning, prompt framing, decoding/position.",
+      "**Bias = the model reproducing training-corpus correlations** — no separate fairness objective; it surfaces whenever context carries a demographic signal.",
+      "**Four entry points:** training data → RLHF/fine-tuning → prompt framing → decoding/position.",
       "**Types:** demographic, positional (corrupts judging/ranking), sycophancy (truth traded for approval), anchoring.",
-      "**Measure distributionally:** matched pairs varying one protected attribute + a significance test — single outputs can't reveal it, and toxicity filters miss it.",
-      "**Fix through the fine-tuning/eval feedback loop**, not the system prompt — the prompt/blinding layer is the weakest and most over-used.",
+      "**Measure distributionally:** matched pairs varying one protected attribute + a significance test — single outputs can't reveal it, toxicity filters miss it.",
+      "**Fix through the fine-tuning/eval feedback loop, not the system prompt** — prompt/blinding is the weakest, most over-used layer.",
     ],
     mcqs: [
       {
@@ -357,10 +357,10 @@ CONTRASTIVE / PAIRED TEST (the correct design):
     ],
     recap: [
       "**Hard token budget:** system + history + chunks + user + output reserve ≤ window. Overflow truncates or errors, often silently.",
-      "**Output is part of the budget** — you must reserve space to generate into, or the model has nowhere to write.",
+      "**Output is part of the budget** — reserve space to generate into, or the model has nowhere to write.",
       "**Chat history is the sneaky claimant** — cheap early, dominant late; the usual cause of long-session degradation.",
-      "**Lost in the middle:** position matters — edges are attended to best, the middle is a dead zone; more chunks can hurt.",
-      "**Pack / prune / summarize + rerank**, and remember more context costs per-token money and quadratic prefill latency — target minimum sufficient context.",
+      "**Lost in the middle:** edges are attended to best, the middle is a dead zone — more chunks can hurt, not help.",
+      "**Pack / prune / summarize + rerank.** More context costs per-token money and quadratic prefill latency — target minimum sufficient context.",
     ],
     mcqs: [
       {
@@ -439,10 +439,10 @@ STREAMING (SSE, token-by-token):
       "**Silent termination is the dangerous one.** An SSE stream can die with no error (proxy buffer limits, timeouts), leaving partial output indistinguishable from a complete response — so production streaming needs explicit end-of-stream signals plus client-side timeouts.",
     ],
     recap: [
-      "**Prefill → TTFT, decode → per-token.** Total time = TTFT + decode; the model does the same work in batch or streaming.",
-      "**Streaming = perceived-latency win only:** user sees the first token after TTFT, so it *feels* fast though total time is unchanged.",
-      "**SSE** (one long HTTP response, token-by-token `data:` events) is the default; WebSockets for full-duplex/barge-in; batch = wait for all.",
-      "**Costs:** partial parsing (fights structured output), cancellation on disconnect (else wasted compute), tool-call interleaving, and silent termination.",
+      "**Prefill → TTFT; decode → per-token.** Total time = TTFT + decode — identical work in batch or streaming.",
+      "**Streaming = a perceived-latency win only:** the user sees the first token after TTFT, so it feels fast though total time is unchanged.",
+      "**SSE** (one long HTTP response, token-by-token `data:` events) is the default; WebSockets add full-duplex/barge-in; batch waits for all.",
+      "**Costs:** partial parsing (fights structured output), cancellation on disconnect (else wasted compute), tool-call interleaving, silent termination.",
       "**Make truncation distinguishable from completion** — explicit end-of-stream signal + client timeouts — or partial output is trusted as the answer.",
     ],
     mcqs: [
@@ -521,8 +521,8 @@ DB slows to 30s under load:
     ],
     recap: [
       "**Treat the LLM as an unreliable remote dependency**, not a reliable function — it inherits every distributed-systems failure plus malformed-output failures.",
-      "**Failure modes:** timeouts, rate limits (429), malformed output (200 but unusable), tool errors, and cascading failures from one slow dependency.",
-      "**Retry only transient errors with exponential backoff + jitter** — immediate/unbounded retries cause retry storms.",
+      "**Failure modes:** timeouts → rate limits (429) → malformed output (200 but unusable) → tool errors → cascading failure from one slow dependency.",
+      "**Retry only transient errors, with exponential backoff + jitter** — immediate/unbounded retries cause retry storms.",
       "**Circuit breaker = fail fast to stop cascades; fallback = degrade instead of die; timeout = the prerequisite for both.**",
       "**Idempotency makes retries safe; output validation (or strict function-calling) stops garbage output from poisoning downstream.**",
     ],
