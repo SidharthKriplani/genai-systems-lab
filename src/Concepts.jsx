@@ -12696,7 +12696,9 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
             <p className="text-sm text-zinc-400 mt-1">{mod.subtitle}</p>
           </div>
 
-          <Component onNavigate={onNavigate} spec={mod.spec} />
+          <div className="gsl-viz-mobile">
+            <Component onNavigate={onNavigate} spec={mod.spec} />
+          </div>
           <GradientPanel blocks={GRADIENT_CONTENT[active]} onNavigate={onNavigate} />
           <ModuleNotes moduleId={active} />
         </div>

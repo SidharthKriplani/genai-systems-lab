@@ -128,7 +128,7 @@ export default function ModelRoutingViz({ onNavigate, spec } = {}) {
       </div>
 
       {/* live stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
+      <div className="gsl-viz-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
         <div style={card}>
           <div style={label}>Total cost (rel.)</div>
           <div style={{ ...mono, fontSize: "1.3rem", color: CYAN, fontWeight: 600 }}>{totalCost}</div>

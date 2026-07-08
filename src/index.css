@@ -419,3 +419,30 @@ html:not([data-theme="light"])[data-palette="luna"] .border-violet-500 {
 .animate-wrongShake {
   animation: wrongShake 0.4s ease-in-out forwards;
 }
+
+/* ── Foundation interactive (nicheViz) mobile hardening ─────────────────────
+   Single injection point: FoundationsRunner.jsx's Hands-On wrapper and
+   Concepts.jsx's legacy (no-runnerData) module wrapper both add the
+   `gsl-viz-mobile` class around whatever interactive `<Component>` is
+   mounted for the active module. This lets us fix touch-target size and
+   cramped 3-column stat grids for every nicheViz visual at once, without
+   editing 40+ individual component files.
+   `gsl-viz-grid-3` is an opt-in class a handful of 3-column stat-card grids
+   (GQAMemoryViz, GrpoRlvrViz, ModelRoutingViz, PrefillDecodeViz) add next to
+   their existing inline `gridTemplateColumns`; the media query below wins
+   over the inline style so those collapse to a single column under 420px
+   instead of squeezing 3 columns of numbers into ~110px each. */
+@media (max-width: 640px) {
+  .gsl-viz-mobile button {
+    min-height: 40px;
+    min-width: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+@media (max-width: 420px) {
+  .gsl-viz-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -109,7 +109,7 @@ export default function CalibrationViz({ onNavigate, spec } = {}) {
           Reliability diagram — confidence (x) vs accuracy (y)
         </div>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <svg width={W} height={H} style={{ maxWidth: "100%" }}>
+          <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxWidth: W }}>
             {/* grid frame */}
             <rect
               x={PAD}

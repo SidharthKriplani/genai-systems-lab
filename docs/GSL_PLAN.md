@@ -343,3 +343,46 @@ balanced or non-MCQ). Full per-file numbers logged in root `CLAUDE.md`.
 
 **Not pushed.** Standard rules apply — GSL push via `rm -f .git/index.lock .git/HEAD.lock` then `git add
 src/` (never `EXTERNAL-ASSESSMENT.md`), hand to Sidharth's Mac for build+push.
+
+**Foundations interactives — mobile-unfriendliness audit + fix pass (2026-07-08).** Swept all 49 files in
+`src/components/nicheViz/` against 6 patterns (fixed-px SVG, hover-only interactions, drag-and-drop w/o
+touch, fixed-column grids, small tap targets, clipped horizontal overflow). Findings: no hover-only
+reveals and no HTML5 drag-and-drop anywhere in the directory (all interactivity is `onClick` on real
+`<button>` elements) — patterns 2/3 not present. `TransformerScenes.jsx`/`foundationScenes.jsx` (the 3B1B
+scene registry) already used `viewBox` + Tailwind correctly — no fix needed there. Fixed: 7 files
+(`CalibrationViz`, `EncoderDecoderViz`, `RopeViz`, `SentenceEmbedViz`, `SparseAttentionViz`,
+`TransferLearningViz`, `Word2vecViz`) had `<svg width={W} height={H}>` with no `viewBox` — on a narrow
+viewport this clips content instead of scaling it; added `viewBox` + `width:100%,height:auto,maxWidth:W`
+to each. `ClassicalTasksViz.jsx` has the same fixed-width SVG pattern but is deliberately left as-is — it's
+already wrapped in `overflowX:auto`, which is the *correct* fix for its case (a token-sequence diagram
+that legitimately needs horizontal scroll on many tokens), not a bug. 4 files (`GQAMemoryViz`,
+`GrpoRlvrViz`, `ModelRoutingViz`, `PrefillDecodeViz`) had a 3-column `gridTemplateColumns` stat-card row
+(≈110px/column on a 375px phone) — added a `gsl-viz-grid-3` class alongside the existing inline style;
+new `@media (max-width:420px)` rule in `src/index.css` collapses it to 1 column. Tap targets: fixed via a
+**single injection point** instead of touching 40+ files — `FoundationsRunner.jsx`'s Hands-On wrapper
+(the runnerData path) and `Concepts.jsx`'s legacy no-runnerData fallback (`~line 12699`, both are the only
+two places `mod.component`/`<Component>` is ever mounted, confirmed via grep) now wrap the interactive in
+a `gsl-viz-mobile` div; `src/index.css` adds `@media (max-width:640px) { .gsl-viz-mobile button { min-height:40px; min-width:40px; display:inline-flex; ... } }` so every nicheViz button gets a ≥40px touch
+target without per-file edits. **Not fixed / flagged for later:** ~14 two-column `gridTemplateColumns`
+grids across other files (`AsrArchitecturesViz`, `MultiAdapterViz`, `MultiturnContextViz`,
+`PreferenceAlignViz`, `PromptCachingViz`, `QueryRewritingViz`, `Seq2seqAttentionViz`,
+`ServingStacksViz`, `TransferLearningViz`, etc.) — judged lower risk (2 columns of short stat text is
+generally still readable at ~170px on a 375px screen) and left alone to stay in budget; same treatment
+(`gsl-viz-grid-3`-style class + media query) would apply if revisited. All touched `.jsx` files + the
+full `Concepts.jsx` bundle esbuild@0.21.5-verified clean.
+
+**Highlight-to-track MVP (2026-07-08).** Select text inside a Foundations module → a floating toolbar
+(4 color swatches + Save, positioned via the selection's `getBoundingClientRect()`, portal-based like the
+existing `AddTrackBtn`) → saves the passage as a new `type:'highlight'` item into the existing Tracks
+system, NOT as a repainted `<mark>` on the source text — deliberately scoped down; on-page highlight
+persistence across re-renders is real anchoring work and was explicitly deferred, not attempted. New:
+`src/utils/highlightColors.js` (4-color palette reusing existing accent hexes), `src/components/
+HighlightPopover.jsx` (selection listener scoped via `containerRef` to the module content div only, never
+app chrome; quick-add-aware — uses `quickAddItem` when quick-add is on and a last track exists, otherwise
+opens the real `AddToTrackPopover` picker, same escape hatches as `AddTrackBtn`). Edited: `tracks.js`
+(added `updateItemMeta` for editing a highlight's note), `FoundationsRunner.jsx` (mounts the popover,
+scoped via `contentRef`), `Concepts.jsx` (threads `gymId` through so the jump-back link resolves from any
+entry point, including the My-Tracks "Study →" deep-link path), `MyTracks.jsx` (new `highlight` render
+branch: colored left border, inline-editable note mirroring the existing note-edit UX, "Jump to source →"
+via the same `navigateTo({tab:'concepts',gymId,moduleId})` mechanism the "Study →" button already uses).
+All 6 files esbuild-verified clean. Not pushed.

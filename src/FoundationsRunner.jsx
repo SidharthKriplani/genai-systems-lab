@@ -265,7 +265,7 @@ export default function FoundationsRunner({
         {hasInteractive && (
           <section>
             <SectionRule label="Hands-On" />
-            <div className="mt-4">
+            <div className="mt-4 gsl-viz-mobile">
               <Component onNavigate={onNavigate} spec={spec} />
             </div>
           </section>

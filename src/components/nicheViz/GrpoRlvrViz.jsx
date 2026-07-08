@@ -253,6 +253,7 @@ export default function GrpoRlvrViz({ onNavigate, spec } = {}) {
         </div>
 
         <div
+          className="gsl-viz-grid-3"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr",

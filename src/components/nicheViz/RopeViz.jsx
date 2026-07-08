@@ -118,7 +118,7 @@ export default function RopeViz({ onNavigate, spec } = {}) {
       {/* rotation viz + score */}
       <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.75rem", alignItems: "center" }}>
         <div style={{ ...card, padding: "0.5rem" }}>
-          <svg width={S} height={S} style={{ display: "block" }}>
+          <svg viewBox={`0 0 ${S} ${S}`} style={{ display: "block", width: "100%", height: "auto", maxWidth: S }}>
             {/* axes */}
             <line x1={cx} y1="10" x2={cx} y2={S - 10} stroke="var(--border)" strokeWidth="1" />
             <line x1="10" y1={cy} x2={S - 10} y2={cy} stroke="var(--border)" strokeWidth="1" />

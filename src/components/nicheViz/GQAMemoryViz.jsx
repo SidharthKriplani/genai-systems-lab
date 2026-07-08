@@ -229,6 +229,7 @@ export default function GQAMemoryViz({ onNavigate, spec }) {
           {HEAD_DIM} · {SEQ_LEN} · {BATCH} · {DTYPE_BYTES}
         </div>
         <div
+          className="gsl-viz-grid-3"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr",

@@ -160,7 +160,7 @@ export default function PrefillDecodeViz({ onNavigate, spec } = {}) {
       </div>
 
       {/* readouts */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+      <div className="gsl-viz-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
         <div style={card}>
           <div style={label}>TTFT (prefill)</div>
           <div style={numBig}>{ttftMs}<span style={{ fontSize: "0.8rem", color: "var(--ink-low)" }}> ms</span></div>

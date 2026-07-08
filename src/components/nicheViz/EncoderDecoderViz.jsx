@@ -129,7 +129,7 @@ export default function EncoderDecoderViz({ onNavigate, spec } = {}) {
         </div>
 
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <svg width={gridW + 8} height={gridW + 8} style={{ maxWidth: "100%" }}>
+          <svg viewBox={`0 0 ${gridW + 8} ${gridW + 8}`} style={{ width: "100%", height: "auto", maxWidth: gridW + 8 }}>
             {/* column headers */}
             {(mode === "cross" ? SRC.concat(["", ""]) : TOKENS).slice(0, n).map((t, j) => (
               <text

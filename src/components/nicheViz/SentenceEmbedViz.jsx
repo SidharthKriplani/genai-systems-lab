@@ -142,7 +142,7 @@ export default function SentenceEmbedViz({ onNavigate, spec } = {}) {
       <div style={card}>
         <div style={{ ...label, marginBottom: "0.5rem" }}>2D similarity space (closer = more similar)</div>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <svg width={W} height={H} style={{ maxWidth: "100%" }}>
+          <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxWidth: W }}>
             <rect
               x={0.5}
               y={0.5}

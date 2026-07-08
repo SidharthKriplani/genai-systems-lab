@@ -118,7 +118,7 @@ export default function SparseAttentionViz({ onNavigate, spec } = {}) {
       {/* grid + readouts */}
       <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.75rem", alignItems: "start" }}>
         <div style={{ ...card, padding: "0.6rem" }}>
-          <svg width={GRID} height={GRID} style={{ display: "block" }}>
+          <svg viewBox={`0 0 ${GRID} ${GRID}`} style={{ display: "block", width: "100%", height: "auto", maxWidth: GRID }}>
             {Array.from({ length: n }).map((_, i) =>
               Array.from({ length: n }).map((_, j) => {
                 const on = isComputed(pattern, i, j, w, g);
