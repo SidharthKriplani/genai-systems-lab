@@ -75,6 +75,7 @@ export const RECAP_PATCH_B = {
       "**Prompting for JSON gets ~85-92% compliance** — adequate only for low-stakes pipelines with retry logic.",
       "**JSON mode forces valid *syntax* but not *schema*** — you still get hallucinated fields, missing required fields, and wrong types.",
       "**Schema-enforced structured outputs use grammar-constrained decoding** — the sampler is restricted to tokens that keep output schema-valid at every step; it *cannot* omit a required field or misplace a comma.",
+      "**Function calling validates typed arguments against a predefined schema** — a real guarantee, but only for fields declared upfront, and only once the model chooses to call the function at all; grammar-constrained decoding forces validity regardless of what the model 'wants.'",
       "**Forced schemas can't express uncertainty** — the model must emit a typed value even when the truth is unknown, so gaps get coerced into plausible-looking values.",
       "**Add a per-field confidence field** — route low-confidence extractions to human review without blocking the automated path.",
     ],

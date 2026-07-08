@@ -386,3 +386,184 @@ entry point, including the My-Tracks "Study →" deep-link path), `MyTracks.jsx`
 branch: colored left border, inline-editable note mirroring the existing note-edit UX, "Jump to source →"
 via the same `navigateTo({tab:'concepts',gymId,moduleId})` mechanism the "Study →" button already uses).
 All 6 files esbuild-verified clean. Not pushed.
+
+---
+
+## S/A-tier content audit — 2026-07-08 (CONTENT-AUDIT-RUBRIC.md pass, all 81 modules)
+
+Ran the 10-smell rubric against all 81 S-tier(25)+A-tier(56) modules via 5 parallel agents, in response to
+the user reporting the material itself felt hard to follow. **0 of 81 modules came back clean** — ~110
+findings total. Full digest: `GSL_CONTENT_AUDIT.md` (delivered to user, not yet copied into this repo — ask
+if you need the full text; the summary below is the durable record).
+
+**Severity buckets (read GSL_CONTENT_AUDIT.md for full per-module detail):**
+- **Tier 1 (~35 modules) — self-contradicting math/facts.** Worked examples or formulas that disagree with
+  themselves in the same module. Worst offenders: tokenizer (inverted token/word ratio, example contradicts
+  its own stated ratio), scaling-laws (3 separate internal contradictions), distillation (softmax doesn't
+  sum to 1, wrong in two places), kv-cache (names Llama-70B/GQA but uses plain-MHA math, 4-8x off),
+  rag-eval (faithfulness defined as verbatim match, not entailment — wrong), managed-vs-selfhosted (3
+  different mutually-contradictory crossover numbers in one module).
+- **Tier 2 (7 modules) — widget and prose teach two different curricula.** Worst: **eval-loop, eval-design,
+  llm-as-judge** (all S-tier) each have an old hand-built `Concepts.jsx` widget never reconciled after the
+  prose was rewritten — eval-loop's widget is actually teaching rag-eval's subject matter. Flagged as
+  needing a dedicated fix pass, not a quick edit. Also smaller forks in structured-outputs,
+  quality-drift, model-routing-cascades, latency-planner, observability-concepts, prompt-regression-signals.
+- **Tier 3 — cross-module naming collisions.** Concentrated in the agent-* cluster (agent-react/
+  -reliability/-failure-modes/-planning-patterns all reuse "grounding," "cascading," "self-critique" with
+  different meanings, no cross-refs) and metadata-filtering vs pgvector-vs-managed (same `WHERE user_id=$2`
+  mechanism, contradictory caveats).
+- **Tier 4 (~35 findings) — undefined terms, under-explained siblings, hidden interactive params, dangling
+  threads.** Lower urgency, listed in full in GSL_CONTENT_AUDIT.md.
+
+**Suggested fix order** (per the audit doc): eval-loop/eval-design/llm-as-judge first (S-tier + structural,
+not a quick patch) → Tier 1 self-contradictions S-tier-first → Tier 3 agent-*/vector-infra cross-reference
+pass → Tier 4 whenever there's spare capacity.
+
+Audit only — no code changed this pass.
+
+**B-tier addendum (2026-07-08, same day):** confirmed via esbuild bundle of `RUNNER_DATA` that GSL has
+exactly 139 total foundation modules (25 S + 56 A + 58 B). Ran the same rubric against all 58 B-tier
+modules — 28 clean, 30 with findings. New patterns beyond S/A: **seq-parallel** has a completely wrong
+interactive wired to it (RNN-vs-Transformer content on a sequence-parallelism-training module); **6 orphaned
+duplicate agent-* modules** (`agent`, `agent-tools`, `multiagent`, `agent-memory`, `agent-planning`,
+`agent-tracing`) pre-date the now-canonical S/A versions and 3 of them are still linked from `AgentsHub.jsx`,
+where opening them triggers a real bug (gym-lookup fails, sidebar falls back to showing every module in the
+app instead of the Agents gym) — recommend deleting the 6 dupes + fixing the 3 dangling links rather than
+fixing their content. More self-contradicting math: resolution-token-cost (prose vs interactive token counts
+~5-8x apart), pgvector-vs-managed (10M vs 50M ceiling, re-confirmed), vector-migration-patterns (3 different
+doc counts for one calculation), enterprise-ai-cost-model (50-60% claim vs ~40-47% from its own numbers),
+codegen-eval-passk-swebench (pass@k example doesn't match its own formula). Safety cluster (red-teaming,
+jailbreak-taxonomy, guardrails) has taxonomy mismatches between prose and interactive category lists. Full
+detail in `GSL_CONTENT_AUDIT.md` (delivered to user).
+
+**Next: fix phase starting now**, per user's explicit go-ahead, in the priority order the audit doc lays
+out (Eval trio content-fork → Tier-1 self-contradicting math S-tier-first → B-tier structural bugs
+(seq-parallel, agent-* orphans) → Tier-3 naming collisions → Tier-4 lower severity). Log each fix batch
+here as it lands, same as every other section in this file.
+
+---
+
+## Fix phase — 2026-07-08, same day, waves 1-6 complete
+
+Ran the full priority-ordered fix list from the audit above via ~15 parallel agents across 6 waves, each
+making real edits (not reports), each esbuild-verified individually, plus a final full-app bundle check
+(`src/App.jsx`, 11.7mb, 0 errors — only pre-existing unrelated duplicate-key warnings in
+`groundTruthIndex.js`, a file untouched this session). `RUNNER_DATA` key count confirmed 139→133 after
+the orphan cleanup (exactly 6 removed, as intended).
+
+**Wave 1 — structural, highest severity:**
+- **eval-loop / eval-design / llm-as-judge** (S-tier): reconciled widget-vs-prose content forks. eval-loop's
+  widget was duplicating rag-eval's subject — rebuilt it around the prose's actual independence/bias/
+  contamination framework (3 new tabs: 4 Properties / Judge Independence / Diagnose a Setup). eval-design's
+  widget rebuilt around the prose's must-do/must-never + 60-70% annotation budget + recall-vs-accuracy
+  tradeoff (now has a live blended-accuracy-vs-recall demo). llm-as-judge standardized on the prose's
+  correlation≥0.7 framing (widget was asserting a contradictory 70-85%-agreement statistic) — bias-card
+  terminology aligned too.
+- **seq-parallel**: was showing an RNN-vs-Transformer interactive under Ring-Attention/Megatron prose — two
+  unrelated topics sharing one id. Investigated: no other module owned the RNN-vs-Transformer content (kept
+  it, rewrote seq-parallel's prose to match), and the real sequence-parallelism content was folded into
+  `flashattn` as a "one more wall" closing section rather than deleted. Also fixed a real prefill-vs-decode
+  conflation bug in the interactive itself ("generation becomes 1 parallel step" — false; decode is always
+  sequential regardless of architecture).
+- **6 orphaned duplicate agent-* modules** (`agent`, `agent-tools`, `multiagent`, `agent-tracing`,
+  `agent-planning`, `agent-memory`) deleted from RUNNER_DATA; `AgentsHub.jsx`'s 3 dangling links repointed to
+  the canonical S/A modules with corrected card copy.
+
+**Wave 2 — S-tier Language Models + Retrieval math (11 modules):** tokenizer (token/word ratio was inverted
+— fixed using a real tiktoken install, not just hand-computation; UUID/JSON/section-header counts corrected;
+Hindi example now shows actual Devanagari script), attention (Q·K scores recomputed and propagated through
+softmax/keyPoints; 2 RoPE-dependent MCQs rewritten to test in-module content; false quadratic-cost→
+attention-sink causal link removed), transformer (`tinyTransformer.js` now actually computes pre-norm,
+matching the claim), sampling (T=0.5 softmax row corrected), positional-encoding ("position 4001 never
+generated" contradiction fixed; θ₄₈ math corrected 0.00178→0.001), rope (base-raising direction fixed:
+slows low-frequency not high-frequency pairs — also caught a second echo of the same error in an MCQ
+explanation), speculative-decoding (worked example fixed to match the module's own formula, ~3.05 not
+~2.5/3.5; live interactive had the identical bug baked into code, also fixed), kv-cache (recomputed for
+real Llama-70B GQA, 8 heads not 64 — 0.33MB/token not 2.6MB, cascading through the 520GB cluster scenario
+down to a more realistic 65GB/one-GPU figure), dense-vs-sparse-retrieval (RRF tie broken with a defensible
+rank change), context (all "middle 60%" claims rewritten to the honest U-shaped-curve framing, matching
+both the interactive and the real Liu et al. 2023 finding), rag-eval (faithfulness redefined from verbatim-
+match to semantic entailment). Drive-by: fixed a pre-existing unrelated syntax error in scaling-laws that
+was breaking the whole file's esbuild check.
+
+**Wave 3 — Foundation Models cluster (8 modules):** rlhf (InstructGPT same-vs-smaller-than-GPT-3
+contradiction fixed), lora (8×A100 claim was full-FT's footprint not LoRA's — recomputed to ~2×A100;
+unsourced 85-98% quality claim softened to qualitative near-parity; prose/interactive matrix notation
+unified on BA), pretraining (10⁶-10⁸× token-ratio vs 100-1,000×-cost contradiction resolved to consistent
+~10⁵-10⁷×; rigid capability-threshold claims softened to explicitly-approximate/contested framing),
+scaling-laws (compute-matched claim fixed with real FLOPs math shown; "20× more tokens" corrected to the
+component's own already-correct "~11×"; Mistral card's Overtrained-badge-vs-Compute-optimal-text
+contradiction resolved), model-families (Claude Sonnet's tier rating fixed to match prose taxonomy; added
+mid-tier/open-source examples to match frontier/small-fast's depth; added missing small-fast models to the
+comparison table), instruction-tuning ("SFT teaches new vocabulary" row removed, was contradicting the
+same component's own Key Insight box), distillation (softmax math corrected in both the data file and the
+live UI caption, verified against the component's own live computation), moe (interactive defaults
+recalibrated so active-param math and the "~13B ACTIVE" caption now genuinely agree, ~12.9B, closer to real
+Mixtral). Flagged, not fixed (out of scope for the 4 listed items): a pre-existing Llama-3-70B-quality vs
+GPT-4o-quality-rating inconsistency in model-families' Key Insight box.
+
+**Wave 4 — Production/infra content-forks + math (15 modules):** quality-drift (added a 4th missing cause
+to the interactive; grounded the MCQ's "most common cause" claim), managed-vs-selfhosted (recomputed the
+real breakeven at ~2.1-2.3B tokens/month from the module's own cost figures, replacing 3 different
+contradictory numbers; rewrote the interactive description; added a scorecard methodology note),
+model-routing-cascades (Router mode no longer secretly depends on the small model having already run — now
+uses a genuine pre-inference heuristic, restoring the actual router-vs-cascade distinction being taught),
+latency-planner (p95-p99 gap corrected 3.3s→2.8s; "halves" corrected to the real ~73% cut; interactive
+description fixed to match the real SLA-allocator component), observability-concepts ("response headers"→
+"response body" ×5, matching real API behavior; "span" now defined inline), structured-outputs (function
+calling given a full prose treatment so the widget's Hold question is answerable), prompt-regression-signals
+(added golden-set offline diffing as the real first line of defense; signal taxonomy reconciled to the
+interactive's actual categories), infra-prefill-decode (KV-cache defined at first use with a worked example;
+0.6%-vs-"8%"-busy label fixed; weight-streaming restored as the primary decode-cost driver, was wrongly
+displaced by KV-cache-reads in the interactive), infra-batching-throughput (12-useful/8-wasted vs the
+caption's swapped "8 useful/60% wasted" fixed), infra-paged-attention-kv (utilization math could exceed
+100% from double-counting a shared prefix — fixed; block allocation now genuinely renders as scattered/
+non-contiguous instead of a recolored ordered row; "page table"→"block table" terminology unified),
+infra-serving-stacks (TGI/SGLang/RadixAttention defined; Triton added to the interactive to match the
+prose; closing panel fixed to name all 3 parallelism axes and drop an unsupported throughput claim),
+custom-preference-alignment (RLHF/PPO expanded; beta slider direction was backwards from real DPO mechanics
+— fixed, high beta now correctly = gentle/conservative), alignment-techniques (PPO/KL-divergence defined;
+SFT given prose coverage to match its interactive tab; RLAIF-vs-SL-CAI staging corrected to match real
+Constitutional AI methodology and the interactive's own RLAIF panel; reward-model scores in the RLHF tab
+now actually respond to the user's click instead of being fixed constants), agent-eval-trajectory
+(4-part schema reconciled to the real 3-part Thought/Action/Observation loop agent-react teaches),
+metadata-filtering ("preserves ANN quality" corrected to properly name and explain the recall trap;
+pre-filter recall interactive no longer hardcoded to a flat 100%; added the same application-layer-filter
+caveat to pgvector-vs-managed for cross-module consistency).
+
+**Wave 5 — B-tier standout bugs (7 modules/clusters):** resolution-token-cost (prose's fabricated ViT-patch
+math replaced with the interactive's real, verifiable GPT-4V tile formula as sole ground truth throughout —
+512px=255/1024px=765/2048px=2,805 tokens; cost story recomputed at a realistic per-token rate; a genuine
+progress-bar denominator bug in the interactive also fixed; "513px=425 tokens" corrected to 765),
+pgvector-vs-managed (10M-vs-50M ceiling contradiction standardized on a 10-50M hardware-dependent range),
+vector-migration-patterns (given full groundUp/keyPoints/recap structure to match its siblings; 3 different
+document counts unified on the scenario's original 5M/2.8hr anchor; cross-module dual-write/backfill/
+cutover pattern explicitly tied to pgvector-vs-managed's identical mechanism), enterprise-ai-cost-model
+(50-60%-of-costs claim corrected to the module's own math, ~40-47%; p95 now actually defined before being
+referenced; cost widget's hidden per-unit formulas surfaced in a visible note), codegen-eval-passk-swebench
+(the "20%→89% at pass@50" example was actually the pass@10 value — relabeled to match, preserving the
+teaching point), and a 3-module safety-cluster taxonomy reconciliation (red-teaming and jailbreak-taxonomy
+each had prose-vs-interactive taxonomy mismatches, now unified per-module; the two modules' scopes are now
+explicitly distinguished from each other — broad red-team methodology vs. the narrower prompt-attack
+sub-taxonomy — plus a guardrails-vs-jailbreak-taxonomy classifier-distinction sentence added to both).
+
+**Wave 6 — agent-* cluster naming collisions (6 items):** "grounding" (agent-reliability's narrower sense
+now explicitly disambiguated from agent-react's), "Cascading errors" vs "Tool cascade failure"
+(cross-referenced both directions between agent-failure-modes and agent-reliability), "Reflection/
+self-critique" vs "self-critique loop" (cross-referenced between agent-planning-patterns and
+agent-reliability), "context rot" (defined at its first-ever use across all 8 sibling modules, distinguished
+from "lost in the middle"), Over-Delegation duplication (agent-multiagent kept as canonical, agent-
+failure-modes trimmed to a one-line pointer), agent-memory-foundations/agent-memory-libraries mismatch
+(libraries' false claim about what foundations taught was corrected; a missing forward-pointer sentence
+added to foundations' takeaway).
+
+**Not done this pass (explicitly deferred, matches the audit's own stated priority):** Tier-4 lower-severity
+findings not already swept up incidentally by the waves above (~20-25 remaining undefined-term/
+under-explained-sibling/hidden-parameter/dangling-thread items scattered across modules not touched in
+waves 1-6) — these were always the lowest-urgency bucket per the audit doc itself. Full remaining list is
+in `GSL_CONTENT_AUDIT.md`'s Tier 4 section (delivered to user).
+
+All ~15 fix agents ran real esbuild@0.21.5 (and node --check for plain-JS files) verification after their
+own edits; I independently re-ran a full-app bundle check on `src/App.jsx` afterward (11.7mb, 0 errors,
+only pre-existing unrelated warnings) plus confirmed `RUNNER_DATA` key count is exactly 133 (139 minus the
+6 intentionally-deleted orphans). Not pushed — same approve-first workflow as everything else in this repo.

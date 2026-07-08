@@ -31,15 +31,15 @@ export const RUNNER_RETRIEVAL_BREADTH = {
 Query: "ERR_2048_TLS certificate handshake failing"
 
 BM25 ranks:            Dense ranks:
-  1. runbook-2048       1. cert-trust-guide
-  2. tls-overview       2. handshake-explainer
+  1. runbook-2048       1. handshake-explainer
+  2. tls-overview       2. cert-trust-guide
   3. cert-trust-guide   3. runbook-2048
 
 RRF (k=60):
   runbook-2048     = 1/(60+1) + 1/(60+3) = 0.01639 + 0.01587 = 0.03226  ← TOP
-  cert-trust-guide = 1/(60+3) + 1/(60+1) = 0.01587 + 0.01639 = 0.03226  ← tie
+  cert-trust-guide = 1/(60+3) + 1/(60+2) = 0.01587 + 0.01613 = 0.03200
+  handshake-expl.  = 1/(60+1)            = 0.01639
   tls-overview     = 1/(60+2)            = 0.01613
-  handshake-expl.  =            1/(60+2) = 0.01613
 
   runbook-2048 (the exact-code doc BM25 loved) survives fusion and lands
   at the top — dense alone had buried it at rank 3. Neither retriever

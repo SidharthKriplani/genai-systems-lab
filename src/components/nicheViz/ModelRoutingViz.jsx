@@ -2,11 +2,29 @@ import { useState } from "react";
 
 // Model routing / cascade instrument. A fixed stream of queries (easy/medium/hard)
 // is routed to a small or large model. Mode = "all-large" | "router" | "cascade".
-// Cascade exposes a confidence-threshold slider: raising it escalates more queries
-// (higher quality, higher cost + tail latency). Cost + quality tallied live.
+// Router decides BEFORE any model runs, using only pre-inference query features
+// (length + keyword heuristics) — it never sees a confidence score, because no
+// model has produced one yet. Cascade decides AFTER running the small model,
+// using the small model's own self-reported confidence. Both modes expose a
+// visible threshold slider. Cost + quality tallied live.
 export default function ModelRoutingViz({ onNavigate, spec } = {}) {
   const [mode, setMode] = useState("router"); // all-large | router | cascade
   const [thresh, setThresh] = useState(60); // cascade escalate-if-confidence-below, 0..100
+  const [routerThresh, setRouterThresh] = useState(45); // router route-to-large-if-complexity-at-or-above, 0..100
+
+  // Pre-inference complexity heuristic: length + keyword matching against the raw
+  // query text. This is exactly what a router has available BEFORE any model runs —
+  // no confidence score, because no model has produced an answer yet.
+  const HARD_KEYWORDS = ["prove", "multi-step", "adversarial", "refactor", "revenue"];
+  const MED_KEYWORDS = ["explain", "classify", "rewrite", "why"];
+  function estimateComplexity(text) {
+    const words = text.trim().split(/\s+/).length;
+    const lower = text.toLowerCase();
+    let score = Math.min(50, words * 5); // pure length signal, capped
+    if (HARD_KEYWORDS.some((k) => lower.includes(k))) score += 40;
+    else if (MED_KEYWORDS.some((k) => lower.includes(k))) score += 20;
+    return Math.min(100, score);
+  }
 
   // ---- monochrome instrument palette ----
   const CYAN = "var(--gal-build, #22d3ee)";
@@ -60,11 +78,13 @@ export default function ModelRoutingViz({ onNavigate, spec } = {}) {
       return { model: "large", cost: COST_LARGE, correct: true, escalated: false };
     }
     if (mode === "router") {
-      // Front-door classifier: routes by *predicted* difficulty. It commits up front.
-      // Model of a decent-but-imperfect router: easy/med -> small, hard -> large,
-      // BUT it misjudges the "confidently wrong" hard query as easy (smallConf high),
-      // sending it to small with no recovery.
-      const routeSmall = q.smallConf >= 65; // the router trusts stated confidence
+      // Front-door classifier: routes by *predicted* difficulty, decided BEFORE any
+      // model runs — from query length + keyword heuristics alone, never a confidence
+      // score. It commits up front and there's no recovery path.
+      // Blind spot: a query can be short and keyword-innocuous (low predicted
+      // complexity) yet genuinely hard — the heuristic has no way to know.
+      const complexity = estimateComplexity(q.t);
+      const routeSmall = complexity < routerThresh;
       if (routeSmall) {
         return { model: "small", cost: COST_SMALL, correct: q.smallOK, escalated: false };
       }
@@ -125,6 +145,24 @@ export default function ModelRoutingViz({ onNavigate, spec } = {}) {
             </div>
           </div>
         )}
+
+        {mode === "router" && (
+          <div style={{ marginTop: "0.9rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={label}>Route to large if pre-inference complexity ≥ threshold</span>
+              <span style={{ ...mono, color: CYAN, fontSize: "1.1rem" }}>{routerThresh}</span>
+            </div>
+            <input type="range" min={0} max={100} step={1} value={routerThresh}
+              onChange={(e) => setRouterThresh(Number(e.target.value))}
+              style={{ width: "100%", accentColor: "#71717a" }} />
+            <div style={{ ...mono, fontSize: "0.68rem", color: "#71717a", display: "flex", justifyContent: "space-between" }}>
+              <span>0 (always large)</span><span>100 (always small)</span>
+            </div>
+            <div style={{ ...mono, fontSize: "0.64rem", color: "#71717a", marginTop: "0.3rem" }}>
+              Complexity = query length + keyword match (e.g. "prove", "refactor", "explain") — computed from the raw text, before either model has run.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* live stats */}
@@ -180,7 +218,7 @@ export default function ModelRoutingViz({ onNavigate, spec } = {}) {
           {mode === "all-large" &&
             "Every query pays the 20x flagship, even 'thanks!'. Quality is 100% but you're paying worst-case cost on average-case traffic — the mistake the whole topic exists to fix."}
           {mode === "router" &&
-            "The router commits each query up front by trusting the small model's stated confidence. It's cheap and low-latency — but the 'legal-clause reasoning' query is confidently wrong (high stated confidence, actually incorrect), so the router sends it to the small model and there is no recovery. That's a silent misroute."}
+            "The router commits each query up front using only length + keyword features — no model has run yet, so there's no confidence score to consult. It's cheap and single-hop — but the heuristic has its own blind spot: 'subtle legal-clause reasoning' is short and keyword-innocuous, so it scores as low-complexity and routes to the small model with no recovery. That's a silent misroute — not from a miscalibrated confidence score (the router never sees one), but from a surface-feature heuristic that can't detect domain difficulty it was never given signal for."}
           {mode === "cascade" &&
             "Cascade tries small first and escalates when confidence is below the threshold. Raise the threshold and you escalate more: quality climbs toward 100% but cost rises and escalated queries pay small+large in series (tail latency). Note the confidently-wrong hard query (stated confidence 88): a threshold below 88 never escalates it — the calibration failure a logprob-style signal can't catch."}
         </div>

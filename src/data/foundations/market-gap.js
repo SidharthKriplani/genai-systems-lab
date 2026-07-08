@@ -36,7 +36,7 @@ Position Interpolation (PI):  squeeze positions into the trained range
   -> needs a short fine-tune to recover; hurts fine-grained nearby order
 
 NTK-aware scaling:  raise base instead of squeezing positions
-  base 10000 -> larger base  => slows the high-frequency pairs
+  base 10000 -> larger base  => slows the low-frequency pairs
   -> stretches long-range wavelengths WITHOUT crushing local detail
   -> often works with little or NO fine-tuning
 
@@ -98,7 +98,7 @@ Naive fix "just raise max_position_embeddings":
           "Add more attention heads to the model so the extra heads can specialize in tracking distant token relationships, reducing reliance on the position encoding scheme itself",
         ],
         correct: 0,
-        explanation: "The first option is correct: NTK-aware scaling raises the base (theta) to slow the high-frequency pairs, and YaRN refines this per-frequency — interpolating the long-range pairs the most while leaving the local high-frequency pairs almost unchanged, plus a small attention-temperature tweak. This keeps fine-grained local order intact and typically needs little or no fine-tuning, which is exactly the requirement. The second option is wrong because plain Position Interpolation compresses local resolution (it squeezes all positions uniformly) and usually needs a fine-tune to recover — the opposite of preserving local detail. The third option is wrong because ALiBi's linear penalty structurally down-weights distant tokens, hurting long-range retrieval, and it is not aimed at preserving local resolution specifically. The fourth option is unrelated — head count does not encode or extend position.",
+        explanation: "The first option is correct: NTK-aware scaling raises the base (theta) to slow the low-frequency pairs, and YaRN refines this per-frequency — interpolating the long-range pairs the most while leaving the local high-frequency pairs almost unchanged, plus a small attention-temperature tweak. This keeps fine-grained local order intact and typically needs little or no fine-tuning, which is exactly the requirement. The second option is wrong because plain Position Interpolation compresses local resolution (it squeezes all positions uniformly) and usually needs a fine-tune to recover — the opposite of preserving local detail. The third option is wrong because ALiBi's linear penalty structurally down-weights distant tokens, hurting long-range retrieval, and it is not aimed at preserving local resolution specifically. The fourth option is unrelated — head count does not encode or extend position.",
       },
       {
         question: "Select the two true statements about how RoPE and ALiBi differ.",

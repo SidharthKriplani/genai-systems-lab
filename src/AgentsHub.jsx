@@ -47,10 +47,10 @@ const TRADEOFF = {
 };
 
 const CONCEPTS = [
-  { id: "agent",       label: "Agent Loop",    fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "The ReAct loop step by step — Thought → Action → Observation — and where each stage breaks.", gymId: "ai-agents" },
-  { id: "agent-tools", label: "Tool Design",   fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "Consequence levels, idempotency, and permission architecture. Tools an agent won't misuse.", gymId: "ai-agents" },
-  { id: "multiagent",  label: "Multi-Agent",   fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "Supervisor, pipeline, and mesh patterns. Inter-agent communication and failure budgets.", gymId: "ai-agents" },
-  { id: "guardrails",  label: "Guardrails",    fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "Input classifiers, output filters, privilege separation. The safety layer every agent needs.", gymId: "ai-agents" },
+  { id: "agent-react",       label: "ReAct Pattern",   fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "Reason, act, observe — the loop every agent runs, step by step, and where each stage breaks.", gymId: "ai-agents" },
+  { id: "agent-tool-design", label: "Tool Use Design", fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "How to define the tools an agent can actually use well — schemas, idempotency, and permission architecture.", gymId: "ai-agents" },
+  { id: "agent-multiagent",  label: "Multi-Agent",     fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "When to split into multiple agents and how they coordinate — supervisor, pipeline, and mesh patterns.", gymId: "ai-agents" },
+  { id: "guardrails",        label: "Guardrails",      fidelity: "~ Simplified", fidelityColor: "#a78bfa", desc: "Input classifiers, output filters, privilege separation. The safety layer every agent needs.", gymId: "ai-agents" },
 ];
 
 const GT_POSTS = [

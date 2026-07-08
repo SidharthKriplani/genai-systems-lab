@@ -36,17 +36,24 @@ const METHODS = [
 
 export default function PreferenceAlignViz({ onNavigate, spec } = {}) {
   const [method, setMethod] = useState("dpo");
-  const [beta, setBeta] = useState(3);
+  const [beta, setBeta] = useState(7);
 
   const m = METHODS.find((x) => x.id === method);
 
-  // Alignment: rises with strength, saturating.
-  const alignment = Math.round(100 * (1 - Math.exp(-beta / 3)));
-  // Capability: flat then falls as over-optimization kicks in past a knee.
-  const knee = 6;
-  const tax = beta <= knee ? 0 : (beta - knee) * 9;
+  // beta is the KL-penalty coefficient: HIGH beta = strong penalty = policy stays
+  // close to the reference model (gentle/conservative). LOW beta = weak penalty =
+  // policy is free to drift far toward the reward signal (aggressive, higher risk
+  // of reward-hacking / quality collapse). "divergence" below is the inverse of
+  // beta — how far the policy is effectively allowed to move from the reference.
+  const divergence = 11 - beta;
+  // Alignment: rises as divergence rises (i.e. as beta drops / gets more aggressive), saturating.
+  const alignment = Math.round(100 * (1 - Math.exp(-divergence / 3)));
+  // Capability: flat while beta keeps the policy near the reference, then falls once
+  // beta drops below the knee and the policy over-optimizes against the reward.
+  const knee = 5;
+  const tax = beta >= knee ? 0 : (knee - beta) * 9;
   const capability = Math.max(30, 100 - tax);
-  const overOpt = beta > knee;
+  const overOpt = beta < knee;
 
   const card = {
     background: "var(--surface-2)",
@@ -139,7 +146,7 @@ export default function PreferenceAlignViz({ onNavigate, spec } = {}) {
       <div style={{ ...card, padding: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <label style={{ fontSize: 12, color: "var(--zinc-400, #a1a1aa)" }}>
-            preference strength (beta)
+            KL-penalty strength (beta)
           </label>
           <span style={{ ...mono, fontSize: 14, fontWeight: 700, color: "var(--gal-build)" }}>
             {beta}
@@ -155,8 +162,18 @@ export default function PreferenceAlignViz({ onNavigate, spec } = {}) {
           style={{ width: "100%", marginTop: 10, accentColor: "var(--gal-build)" }}
         />
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--zinc-400, #a1a1aa)", ...mono }}>
-          <span>gentle</span>
-          <span>aggressive</span>
+          <span>low beta — aggressive (large policy shift)</span>
+          <span>high beta — gentle (stays close to reference)</span>
+        </div>
+
+        <div style={{ fontSize: 11, color: "var(--zinc-400, #a1a1aa)", marginTop: 10, lineHeight: 1.5 }}>
+          Beta sets how hard the KL penalty pulls the policy back toward the frozen reference model.
+          <strong> Alignment</strong> below is roughly how far the policy has shifted toward the
+          preferred behavior; <strong>general capability</strong> is roughly how much of the base
+          model's broader ability survives that shift. There's a transition point (a "knee") around
+          beta ≈ 5: above it the penalty is strong enough to keep capability intact, below it the
+          policy is optimizing hard enough against the reward signal that capability starts to
+          collapse — the reward-hacking risk in action.
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
@@ -181,8 +198,8 @@ export default function PreferenceAlignViz({ onNavigate, spec } = {}) {
           }}
         >
           {overOpt
-            ? `alignment tax: over-optimizing — capability down ${100 - capability} points to chase the preference`
-            : "no alignment tax yet — pushing harder still helps"}
+            ? `alignment tax: over-optimizing — capability down ${100 - capability} points from letting beta run too low (too aggressive, drifting far from the reference)`
+            : "no alignment tax yet — beta is high enough to keep the policy close to the reference"}
         </div>
       </div>
     </div>

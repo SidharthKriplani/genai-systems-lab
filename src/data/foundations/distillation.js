@@ -12,12 +12,12 @@ export const RUNNER_DISTILLATION = {
       { type: "illustration", label: "Temperature exposes the dark knowledge (and the T² fix)", content: `Teacher logits z for one example (4 classes):  [4.0, 3.0, -1.0, -3.0]
 
 Softmax at T=1 (softmax(z)):
-  billing 0.708 | account 0.260 | technical 0.005 | spam 0.0006
-  -> account 0.26 is visible but technical/spam are ~0: the near-neighbor
+  billing 0.727 | account 0.267 | technical 0.0049 | spam 0.0007
+  -> account 0.267 is visible but technical/spam are ~0: the near-neighbor
      signal is faint, and gradients from those tiny probs are negligible.
 
 Softmax at T=3 (softmax(z / T)):
-  billing 0.452 | account 0.324 | technical 0.121 | spam 0.062
+  billing 0.499 | account 0.358 | technical 0.094 | spam 0.048
   -> the RELATIVE structure is now exposed: billing > account > technical > spam.
      "spam is far, technical is closer, account is a real neighbor" is now
      a strong training signal the student can actually fit.

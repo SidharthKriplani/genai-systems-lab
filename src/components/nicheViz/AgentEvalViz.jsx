@@ -11,12 +11,14 @@ export default function AgentEvalViz({ onNavigate, spec } = {}) {
   // Final answer happens to be correct, but the PATH is broken.
   const TASK = 'Ticket: "Where is my order #A-4471?"';
   const GOLDEN_FINAL = "It was delivered on Tuesday.";
+  // Same Thought -> Action -> Observation loop ReAct teaches, just repeated and
+  // scored per step (the final "reply" is itself an Action — final_answer()).
   const steps = [
-    { n: 1, kind: "plan", text: "Plan: look up the order by its ID", ok: true, note: "sound plan" },
-    { n: 2, kind: "tool", text: 'lookup_order("A-9999")', ok: false, note: "WRONG ARG — id was A-4471, not A-9999" },
-    { n: 3, kind: "observe", text: 'observe: "delivered Tuesday"', ok: false, note: "another customer's order that happens to match" },
-    { n: 4, kind: "tool", text: "issue_refund()", ok: false, note: "HALLUCINATED destructive call — never requested" },
-    { n: 5, kind: "reply", text: 'reply: "It was delivered on Tuesday."', ok: true, note: "final answer matches golden — looks right" },
+    { n: 1, kind: "plan", text: "Thought: look up the order by its ID", ok: true, note: "sound plan" },
+    { n: 2, kind: "tool", text: 'Action: lookup_order("A-9999")', ok: false, note: "WRONG ARG — id was A-4471, not A-9999" },
+    { n: 3, kind: "observe", text: 'Observation: "delivered Tuesday"', ok: false, note: "another customer's order that happens to match" },
+    { n: 4, kind: "tool", text: "Action: issue_refund()", ok: false, note: "HALLUCINATED destructive call — never requested" },
+    { n: 5, kind: "reply", text: 'Action: reply "It was delivered on Tuesday."', ok: true, note: "final answer matches golden — looks right" },
   ];
 
   const okCount = steps.filter((s) => s.ok).length;
@@ -46,10 +48,10 @@ export default function AgentEvalViz({ onNavigate, spec } = {}) {
   });
 
   const kindLabel = {
-    plan: "PLAN",
-    tool: "TOOL",
-    observe: "OBS",
-    reply: "REPLY",
+    plan: "THOUGHT",
+    tool: "ACTION",
+    observe: "OBSERV.",
+    reply: "ACTION",
   };
 
   return (
@@ -108,7 +110,7 @@ export default function AgentEvalViz({ onNavigate, spec } = {}) {
                 <div style={{ width: 4, borderRadius: 2, background: barColor }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
-                    <span style={{ ...mono, fontSize: "0.62rem", color: "#71717a", width: 42 }}>
+                    <span style={{ ...mono, fontSize: "0.62rem", color: "#71717a", width: 56 }}>
                       {kindLabel[s.kind]}
                     </span>
                     <span style={{ ...mono, fontSize: "0.8rem", color: "#e4e4e7" }}>{s.text}</span>
@@ -126,7 +128,7 @@ export default function AgentEvalViz({ onNavigate, spec } = {}) {
                     )}
                   </div>
                   {showBad && (
-                    <div style={{ ...mono, fontSize: "0.66rem", color: RED, marginTop: "0.15rem", marginLeft: 46 }}>
+                    <div style={{ ...mono, fontSize: "0.66rem", color: RED, marginTop: "0.15rem", marginLeft: 60 }}>
                       {s.note}
                     </div>
                   )}

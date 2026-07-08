@@ -73,16 +73,19 @@ export function runTransformer(sentenceIdx, n_heads, temperature) {
     )
   );
 
-  // 2. Multi-head attention
+  // 2. Multi-head attention — PRE-norm: LayerNorm is applied to the input BEFORE the
+  // sublayer runs (x + Sublayer(LayerNorm(x))), which is what GPT-2 and essentially every
+  // modern LLM actually does (this is the architecture the module's prose describes).
+  const attnInput = tokenEmbeds.map(lnorm);
   const allHeadWeights = [];
   let attnOutput = Array.from({ length: seqLen }, () => new Array(D).fill(0));
   for (let h = 0; h < n_heads; h++) {
     const WQ = randMatrix(D, dh, 100 + h * 17 + sentenceIdx);
     const WK = randMatrix(D, dh, 200 + h * 17 + sentenceIdx);
     const WV = randMatrix(D, dh, 300 + h * 17 + sentenceIdx);
-    const Q = matMul(tokenEmbeds, WQ);
-    const K = matMul(tokenEmbeds, WK);
-    const V = matMul(tokenEmbeds, WV);
+    const Q = matMul(attnInput, WQ);
+    const K = matMul(attnInput, WK);
+    const V = matMul(attnInput, WV);
     const scale = Math.sqrt(dh);
     const KT = transposeM(K);
     const rawScores = matMul(Q, KT).map(row => row.map(v => v / scale));
@@ -96,19 +99,23 @@ export function runTransformer(sentenceIdx, n_heads, temperature) {
         attnOutput[i][h * dh + d] += headOut[i][d];
   }
 
-  // 3. Residual + LayerNorm
-  const normed = tokenEmbeds.map((emb, i) => lnorm(emb.map((v, d) => v + attnOutput[i][d])));
+  // 3. Residual add — pre-norm adds the sublayer output straight back onto the UN-normed
+  // residual stream (no LayerNorm after the add; the next sublayer normalizes its own input).
+  const normed = tokenEmbeds.map((emb, i) => emb.map((v, d) => v + attnOutput[i][d]));
 
-  // 4. FFN: D → 2D → D
+  // 4. FFN: D → 2D → D — pre-norm again: LayerNorm the input before the sublayer.
+  const ffnInput = normed.map(lnorm);
   const W1 = randMatrix(D, D * 2, 400 + sentenceIdx);
   const W2 = randMatrix(D * 2, D, 500 + sentenceIdx);
-  const ffnOut = normed.map(v => matVec(transposeM(W2), relu(matVec(transposeM(W1), v))));
+  const ffnOut = ffnInput.map(v => matVec(transposeM(W2), relu(matVec(transposeM(W1), v))));
 
-  // 5. Residual + LayerNorm after FFN
-  const finalOut = normed.map((v, i) => lnorm(v.map((x, d) => x + ffnOut[i][d])));
+  // 5. Residual add after FFN — again just the add, no LayerNorm wrapping it.
+  const finalOut = normed.map((v, i) => v.map((x, d) => x + ffnOut[i][d]));
 
-  // 6. Output logits for next-token candidates
-  const lastHidden = finalOut[seqLen - 1];
+  // 6. Output logits for next-token candidates — real pre-norm stacks (e.g. GPT-2's `ln_f`)
+  // apply one last LayerNorm to the residual stream right before the unembedding, since
+  // nothing else in a pre-norm block normalizes it on the way out.
+  const lastHidden = lnorm(finalOut[seqLen - 1]);
   const candidates = NEXT_CANDIDATES[sentenceIdx];
   const logits = candidates.map((tok) => {
     const wordSeed = tok.split("").reduce((s, c) => s + c.charCodeAt(0), 0) * 31 + 999;

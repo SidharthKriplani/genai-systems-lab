@@ -123,17 +123,18 @@ export const RECAP_PATCH_A = {
 
   "prompt-regression-signals": {
     keyPoints: [
+      "**Golden-set diffing catches regressions before deploy.** Run every prompt change against a fixed, representative eval set and diff outputs/scores against the previous version on those identical inputs — zero production risk, the first and cheapest line of defense.",
       "**Passive monitoring lags 24–48 hours.** Trend-based signals let a prompt change accumulate days of support tickets before an alert fires.",
-      "**Regression signals fire on the first bad response.** Output format compliance and downstream parse error rate surface a broken prompt on request #1, before any trend forms.",
-      "**Length and refusal rate are fast secondary signals.** Over-constrained prompts truncate answers; few-shot over-reliance causes verbose mirroring; task confusion raises refusals.",
-      "**A/B test every prompt change.** Route a slice of traffic to the new prompt and compare in real time; even 5% for 1 hour gives statistical signal on format and downstream errors.",
+      "**Fast production signals catch what golden sets miss.** Output-format compliance, toxicity spikes, factuality drops, and latency spikes each surface a broken prompt on the first bad response, before any trend forms.",
+      "**A/B test every prompt change.** Route a slice of traffic to the new prompt and compare in real time; even 5% for 1 hour gives statistical signal on format and the other fast signals.",
       "**Without A/B testing you deploy blind.** You'll know when a regression started but not which change caused it if several moved at once.",
       "**Rollback is the fastest causal test.** Reverting takes seconds and costs nothing; if the regression disappears, the prompt caused it. Cluster tickets by failure type to confirm.",
     ],
     recap: [
-      "**Detect prompt regressions before users do** — passive monitoring lags 24–48h; regression signals fire on the first bad response.",
-      "**Output format compliance + downstream parse error rate** are the earliest automated signals.",
-      "**A/B test every change** — 5% traffic for 1 hour catches format failures before full rollout.",
+      "**Diff against a golden set before deploy** — the cheapest, first line of defense against a prompt regression.",
+      "**Detect what slips through before users do** — passive monitoring lags 24–48h; fast production signals fire on the first bad response.",
+      "**Output-format compliance, toxicity, factuality, and latency** are the fast automated signals.",
+      "**A/B test every change** — 5% traffic for 1 hour catches failures before full rollout.",
       "**Prompt rollback is the fastest causal test** — seconds to revert, costs nothing; if the regression resolves, the prompt caused it.",
     ],
   },
@@ -178,14 +179,14 @@ export const RECAP_PATCH_A = {
       "**Managed API is cheap at low volume.** ~$400/month at 50M tokens buys high availability, zero ops, and automatic model updates — a premium for operational simplicity.",
       "**At 50M tokens/month, self-hosted GPU utilization is ~2.6%.** 2×A100 can produce ~1.9B tokens/month; you use 50M and pay for 97.4% idle compute.",
       "**TCO is the piece the intuition misses.** Compute (~$4.3–5.8K) plus 0.25–0.5 FTE ops (~$12.5K) plus security, compliance, and model-upgrade overhead — not just raw compute.",
-      "**The crossover is ~300–500M tokens/month for a lean team.** Below it, self-hosting is a cost increase; the scenario is $400 managed vs $16.8–18.3K self-hosted TCO.",
+      "**The crossover is ~2.1–2.3 billion tokens/month for a lean team** (self-hosted TCO ÷ managed $/token: ~$16.8–18.3K ÷ ~$8/1M tokens). Below it, self-hosting is a cost increase; the scenario is $400 managed vs $16.8–18.3K self-hosted TCO.",
       "**The sunk-cost path is a real trap.** Teams keep self-hosting because the ops FTE is already allocated, even when a TCO recalculation says switch back.",
     ],
     recap: [
       "**Self-hosting isn't cheaper until utilization is high** — the whole comparison turns on GPU utilization.",
       "**At 50M tokens/month utilization is ~2.6%** — you pay for ~97% idle compute.",
       "**Compare TCO, not raw compute:** add 0.25–0.5 FTE ops plus security and model-upgrade overhead — $400 managed vs ~$17K self-hosted here.",
-      "**Crossover is ~300–500M tokens/month;** below it self-hosting is a cost increase, and the sunk-cost FTE keeps teams stuck past it.",
+      "**Crossover is ~2.1–2.3 billion tokens/month;** below it self-hosting is a cost increase, and the sunk-cost FTE keeps teams stuck past it.",
     ],
   },
 

@@ -41,27 +41,51 @@ export default function PagedAttentionViz({ onNavigate, spec } = {}) {
       "Each request grabs one contiguous span sized for the worst case (max_seq_len). Tokens it never generates leave reserved-but-empty blocks. The shared system prompt is copied into every request.";
   } else {
     // Paged: allocate exactly what's needed, block granularity; prefix shared once.
-    const rows = [];
-    let allocated = 0;
-    // shared prefix stored ONCE
-    allocated += PREFIX_BLOCKS;
-    REQS.forEach((r) => {
+    // Physical blocks are handed out round-robin across requests (not one
+    // contiguous run per request) so each request's block IDs land scattered
+    // across the pool — the actual mechanic a block table has to map around.
+    const poolOwner = new Array(TOTAL_BLOCKS).fill(null);
+    let nextSlot = 0;
+    const alloc = (id, state) => {
+      const slot = nextSlot++;
+      poolOwner[slot] = { id, state };
+      return slot;
+    };
+
+    // shared prefix stored ONCE, gets its own fixed slots up front
+    const prefixSlots = [];
+    for (let i = 0; i < PREFIX_BLOCKS; i++) prefixSlots.push(alloc("shared", "shared"));
+
+    // round-robin the remaining per-request blocks across requests so their
+    // physical IDs interleave rather than running contiguously per request
+    const ownNeeded = REQS.map((r) => r.actual - (r.shared ? PREFIX_BLOCKS : 0));
+    const ownSlots = REQS.map(() => []);
+    let remaining = ownNeeded.reduce((a, b) => a + b, 0);
+    while (remaining > 0) {
+      REQS.forEach((r, idx) => {
+        if (ownNeeded[idx] > 0) {
+          ownSlots[idx].push(alloc(r.id, "used"));
+          ownNeeded[idx] -= 1;
+          remaining -= 1;
+        }
+      });
+    }
+
+    const rows = REQS.map((r, idx) => {
       const span = [];
-      const prefixHere = r.shared ? PREFIX_BLOCKS : 0;
-      const own = r.actual - prefixHere;
-      for (let i = 0; i < prefixHere; i++) span.push({ state: "shared", id: r.id });
-      for (let i = 0; i < own; i++) {
-        span.push({ state: "used", id: r.id });
-        allocated += 1;
-      }
-      rows.push({ id: r.id, span, reserved: r.actual });
+      if (r.shared) prefixSlots.forEach((slot) => span.push({ state: "shared", id: r.id, slot }));
+      ownSlots[idx].forEach((slot) => span.push({ state: "used", id: r.id, slot }));
+      return { id: r.id, span, reserved: r.actual };
     });
-    used = REQS.reduce((a, r) => a + r.actual, 0);
+    const allocated = nextSlot;
+    // Deduplicated real usage — the shared prefix is counted ONCE here, matching
+    // totalReserved below, so utilization can never be pushed over 100%.
+    used = allocated;
     wasted = 0; // block-granular, near-zero internal fragmentation
     fit = allocated <= TOTAL_BLOCKS;
     blocks = rows;
     note =
-      "Blocks are allocated on demand at block granularity, scattered anywhere in memory (a page table maps them). The shared system-prompt prefix is stored once and pointed to by both R2 and R3.";
+      "Blocks are allocated on demand at block granularity, scattered anywhere in the physical pool — a block table maps each request's logical tokens to its physical block IDs (shown on each tile). The shared system-prompt prefix is stored once and pointed to by both R2 and R3.";
   }
 
   const totalReserved =
@@ -145,11 +169,12 @@ export default function PagedAttentionViz({ onNavigate, spec } = {}) {
                   <div
                     key={i}
                     title={
-                      c.state === "used"
+                      (c.state === "used"
                         ? "in use"
                         : c.state === "shared"
                         ? "shared prefix (stored once)"
-                        : "reserved but empty"
+                        : "reserved but empty") +
+                      (c.slot !== undefined ? ` — physical block b${c.slot}` : "")
                     }
                     style={{
                       width: 22,
@@ -157,8 +182,16 @@ export default function PagedAttentionViz({ onNavigate, spec } = {}) {
                       borderRadius: 4,
                       background: cellColor(c.state),
                       border: "1px solid var(--border)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.5rem",
+                      fontFamily: mono.fontFamily,
+                      color: "rgba(0,0,0,0.6)",
                     }}
-                  />
+                  >
+                    {c.slot !== undefined ? c.slot : ""}
+                  </div>
                 ))}
               </div>
             </div>

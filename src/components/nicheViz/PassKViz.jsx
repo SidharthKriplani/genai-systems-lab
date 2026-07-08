@@ -169,7 +169,9 @@ export default function PassKViz({ onNavigate, spec } = {}) {
         pass@k needs an oracle — real test cases that tell you which of the k
         samples is correct. In production you rarely have that oracle, so pass@k
         is an upper bound, not a delivery rate. A 20% pass@1 model can post 89%
-        at pass@50 here without getting one bit smarter.
+        at pass@10 here without getting one bit smarter — and by pass@50 that
+        same model is over 99.99%, effectively "always solves it," with zero
+        change to the underlying model.
       </div>
     </div>
   );

@@ -48,6 +48,16 @@ export default function ServingStacksViz({ onNavigate, spec } = {}) {
       flexibility: 5,
       note: "prefix caching + rich control flow — the research/agent choice.",
     },
+    {
+      key: "triton",
+      name: "Triton",
+      blurb: "NVIDIA orchestration layer, not a kernel engine",
+      setup: 3,
+      latency: 3,
+      throughput: 3,
+      flexibility: 5,
+      note: "fronts other backends (often vLLM or TensorRT-LLM) — dynamic batching, versioning, multi-model routing. Reach for it when you're running a fleet, not tuning one model.",
+    },
   ];
 
   const AXES = [
@@ -132,7 +142,7 @@ export default function ServingStacksViz({ onNavigate, spec } = {}) {
           Which serving stack?
         </div>
         <div style={{ color: "#a1a1aa", fontSize: "0.82rem" }}>
-          vLLM · TGI · TensorRT-LLM · SGLang. Pick a use-case — the deciding
+          vLLM · TGI · TensorRT-LLM · SGLang · Triton. Pick a use-case — the deciding
           axis lights up and the recommended stack is called out.
         </div>
       </div>
@@ -274,10 +284,15 @@ export default function ServingStacksViz({ onNavigate, spec } = {}) {
           color: "#d4d4d8",
         }}
       >
-        Scaling past one GPU splits two ways: tensor parallelism shards each
-        layer's matrices across GPUs (low latency, needs fast interconnect);
-        pipeline parallelism puts whole layers on different GPUs (higher
-        throughput, cheaper links, but adds bubble latency between stages).
+        Scaling past one GPU splits three ways: tensor parallelism shards each
+        layer's matrices across GPUs (lowest latency, needs fast interconnect,
+        stays in-node); pipeline parallelism puts whole layers on different
+        GPUs (cheap links so it scales across nodes, but adds pipeline-bubble
+        latency between stages); and for Mixture-of-Experts models, expert
+        parallelism spreads experts across GPUs and routes each token to its
+        selected experts (all-to-all communication). Most dense models pick
+        tensor parallelism within a node and add pipeline parallelism across
+        nodes only when memory demands it.
       </div>
     </div>
   );

@@ -1,10 +1,15 @@
 import { useState } from "react";
 
-// Rate constants (illustrative, order-of-magnitude realistic for a mid-size LLM
-// on one GPU). Prefill is compute-bound: it chews through all prompt tokens in
-// one parallel pass, so cost grows with total prompt tokens but amortizes well.
-// Decode is memory-bandwidth-bound: every single generated token re-reads the
-// entire KV cache from HBM, so cost is essentially fixed per step and serial.
+// Rate constants (illustrative, order-of-magnitude realistic assuming a ~13B
+// model on a single A100-class GPU — the same hardware/model assumption used
+// in this module's own worked example). Prefill is compute-bound: it chews
+// through all prompt tokens in one parallel pass, so cost grows with total
+// prompt tokens but amortizes well. Decode is memory-bandwidth-bound: every
+// single generated token must re-stream almost the entire ~26GB weight matrix
+// from HBM just to produce that one token — weight-streaming is the PRIMARY
+// cost. Re-reading the (much smaller, but still real) KV cache from HBM on
+// every step adds to that same memory-bandwidth bill as a secondary,
+// additional contributor. So cost is essentially fixed per step and serial.
 const PREFILL_TOKENS_PER_MS = 8; // parallel throughput, tokens/ms
 const DECODE_MS_PER_TOKEN = 22; // per-step latency, ms/token (serial)
 
@@ -17,7 +22,7 @@ export default function PrefillDecodeViz({ onNavigate, spec } = {}) {
 
   // Prefill: one wide parallel pass over all prompt tokens -> sets TTFT.
   const ttftMs = Math.round(promptLen / PREFILL_TOKENS_PER_MS);
-  // Decode: genTokens serial steps, each a full KV-cache re-read -> TPOT.
+  // Decode: genTokens serial steps, each a full weight-stream from HBM (plus a KV-cache read) -> TPOT.
   const tpotMs = DECODE_MS_PER_TOKEN;
   const decodeMs = Math.round(genTokens * tpotMs);
   const totalMs = ttftMs + decodeMs;
@@ -77,6 +82,9 @@ export default function PrefillDecodeViz({ onNavigate, spec } = {}) {
             onChange={(e) => setGenTokens(Number(e.target.value))}
             style={{ width: "100%", accentColor: "var(--gal-build)" }}
           />
+        </div>
+        <div style={{ ...mono, fontSize: "0.62rem", color: "var(--ink-low)" }}>
+          Illustrative rates — assumes a ~13B model on a single A100-class GPU (same hardware/model assumption as this module's own worked example).
         </div>
       </div>
 
@@ -153,7 +161,7 @@ export default function PrefillDecodeViz({ onNavigate, spec } = {}) {
           </div>
           {genTokens > stepCount && (
             <div style={{ ...mono, fontSize: "0.62rem", color: "var(--ink-low)", marginTop: "0.2rem" }}>
-              showing {stepCount} of {genTokens} steps — each one re-reads the full KV cache
+              showing {stepCount} of {genTokens} steps — each one re-streams the model's weights from HBM, plus a KV-cache read
             </div>
           )}
         </div>
@@ -195,9 +203,11 @@ export default function PrefillDecodeViz({ onNavigate, spec } = {}) {
         ) : (
           <>
             <strong>Memory-bandwidth-bound.</strong> Decode emits one token per step, and every step
-            re-reads the entire KV cache from HBM. The math is tiny; moving the cache is the limit —
-            so per-token latency (<span style={mono}>TPOT ≈ {tpotMs} ms</span>) barely changes with
-            batch, and {genTokens} tokens cost {genTokens} serial trips.
+            must re-stream almost the entire model's weights from HBM just to compute that one
+            token — weight-streaming is the primary cost. Re-reading the (much smaller) KV cache
+            adds to that same memory-bandwidth bill as a secondary contributor. The math itself is
+            tiny; moving bytes is the limit — so per-token latency (<span style={mono}>TPOT ≈ {tpotMs} ms</span>)
+            barely changes with batch, and {genTokens} tokens cost {genTokens} serial trips.
           </>
         )}
       </div>
