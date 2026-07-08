@@ -372,6 +372,18 @@ const HASH_GYM_REDIRECTS = {
   retrieval: "retrieval",
 };
 
+// 2026-07-08 deep-linking pass: individual Concepts modules now get a real hash segment
+// (#concepts/<gymId>/<moduleId>) so refreshing or pasting the URL restores the exact module,
+// and browser Back/Forward across gym/module segments works (see "browser-back / history-routing
+// audit" + "C6 origin-aware back" entries in docs/GSL_PLAN.md — this finishes the item-level
+// hash-encoding half that was deliberately left open there). Parses BOTH the flat legacy hash
+// ("#concepts") and the new path form ("#concepts/gymId" or "#concepts/gymId/moduleId").
+function parseConceptsHash(rawHash) {
+  const clean = (rawHash || "").replace(/^#\/?/, "").toLowerCase();
+  const parts = clean.split("/").filter(Boolean);
+  return { view: parts[0] || "", gymId: parts[1] || null, moduleId: parts[2] || null };
+}
+
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
 function Toggle({ value, onChange }) {
@@ -1139,7 +1151,7 @@ const SCENARIO_FORWARD_POINTERS = {
 
 function getInitialView() {
   try {
-    const hash = window.location.hash.replace('#', '').toLowerCase();
+    const { view: hash } = parseConceptsHash(window.location.hash);
     if (HASH_REDIRECTS[hash]) {
       window.location.replace("#" + HASH_REDIRECTS[hash]);
       return HASH_REDIRECTS[hash];
@@ -1317,10 +1329,29 @@ export default function App() {
   const [gtPathContext, setGtPathContext] = useState(null);
   const [conceptsGym, setConceptsGym] = useState(() => {
     // Deep-hash back-compat: if the app booted on a deleted lab/hub hash, open its gym.
-    try { return HASH_GYM_REDIRECTS[window.location.hash.replace('#', '').toLowerCase()] || null; }
-    catch { return null; }
+    // ALSO (2026-07-08): resolve the new "#concepts/<gymId>[/<moduleId>]" path form on mount,
+    // so a refreshed/pasted module URL restores the exact gym.
+    try {
+      const { view, gymId } = parseConceptsHash(window.location.hash);
+      if (HASH_GYM_REDIRECTS[view]) return HASH_GYM_REDIRECTS[view];
+      if (view === "concepts" && gymId) return gymId;
+    } catch {}
+    return null;
   });
-  const [conceptsModule, setConceptsModule] = useState(null);
+  const [conceptsModule, setConceptsModule] = useState(() => {
+    try {
+      const { view, moduleId } = parseConceptsHash(window.location.hash);
+      if (view === "concepts" && moduleId) return moduleId;
+    } catch {}
+    return null;
+  });
+  // Deep-link provenance for ConceptsApp's single sync effect — 'tracks' (My Tracks "Study →"
+  // and other navigateTo({tab:'concepts', gymId, moduleId}) callers, sticky-set only) vs
+  // 'hash' (the URL itself: initial load, refresh, or browser Back/Forward — also clears the
+  // open gym/module when the hash no longer carries them). navKey increments on every event
+  // from either origin so ConceptsApp's effect re-applies even for a repeated id.
+  const [conceptsModuleOrigin, setConceptsModuleOrigin] = useState("hash");
+  const [conceptsNavKey, setConceptsNavKey] = useState(1);
   const [preplabInitialMode, setPreplabInitialMode] = useState(null);
   const [visitedModules, setVisitedModules] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited_modules") || "[]")); }
@@ -1395,7 +1426,11 @@ export default function App() {
     }
     if (postId) setGtPostId(postId);
     if (gymId)  setConceptsGym(gymId);
-    if (tab === "concepts") setConceptsModule(moduleId || null);
+    if (tab === "concepts") {
+      setConceptsModule(moduleId || null);
+      setConceptsModuleOrigin("tracks");
+      setConceptsNavKey(k => k + 1);
+    }
     if (tab === "groundtruth") {
       setGtPathContext(pathContext || null);
     } else {
@@ -1408,6 +1443,25 @@ export default function App() {
     }
     navigate(tab);
   }
+  // 2026-07-08 bugfix: switching tabs/windows and back can drop focus off whatever
+  // input was active, so the next keystroke lands on `window` instead of the field
+  // and fires a shortcut (e.g. "g" → Ground Truth). The editable-field guard above
+  // (2026-07-03) doesn't close this — there's no editable field focused at all in
+  // this case. Track the last time the tab regained visibility and ignore shortcut
+  // keys for a short window after that, since a stray keystroke right after a
+  // tab-switch is very unlikely to be an intentional shortcut.
+  const lastVisibleAtRef = useRef(0);
+  useEffect(() => {
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") lastVisibleAtRef.current = Date.now();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onVisibilityChange);
+    };
+  }, []);
   useEffect(() => {
     function onKey(e) {
       // Never let bare-letter/digit shortcuts fire while the user is typing. Covers
@@ -1418,6 +1472,9 @@ export default function App() {
       const editable = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"
         || (t && (t.isContentEditable || (t.closest && t.closest('[contenteditable="true"], input, textarea, select'))));
       if (editable) return;
+      // Ignore shortcut keys fired within ~500ms of the tab/window regaining
+      // visibility or focus (see comment above the visibilitychange effect).
+      if (Date.now() - lastVisibleAtRef.current < 500) return;
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(s => !s); return; }
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "Q") { e.preventDefault(); navigate("qa"); return; }
       if (e.key === "?") { e.preventDefault(); setShowShortcuts(s => !s); return; }
@@ -1493,15 +1550,44 @@ export default function App() {
 
   useEffect(() => {
     const handler = () => {
-      const h = window.location.hash.replace('#', '').toLowerCase();
+      const { view: h, gymId, moduleId } = parseConceptsHash(window.location.hash);
       if (HASH_REDIRECTS[h]) { window.location.replace("#" + HASH_REDIRECTS[h]); setTopView(HASH_REDIRECTS[h]); return; }
-      if (HASH_GYM_REDIRECTS[h]) { setConceptsGym(HASH_GYM_REDIRECTS[h]); window.location.replace("#concepts"); setTopView("concepts"); return; }
+      if (HASH_GYM_REDIRECTS[h]) {
+        setConceptsGym(HASH_GYM_REDIRECTS[h]);
+        setConceptsModule(null);
+        setConceptsModuleOrigin("hash");
+        setConceptsNavKey(k => k + 1);
+        window.location.replace("#concepts");
+        setTopView("concepts");
+        return;
+      }
       if (VALID_VIEWS.includes(h)) setTopView(h);
       else if (!h) setTopView("home");
     };
     window.addEventListener("hashchange", handler);
     return () => window.removeEventListener("hashchange", handler);
   }, [setTopView]);
+
+  // 2026-07-08 deep-linking pass — real browser Back/Forward across #concepts/<gymId>/<moduleId>
+  // segments. Deliberately on "popstate", NOT "hashchange": popstate fires ONLY for genuine
+  // session-history traversal (back/forward, history.go()), never for navigate()'s plain
+  // `window.location.hash = view` assignment or Concepts.jsx's own history.pushState calls. That
+  // split matters — if this lived in the hashchange handler above, clicking the top-nav "Concepts"
+  // tab (which sets a bare "#concepts" hash) would clobber whatever gym/module a My Tracks
+  // "Study →" deep link had previously opened, even though the user never actually pressed Back.
+  useEffect(() => {
+    function onPopState() {
+      const { view: h, gymId, moduleId } = parseConceptsHash(window.location.hash);
+      if (h === "concepts") {
+        setConceptsGym(gymId);
+        setConceptsModule(moduleId);
+        setConceptsModuleOrigin("hash");
+        setConceptsNavKey(k => k + 1);
+      }
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   useEffect(() => {
     const TAB_TITLES = {
@@ -1950,7 +2036,7 @@ export default function App() {
             <GateOverlay context="free-account" user={null} />
           ) : (
             <>
-          {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} initialGym={conceptsGym} initialModule={conceptsModule} />}
+          {topView === "concepts"   && <ConceptsApp onNavigate={navigateTo} initialGym={conceptsGym} initialModule={conceptsModule} initialModuleOrigin={conceptsModuleOrigin} navKey={conceptsNavKey} />}
           {topView === "flows"      && <FlowsApp onNavigate={navigateTo} />}
           {/* 2026-07-03 MIGRATION: the standalone Agent Lab (agents/agentlab), Eval Lab (evallab)
               and LLM Lab (llmlab) top-level renders were DELETED. Their content now lives INSIDE

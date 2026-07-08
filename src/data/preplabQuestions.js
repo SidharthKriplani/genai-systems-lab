@@ -673,8 +673,62 @@ export const PREP_QUESTIONS = [
     explanation: "AI product reviews differ in 3 ways: (1) Model regressions must be tracked — a model update from the provider can break behavior silently. (2) Data drift means last quarter's eval results may not reflect today. (3) Cost-per-query is a first-class roadmap input alongside user value. Review includes: eval score trends, failure mode analysis, prompt change log, token cost trend, model version changelog.",
     readMore: { label: "AI Product Management", tab: "concepts" }
   },
+  {
+    id: "product-10", topic: "product", difficulty: "medium", gated: true, type: "mcq",
+    question: "Your team is deciding whether to build a custom RAG pipeline or buy a vendor's turnkey 'chat with your docs' product for an internal tool with ~50 users. Engineering estimates 6 weeks to build in-house. What should drive the decision?",
+    options: ["Building is always the right long-term choice for any AI feature, since vendor lock-in risk outweighs time-to-market in every case", "Pilot the vendor's product against your real document corpus, and weigh the fit against the 6-week build cost plus ongoing maintenance", "Buying is always correct for a 50-user internal tool, since any user base under 1,000 doesn't justify a custom build regardless of quality", "The decision should be made by whichever option the engineering team is more excited to work on, since morale is the primary constraint"],
+    correct: 1, keywords: [],
+    explanation: "Build-vs-buy for a low-user-count internal tool should be grounded in a real quality/cost comparison, not a blanket rule for either side. A short pilot on the vendor's product against your actual document corpus tells you whether it meets the bar; if it does, the 6-week build cost plus the ongoing maintenance of owning a RAG pipeline (reindexing, monitoring, model updates) is hard to justify for 50 users. If the vendor falls short on your specific documents, that gap is the actual justification for building — not user count or a fixed preference for either path.",
+    trap: "Applying a fixed threshold (user count, or an always-build/always-buy rule) instead of measuring quality against your actual corpus. The real cost of buying isn't just license fees — it's ongoing vendor dependency; the real cost of building isn't just the initial 6 weeks — it's the maintenance burden after.",
+    readMore: { label: "AI Product Strategy", tab: "concepts" }
+  },
+  {
+    id: "product-11", topic: "product", difficulty: "medium", gated: true, type: "mcq",
+    question: "Your AI feature costs $0.04 per query at current volume. A PM wants to add a more expensive but more accurate model, raising cost to $0.11 per query. How should this decision be evaluated?",
+    options: ["Reject it outright — nearly 3x the per-query cost is unacceptable no matter the accuracy gain or the feature's revenue impact, full stop", "Approve it automatically, since higher accuracy is always worth the extra cost in any AI product, without further analysis", "Model the total cost increase at expected volume against the revenue impact, and check the gain holds on your real query distribution", "Let engineering decide unilaterally, since cost-per-query is purely a technical metric outside of product's actual scope"],
+    correct: 2, keywords: [],
+    explanation: "A per-query cost increase in isolation is meaningless without volume and impact context — $0.07 extra per query at 10K queries/month is $700; at 10M queries/month it's $700K. The evaluation needs: total monthly cost delta at realistic volume, whether the accuracy gain is real on your specific query distribution, and what that gain is worth in reduced churn, fewer escalations, or higher conversion. Only once those numbers exist can 'is this worth it' be answered.",
+    trap: "Treating cost-per-query as meaningful without volume and business-impact context attached — the same absolute number can be an easy yes or an easy no depending on scale and what the accuracy gain is actually worth.",
+    readMore: { label: "AI Product Metrics", tab: "concepts" }
+  },
+  {
+    id: "product-12", topic: "product", difficulty: "medium", gated: true, type: "mcq",
+    question: "You're scoping an AI feature that drafts email replies for a sales team. Hallucination risk exists (the model might state incorrect pricing or terms). What product decision most directly reduces the business risk, independent of model quality improvements?",
+    options: ["Wait until a model with a verified 0% hallucination rate becomes available before shipping anything at all", "Keep AI drafts in front of the human rep for review before sending, so a hallucinated claim never reaches a customer", "Add a disclaimer to every outgoing email stating the content was AI-generated, which transfers the liability to the recipient instead", "Restrict the feature to only the most experienced sales reps, since they are less likely to send an incorrect email"],
+    correct: 1, keywords: [],
+    explanation: "No model ships with a verified zero hallucination rate, so waiting for one isn't a real option — the actual product lever is workflow design, not model selection. Keeping a human in the loop before anything reaches a customer converts 'the model might state wrong pricing' from a customer-facing risk into an internal QA step. This decision is independent of and complementary to model-quality work — better models reduce how often the rep needs to correct something, but the review step is what bounds the worst-case damage regardless of model quality on any given day.",
+    trap: "Treating disclaimers or rep seniority as risk mitigation. Neither actually stops a wrong claim from reaching a customer — only a review step before send does that.",
+    readMore: { label: "Production AI reliability", tab: "groundtruth", postId: "llmops-production-checklist" }
+  },
+  {
+    id: "product-13", topic: "product", difficulty: "medium", gated: true, type: "mcq",
+    question: "Your team must choose between three foundation model APIs for a new feature, all claiming similar benchmark scores. Leadership wants a decision by Friday. What's the fastest valid way to choose?",
+    options: ["Pick the model with the highest public benchmark average, since benchmark scores reliably predict performance on any task", "Run all three models against real production-representative queries with your own eval rubric, and decide from that", "Pick whichever vendor offers the lowest list price per token, since cost is the variable engineering can't influence later", "Default to the largest, most expensive model, since capability strictly tracks size and price across every vendor"],
+    correct: 1, keywords: [],
+    explanation: "Public benchmarks measure general capability on tasks that may not resemble your production query distribution — a model that leads on a public leaderboard can underperform on your specific domain, tone, or format requirements. A focused eval against your own rubric, even on a much smaller sample, directly measures what you actually care about and can be run in a day or two — well within a Friday deadline. Price and benchmark rank are easy tie-breakers once quality is established, but using them as the primary decision criterion skips the one measurement that actually predicts production performance.",
+    trap: "Defaulting to public benchmark rank or price under time pressure. A small but representative internal eval, run quickly, beats a benchmark comparison that wasn't measuring your actual task.",
+    readMore: { label: "AI Product Iteration", tab: "concepts" }
+  },
+  {
+    id: "product-14", topic: "product", difficulty: "medium", gated: true, type: "mcq",
+    question: "A stakeholder requests: 'Can the AI just summarize all our meeting notes automatically?' Before scoping any technical work, what's the first clarifying step?",
+    options: ["Ask what decisions the summaries need to support, and what 'good' looks like to the people reading them, since 'summarize' means different things", "Start prototyping immediately with a standard summarization prompt, since 'summarize meeting notes' is an unambiguous, well-understood task already", "Ask what LLM the company already has a contract with, since vendor choice is the most important variable to lock down first", "Ask how many meetings happen per week, since query volume is the primary factor that determines whether this is feasible"],
+    correct: 0, keywords: [],
+    explanation: "'Summarize' is underspecified in a way that changes the entire build: a one-line digest for a status dashboard, a structured action-item extraction for a task tracker, and a full narrative summary for someone who missed the meeting are three different prompts, three different evaluation criteria, and arguably three different features. Scoping technical work before this is resolved risks building something that technically 'summarizes' but doesn't serve the actual downstream use.",
+    trap: "Treating 'summarize' as self-evidently scoped. Volume and vendor choice matter operationally but don't resolve what the actual output should look like — that ambiguity has to be resolved first or the build targets the wrong shape of answer.",
+    readMore: { label: "AI Product Management", tab: "concepts" }
+  },
+  {
+    id: "product-15", topic: "product", difficulty: "medium", gated: true, type: "mcq",
+    question: "You're defining success metrics for a new AI writing-assistant feature before launch. A colleague proposes 'number of AI suggestions shown' as the primary metric. What's the problem with this choice?",
+    options: ["It's a fine primary metric, since more suggestions shown always correlates with more value delivered to users", "It measures exposure, not value — a user could see many suggestions and reject all of them, unlike acceptance rate", "The problem is technical, not conceptual — 'suggestions shown' is hard to instrument reliably in most analytics stacks", "There's no real problem, since any metric that increases with usage is a reasonable proxy for product success here"],
+    correct: 1, keywords: [],
+    explanation: "Suggestions shown is an exposure metric — it counts how often the feature fired, not whether it helped anyone. A feature that shows suggestions constantly but gets rejected 95% of the time would score well on 'suggestions shown' while actively degrading the user experience through noise. The metric that reflects actual value is downstream of exposure: acceptance rate, how much of an accepted suggestion survives further editing, or task completion time with the feature on versus off.",
+    trap: "Picking a metric that's easy to instrument and always goes up with usage. Exposure metrics look like progress even when they're rewarding a worse experience — pair them with a downstream acceptance or outcome metric before treating them as primary.",
+    readMore: { label: "AI Product Metrics", tab: "concepts" }
+  },
 
-  // ── BEHAVIORAL (6) ────────────────────────────────────────────────────────
+  // ── BEHAVIORAL (12) ───────────────────────────────────────────────────────
   {
     id: "beh-1", topic: "behavioral", difficulty: "medium", type: "text",
     question: "Tell me about a time you had to push back on a stakeholder request. How did you frame the pushback and what was the outcome?",
@@ -728,8 +782,62 @@ export const PREP_QUESTIONS = [
     explanation: "Strong answer: assess impact severity and blast radius first, determine fastest mitigation (rollback vs. hotfix), communicate to affected stakeholders immediately, escalate appropriately, document timeline for postmortem.",
     readMore: null
   },
+  {
+    id: "beh-7", topic: "behavioral", difficulty: "medium", type: "text",
+    question: "Tell me about a time you disagreed with a PM's choice of model or approach for an AI feature. How did you handle it?",
+    options: null, correct: null,
+    keywords: ["evidence", "eval", "tradeoff", "cost", "alternative", "data", "compromise"],
+    explanation: "Strong answers show a specific disagreement grounded in evidence (an eval result, a cost projection, a known failure mode) rather than a stylistic preference, a proposed alternative with its own tradeoffs made explicit, and a clear resolution — whether the PM's original call held or changed, and why.",
+    trap: "Saying \'I just did what they asked\' or \'I convinced them I was right.\' Strong answers show a structured technical argument presented collaboratively, and are honest about whether they ultimately deferred to the PM's call and why that was still the right outcome.",
+    readMore: null
+  },
+  {
+    id: "beh-8", topic: "behavioral", difficulty: "hard", type: "text",
+    question: "Describe an incident where an AI system in production behaved unexpectedly — hallucinated, gave a harmful or wrong output, or degraded silently. Walk through what you did.",
+    options: null, correct: null,
+    keywords: ["detect", "rollback", "mitigate", "root cause", "monitor", "communicate", "postmortem"],
+    explanation: "Strong answers cover how the issue was detected (user report vs. monitoring), immediate mitigation (rollback, feature flag, guardrail), root cause analysis specific to AI failure modes (prompt regression, model version change, data drift, adversarial input), and the concrete monitoring or eval gate added afterward to catch it earlier next time.",
+    trap: "Saying \'we fixed the prompt and moved on.\' Strong answers show the systemic fix — an eval added to the regression suite, a monitor added to production — not just the one-off patch for the specific incident.",
+    readMore: null
+  },
+  {
+    id: "beh-9", topic: "behavioral", difficulty: "medium", type: "text",
+    question: "Tell me about a time you disagreed with another team — a data science or eval team, for instance — about what counted as a 'good enough' result for an AI feature to ship. How was it resolved?",
+    options: null, correct: null,
+    keywords: ["threshold", "eval", "risk", "stakeholder", "criteria", "tradeoff", "shipped"],
+    explanation: "Strong answers show the specific disagreement (e.g., aggregate accuracy vs. worst-case failure rate on a sensitive slice), how each side's criteria reflected a real but different risk model, and how the resolution incorporated both — not just whoever had more organizational power winning the argument.",
+    trap: "Saying \'we compromised in the middle.\' Strong answers show the resolution was grounded in identifying what each metric actually protected against, and the final bar reflected a more complete picture of risk, not an arbitrary average of two numbers.",
+    readMore: null
+  },
+  {
+    id: "beh-10", topic: "behavioral", difficulty: "medium", type: "text",
+    question: "Your eval surfaces 5 different failure modes in an LLM feature and you have time to fix only 2 before the next release. Walk through how you prioritized.",
+    options: null, correct: null,
+    keywords: ["frequency", "severity", "user impact", "fix cost", "tradeoff", "data", "prioritize"],
+    explanation: "Strong answers use an explicit framework: frequency (how often does this occur in real traffic) times severity (how bad is the outcome when it does) times fix cost (how much effort to address), not gut feel. They also show awareness that the most visible failure in manual review isn't always the highest-impact one in production traffic.",
+    trap: "Saying \'I fixed the ones that were easiest.\' Strong answers show a frequency/severity/cost framework applied to real production data, not a convenience-driven prioritization.",
+    readMore: null
+  },
+  {
+    id: "beh-11", topic: "behavioral", difficulty: "medium", type: "text",
+    question: "Describe a time you needed to influence an architecture decision — which model to use, or whether to build vs. buy — where you didn't have final decision-making authority. What did you do?",
+    options: null, correct: null,
+    keywords: ["prototype", "data", "stakeholder", "evidence", "demo", "alignment", "influence"],
+    explanation: "Strong answers show building concrete evidence — a small prototype, a cost comparison, an eval result — rather than relying on argument alone, engaging the actual decision-maker's specific concerns, and being honest about the outcome, including whether their position won out and why.",
+    trap: "Saying \'I made my case in the meeting.\' Strong answers show building something concrete that made the tradeoff visible rather than relying purely on verbal argument.",
+    readMore: null
+  },
+  {
+    id: "beh-12", topic: "behavioral", difficulty: "medium", type: "text",
+    question: "A stakeholder expects an AI feature to be '100% accurate' before launch, which isn't realistic for the technology. How have you handled a similar expectation-setting conversation?",
+    options: null, correct: null,
+    keywords: ["expectation", "realistic", "benchmark", "risk", "tradeoff", "education", "framing"],
+    explanation: "Strong answers show reframing the conversation around what accuracy is achievable and what the actual risk of errors is — frequency, severity, and mitigation like human review or confidence thresholds — rather than either overpromising or dismissively saying 'that's not possible.' They connect the accuracy bar to a concrete decision about what error rate is tolerable given the use case's stakes.",
+    trap: "Saying \'I explained that AI isn't perfect.\' Strong answers reframe toward a specific, measurable target and a concrete mitigation plan rather than a vague expectation-lowering statement.",
+    readMore: null
+  },
 
-  // ── MULTIMODAL (5) ────────────────────────────────────────────────────────
+  // ── MULTIMODAL (11) ───────────────────────────────────────────────────────
   {
     id: "mm-1", topic: "multimodal", difficulty: "medium", type: "mcq",
     question: "A GPT-4o call with a 1024×1024 image in 'high detail' mode uses approximately how many image tokens?",
@@ -772,8 +880,62 @@ export const PREP_QUESTIONS = [
     explanation: "ColPali (based on PaliGemma) encodes full document pages as image patches, capturing text, layout, charts, and tables together. CLIP struggles with fine-grained text. The tradeoff: ColPali is slower and newer with less tooling.",
     readMore: { label: "Multimodal RAG patterns →", tab: "systems" }
   },
+  {
+    id: "mm-6", topic: "multimodal", difficulty: "medium", type: "mcq",
+    question: "A voice assistant pipes audio through an ASR model for transcription, then feeds the transcript to an LLM. Users complain the assistant frequently misunderstands numbers and proper nouns even though the LLM behaves perfectly on text input. What's the most likely fix?",
+    options: ["Switch to a larger downstream LLM, since the transcript quality must be fine and the model itself misinterprets numbers and names", "Add a post-ASR correction step — custom vocabulary for domain terms — since ASR errors on rare words propagate into the LLM's input", "Increase the LLM's context window so it has more room to reason about ambiguous numbers and unclear names", "The problem is fundamentally unsolvable — ASR-to-LLM pipelines cannot ever handle numbers or proper nouns reliably in any configuration"],
+    correct: 1, keywords: [],
+    explanation: "In an ASR-then-LLM pipeline, the LLM only ever sees the transcript — it has no access to the original audio and cannot recover information the ASR model mis-transcribed. Numbers and proper nouns are exactly where general-purpose ASR struggles most, and once a transcription error happens, the downstream LLM confidently reasons over wrong input with no way to know it's wrong. The fix has to happen at or before the ASR stage: custom vocabulary or phrase biasing for the domain's specific terms, or a correction pass, not a bigger downstream LLM.",
+    trap: "Blaming the LLM stage for an ASR-stage problem. If the LLM performs well on clean text input, the error is almost certainly happening upstream, in transcription.",
+    readMore: { label: "Multimodal AI →", tab: "systems" }
+  },
+  {
+    id: "mm-7", topic: "multimodal", difficulty: "medium", gated: true, type: "mcq",
+    question: "You build a product search feature: users type a text query, and the system retrieves product images by comparing text and image embeddings in a shared CLIP-style space. Searches for specific brand names return visually similar but wrong-brand products. Why?",
+    options: ["CLIP-style embeddings capture general visual-semantic similarity from broad image-caption pairs, not precise brand or logo text", "The image resolution in the uploaded product photos is too low for the embedding model to correctly process the brand name text at all", "The retrieval index needs a larger top_k value to surface the correct brand somewhere among the returned results", "This is a vector database configuration issue, not a modeling limitation, fixable with a different distance metric entirely"],
+    correct: 0, keywords: [],
+    explanation: "CLIP-style joint embeddings are trained to capture general visual-semantic alignment from broad web image-caption pairs, not to perform fine-grained text recognition or brand disambiguation — a query for a specific brand and a visually similar competitor's product can land close together in embedding space because the model represents general visual similarity, not the specific logo or brand text on the product. The practical fix is hybrid: combine the semantic embedding search with an exact-match signal, like OCR'd brand text or metadata filtering, rather than relying on embedding similarity alone.",
+    trap: "Assuming this is a data quality, resolution, or database configuration issue. It's a structural limitation of what CLIP-style embeddings are trained to represent.",
+    readMore: { label: "Multimodal RAG patterns →", tab: "systems" }
+  },
+  {
+    id: "mm-8", topic: "multimodal", difficulty: "hard", type: "mcq",
+    question: "A model that analyzes video by sampling 1 frame per second misses a fast hand gesture that happens across 3 consecutive video frames, 0.1 seconds apart. What's the fundamental tradeoff being made, and what's the fix?",
+    options: ["There is no tradeoff — sampling rate can be increased freely with no cost, so simply sample every single frame", "Sampling rate trades compute cost against temporal resolution — fast events need denser or motion-aware sampling", "The problem is unrelated to sampling rate and is actually a limitation of the model's language understanding component", "Increasing the model's context window alone solves this without any change to the sampling strategy used"],
+    correct: 1, keywords: [],
+    explanation: "Video-to-frames sampling is a direct tradeoff between temporal resolution and cost: each additional frame sampled is additional image tokens fed to the model. At 1 frame/second, any event faster than roughly a second falls entirely between samples and simply doesn't exist in what the model sees. The fix is either raising the overall sampling rate (expensive, most of it wasted on static segments) or motion-aware sampling that detects high-motion windows and samples those more densely while staying sparse elsewhere.",
+    trap: "Treating context window size as the relevant lever. Context window limits how many total frames fit; it doesn't change what temporal detail was captured or missed at the sampling stage before the model ever sees it.",
+    readMore: { label: "Multimodal AI →", tab: "systems" }
+  },
+  {
+    id: "mm-9", topic: "multimodal", difficulty: "hard", gated: true, type: "mcq",
+    question: "A vision-language model captions a product photo with a confident but incorrect detail — naming a material the product isn't made of. Text-only LLM hallucination mitigations like RAG grounding and citation requirements don't directly transfer here. Why not?",
+    options: ["Vision-language hallucination and text hallucination are actually identical in cause, so the exact same mitigations transfer over unmodified", "Text grounding checks claims against retrievable text, but an image claim needs grounding against that image's actual pixels instead", "Vision-language models cannot hallucinate at all — any caption inaccuracy is necessarily a training-data labeling error", "The only fix for image captioning hallucination is a bigger vision encoder, unrelated to any grounding technique at all"],
+    correct: 1, keywords: [],
+    explanation: "Text-hallucination mitigations work by giving the model retrievable text passages to check claims against — the fix assumes ground truth exists as retrievable text. An image caption's claim needs to be checked against the actual pixels of that specific image — there's no retrieval index of 'what this exact photo shows' to ground against. Practical mitigations look different here: a verification pass that re-examines the claim against the image directly, or falling back to structured, human-verified metadata for high-stakes claims like materials or specifications.",
+    trap: "Assuming grounding techniques transfer directly across modalities because the underlying problem sounds the same. What the claim needs to be grounded against is fundamentally different.",
+    readMore: { label: "Multimodal failure modes →", tab: "systems" }
+  },
+  {
+    id: "mm-10", topic: "multimodal", difficulty: "medium", type: "mcq",
+    question: "Your product ingests user-uploaded images for analysis. At 100K images/day and roughly 1,000 image tokens per high-detail image, an engineer proposes always using high-detail mode 'for the best possible quality.' What's the tradeoff being ignored?",
+    options: ["High-detail mode has no real cost tradeoff at all — quality only ever improves the more image tokens are used per request", "High-detail mode multiplies token cost several-fold, and many tasks don't actually need that level of detail", "The only cost that matters here is storage space, and high-detail mode has no measurable effect on storage requirements", "High-detail mode only affects response latency, not dollar cost, so the proposal is fine as long as the SLA target is met"],
+    correct: 1, keywords: [],
+    explanation: "Detail mode is a direct cost/quality lever: high-detail tiling multiplies image token count several-fold over a low-detail encoding, and that cost is paid on every image regardless of what the task actually needs. Many common analysis tasks don't benefit from fine-grained detail the way tasks like reading small text or counting fine objects do. At 100K images/day, defaulting to high-detail across the board means paying peak token cost for tasks that would perform identically at a fraction of the cost.",
+    trap: "Treating 'more detail' as a free quality dial. It's a direct multiplier on token cost paid per image, and most tasks in a mixed workload don't need the resolution it buys.",
+    readMore: { label: "Multimodal AI →", tab: "systems" }
+  },
+  {
+    id: "mm-11", topic: "multimodal", difficulty: "medium", gated: true, type: "mcq",
+    question: "For a document-heavy product handling invoices and forms, a team debates: run OCR first and feed the extracted text to an LLM, versus feeding document images directly to a vision-capable model with no separate OCR step. What's the key tradeoff?",
+    options: ["OCR-first is strictly obsolete now that vision-capable LLMs exist, so there's no real tradeoff left to weigh", "OCR-first loses layout and table structure that a native vision model can use, but OCR is often cheaper at high volume", "Native vision models are always slower and more expensive with no accuracy benefit, so OCR-first is the only viable option", "The tradeoff is purely about which approach is newer, since more recent techniques always outperform older ones regardless"],
+    correct: 1, keywords: [],
+    explanation: "OCR-first pipelines convert a document to flat text, discarding layout, table structure, and visual cues that matter for correctly interpreting many forms and invoices — a native vision-capable model can use that structure directly. But OCR pipelines are mature, fast, and cheap at high volume, and for text-heavy, well-structured documents the layout information a vision model would use isn't adding much value anyway. The right choice depends on how layout-dependent the actual document types are and the volume/cost constraints.",
+    trap: "Treating this as an old-approach-vs-new-approach question. The real variable is how much the specific document type's meaning depends on visual layout versus being adequately captured by flat extracted text.",
+    readMore: { label: "Multimodal RAG patterns →", tab: "systems" }
+  },
 
-  // ── REASONING MODELS (5) ──────────────────────────────────────────────────
+  // ── REASONING MODELS (15) ─────────────────────────────────────────────────
   {
     id: "rsn-1", topic: "reasoning", difficulty: "medium", type: "mcq",
     question: "A reasoning model with a 32K thinking budget takes 25s to respond. Which production pattern best hides this from users?",
@@ -852,6 +1014,60 @@ export const PREP_QUESTIONS = [
     keywords: ["latency", "cost", "complexity", "planning", "benchmark", "eval", "routing", "SLA", "accuracy"],
     explanation: "Decision framework: (1) Task type — does it require multi-step planning, backtracking, or verification? If yes, reasoning model is justified. (2) Latency SLA — can users wait 10-40s? If not, reasoning model needs async mode. (3) Cost — reasoning tokens are 5-10x more expensive. Calculate cost/query at expected volume. (4) Run your eval on both models with your actual query distribution — general benchmarks don't predict your specific use case. (5) Consider a routing architecture for mixed workloads.",
     readMore: { label: "Reasoning Models Lab →", tab: "systems" }
+  },
+  {
+    id: "rsn-10", topic: "reasoning", difficulty: "medium", gated: true, type: "mcq",
+    question: "You sample a reasoning model 5 times on the same hard math problem and take the majority-vote answer (self-consistency). Cost goes up 5x. When is this actually worth it?",
+    options: ["Always — self-consistency is a universal accuracy improvement, and it should be applied to every single reasoning query without exception", "When single-sample accuracy is inconsistent run to run, since self-consistency helps most where reasoning paths genuinely diverge", "Only on classification tasks, since majority voting is fundamentally a classification technique that doesn't transfer over", "Never — resampling the same model repeatedly just amplifies its systematic errors rather than correcting them at all"],
+    correct: 1, keywords: [],
+    explanation: "Self-consistency works by exploiting variance: if the model's reasoning paths sometimes diverge and sometimes converge on the same hard problem, majority vote over several samples cancels out the paths that went wrong in different ways while reinforcing the answer most paths agree on. On problems where the model is already reliably correct or wrong in a single pass, resampling doesn't change the outcome — you're paying 5x cost for the same answer. Measure run-to-run variance on your actual query distribution before deciding self-consistency is worth the multiplier.",
+    trap: "Assuming self-consistency is a free accuracy boost worth paying for everywhere. It specifically helps where the model's own reasoning is inconsistent — measure that variance before committing to 5x cost.",
+    readMore: { label: "Reasoning Models Lab →", tab: "systems" }
+  },
+  {
+    id: "rsn-11", topic: "reasoning", difficulty: "medium", gated: true, type: "mcq",
+    question: "A reasoning model's final answer is correct, but a step in its visible reasoning trace contains a factually wrong intermediate claim that the final answer doesn't actually depend on. Should this be flagged as a failure in your eval?",
+    options: ["No — only the final answer's correctness should ever be scored, since that's the only thing the user sees or acts on", "Yes, but as its own category — an unreliable trace undermines trust even when the final answer happens to be right", "No — reasoning traces are internal scratchpad content not meant to be factually accurate, so grading them is a category error", "Yes, and it should be weighted identically to a wrong final answer in every single downstream metric used"],
+    correct: 1, keywords: [],
+    explanation: "Scoring only final-answer correctness misses a real risk: a model that reaches the right answer via a wrong intermediate claim got lucky on this input, and the same flawed reasoning step could easily produce a wrong final answer on a slightly different problem. For applications where users read the reasoning trace, factual errors in intermediate steps damage trust even when the conclusion is correct. Track 'process errors' as a separate signal from 'outcome errors' — a high process-error rate with good outcome accuracy is an early warning.",
+    trap: "Treating outcome-only grading as sufficient. It hides latent unreliability that eventually surfaces as a wrong final answer on a different input with the same underlying reasoning flaw.",
+    readMore: { label: "Reasoning Models Lab →", tab: "systems" }
+  },
+  {
+    id: "rsn-12", topic: "reasoning", difficulty: "hard", gated: true, type: "mcq",
+    question: "Your agent uses a reasoning model to plan a multi-step tool-calling sequence, then executes all steps before checking any tool's output. A tool call in step 2 fails silently and returns an empty result. What's the systemic risk of this design?",
+    options: ["None — the reasoning model already accounted for possible tool failures during its planning phase upfront", "The plan assumed step 2 would succeed, so a silent failure there propagates uncorrected through later steps", "Reasoning models cannot be used with tool calling at all, so this design is invalid regardless of the failure", "The only risk is added latency from the failed call, since the plan structure itself is unaffected by tool output"],
+    correct: 1, keywords: [],
+    explanation: "Planning a full sequence upfront and only executing afterward means later reasoning steps are built on an assumed successful outcome for step 2 — a plan-time assumption, not a runtime-verified fact. When step 2 fails silently, nothing interrupts the sequence to replan, so steps 3+ execute on top of an empty or wrong result as if it had succeeded. Interleaving execution with verification catches this; planning the whole chain in one reasoning pass and running it blind does not.",
+    trap: "Assuming a strong reasoning model's plan is self-correcting. Planning happens once, before any tool actually runs — it can't detect a failure that only becomes visible during execution unless the loop explicitly checks outputs between steps.",
+    readMore: { label: "Reasoning Models Lab →", tab: "systems" }
+  },
+  {
+    id: "rsn-13", topic: "reasoning", difficulty: "hard", gated: true, type: "mcq",
+    question: "Research has shown a model's stated chain-of-thought doesn't always reflect the actual computation that produced its answer — the model can state a plausible-sounding path that isn't causally responsible for the output. What's the practical implication for using CoT traces as an explainability tool?",
+    options: ["CoT traces are a helpful debugging signal, not a certified, faithful account of the model's actual internal computation", "CoT traces are always fully faithful for reasoning-specialized models, so this concern only applies to standard chat models", "This finding means CoT prompting provides no value at all and should be abandoned as a technique entirely", "The finding only applies to math problems and does not generalize to any other reasoning task type at all"],
+    correct: 0, keywords: [],
+    explanation: "CoT unfaithfulness means the text a model produces as 'reasoning' is generated the same way as any other output rather than a transparent log of an internal computation. It can still correlate strongly with correct answers and be genuinely useful for spotting certain classes of errors, which is why it remains valuable in practice. What it doesn't provide is a guarantee: you can't treat a clean-looking reasoning trace as proof the final answer is well-founded.",
+    trap: "Over-trusting a clean chain-of-thought as proof of correct reasoning, or over-correcting to dismiss CoT as worthless. The realistic middle ground is a moderately-reliable signal, not a ground-truth explanation.",
+    readMore: { label: "Reasoning Models Lab →", tab: "systems" }
+  },
+  {
+    id: "rsn-14", topic: "reasoning", difficulty: "medium", gated: true, type: "mcq",
+    question: "A customer-support agent routes 'simple FAQ' queries to a fast model and 'complex multi-turn troubleshooting' queries to a reasoning model. The classifier that decides the route is itself only 85% accurate. What's the main risk this introduces?",
+    options: ["None at all — even an imperfect classifier is strictly better than sending every single query to the reasoning model", "Misrouted queries in both directions mean end-to-end quality is bounded by classifier accuracy, not each model alone", "The risk is purely financial, since misclassified queries only affect cost and have no effect whatsoever on answer quality", "An 85% accurate classifier is high enough already that misrouting has no measurable effect on latency or quality metrics"],
+    correct: 1, keywords: [],
+    explanation: "A routing architecture's end-to-end quality is capped by the router's own accuracy, not just by how good each downstream model is. At 85% classifier accuracy, roughly 1 in 7 queries goes to the wrong model — complex queries landing on the fast model get an answer that doesn't reflect the reasoning the task needed, while simple queries misrouted to the reasoning model waste latency and cost for no quality gain. Measuring only each model's accuracy in isolation misses this — end-to-end quality across the full traffic mix, weighted by the router's real confusion matrix, is what actually matters.",
+    trap: "Evaluating each downstream model's quality in isolation. The router's accuracy is itself part of the system's failure surface and needs to be measured and monitored, not assumed away.",
+    readMore: { label: "Reasoning model economics →", tab: "systems" }
+  },
+  {
+    id: "rsn-15", topic: "reasoning", difficulty: "hard", gated: true, type: "mcq",
+    question: "You cap a reasoning model's thinking budget at 2K tokens to control cost, but the model was mid-way through a multi-step derivation when the budget ran out and it was forced to produce an answer. What does this risk, and how would you detect it?",
+    options: ["No real risk at all — models are trained to always produce a valid final answer no matter how much reasoning was actually completed", "The model may guess past where its reasoning had gotten to; detect this by sweeping the thinking-budget cap on your eval set", "The only risk is a visibly incomplete or truncated response, which is easy to catch with a simple format check", "Thinking budget caps only affect latency, not final-answer quality, so this is purely a cost-versus-speed tradeoff"],
+    correct: 1, keywords: [],
+    explanation: "A hard thinking-budget cap doesn't pause the model gracefully — it truncates whatever reasoning was in progress and forces a final answer regardless of whether the derivation was actually finished. The output still looks like a complete, confident answer, which is exactly what makes this risk easy to miss. Sweep the thinking-budget cap across several values on your eval set and look for the point where accuracy starts dropping — that's the signal that truncation is silently costing you correctness.",
+    trap: "Assuming a truncated response would look obviously broken. The failure mode is a confident, well-formatted wrong answer — the same shape as a correct one — which is why budget sweeps on real eval data matter more than spot-checking outputs.",
+    readMore: { label: "Thinking budget deep dive →", tab: "systems" }
   },
 
   // ── MCP + RELIABILITY (agents) (4) ────────────────────────────────────────
@@ -1560,6 +1776,34 @@ export const PREP_QUESTIONS = [
     explanation: "Model answer: Define tools as strict JSON schemas — the model generates structured calls, not free text. Validate every tool call against the schema before execution (reject malformed calls and retry with error feedback, max 2 retries). For each tool: set timeouts (e.g., 5s for search, 30s for code execution), implement idempotency for write operations, log all calls and results for observability. Failure handling: malformed call → re-prompt with schema; tool error → surface to model with error message; timeout → graceful fallback to no-tool response. Monitor tool call rate, success rate, and fallback rate per tool in production.",
     readMore: { label: "Agents →", tab: "systems" }
   },
+  {
+    id: "design-5", topic: "design", difficulty: "hard", gated: true, type: "text",
+    question: "You're asked to design a semantic caching layer for a high-traffic customer support chatbot to cut LLM API costs. Walk through your architecture: what gets cached, what doesn't, and how you handle staleness.",
+    keywords: ["embedding", "similarity threshold", "TTL", "cache invalidation", "personalization", "namespace", "staleness"],
+    explanation: "Model answer: Embed each incoming query and compare against a vector index of previously-answered queries above a similarity threshold (e.g., 0.92). Cache stable, non-personalized, factual queries (return policy, hours, general troubleshooting) with a TTL appropriate to how often the underlying answer changes. Never cache personalized queries (order status, account details) without namespacing by user ID, since near-duplicate personalized queries from different users must not cross-contaminate. Invalidate cache entries when the underlying knowledge base updates (track a content version and bust matching cache entries). Monitor cache hit rate and stale-hit rate (cases where a cached answer became wrong after a KB update) separately.",
+    readMore: { label: "Semantic Caching →", tab: "groundtruth", postId: "semantic-caching" }
+  },
+  {
+    id: "design-6", topic: "design", difficulty: "hard", gated: true, type: "text",
+    question: "Design an on-call and rollback strategy for an LLM-powered feature that occasionally produces a confidently wrong output. You cannot retrain the model quickly. What do you ship in week one?",
+    keywords: ["feature flag", "rollback", "guardrail", "monitoring", "canary", "kill switch", "escalation"],
+    explanation: "Model answer: Week one ships infrastructure, not a model fix — a feature flag / kill switch that can disable the AI feature and fall back to a deterministic or human-handled path within minutes, without a deploy. Add guardrail checks on the output (format validation, banned-content filters, confidence thresholds) that trigger the fallback automatically for out-of-bounds responses. Instrument dashboards for the specific failure signature that was reported, so on-call can confirm whether the issue is recurring or resolved. A canary rollout for any subsequent prompt or model change, gated on the same guardrail metrics, so a fix doesn't ship blind. Actual model-level fixes (prompt revision, few-shot examples, fine-tuning) come after this safety net exists.",
+    readMore: { label: "Production AI reliability", tab: "groundtruth", postId: "llmops-production-checklist" }
+  },
+  {
+    id: "design-7", topic: "design", difficulty: "hard", gated: true, type: "text",
+    question: "Design a system to detect when a deployed LLM's real-world quality has silently degraded, without waiting for user complaints. What signals would you monitor and how would you act on them?",
+    keywords: ["drift", "proxy metric", "sampling", "human review", "regression eval", "alerting", "confidence"],
+    explanation: "Model answer: Since ground-truth labels for live traffic are rarely available immediately, monitor leading proxy signals: refusal rate, response length distribution, self-reported confidence or uncertainty markers, and rate of follow-up clarifying questions from users (a rise often signals the model is failing to understand queries). Run a continuous eval on a rotating sample of real production queries against your golden/regression set, with a human review loop on a random subset weekly. Alert on statistically significant shifts in any proxy metric versus a rolling baseline, not just fixed thresholds, since normal traffic composition drifts too. Tie every alert to a specific action — page on-call, trigger the guardrail fallback, or open a ticket for review — rather than a dashboard nobody checks.",
+    readMore: { label: "Production AI reliability", tab: "groundtruth", postId: "llmops-production-checklist" }
+  },
+  {
+    id: "design-8", topic: "design", difficulty: "hard", gated: true, type: "text",
+    question: "You need to design an evaluation pipeline that catches regressions before every deploy, for a product with 15 different LLM-powered features sharing one underlying model. What's your approach to keeping this fast enough to not block releases?",
+    keywords: ["regression suite", "golden set", "parallelization", "tiered eval", "LLM judge", "fast feedback", "sampling"],
+    explanation: "Model answer: Maintain a small, fast golden set per feature (20-50 examples covering known edge cases and past regressions) that runs on every PR in parallel across features, using deterministic checks where possible and a cheaper LLM-judge model for open-ended quality scoring — this should complete in minutes. Reserve the full, larger eval set (hundreds of examples per feature, more expensive judge models, human spot-checks) for a nightly or pre-release gate rather than every commit. Track eval flakiness itself as a metric — a golden-set test that fails intermittently on unchanged code erodes trust in the whole suite and needs to be fixed or removed. The tiering (fast PR-gate vs. slower release-gate) is what keeps 15 features' worth of evals from blocking day-to-day iteration.",
+    readMore: { label: "Evals →", tab: "systems" }
+  },
 
   // ─── TRANSFORMER ARCHITECTURE ────────────────────────────────────────────────
   {
@@ -1799,6 +2043,66 @@ export const PREP_QUESTIONS = [
     trap: "Saying \'averaging models hurts performance.\' Model Soup works specifically when merging models fine-tuned from the same pretrained checkpoint. The shared loss landscape means averaging does not push weights into out-of-distribution regions.",
     readMore: { label: "Model Merging →", tab: "systems" }
   },
+  {
+    id: "merge-5", topic: "merging", difficulty: "hard", gated: true, type: "mcq",
+    question: "DARE (Drop And REscale) is often combined with TIES-Merging before averaging multiple fine-tuned models. What problem does DARE address on its own?",
+    options: [
+      "Most fine-tuning delta parameters are redundant noise; DARE drops most of them at random and rescales what remains",
+      "DARE removes sign conflicts between models by keeping only the majority-sign parameter at each delta position",
+      "DARE compresses the merged model's weights to INT8 precision, cutting the deployment memory footprint substantially",
+      "DARE trains a small router network that decides which source model to consult for each input token"
+    ],
+    correct: 0,
+    keywords: ["DARE", "model merging", "delta pruning", "TIES-Merging", "sparsity"],
+    explanation: "DARE observes that most of a fine-tuned model's weight delta (ΔW = fine-tuned − base) is redundant — the model can tolerate randomly zeroing out 90%+ of delta values with little quality loss. DARE drops a large random fraction of each delta and rescales the survivors by 1/(1-drop_rate) to preserve the delta's expected magnitude. This sparsification makes the subsequent merge (e.g., TIES) more robust, since fewer near-noise parameters are competing during sign election.",
+    trap: "Confusing DARE's random pruning with TIES-Merging's sign-conflict resolution. They solve different problems and are commonly used together: DARE sparsifies each model's delta first, TIES then resolves interference across the sparsified deltas.",
+    readMore: { label: "Model Merging →", tab: "systems" }
+  },
+  {
+    id: "merge-6", topic: "merging", difficulty: "hard", gated: true, type: "mcq",
+    question: "'Task vectors' (task arithmetic) represent a fine-tuned model's specialization as ΔW = W_finetuned − W_base. Adding two task vectors to a shared base model attempts to combine both specializations. What does subtracting a task vector do?",
+    options: [
+      "It has no defined effect at all, since task arithmetic is understood to only support addition of vectors",
+      "It attempts to remove that specialization's behavior from the base model, effectively 'unlearning' the task",
+      "It reverses the model all the way back to a random initialization state, discarding all of its prior pretraining knowledge",
+      "It merges the negative of one model's weights with the positive of another to average out noise"
+    ],
+    correct: 1,
+    keywords: ["task vectors", "task arithmetic", "negation", "unlearning", "model merging"],
+    explanation: "Task arithmetic treats a fine-tuned model's specialization as a direction in weight space. Adding a task vector to the base model imparts that specialization; subtracting it pushes the model away from that behavior, which has been used to reduce toxicity, remove a specific learned bias, or 'forget' a capability without retraining from scratch. This only works reliably for models sharing the same base checkpoint — the vector's direction is meaningful relative to that shared origin, not in absolute weight space.",
+    trap: "Assuming subtraction just undoes fine-tuning perfectly. In practice negation is an approximate operation — it reduces the targeted behavior but can also degrade unrelated capabilities if the task vector isn't cleanly disentangled from them.",
+    readMore: { label: "Model Merging →", tab: "systems" }
+  },
+  {
+    id: "merge-7", topic: "merging", difficulty: "medium", gated: true, type: "mcq",
+    question: "Two fine-tuned models share the same base architecture but were trained after their teams independently extended the tokenizer vocabulary by different amounts. What happens if you try to merge them with standard weight averaging?",
+    options: [
+      "The merge proceeds normally, since vocabulary size differences only affect the tokenizer, not the model weights being merged",
+      "The embedding and output-projection matrices end up with mismatched shapes, so averaging them element-wise is undefined",
+      "The merge succeeds but produces a model that can only generate tokens from the smaller of the two vocabularies",
+      "The merge automatically truncates the larger vocabulary down to match the smaller one before averaging"
+    ],
+    correct: 1,
+    keywords: ["vocabulary mismatch", "embedding table", "model merging", "tokenizer", "shape mismatch"],
+    explanation: "Vocabulary extension adds rows to the embedding table and the (often tied) output projection matrix — a vocab of 32,005 vs 32,048 tokens means these matrices are literally different shapes, and there is no element-wise average defined between a 32,005×d and 32,048×d matrix. Merging tools either require identical tokenizers, or need an explicit alignment step (mapping shared tokens by ID, handling the extras separately) before any weight averaging can happen at all.",
+    trap: "Assuming tokenizer differences are cosmetic. Vocabulary size directly determines the shape of two of the model's largest weight matrices — a mismatch there is a hard blocker for naive merging, not a minor inconvenience.",
+    readMore: { label: "Model Merging →", tab: "systems" }
+  },
+  {
+    id: "merge-8", topic: "merging", difficulty: "hard", gated: true, type: "mcq",
+    question: "A team merges a coding-specialized model with a customer-support-specialized model and finds the result is noticeably worse at both tasks than either source model alone. What's the most likely cause, distinct from simple catastrophic forgetting?",
+    options: [
+      "Catastrophic forgetting that occurred during the original fine-tuning of each source model, well before the merge itself happened",
+      "Destructive parameter interference — the two models' weight deltas disagree in sign at many parameters, canceling both specializations",
+      "The base model itself was undertrained, so neither fine-tuned model had a strong foundation for the merge to build on",
+      "The merge script had a bug that accidentally averaged in a third, unrelated model's weights by mistake"
+    ],
+    correct: 1,
+    keywords: ["parameter interference", "sign conflict", "model merging", "TIES", "destructive averaging"],
+    explanation: "When two specializations push the same parameters in opposite directions — coding fine-tuning increases a weight while support fine-tuning decreases the same weight — naive averaging partially cancels both signals, degrading each capability rather than combining them. This is the specific failure TIES-Merging and DARE were designed to address: identify and resolve sign disagreements before averaging, rather than averaging blindly and hoping the specializations are compatible.",
+    trap: "Defaulting to 'catastrophic forgetting' as the explanation for any merge quality drop. Forgetting describes losing capability during training; the merge-specific failure mode is interference between two already-good models at merge time, which needs a different fix (TIES/DARE-style resolution, not more training).",
+    readMore: { label: "Model Merging →", tab: "systems" }
+  },
 
   // ─── CONSTRAINED GENERATION ──────────────────────────────────────────────────
   {
@@ -1858,6 +2162,66 @@ export const PREP_QUESTIONS = [
     correct: 1,
     keywords: ["SGLang", "structured generation", "DFA", "token mask", "caching", "overhead"],
     explanation: "SGLang compiles the JSON schema or regex into an efficient deterministic finite automaton (DFA) and pre-computes token masks for each DFA state. Since many states are visited repeatedly during generation (e.g., 'inside a string value'), the mask lookup becomes a simple array index — O(1) — rather than re-evaluating the constraint against the full vocabulary. This amortization reduces overhead from ~15ms to near-zero for common schema patterns.",
+    readMore: { label: "Constrained Generation →", tab: "systems" }
+  },
+  {
+    id: "constrain-5", topic: "constrained", difficulty: "hard", gated: true, type: "mcq",
+    question: "You apply strict JSON-schema constrained decoding to a reasoning model's final output, expecting guaranteed valid JSON. The output is valid JSON but consistently lower quality than the same model's unconstrained free-text answer to the same prompt. Why might this happen?",
+    options: [
+      "Constrained decoding always degrades quality for every single model type, so this outcome is expected and unfixable",
+      "Forcing the schema onto the final answer can cut off exploratory tokens the reasoning process relies on before settling",
+      "The JSON schema itself must have been defined incorrectly somewhere, since correct schemas never affect output quality at all",
+      "Reasoning models are fundamentally and completely incompatible with any form of constrained decoding whatsoever"
+    ],
+    correct: 1,
+    keywords: ["constrained decoding", "reasoning models", "logit masking", "quality tradeoff"],
+    explanation: "A reasoning model's quality often comes from working through intermediate steps before committing to a final answer. If the schema constraint is applied to the entire output including the reasoning portion, it can force the model into a rigid structure mid-thought, cutting off exploratory tokens that would have led to a better-considered answer. The common fix is to let the model reason freely in an unconstrained scratchpad, then apply constrained decoding only to a final, separate structured-answer extraction step.",
+    trap: "Concluding constrained decoding is simply incompatible with reasoning models. The fix isn't to abandon constraints — it's to scope where in the generation the constraint applies, leaving the reasoning phase unconstrained.",
+    readMore: { label: "Constrained Generation →", tab: "systems" }
+  },
+  {
+    id: "constrain-6", topic: "constrained", difficulty: "medium", gated: true, type: "mcq",
+    question: "A team constrains an LLM's output to a strict regex grammar for extracting structured fields, but on ambiguous inputs the model produces syntactically valid output that is semantically nonsensical — for example, a plausible-looking but fabricated phone number. What does this reveal about constrained generation's guarantee?",
+    options: [
+      "Constrained generation guarantees syntactic validity, not semantic correctness — required fields can still get fabricated content",
+      "This means the grammar itself was defined incorrectly and needs significantly more regex refinement to prevent it",
+      "Constrained generation is fundamentally broken in this exact scenario and should be fully replaced with unconstrained free-text prompting instead",
+      "This only ever happens with smaller models, and switching to a much larger model resolves the issue automatically"
+    ],
+    correct: 0,
+    keywords: ["constrained generation", "semantic correctness", "hallucination", "grammar", "structured extraction"],
+    explanation: "Logit masking only guarantees the output belongs to the set of grammatically valid strings — it says nothing about whether the specific value chosen is true or grounded in the input. On an ambiguous or under-specified input, a model still has to pick some token sequence, and it may confidently fabricate a well-formed but incorrect value rather than expressing uncertainty (which the rigid schema may not even have a slot for). Validity and correctness are separate axes, and constrained generation only solves the first.",
+    trap: "Treating a syntactically valid output as evidence the extraction was correct. The grammar constraint says nothing about grounding — pair it with a confidence field or a 'null/unknown' option in the schema so the model has a valid way to express uncertainty.",
+    readMore: { label: "Constrained Generation →", tab: "systems" }
+  },
+  {
+    id: "constrain-7", topic: "constrained", difficulty: "medium", gated: true, type: "mcq",
+    question: "Your team adds GBNF grammar-constrained decoding to a production API. p50 latency is fine, but the very first request after each deployment is consistently 2-3 seconds slower than subsequent ones. What's the likely cause?",
+    options: [
+      "The grammar compiles into its automaton representation once per process, and that cost is paid on the first request",
+      "The first request after deployment always retrains the underlying model weights before serving predictions",
+      "Cold starts always add exactly 2-3 seconds regardless of whether constrained decoding is used at all",
+      "The GPU needs to warm up its clock speed for the very first request, entirely unrelated to the grammar constraint feature"
+    ],
+    correct: 0,
+    keywords: ["GBNF", "grammar compilation", "cold start", "one-time cost", "constrained generation"],
+    explanation: "Compiling a grammar (JSON schema, regex, or GBNF) into its automaton form is a one-time, per-process cost — it doesn't need to happen again until the schema changes or the process restarts. After a fresh deployment, the very first request that touches a given schema pays this compilation cost; every subsequent request reuses the cached automaton and only pays the much smaller per-token mask-lookup overhead. The fix is a warm-up step at startup that pre-compiles known schemas before the process accepts real traffic.",
+    trap: "Attributing the one-time delay to GPU warm-up or generic cold-start effects. The specific signature — consistent extra latency tied to a schema, not to traffic volume — points to grammar compilation, which is fixable with an explicit warm-up pass.",
+    readMore: { label: "Constrained Generation →", tab: "systems" }
+  },
+  {
+    id: "constrain-8", topic: "constrained", difficulty: "medium", gated: true, type: "mcq",
+    question: "A team wants to apply constrained generation (strict grammar) to a creative writing feature to guarantee well-formed markdown output. What's the risk of over-constraining here compared to a structured-extraction use case?",
+    options: [
+      "There is absolutely no risk here at all — constrained generation is strictly beneficial for any task type, creative or structured alike",
+      "An overly rigid grammar can force unnatural phrasing to satisfy structural rules that matter less for creative writing than extraction",
+      "Constrained generation cannot technically be applied to any creative or fully open-ended text generation task whatsoever",
+      "The only risk is a fixed 5-15ms per-token latency overhead, entirely identical regardless of what kind of task is involved"
+    ],
+    correct: 1,
+    keywords: ["constrained generation", "creative writing", "expressiveness tradeoff", "grammar", "structured extraction"],
+    explanation: "For structured extraction, the grammar is the entire point — there's one correct shape and no expressive cost to enforcing it. For creative writing, the grammar is a much looser guardrail (valid markdown) layered on top of a task that's fundamentally about expressive freedom; a grammar written too strictly (rigid heading structure, forced list formats) can nudge the model toward stilted phrasing just to stay inside the allowed token set. The fix is constraining only the minimal structural guarantee actually needed (valid markdown syntax) rather than over-specifying content shape.",
+    trap: "Assuming constrained generation is either universally good or universally inapplicable. The real consideration is how much of the task's value depends on expressive freedom versus structural guarantee — that ratio differs sharply between extraction and creative tasks.",
     readMore: { label: "Constrained Generation →", tab: "systems" }
   },
 
@@ -3055,22 +3419,22 @@ export const PREP_QUESTIONS = [
   },
 
   {
-    id: "scaling-1", topic: "llm", difficulty: "medium", gated: false, type: "mcq",
-    question: "The Chinchilla paper showed GPT-3 175B was trained suboptimally. What was the core problem?",
+    id: "scaling-1", topic: "foundations", difficulty: "medium", gated: false, type: "mcq",
+    question: "Your team is scoping a 70B-parameter pretraining run. The draft compute plan allocates 300B training tokens — the same token count GPT-3 175B used. A senior engineer objects before the run starts. What's the concern?",
     options: [
-      "The model was too large — it needed fewer parameters to reach the same loss",
-      "The model was undertrained — it needed roughly 20× more tokens for its parameter count",
-      "The learning rate schedule was incorrect",
-      "The architecture used MHA instead of GQA"
+      "300B tokens is too small a corpus for a 70B-parameter model, so training will overfit the data before the loss converges",
+      "The token/parameter ratio is far below compute-optimal — Chinchilla wants roughly 20 tokens per parameter, needing closer to 1.4T",
+      "300B tokens will need far more data-parallel shards than the storage budget allocated for this particular training run can hold",
+      "The learning rate warmup schedule tuned for a 175B model run won't transfer cleanly onto a 70B parameter count at all"
     ],
     correct: 1,
-    explanation: "Chinchilla (Hoffmann et al., 2022) established the compute-optimal rule: for a given training budget, parameters N and training tokens D should scale equally — roughly D ≈ 20 × N. GPT-3's 175B parameters should have been trained on ~3.5T tokens; it only saw 300B — 11× too few. Chinchilla-70B, trained on 1.4T tokens, outperformed GPT-3 at 2.5× fewer parameters and the same total compute.",
-    trap: "Saying the model was 'too large.' GPT-3's problem was not size but the token/parameter ratio being far off the compute-optimal curve. Making it smaller while keeping token count fixed would have made it worse.",
+    explanation: "Chinchilla (Hoffmann et al., 2022) established the compute-optimal rule: for a fixed training budget, parameter count N and training tokens D should scale together — roughly D ≈ 20 × N. GPT-3's 175B parameters only saw ~300B tokens (≈1.7 tokens/parameter), badly undertrained for its size. Copying that same token budget onto a 70B model repeats the mistake: at the compute-optimal ratio, 70B params want ~1.4T tokens. Skipping that check means the run finishes with a model that has capacity it never got to use.",
+    trap: "Assuming the objection is about overfitting or storage limits. The real failure mode is under-training: not enough data relative to parameter count to reach the loss that parameter count is capable of.",
     readMore: { label: "Chinchilla: Scaling Laws →", tab: "groundtruth", postId: "chinchilla-scaling-laws" }
   },
 
   {
-    id: "scaling-2", topic: "llm", difficulty: "hard", gated: true, type: "text",
+    id: "scaling-2", topic: "foundations", difficulty: "hard", gated: true, type: "text",
     question: "A team has a fixed training compute budget. Using Chinchilla's rule they find the compute-optimal model is 10B params on 200B tokens. But the product requirement is a model served at < $0.002 per 1K tokens. How does this change the model choice, and what training strategy follows?",
     options: [],
     correct: 0,
@@ -3081,22 +3445,22 @@ export const PREP_QUESTIONS = [
   },
 
   {
-    id: "scaling-3", topic: "llm", difficulty: "medium", gated: false, type: "mcq",
-    question: "Why did LLaMA-7B (2023) frequently match or outperform GPT-3 175B on practical benchmarks despite being 25× smaller?",
+    id: "scaling-3", topic: "foundations", difficulty: "medium", gated: false, type: "mcq",
+    question: "A PM asks why the team should consider shipping a 7B open-weight model instead of licensing a 175B-parameter API model, since the 175B model is '25× larger and should just be better.' What's the technical rebuttal?",
     options: [
-      "LLaMA used a better architecture with rotary position embeddings",
-      "LLaMA was trained on ~1T tokens — far more data per parameter than GPT-3's ~1.7 tokens/parameter",
-      "GPT-3 used 16-bit training while LLaMA used 32-bit precision",
-      "LLaMA used instruction fine-tuning while GPT-3 was a base model"
+      "Model size alone doesn't determine quality — tokens trained per parameter matters more, and a well-trained 7B model can out-train an under-trained 175B one",
+      "The 7B model uses instruction tuning while the 175B model is a base model, and that alone closes most of the quality gap between them",
+      "The 175B model was trained using 16-bit mixed precision while the 7B model trained fully in 32-bit, giving the smaller model a numerical stability edge over it",
+      "Rotary position embeddings in the 7B model's architecture are strictly more powerful than the learned position embeddings the 175B model uses"
     ],
-    correct: 1,
-    explanation: "The core reason is the token/parameter ratio. GPT-3 trained 175B params on 300B tokens — ~1.7 tokens per parameter, far below Chinchilla's 20× rule. LLaMA-7B trained on ~1T tokens — ~143 tokens per parameter, far more compute-optimal. A model trained on more data per parameter learns richer representations and generalises better. Architecture improvements (RoPE, GQA) are secondary.",
-    trap: "Crediting instruction fine-tuning. LLaMA 1 was a base model with no instruction tuning and still outperformed GPT-3 base. The advantage was in pretraining data volume.",
+    correct: 0,
+    explanation: "The determining factor is tokens-per-parameter, not parameter count. GPT-3 175B trained on ~300B tokens — about 1.7 tokens per parameter, far below the ~20× Chinchilla ratio. A well-trained 7B model can see ~1T tokens — about 143 tokens per parameter, much closer to compute-optimal. A model trained on more data relative to its size learns richer representations per parameter. This is why smaller, thoroughly-trained models can match or beat larger, undertrained ones — architecture and instruction-tuning differences are secondary to this data/parameter ratio gap.",
+    trap: "Crediting instruction tuning, precision, or architecture. LLaMA 1 was a base model with no instruction tuning and still outperformed GPT-3 base — the advantage was pretraining data volume relative to parameter count, not any of these secondary factors.",
     readMore: { label: "Chinchilla: Scaling Laws →", tab: "groundtruth", postId: "chinchilla-scaling-laws" }
   },
 
   {
-    id: "scaling-4", topic: "llm", difficulty: "hard", gated: true, type: "text",
+    id: "scaling-4", topic: "foundations", difficulty: "hard", gated: true, type: "text",
     question: "An engineer says: 'Scaling laws show larger models always perform better, so request the biggest available model via API.' What's wrong, and what should guide model selection instead?",
     options: [],
     correct: 0,
@@ -4829,796 +5193,6 @@ export const PREP_QUESTIONS = [
     readMore: { postId: "encoder-decoder-architecture", label: "Encoder-Decoder Architecture" }
   },,
 
-  // ─── RECOMMENDATION SYSTEMS ──────────────────────────────────────────────────
-
-  {
-    id: "reco-1", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
-    question: "A two-tower model uses in-batch negative sampling during training. What's the main bias this introduces?",
-    options: [
-      "The model overfits to the positive pairs since there are too few negatives",
-      "Popular items appear as negatives more often, causing the model to underestimate their relevance",
-      "The model learns item embeddings but not user embeddings effectively",
-      "In-batch negatives have too much overlap with positive pairs, making training unstable"
-    ],
-    correct: 1,
-    explanation: "Popular items appear more frequently in batches and therefore more often as negatives. The model learns to push popular items away from user embeddings — suppressing legitimate popular recommendations. Fix: popularity-based correction (down-weight the loss contribution from popular-item negatives by their appearance probability).",
-    trap: "Overclaim: in-batch negatives are unbiased because items are randomly sampled. Honest reframe: in-batch negatives are biased toward popular items by construction — any item proportionally represented in the training set will disproportionately appear as a negative.",
-    readMore: { postId: "two-tower-reco-architecture", label: "Two-Tower Recommendation Architecture" }
-  },
-
-  {
-    id: "reco-2", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
-    question: "Why does a two-tower model L2-normalize the output embeddings before computing similarity?",
-    options: [
-      "To prevent gradient explosion during training",
-      "To make dot product equivalent to cosine similarity and prevent embedding norm from growing unboundedly",
-      "To ensure the ANN index can use Euclidean distance instead of cosine distance",
-      "To reduce the dimensionality of embeddings at serving time"
-    ],
-    correct: 1,
-    explanation: "Without normalization, the model can game the similarity score by growing embedding norms rather than learning meaningful directions. L2 normalization constrains embeddings to the unit hypersphere, making dot product equivalent to cosine similarity. This also makes FAISS inner product search equivalent to cosine search.",
-    trap: "Overclaim: L2 normalization is just a numerics trick with no semantic meaning. Honest reframe: normalization enforces that similarity is determined by direction, not magnitude — a meaningful inductive bias for recommendation where you want 'taste alignment,' not 'how much we talked about this item.'",
-    readMore: { postId: "two-tower-reco-architecture", label: "Two-Tower Recommendation Architecture" }
-  },
-
-  {
-    id: "reco-3", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
-    question: "Your recommendation system's offline NDCG@20 improved from 0.31 to 0.34 with a new model. In A/B test, CTR is flat but session length decreased 8%. What's the most likely explanation?",
-    options: [
-      "The new model is overfitting to the test set and the A/B test is correct",
-      "NDCG@20 and CTR are unrelated metrics so neither result is meaningful",
-      "The new model improved relevance but reduced diversity, causing users to exhaust the feed faster",
-      "The A/B test has insufficient statistical power to detect the CTR improvement"
-    ],
-    correct: 2,
-    explanation: "Higher NDCG means more relevant items at the top — users find what they want faster and leave sooner. This is a diversity-vs-relevance tradeoff. The model is doing its job (surfacing relevant items) but reducing serendipity and exploration. The fix: add diversity constraints to re-ranking, optimize for long-term engagement signals (return next day), not just per-session CTR.",
-    trap: "Overclaim: offline metrics predict online behavior. Honest reframe: offline metrics measure what you optimized for in training. They don't capture second-order effects like saturation, diversity fatigue, or the explore-exploit balance that shape session length and return rate.",
-    readMore: { postId: "candidate-generation-vs-ranking", label: "Candidate Generation vs Ranking" }
-  },
-
-  {
-    id: "reco-4", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
-    question: "In a two-stage recommender (retrieval + ranking), a new item added to the catalog gets zero recommendations for its first week. What's the most likely cause?",
-    options: [
-      "The ranking model hasn't been retrained to include the new item's features",
-      "The new item has no embedding in the ANN index so the retrieval stage never surfaces it as a candidate",
-      "The re-ranking layer is filtering the new item due to low review count",
-      "The feature store hasn't computed velocity features for the new item yet"
-    ],
-    correct: 1,
-    explanation: "The retrieval stage depends on pre-computed item embeddings in the ANN index. If the item isn't indexed, no user will ever retrieve it as a candidate, so the ranking model never sees it. New item cold start requires: (1) computing an embedding from content features (not interaction data), (2) adding it to the ANN index. Only then can it reach the ranking stage.",
-    trap: "Overclaim: cold start is a ranking problem — just train the ranking model on new items. Honest reframe: if the retrieval stage never surfaces the item, the ranking model is irrelevant. Cold start must be fixed at the retrieval stage first.",
-    readMore: { postId: "cold-start-problem", label: "The Cold Start Problem" }
-  },
-
-  {
-    id: "reco-5", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
-    question: "What does BPR (Bayesian Personalized Ranking) optimize that standard matrix factorization with MSE loss does not?",
-    options: [
-      "BPR handles missing data by treating unobserved items as negative examples",
-      "BPR directly optimizes the ranking order: that clicked items should score higher than unclicked items for the same user",
-      "BPR adds a Bayesian prior over the latent factors to prevent overfitting",
-      "BPR uses Bayesian inference to estimate uncertainty in the predicted ratings"
-    ],
-    correct: 1,
-    explanation: "MSE optimizes absolute rating prediction — it tries to predict the exact score a user would give an item. For implicit feedback (clicks), you don't have absolute ratings. BPR optimizes relative ordering: for each user, clicked items should rank above unclicked items. This is the right objective for the actual task (ranking) rather than a proxy task (rating prediction).",
-    trap: "Overclaim: MSE works fine for implicit feedback — just treat 0 as 'not interested.' Honest reframe: unobserved (0) doesn't mean the user dislikes the item — they may never have seen it. MSE on implicit feedback conflates 'not exposed' with 'disliked,' leading to systematically poor recommendations for items with low exposure.",
-    readMore: { postId: "collaborative-filtering-deep-dive", label: "Collaborative Filtering Deep Dive" }
-  },
-
-  {
-    id: "reco-6", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
-    question: "You're implementing Thompson Sampling for exploration in a recommender. Your rewards are delayed by 45 minutes (order completion). How do you handle this?",
-    options: [
-      "Use a proxy reward (click) instead of the delayed reward to update the bandit immediately",
-      "Buffer the (item, context) tuple at impression time; update the Beta distribution when the delayed reward arrives",
-      "Switch to UCB which doesn't require reward updates",
-      "Increase the exploration rate to compensate for the delayed signal"
-    ],
-    correct: 1,
-    explanation: "Buffer the impression context (item ID, user context, timestamp) at decision time. When the reward arrives 45 minutes later, look up the buffered context and update alpha (success) or beta (failure) accordingly. Using a proxy reward (click) introduces a different signal — click doesn't equal order. UCB also requires reward updates so the same problem applies.",
-    trap: "Overclaim: delayed rewards require immediate proxy rewards to keep bandits functioning. Honest reframe: delayed reward bandits are standard and well-studied. The buffering pattern is simple and correct. Proxy rewards introduce reward signal mismatch that can be worse than the delay.",
-    readMore: { postId: "explore-exploit-recommendations", label: "Explore-Exploit in Recommendations" }
-  },
-
-  {
-    id: "reco-7", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
-    question: "Matrix factorization decomposes the user-item matrix R ≈ U × V^T. What does the dot product u_i · v_j represent geometrically?",
-    options: [
-      "The Euclidean distance between user i and item j in the latent space",
-      "The projection of the item vector onto the user vector, measuring alignment of their latent factors",
-      "The probability that user i has seen item j in the training data",
-      "The magnitude of the combined user-item representation"
-    ],
-    correct: 1,
-    explanation: "The dot product u_i · v_j = |u_i| |v_j| cos(θ), where θ is the angle between them. It measures how aligned the user's latent preferences are with the item's latent characteristics. High dot product means user i's tastes are well-aligned with item j's properties. With L2-normalized vectors, this reduces to pure cosine similarity.",
-    trap: "Overclaim: the dot product is just a computational convenience with no geometric meaning. Honest reframe: the latent factor geometry is the core learning signal. Users with similar latent vectors have similar tastes. Items with similar latent vectors are interchangeable. The geometry IS the model.",
-    readMore: { postId: "collaborative-filtering-deep-dive", label: "Collaborative Filtering Deep Dive" }
-  },
-
-  {
-    id: "reco-8", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
-    question: "Your e-commerce ranking model optimizes CTR but you observe that high-CTR items have 3x the return rate of low-CTR items. What's happening and how do you fix it?",
-    options: [
-      "The model is working correctly — clicks indicate intent and return rate is a supply chain problem",
-      "The model learned to optimize for deceptive presentation rather than genuine relevance; fix by adding return rate as a negative signal in the objective",
-      "Return rates are a delayed signal that can't be incorporated into real-time ranking",
-      "High CTR with high returns means customers liked the items initially but changed their minds"
-    ],
-    correct: 1,
-    explanation: "Optimizing CTR teaches the model to exploit visual tricks — misleading thumbnails, artificially low displayed prices, exaggerated descriptions. Users click but are disappointed on receipt. Fix: multi-objective ranking with CTR weighted alongside satisfaction signals (low return rate, positive reviews, repeat purchase from same seller). This is the misalignment between the proxy metric (CTR) and the true objective (customer satisfaction).",
-    trap: "Overclaim: CTR is a reliable signal for item quality because users click on what they want. Honest reframe: CTR measures curiosity and deception susceptibility as much as genuine interest. Any metric you optimize for can be gamed — by fraudsters, by sellers, and by the model itself through spurious correlations.",
-    readMore: { postId: "how-id-build-search-ranking-ecommerce", label: "How I'd Build Search Ranking at E-commerce Scale" }
-  },
-
-  {
-    id: "reco-9", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
-    question: "In the candidate generation + ranking cascade, the retrieval stage has Recall@500 of 85%. What does this mean?",
-    options: [
-      "85% of the 500 candidates retrieved are items the user would actually engage with",
-      "For 85% of users, the item they eventually engaged with was in the 500 candidates retrieved",
-      "The retrieval stage has 85% precision among the top 500 results",
-      "85% of all items in the catalog are reachable by the retrieval stage"
-    ],
-    correct: 1,
-    explanation: "Recall@500 = 85% means: for 85% of historical sessions, the item the user actually engaged with appeared somewhere in the top 500 retrieved candidates. The retrieval stage succeeded. The ranking model's job is to find and surface that item from among the 500. The 15% miss rate is the ceiling on what the full system can ever achieve — if retrieval misses it, ranking can't fix it.",
-    trap: "Overclaim: 85% recall@500 means 85% of retrieved items are relevant. That's precision, not recall. Honest reframe: retrieval optimizes recall (did we get the relevant items in the candidate set?). Ranking optimizes precision (within the candidate set, did we put the relevant items first?).",
-    readMore: { postId: "candidate-generation-vs-ranking", label: "Candidate Generation vs Ranking" }
-  },
-
-  {
-    id: "reco-10", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
-    question: "A GRU4Rec session-based model outperforms collaborative filtering for new users but underperforms for users with 50+ historical interactions. Why?",
-    options: [
-      "GRU4Rec overfits to long interaction histories because it processes all items in sequence",
-      "Session-based models capture within-session intent but can't leverage the rich cross-session preference signal that collaborative filtering extracts from extensive history",
-      "GRU4Rec requires more training data than is available for users with long histories",
-      "Collaborative filtering is architecturally superior for all user types but harder to train"
-    ],
-    correct: 1,
-    explanation: "Session-based models excel at cold start because they only need the current session to make recommendations. For users with rich history, collaborative filtering extracts a latent preference representation that spans many sessions and captures stable, long-term tastes. The right architecture for mature systems: session-based model for cold-start users, gradually blend toward CF as history accumulates.",
-    trap: "Overclaim: one model architecture should be used uniformly across all user cohorts. Honest reframe: user cohorts have fundamentally different data availability. Architecture decisions should follow data availability, not architectural preferences.",
-    readMore: { postId: "cold-start-problem", label: "The Cold Start Problem" }
-  },
-
-  {
-    id: "reco-11", topic: "recommendations", difficulty: "medium", gated: false, type: "mcq",
-    question: "What's the key difference between user-user collaborative filtering and item-item collaborative filtering at scale?",
-    options: [
-      "User-user CF has better cold start performance because users have more features than items",
-      "Item-item CF is more computationally efficient at serving time because item similarity is precomputed and stable; user-user requires finding similar users at query time",
-      "Item-item CF requires explicit ratings while user-user CF works with implicit feedback",
-      "User-user CF produces more diverse recommendations because users have varying tastes"
-    ],
-    correct: 1,
-    explanation: "Item-item similarity (which items co-occur in purchases) can be precomputed offline and cached — items don't change their behavior rapidly. User-user similarity requires finding similar users at query time, which is O(n_users) or requires a user ANN index. Item-item CF scales better and is more stable because items are a smaller, slower-changing set than users in most consumer apps.",
-    trap: "Overclaim: user-user CF is better because it captures personalized tastes more directly. Honest reframe: user-user CF has severe scaling problems. Amazon famously switched to item-item CF for this reason (Linden et al., 2003) and it became the industry standard for a decade before neural CF replaced it.",
-    readMore: { postId: "collaborative-filtering-deep-dive", label: "Collaborative Filtering Deep Dive" }
-  },
-
-  {
-    id: "reco-12", topic: "recommendations", difficulty: "hard", gated: true, type: "mcq",
-    question: "You want to add diversity to your recommender's output. Your team proposes: (A) add diversity as a penalty in the ranking loss, (B) apply MMR (Maximal Marginal Relevance) at re-ranking. What's the tradeoff?",
-    options: [
-      "Option A is better because end-to-end training is always superior to post-hoc adjustments",
-      "Option B is better because re-ranking is simpler to implement and doesn't affect model training stability",
-      "Option A changes what the model learns globally; Option B applies diversity as a controllable post-processing step. B is easier to tune and A may hurt relevance in non-diverse contexts",
-      "Both approaches are equivalent because they optimize the same objective"
-    ],
-    correct: 2,
-    explanation: "Training-time diversity (A) bakes diversity into every prediction — good for consistent behavior, bad for contexts where diversity hurts (e.g., when a user clearly wants 5 pairs of running shoes). Re-ranking diversity (B) lets you tune the diversity-relevance tradeoff per context and revert if it hurts metrics. MMR in re-ranking is the industry standard because it's interpretable, tunable, and doesn't destabilize model training.",
-    trap: "Overclaim: end-to-end training is always the right approach because it optimizes the full objective. Honest reframe: modularity wins at scale. Controllable re-ranking lets product and ML teams adjust behavior without retraining. Baking constraints into training makes them inflexible and hard to debug.",
-    readMore: { postId: "explore-exploit-recommendations", label: "Explore-Exploit in Recommendations" }
-  },
-
-  // ─── CLASSICAL ML THEORY ─────────────────────────────────────────────────────
-
-  {
-    id: "ml-theory-1", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
-    question: "Your regression model has MSE = 100 but MAE = 2. What does this tell you about the error distribution?",
-    options: [
-      "The model is performing well on most examples but has a few very large errors (outliers)",
-      "The model has systematic bias — it consistently underpredicts by about 2 units",
-      "MSE and MAE are measuring different things and can't be compared directly",
-      "The model is overfitting because MSE is much higher than MAE"
-    ],
-    correct: 0,
-    explanation: "MSE penalizes errors quadratically — an error of 10 contributes 100 to MSE but only 10 to MAE. MSE=100 with MAE=2 means typical errors are small (around 2 units) but occasional large errors (e.g., a few errors of 10+) are driving up MSE dramatically. This is the signature of outliers. Investigate which examples have large individual errors.",
-    trap: "Overclaim: high MSE relative to MAE means the model is broken. Honest reframe: it means your error distribution has heavy tails. Whether this is a problem depends on whether those outliers are important examples (fraud, safety-critical) or noise (mislabeled data).",
-    readMore: { postId: "loss-functions-deep-dive", label: "Loss Functions Deep Dive" }
-  },
-
-  {
-    id: "ml-theory-2", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
-    question: "Why does cross-entropy loss work better than MSE for classification tasks?",
-    options: [
-      "Cross-entropy is computationally faster to optimize than MSE",
-      "MSE produces near-zero gradients when softmax outputs are close to 0 or 1, slowing learning; cross-entropy gradients are proportional to prediction error at all values",
-      "Cross-entropy automatically handles class imbalance while MSE does not",
-      "MSE requires normalized outputs while cross-entropy works with raw logits"
-    ],
-    correct: 1,
-    explanation: "Consider a misclassified example where softmax output is 0.001 for the true class. MSE gradient is proportional to (0.001 - 1)² ≈ 1 — but the derivative of softmax near 0 is also near 0, causing vanishing gradients. Cross-entropy gradient is proportional to (p - y) directly, giving a gradient of (0.001 - 1) = -0.999 — a large, useful update. This is why cross-entropy trains faster and more stably for classification.",
-    trap: "Overclaim: MSE simply doesn't work for classification. Honest reframe: MSE can work for binary classification in some settings (especially with careful initialization), but its gradient behavior near the extremes makes training significantly slower and less stable than cross-entropy.",
-    readMore: { postId: "loss-functions-deep-dive", label: "Loss Functions Deep Dive" }
-  },
-
-  {
-    id: "ml-theory-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You're training a fraud detection model (0.1% fraud rate). You use standard binary cross-entropy and achieve 99.9% accuracy. What went wrong and how do you fix it?",
-    options: [
-      "Nothing went wrong — 99.9% accuracy is excellent for fraud detection",
-      "The model learned to always predict 'legitimate' since it's correct 99.9% of the time; fix with Focal Loss or class-weighted BCE",
-      "You need to use MSE instead of cross-entropy for imbalanced classes",
-      "The issue is feature engineering, not the loss function"
-    ],
-    correct: 1,
-    explanation: "At 0.1% fraud rate, predicting 'legitimate' for every transaction achieves 99.9% accuracy. Standard BCE optimizes accuracy implicitly and the model collapses to the majority class. Fixes: (1) Class-weighted BCE: weight fraud examples by inverse class frequency (999x). (2) Focal Loss: downweight easy legitimate examples so training focuses on hard fraud cases. (3) Undersample legitimate transactions in training. Evaluate with precision-recall curve, not accuracy.",
-    trap: "Overclaim: any loss function works for imbalanced classes if you have enough data. Honest reframe: imbalanced loss functions are not just about data quantity — the optimization landscape itself is distorted. The model's gradient updates are dominated by the majority class regardless of dataset size unless you explicitly correct for it.",
-    readMore: { postId: "loss-functions-deep-dive", label: "Loss Functions Deep Dive" }
-  },
-
-  {
-    id: "ml-theory-4", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
-    question: "Adam uses a second moment estimate (v_t) to scale learning rates per parameter. What does this actually do to training?",
-    options: [
-      "It reduces the learning rate for all parameters uniformly to prevent divergence",
-      "It gives smaller effective learning rates to parameters that receive large gradients frequently, and larger learning rates to parameters that receive small gradients rarely",
-      "It normalizes gradients to have unit variance, making all parameters train at the same rate",
-      "It acts as a momentum term that smooths gradient updates over time"
-    ],
-    correct: 1,
-    explanation: "v_t accumulates the squared gradient for each parameter. Parameters with consistently large gradients (e.g., embeddings of common words) accumulate large v_t, which shrinks their effective learning rate (lr / √v_t). Parameters with small, rare gradients accumulate small v_t, giving them larger effective learning rates. This adaptive behavior helps rare features (uncommon tokens, rare user behaviors) learn effectively.",
-    trap: "Overclaim: Adam's adaptive learning rates always outperform SGD. Honest reframe: Adam finds minima faster but they can be sharper and generalize worse than SGD's minima on some tasks (particularly image classification). For transformers, AdamW (Adam + proper weight decay) is the standard.",
-    readMore: { postId: "optimizers-explained", label: "Optimizers: SGD, Adam, AdamW Explained" }
-  },
-
-  {
-    id: "ml-theory-5", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Your model has 95% validation accuracy but 78% production accuracy. Walk through your debugging process in priority order.",
-    options: [
-      "Retrain with more data → add regularization → check for label errors",
-      "Check for distribution shift between val and production → check for feature leakage in training → check label quality in production → check model serving correctness",
-      "Increase model capacity → collect more diverse training data → reduce learning rate",
-      "Run error analysis on val set → add data augmentation → increase ensemble size"
-    ],
-    correct: 1,
-    explanation: "17% accuracy gap almost always indicates distribution shift or leakage before it indicates model capacity issues. Priority: (1) Distribution shift — are production inputs different from validation inputs? (2) Feature leakage — are any training features not available at serving time? (3) Label quality — are production labels being collected correctly? (4) Serving bugs — is the preprocessing identical between training and serving? Only after ruling these out does model capacity matter.",
-    trap: "Overclaim: large train-production accuracy gaps indicate overfitting and require more regularization. Honest reframe: overfitting shows as train-val gap, not val-production gap. A val-production gap is almost always a data distribution problem, not a model capacity problem.",
-    readMore: { postId: "bias-variance-in-production", label: "Bias-Variance in Production" }
-  },
-
-  {
-    id: "ml-theory-6", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
-    question: "You compare two models on the same 1,000-example test set: Model A has 85% accuracy, Model B has 87% accuracy. Is Model B significantly better?",
-    options: [
-      "Yes — a 2% accuracy difference on 1,000 examples is statistically significant at p < 0.05",
-      "Not necessarily — you need a statistical test (McNemar's test or bootstrap confidence interval) to determine significance",
-      "Yes — with 1,000 examples you have sufficient statistical power for any practical difference",
-      "No — you need at least 10,000 examples for any comparison to be meaningful"
-    ],
-    correct: 1,
-    explanation: "A 2% accuracy difference on 1,000 examples corresponds to 20 more correct predictions. McNemar's test on the disagreement pattern would show this is not statistically significant (roughly p ≈ 0.15 depending on the disagreement distribution). With 10,000 examples, the same 2% difference would be highly significant. Always apply statistical tests before claiming model improvement.",
-    trap: "Overclaim: larger absolute differences are always statistically significant regardless of sample size. Honest reframe: statistical significance depends on sample size, effect size, and variance simultaneously. A 2% difference on 100 examples, 1,000 examples, and 100,000 examples have completely different significance levels.",
-    readMore: { postId: "statistical-testing-ml", label: "Statistical Testing for ML" }
-  },
-
-  {
-    id: "ml-theory-7", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You train 10 model variants and find that Variant 7 has the best validation metric with p = 0.03 vs baseline. Should you ship it?",
-    options: [
-      "Yes — p < 0.05 is the standard threshold for statistical significance",
-      "Not without multiple comparison correction — testing 10 variants inflates the false positive rate to ~40%; Bonferroni correction requires p < 0.005",
-      "Yes — comparing to a fixed baseline doesn't require multiple comparison correction",
-      "Only if Variant 7's improvement holds on a held-out test set you haven't seen"
-    ],
-    correct: 1,
-    explanation: "Testing 10 variants against a baseline: P(at least one false positive) = 1 - 0.95^10 ≈ 40%. Variant 7's p=0.03 has a high probability of being a false positive. Bonferroni correction: require p < 0.05/10 = 0.005. Alternatively, Benjamini-Hochberg FDR control is less conservative. Also valid: hold a separate test set used only for final validation of the winner — if it holds there, it's likely real.",
-    trap: "Overclaim: each comparison is independent so p < 0.05 is valid for each one. Honest reframe: independence of tests doesn't prevent family-wise error rate inflation. Running 20 independent comparisons guarantees roughly one false positive at α=0.05.",
-    readMore: { postId: "statistical-testing-ml", label: "Statistical Testing for ML" }
-  },
-
-  {
-    id: "ml-theory-8", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
-    question: "What's the difference between L1 and L2 regularization in terms of the solutions they produce?",
-    options: [
-      "L1 produces sparse solutions (many weights exactly zero); L2 produces small but non-zero weights",
-      "L1 is better for preventing overfitting; L2 is better for handling multicollinearity",
-      "L1 uses absolute value so it's computationally harder; L2 uses squared values so it's faster",
-      "L2 produces sparse solutions; L1 produces small but distributed weights"
-    ],
-    correct: 0,
-    explanation: "L1 (Lasso) penalty: the diamond-shaped constraint region has corners on the axes — optimization is likely to hit a corner, giving sparse solutions with many exactly-zero weights. L2 (Ridge) penalty: the circular constraint region has no corners — optimization lands somewhere on the circle, giving small but non-zero weights for all features. Use L1 when you believe most features are irrelevant. Use L2 when all features are likely relevant but should be small.",
-    trap: "Overclaim: L2 is always preferred because L1 is non-differentiable and harder to optimize. Honest reframe: L1's non-differentiability is a solved problem (subgradient methods, proximal gradient). The sparsity L1 produces is often exactly what you want for interpretability and feature selection.",
-    readMore: { postId: "bias-variance-in-production", label: "Bias-Variance in Production" }
-  },
-
-  {
-    id: "ml-theory-9", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You're designing an ablation study for a new RAG pipeline component (a query rewriter). What are the minimum requirements for a valid ablation?",
-    options: [
-      "Compare the full pipeline with and without the query rewriter on any reasonable test set",
-      "Fix all other components, use the same test set for both conditions, run multiple seeds, and apply a statistical test to the metric difference",
-      "Run the ablation on the validation set used for hyperparameter tuning to save compute",
-      "Compare on at least 3 different test sets to show generalization"
-    ],
-    correct: 1,
-    explanation: "Valid ablation requirements: (1) Only one variable changes — remove the query rewriter, nothing else. (2) Same test set — different test sets introduce evaluation variance. (3) Multiple seeds — a single run has high variance from random initialization and batch ordering. (4) Statistical test — is the metric difference larger than expected by chance? Without these, you can't attribute performance change to the component you removed.",
-    trap: "Overclaim: ablation studies are just A/B comparisons — run both systems on the same data and compare. Honest reframe: ablations are arguments, not observations. The validity of the argument depends on controlling for confounders (random seeds, test set variance, implementation differences).",
-    readMore: { postId: "experimental-design-ablations", label: "Experimental Design and Ablation Studies" }
-  },
-
-  {
-    id: "ml-theory-10", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
-    question: "AdamW differs from Adam in how it handles weight decay. Why does this matter?",
-    options: [
-      "AdamW applies weight decay to the gradient before the Adam update, making it equivalent to L2 regularization",
-      "Adam applies weight decay through L2 regularization added to the loss, which gets scaled by Adam's adaptive learning rates — making effective regularization non-uniform; AdamW decouples weight decay from gradient updates",
-      "AdamW removes weight decay entirely, relying on gradient clipping instead",
-      "The difference is purely numerical and doesn't affect model quality in practice"
-    ],
-    correct: 1,
-    explanation: "In Adam + L2: the regularization gradient (λθ) gets added to the gradient and then divided by √v_t. Parameters with large gradients (large v_t) get less effective regularization. AdamW applies weight decay directly: θ ← θ×(1-ηλ) - η×adam_update. Every parameter gets the same regularization regardless of gradient magnitude. This is the correct behavior and why GPT, BERT, and LLaMA all use AdamW.",
-    trap: "Overclaim: L2 regularization and weight decay are the same thing. Honest reframe: they're mathematically equivalent for SGD but different for adaptive optimizers like Adam. This was a known but ignored issue until Loshchilov & Hutter (2019) published the AdamW paper.",
-    readMore: { postId: "optimizers-explained", label: "Optimizers Explained" }
-  },
-
-  {
-    id: "ml-theory-11", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Your model achieves 90% precision and 40% recall on fraud detection. Your product team says precision is more important. The data scientist says recall matters more. Who's right and how do you resolve it?",
-    options: [
-      "The product team is right — false positives hurt customer experience more than missed fraud",
-      "The data scientist is right — missed fraud (false negatives) costs more money than false positives",
-      "Neither is categorically right — compute the business cost of a false positive and a false negative, then find the threshold that minimizes total expected cost",
-      "Use F1 score as a compromise between precision and recall"
-    ],
-    correct: 2,
-    explanation: "False positive cost: customer blocked from legitimate transaction → support ticket, churn risk, brand damage. Estimate: ₹500 per false positive. False negative cost: fraudulent transaction goes through → direct loss, chargeback fee, potential regulatory fine. Estimate: ₹5,000 per false negative. Optimal threshold: minimize (FP_count × 500 + FN_count × 5000). At this cost ratio, you should accept lower precision (more FPs) to improve recall (fewer FNs). The right threshold is a business decision, not a model decision.",
-    trap: "Overclaim: there's a universally correct trade-off between precision and recall that applies to all fraud systems. Honest reframe: the optimal threshold depends entirely on the cost structure of your specific business. A bank and a UPI app have completely different false positive and false negative costs.",
-    readMore: { postId: "how-id-build-fraud-detection", label: "How I'd Build Fraud Detection" }
-  },
-
-  {
-    id: "ml-theory-12", topic: "ml-fundamentals", difficulty: "medium", gated: false, type: "mcq",
-    question: "What does learning rate warmup do in transformer training, and why is it necessary?",
-    options: [
-      "Warmup prevents the model from memorizing training data in the first few steps",
-      "Warmup starts with a small learning rate to prevent large, unstable gradient updates when the model weights are randomly initialized and gradients are noisy",
-      "Warmup gradually increases batch size to match the learning rate",
-      "Warmup is a regularization technique that reduces overfitting in the early training phase"
-    ],
-    correct: 1,
-    explanation: "At initialization, transformer weights are random and gradients are noisy and large. Starting with a high learning rate causes large weight updates that can destabilize training or push weights into bad regions from which recovery is slow. Warmup linearly increases the learning rate from near-zero to the target LR over N steps (typically 1,000-10,000). By then, the model has found a better region of parameter space and gradients are more meaningful.",
-    trap: "Overclaim: warmup is unique to transformers and not needed for other architectures. Honest reframe: warmup helps any architecture with high learning rate targets, but it's particularly important for transformers because the attention mechanism is sensitive to initialization and the loss landscape is complex.",
-    readMore: { postId: "optimizers-explained", label: "Optimizers Explained" }
-  },
-
-  // ─── ML SYSTEM DESIGN ────────────────────────────────────────────────────────
-
-  {
-    id: "mlsysdesign-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You're designing a real-time fraud scoring system at 10,000 TPS with a 50ms SLA. Which feature computation approach is correct?",
-    options: [
-      "Compute all features in the request path — this ensures freshness and simplifies the architecture",
-      "Pre-compute batch features offline (user history, risk scores), stream velocity features via Kafka+Flink, serve both from a low-latency feature store; never compute expensive features in the request path",
-      "Use an async feature computation queue and respond with a preliminary score while features compute",
-      "Cache all features for each user-merchant pair and refresh them every hour"
-    ],
-    correct: 1,
-    explanation: "At 10,000 TPS with 50ms SLA, you have ~5-10ms for feature computation. Batch features (30-day transaction history, user risk score) are expensive to compute — pre-compute them in batch jobs and serve from Redis/DynamoDB (<1ms lookup). Velocity features (transactions in last 1 hour) change with each transaction — compute via streaming (Kafka→Flink) and keep in Redis. Never compute velocity features from raw transaction logs in the request path — it won't fit in the latency budget at this scale.",
-    trap: "Overclaim: real-time feature freshness requires computing all features in the request path. Honest reframe: real-time freshness for velocity features requires a streaming feature pipeline that precomputes and maintains these aggregations in a low-latency store. Computing from scratch in the request path is a non-starter at scale.",
-    readMore: { postId: "how-id-build-fraud-detection", label: "How I'd Build Fraud Detection" }
-  },
-
-  {
-    id: "mlsysdesign-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Your LTR (learning to rank) model for e-commerce search uses historical click data. What's the main validity threat to your training labels?",
-    options: [
-      "Clicks are too sparse — most queries have fewer than 10 historical clicks",
-      "Position bias — items shown at rank 1 get clicked more due to their position, not their relevance; the model learns to recommend popular positions rather than relevant items",
-      "Click timestamps are unreliable because of network latency in log collection",
-      "Historical clicks reflect past relevance but products change over time"
-    ],
-    correct: 1,
-    explanation: "Position bias is the fundamental validity threat in learning from clicks. An item shown at rank 1 gets 10x more clicks than the same item at rank 5, regardless of quality. Training on raw clicks teaches the model that rank-1 items are always better. Fix: Inverse Propensity Scoring (IPS) — weight each click by 1/P(item was seen at its position), estimated from randomization experiments. Or use pairwise loss only on items shown at the same position.",
-    trap: "Overclaim: position bias can be ignored if you have enough click data. Honest reframe: more data amplifies position bias — you get more confident estimates of the biased signal. The only fix is to correct for the propensity scores, not collect more biased data.",
-    readMore: { postId: "how-id-build-search-ranking-ecommerce", label: "How I'd Build Search Ranking" }
-  },
-
-  {
-    id: "mlsysdesign-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Design question: you need to add a 'sponsored items' insertion layer to a recommendation feed without degrading organic recommendation quality metrics. What's your approach?",
-    options: [
-      "Train a single model that jointly optimizes organic relevance and sponsored item insertion probability",
-      "Apply sponsored item insertion as a post-ranking re-ranking layer with guaranteed slot positions; measure organic quality metrics on non-sponsored slots separately from overall feed metrics",
-      "Use A/B testing to find the sponsored insertion ratio that doesn't hurt key metrics",
-      "Let the ranking model naturally learn to balance organic and sponsored items through training on user engagement"
-    ],
-    correct: 1,
-    explanation: "Joint optimization couples business monetization objectives with organic relevance — sponsored items will corrupt the organic quality signal. Separate layers: (1) Organic ranking runs independently with standard relevance objective. (2) Sponsored insertion layer inserts ads at contracted positions after organic ranking. (3) Measure organic quality (NDCG, CTR on non-ad positions) independently of overall feed metrics. This keeps the ML system accountable for relevance while the business layer handles monetization.",
-    trap: "Overclaim: jointly training on both objectives will naturally find the optimal balance. Honest reframe: jointly training organic and sponsored objectives leads to the model implicitly deprioritizing organic relevance to satisfy the sponsored constraint. Architectural separation is the right design — it makes each component auditable and tunable independently.",
-    readMore: { postId: "how-id-build-recommendation-feed", label: "How I'd Build a Recommendation Feed" }
-  }
-,
-
-  // ─── FIRST PRINCIPLES ──────────────────────────────────────────────────────
-  { id: "firstp-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In MAP estimation with a Gaussian prior N(0, σ²) on weights, what is the exact equivalent regularization term added to the MLE objective?",
-    options: ["λ||θ||₁ where λ = 1/σ", "λ||θ||² where λ = 1/(2σ²)", "λ||θ||² where λ = σ²", "λ||θ||₁ where λ = 1/(2σ)"],
-    correct: 1,
-    explanation: "The Gaussian prior contributes log P(θ) = -θ²/(2σ²) + const to the MAP objective. Maximizing this is equivalent to minimizing θ²/(2σ²) = (1/2σ²)||θ||². So λ = 1/(2σ²). L2 regularization IS MAP with a Gaussian prior — not a heuristic, a derivation.",
-    trap: "L2 regularization feels like a penalty trick. It is MAP estimation under a Gaussian prior. When you tune λ you are choosing how tight your prior is.",
-    readMore: { postId: "bayesian-reasoning-ml", label: "MAP vs MLE derivation" } },
-
-  { id: "firstp-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In the attention mechanism, why is the dot product scaled by 1/√d_k before the softmax?",
-    options: ["To normalize the output to sum to 1", "To prevent the dot products from growing large enough to push softmax into saturation regions where gradients vanish", "To ensure the attention weights are always less than 1", "To match the scale of the value vectors"],
-    correct: 1,
-    explanation: "For d_k-dimensional query/key vectors with unit variance components, the dot product q·k has variance d_k. So std(q·k) = √d_k. Large-magnitude inputs push softmax toward one-hot outputs — the gradient becomes nearly zero everywhere except the argmax. Scaling by 1/√d_k keeps variance at 1 regardless of d_k, keeping gradients healthy during training.",
-    trap: "Many candidates say 'to normalize it' — that's what softmax does. The scaling is specifically about preventing gradient vanishing from softmax saturation at large d_k.",
-    readMore: { postId: "attention-from-scratch", label: "Attention from scratch" } },
-
-  { id: "firstp-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Adam optimizer maintains two moment estimates. What specific problem does the second moment (v_t) solve that the first moment (m_t) alone cannot?",
-    options: ["It prevents the learning rate from growing too large", "It provides per-parameter adaptive learning rates — parameters with consistently large gradients get smaller effective LR, sparse parameters get larger effective LR", "It corrects for momentum overshooting", "It removes the need for weight decay"],
-    correct: 1,
-    explanation: "m_t is an exponential moving average of gradients — momentum. v_t is an EMA of squared gradients — estimates gradient variance per parameter. Dividing by √v_t gives each parameter its own adaptive learning rate: high-variance (frequently-updated, embedding dimensions) parameters get LR shrunk, low-variance (sparse/infrequent) parameters get LR amplified. This is why Adam dominates SGD on sparse features like NLP embeddings.",
-    trap: "The first moment alone is SGD with momentum. The innovation in Adam is the second moment enabling per-parameter learning rates — critical for embeddings where most parameters receive zero gradient on any given batch.",
-    readMore: { postId: "optimizers-explained", label: "Adam second moment explained" } },
-
-  { id: "firstp-4", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "What is the mathematical relationship between cross-entropy loss and KL divergence from the true distribution P to the model distribution Q?",
-    options: ["Cross-entropy H(P,Q) = KL(P||Q) exactly", "Cross-entropy H(P,Q) = H(P) + KL(P||Q), where H(P) is the entropy of the true distribution", "Cross-entropy H(P,Q) = KL(P||Q) - H(P)", "Cross-entropy and KL divergence measure different things with no direct relationship"],
-    correct: 1,
-    explanation: "H(P,Q) = -Σ P(x) log Q(x). KL(P||Q) = Σ P(x) log(P(x)/Q(x)) = Σ P(x) log P(x) - Σ P(x) log Q(x) = -H(P) + H(P,Q). So H(P,Q) = H(P) + KL(P||Q). Since H(P) is fixed (true labels don't change during training), minimizing cross-entropy IS minimizing KL divergence. This is why cross-entropy loss is the right loss for classification — it's minimizing the divergence between predicted and true distributions.",
-    trap: "Cross-entropy is not the same as KL divergence. It equals KL divergence plus the entropy of the true distribution. Since the true distribution entropy is constant during training, minimizing cross-entropy minimizes KL divergence — but the two quantities differ by H(P).",
-    readMore: { postId: "how-surprised-is-the-model", label: "Entropy and loss in LLMs" } },
-
-  { id: "firstp-5", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In BPR (Bayesian Personalized Ranking) for recommendation, what is the core assumption that justifies the pairwise ranking objective?",
-    options: ["Users have explicit ratings for all items", "A user prefers an item they interacted with over an item they haven't interacted with — we can train on these relative preferences even without negative feedback", "Items can be ranked by absolute relevance scores", "The model must see all items at training time"],
-    correct: 1,
-    explanation: "Implicit feedback (clicks, purchases) gives you positive pairs only — you know what a user engaged with, not what they disliked. BPR assumes: for user u, item i (interacted) > item j (not interacted). The objective maximizes P(score(u,i) > score(u,j)) = σ(score(u,i) - score(u,j)). This converts implicit data into a ranking problem without needing explicit negatives. The key insight: you're not predicting absolute relevance, you're predicting relative preference.",
-    trap: "Standard cross-entropy loss requires negative labels. Implicit feedback has no negatives — only positives and unknowns. BPR treats unobserved interactions as 'less preferred' relative to observed ones, not as 'definitely bad'.",
-    readMore: { postId: "collaborative-filtering-deep-dive", label: "BPR for implicit feedback" } },
-
-  { id: "firstp-6", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "AdamW differs from Adam + L2 regularization. Why does this difference matter in practice?",
-    options: ["AdamW is faster to compute", "In Adam, L2 adds to the gradient, which then gets scaled by the adaptive second moment — effectively weakening weight decay for parameters with large gradients. AdamW applies weight decay directly to weights, independent of the adaptive scaling.", "AdamW removes the need for a learning rate schedule", "AdamW prevents gradient explosion"],
-    correct: 1,
-    explanation: "Adam with L2 reg: gradient = ∇L + λθ, then divided by √v_t (second moment). Parameters with large gradients have large v_t, so the weight decay term λθ/√v_t is also shrunk — less regularization exactly where you might need it most. AdamW: update = -lr * m_t/√v_t - lr * λ * θ. Weight decay is applied directly, not scaled by the second moment. Empirically, AdamW trains more stable, generalizes better, and is the default for modern transformers (GPT, BERT fine-tuning).",
-    trap: "Many people think 'Adam with weight_decay=λ' is the same as AdamW. It's not — that's Adam with L2. The coupling between the adaptive scaling and weight decay in Adam is the bug. AdamW decouples them.",
-    readMore: { postId: "optimizers-explained", label: "AdamW vs Adam" } },
-
-  // ─── RESEARCH TASTE ───────────────────────────────────────────────────────────
-  { id: "restaste-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A paper reports their method achieves 84.2 on a benchmark, vs. the previous best of 83.7. What is the most important question to ask before trusting this claim?",
-    options: ["What model architecture did they use?", "Were confidence intervals / standard deviations reported across multiple runs, and is the improvement statistically significant?", "Did they use data augmentation?", "What hardware did they use for training?"],
-    correct: 1,
-    explanation: "A 0.5-point improvement from a single run is noise. With variance across seeds, that improvement could disappear or reverse. Strong ML results report mean ± std over at least 3 seeds on a fixed held-out test set, with a statistical test (McNemar's or bootstrap confidence interval). Most papers don't. If std isn't reported, the improvement should be treated as unconfirmed.",
-    trap: "Architecture and hardware questions matter for reproducibility but not for whether the reported improvement is real. The statistical significance question is the one that determines whether the number in the table reflects a genuine improvement.",
-    readMore: { postId: "reading-ml-papers-critically", label: "Reading ML papers critically" } },
-
-  { id: "restaste-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You're evaluating a paper where the proposed method outperforms all baselines. On inspection, you notice the baseline hyperparameters are taken from the original baseline papers (different datasets, different tasks). What's the problem?",
-    options: ["Using hyperparameters from original papers is standard practice", "The baselines are likely under-tuned for this specific task and dataset — the comparison is unfair. The gap may reflect tuning effort rather than method superiority.", "The paper should have used newer baselines", "Hyperparameter transfer between tasks is well-established"],
-    correct: 1,
-    explanation: "Tuning your own method extensively while using out-of-the-box hyperparameters for baselines is a common source of illusory improvements. The baseline was tuned for a different dataset by different researchers. On this new task/dataset, it could perform significantly better with proper tuning. Fair comparison requires giving each method the same hyperparameter search budget — or at minimum, re-tuning baselines on the same validation set.",
-    trap: "Taking baseline numbers from the original paper feels like giving credit to prior work. It's often the opposite — it's using numbers that weren't optimized for your setup, making your method look better by comparison.",
-    readMore: { postId: "reading-ml-papers-critically", label: "Baseline selection flaws" } },
-
-  { id: "restaste-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "An LLM achieves 89% on MMLU, which is above the reported 'human baseline' of 87%. What is the most serious concern about this comparison?",
-    options: ["The human baseline may be from a different demographic", "MMLU questions may have appeared in the model's pretraining data (contamination), and human baseline was measured on people who hadn't seen the questions before — the comparison is not apples-to-apples", "The model used more parameters than a human brain", "MMLU is too easy for large models"],
-    correct: 1,
-    explanation: "MMLU was published in 2020. LLMs trained on internet data have likely seen MMLU questions in training corpora. Humans taking MMLU are seeing the questions for the first time in a controlled setting. Comparing these is measuring different things: one is memorization + reasoning, the other is reasoning alone. Without a contamination analysis (e.g., testing on held-out questions written after training cutoff), the comparison is not valid.",
-    trap: "Passing human-level on a benchmark sounds like a milestone. On contaminated benchmarks it's not. The comparison requires both the model and the humans to be evaluated under equivalent conditions — which contamination breaks.",
-    readMore: { postId: "benchmark-overfitting-goodhart", label: "Benchmark contamination" } },
-
-  { id: "restaste-4", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Goodhart's Law applied to ML evaluation: a team optimizes their recommendation model for CTR (click-through rate) over 6 months. CTR improves 15%. User complaints about recommendation quality increase. What most likely happened?",
-    options: ["The model overfit to the training data", "CTR optimization selected for clickbait, sensationalism, or misleading thumbnails that get clicks but don't satisfy users — the metric and the goal decoupled", "The model has high variance", "Users became more critical over time"],
-    correct: 1,
-    explanation: "CTR measures whether users click, not whether they're satisfied. Optimizing purely for CTR incentivizes recommendations that are surprising, provocative, or misleading — content that gets clicks but leaves users feeling manipulated. This is Goodhart's Law: the measure (CTR) was a proxy for the goal (user satisfaction), but once it became the target, the system found ways to maximize it that didn't improve the underlying goal. Fix: multi-objective optimization including watch time, return rate, and explicit satisfaction signals.",
-    trap: "Overfitting is a model generalization problem. This is a metric-goal misalignment problem — the model is doing exactly what it was trained to do, just on the wrong objective.",
-    readMore: { postId: "benchmark-overfitting-goodhart", label: "Goodhart's Law in ML" } },
-
-  // ─── HIGH-TC PREP ─────────────────────────────────────────────────────────────
-  { id: "hightc-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a high-TC AI company interview, you're asked to 'design a search ranking system for 500M users.' Before drawing any architecture, what is the single most important clarification to make?",
-    options: ["What cloud provider will be used?", "What is the latency budget at p99, and what breaks if you miss it?", "How many engineers will be on the team?", "What query volume do you expect?"],
-    correct: 1,
-    explanation: "Latency budget determines the entire architecture. 50ms p99 → precomputed or approximate retrieval only, no neural ranker at query time, HNSW index mandatory. 500ms p99 → you can afford a small neural ranker on a candidate set. 2s p99 → batch reranking is possible. Query volume matters but can be scaled horizontally. Latency budget is a hard architectural constraint that cascades through every design decision. It's the first clarification that unlocks the rest.",
-    trap: "QPS (query volume) sounds like the scale question, and it is — but it's addressable by horizontal scaling. Latency is a physical constraint on the design. A system that works at 100ms p99 cannot be easily modified to work at 50ms without architectural changes.",
-    readMore: { postId: "ambiguous-system-design-framework", label: "The no-spec system design framework" } },
-
-  { id: "hightc-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a Cohere/Anthropic-style interview, you're asked 'Why does temperature scaling work for model calibration?' What's the correct first-principles answer?",
-    options: ["It smooths the probability distribution", "The softmax function's sharpness is controlled by the logit magnitudes. Modern neural networks produce overconfident logits (too large). Dividing by T > 1 scales logits down, producing softer probability distributions that better match empirical frequencies — without changing the argmax or retraining.", "It reduces entropy", "It prevents the model from being overconfident by adding noise"],
-    correct: 1,
-    explanation: "Calibration problem: neural nets produce softmax outputs where argmax is correct but the probability magnitude (e.g., 0.97) doesn't match empirical accuracy (e.g., 0.72). Temperature T > 1 divides all logits by T before softmax. This flattens the distribution — less extreme probabilities. T is found by minimizing NLL on a held-out calibration set (not the test set). It works because it fixes the logit scale without touching the rank ordering or requiring retraining.",
-    trap: "Many candidates say 'it softens the distribution' — correct but not mechanistic. The interviewer wants to hear that overconfident logits are the root cause and that T corrects the logit scale. Bonus: mentioning that T doesn't change argmax, so accuracy is preserved while calibration improves.",
-    readMore: { postId: "calibration-ece-from-scratch", label: "Calibration and temperature scaling" } },
-
-  { id: "hightc-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A staff AI engineer joins a new team. In the first week, what should they do first?",
-    options: ["Identify the biggest technical debt and propose a rewrite", "Talk to users of the current system and read the on-call runbook before touching the code", "Set up their development environment and run the tests", "Present a 30/60/90-day plan to the team"],
-    correct: 1,
-    explanation: "The most common staff+ failure mode is proposing architecture changes before understanding what's actually failing in production. The on-call runbook shows what breaks, how often, and what the workarounds are — this is the ground truth about system health. User interviews (internal or external) show what the system is supposed to do vs. what it actually does. Both precede any technical opinion. The 30/60/90 plan is manager work; the runbook is engineering work. Dev setup is table stakes, not strategy.",
-    trap: "The rewrite impulse is almost always wrong in week 1. You don't know what you don't know. The system that looks messy from the outside usually has embedded knowledge about failure modes that would be lost in a clean rewrite.",
-    readMore: { postId: "high-tc-ai-company-interviews", label: "What high-TC companies test" } },
-,
-
-  // ─── RESEARCH ENGINEER ────────────────────────────────────────────────────────
-  { id: "re-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a Research Engineer coding round, you're given the NT-Xent loss from SimCLR and 45 minutes to implement it. The key numerical stability issue to handle is:",
-    options: ["Gradient clipping to prevent exploding gradients", "Log-sum-exp trick to prevent overflow when computing the denominator of the softmax over similarity scores", "Normalizing the loss by batch size", "Using float64 instead of float32"],
-    correct: 1,
-    explanation: "NT-Xent computes exp(sim(z_i, z_j)/τ) / Σ_k exp(sim(z_i, z_k)/τ). When similarities are large, exp() overflows to inf. The log-sum-exp trick: log(Σ exp(x_k)) = max(x) + log(Σ exp(x_k - max(x))). Subtracting the max before exponentiation prevents overflow without changing the result. This is the implementation detail that separates candidates who've actually coded contrastive loss from those who've only read about it.",
-    trap: "Gradient clipping is a training stability trick unrelated to the numerical stability of the loss computation itself. The overflow happens in the forward pass.",
-    readMore: { postId: "research-engineer-interview", label: "Research Engineer interview guide" } },
-
-  { id: "re-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You're reviewing a paper that proposes a new retrieval method and reports 3% improvement over DPR on NaturalQuestions. The first thing to check is:",
-    options: ["Whether the authors are from a well-known institution", "Whether DPR was fine-tuned on NaturalQuestions training data specifically, as DPR was originally trained on NQ — using a re-run of DPR vs. the paper's reported numbers may reflect tuning differences not method differences", "Whether the improvement holds on out-of-domain datasets", "Whether they used the same embedding dimension"],
-    correct: 1,
-    explanation: "DPR was trained on NaturalQuestions. Comparing a new method to DPR on NQ requires ensuring the DPR baseline used the same training data and checkpoint. Papers often report DPR numbers from the original paper (which used full NQ training data) while their own method uses a different split or data cleaning. This 'apples to oranges' baseline comparison is one of the most common sources of illusory improvements in retrieval papers.",
-    trap: "Out-of-domain generalization matters but is secondary. The first question is whether the comparison is even valid on the reported dataset.",
-    readMore: { postId: "reading-ml-papers-critically", label: "Baseline selection flaws" } },
-
-  { id: "re-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a Research Engineer interview, you're asked to design an experiment to test: 'Instruction tuning improves zero-shot performance more than adding few-shot examples.' What is the critical control variable most candidates miss?",
-    options: ["The number of instruction tuning steps", "The token count must be matched — instruction tuning adds tokens to training, few-shot adds tokens at inference. Comparing the two without controlling for total token exposure confounds method with scale.", "The learning rate during instruction tuning", "Whether to use LoRA or full fine-tuning"],
-    correct: 1,
-    explanation: "Instruction tuning sees more task-relevant tokens during training. Few-shot adds those tokens at inference. If instruction tuning uses 100K examples of 500 tokens each, you've added 50M tokens of task exposure. Few-shot adds maybe 2K tokens per inference call. These are not the same intervention at the same scale. A rigorous experiment would either match token exposure or explicitly acknowledge the confound and argue why it doesn't matter for the comparison.",
-    trap: "LoRA vs. full fine-tuning is an important choice but secondary to the confound. You can run the experiment either way — the token exposure confound exists regardless.",
-    readMore: { postId: "research-engineer-interview", label: "Experimental design round" } },
-
-  { id: "re-4", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "When asked 'what's the most important unsolved problem in RAG systems?' in a Research Engineer interview, which answer best demonstrates research taste?",
-    options: ["Hallucination — models still make things up", "The retrieval-generation mismatch: retrieved documents are optimized for lexical/semantic similarity to the query, not for what the generator actually needs to answer correctly. Current dense retrieval cannot model 'what context would help the LLM?' as the objective.", "Latency — RAG is too slow for production", "Context window limits restrict how many documents can be retrieved"],
-    correct: 1,
-    explanation: "Hallucination is real but vague — it doesn't name a specific research gap or suggest a research direction. Latency and context window are engineering constraints, not research problems. The retrieval-generation mismatch identifies a specific gap: dense retrieval is trained with labels 'is this document relevant to the query?' but the true objective is 'does this document help the model answer the query?' These are different. Papers like FLARE, RAT, and REALM attempt this — knowing them shows you've engaged with the literature.",
-    trap: "Hallucination is the obvious answer and therefore the weakest one in a research taste round. They want to see you've identified a specific technical gap with a research direction attached.",
-    readMore: { postId: "research-engineer-interview", label: "Open problems round" } },
-
-  { id: "re-5", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You implement attention from the Vaswani et al. paper and your outputs don't match PyTorch's F.scaled_dot_product_attention. Most likely cause:",
-    options: ["Float32 vs float16 precision difference", "Mask handling — PyTorch uses additive masking (add -inf before softmax) while many implementations incorrectly use multiplicative masking (multiply by 0 after softmax), which doesn't prevent attention to masked positions after softmax normalization", "Different random seed for weight initialization", "Missing layer normalization"],
-    correct: 1,
-    explanation: "Multiplicative masking: attention_weights * mask. Problem: softmax is applied before masking. Softmax converts logits to probabilities that sum to 1. Multiplying by 0 after softmax gives 0 weight to masked positions, but the remaining weights no longer sum to 1 — you've broken the probability distribution. Additive masking: add -inf to masked logits BEFORE softmax. exp(-inf) = 0, so masked positions get zero probability, and remaining positions still sum to 1. This is the correct implementation.",
-    trap: "Precision differences cause small numerical errors, not qualitatively wrong attention patterns. Mask handling causes structurally wrong outputs that fail tests clearly.",
-    readMore: { postId: "attention-from-scratch", label: "Attention from scratch" } },
-
-  { id: "re-6", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A paper claims their method achieves 'state-of-the-art' on three benchmarks. In your critique, you note the ablation table shows removing Component A drops performance by 0.1% while removing Component B drops it by 2.3%. What is the strongest critique?",
-    options: ["The paper should have included more benchmarks", "The paper's contribution is essentially Component B — Component A adds complexity for negligible gain. The 'method' as presented bundles an important contribution with unnecessary complexity, obscuring what actually works.", "The authors should have compared against more baselines", "The improvement on benchmark 3 is within the margin of error"],
-    correct: 1,
-    explanation: "Good research isolates what works. If Component A contributes 0.1% and Component B contributes 2.3%, the paper is selling a two-component method when the contribution is really Component B alone. Component A adds implementation complexity, reproducibility risk, and compute cost for near-zero benefit. A rigorous paper would either drop Component A or explicitly argue why the 0.1% gain justifies the complexity. This critique shows you read ablations to understand what drives results, not just to check that ablations exist.",
-    trap: "The margin-of-error point about benchmark 3 is valid but generic. The ablation critique is specific and shows you understand how to extract signal from experimental results.",
-    readMore: { postId: "reading-ml-papers-critically", label: "Missing ablations" } },
-
-  { id: "re-7", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "When implementing LoRA from scratch, the correct initialization for the B matrix (the up-projection) is:",
-    options: ["Random normal initialization same as A", "Zero initialization — so that at the start of training, W + BA = W (the original pretrained weights), making the adaptation start from the pretrained model rather than a random perturbation", "Xavier initialization", "Identity matrix"],
-    correct: 1,
-    explanation: "LoRA adds BA to the pretrained weight W, where A is randomly initialized and B is zero-initialized. At step 0: W + BA = W + B·0 = W. The full model starts identical to the pretrained model. Only A is random — the product BA is zero because B is zero. As training proceeds, B learns to up-project A's low-rank representation. If B were randomly initialized, the model would start with a randomly perturbed version of the pretrained weights — destroying the pretrained knowledge at initialization.",
-    trap: "Xavier initialization is correct for training from scratch. For LoRA, the constraint is that the adaptation starts at zero (BA=0), which requires B=0 regardless of how A is initialized.",
-    readMore: { postId: "lora-from-scratch", label: "LoRA from scratch" } },
-
-  { id: "re-8", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In the reparameterization trick for VAEs, why can't you backpropagate through z ~ N(μ, σ²) directly?",
-    options: ["The normal distribution is not differentiable", "Sampling is a stochastic operation with no defined gradient with respect to μ and σ — you can't differentiate through a random draw. The reparameterization z = μ + σ·ε, ε ~ N(0,1) moves the randomness to ε (which doesn't depend on parameters), making z a deterministic function of μ, σ, and ε.", "The KL term makes backpropagation unstable", "You need to use the straight-through estimator instead"],
-    correct: 1,
-    explanation: "∂z/∂μ and ∂z/∂σ are undefined when z is sampled — there's no gradient of a random draw with respect to distribution parameters. The reparameterization z = μ + σε makes z deterministic given ε. Now ∂z/∂μ = 1 and ∂z/∂σ = ε. The gradient flows through z to μ and σ, enabling the encoder to learn via backpropagation. ε is just a source of randomness with no parameters to optimize.",
-    trap: "The straight-through estimator is for discrete latent variables where reparameterization doesn't apply. For continuous Gaussian latents, reparameterization is the standard solution.",
-    readMore: { postId: "probabilistic-graphical-models", label: "Latent variable models and VAEs" } },
-
-  { id: "re-9", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A paper reports a new pretraining objective that improves downstream GLUE score by 1.2 points. The ablation shows the gain comes from a specific masking strategy. What experiment would you run first to check if this result is real?",
-    options: ["Replicate with 5 random seeds and report mean ± std", "Test whether the masking strategy helps equally on BIG-Bench Hard and MMLU — if the gain is specific to GLUE-style tasks, it may reflect GLUE-adjacent pretraining rather than general capability improvement", "Increase the model size to see if the gain scales", "Test on a different tokenizer"],
-    correct: 1,
-    explanation: "A 1.2-point GLUE improvement from a masking strategy could reflect: (1) genuine improvement in language understanding, or (2) the masking strategy encouraging pretraining patterns similar to GLUE tasks (masked spans, sentence-pair reasoning). The falsification test is cross-benchmark consistency. If BIG-Bench Hard shows no improvement, the result is likely GLUE-specific. Multiple seeds is important for statistical validity but doesn't address the generalization question.",
-    trap: "Multiple seeds answers 'is this result statistically significant on GLUE?' not 'does this result reflect genuine capability improvement?' The cross-benchmark test answers the harder question.",
-    readMore: { postId: "benchmark-overfitting-goodhart", label: "When benchmark improvements don't transfer" } },
-
-  { id: "re-10", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a Research Engineer interview open-problem round on efficient inference, which framing best demonstrates research taste?",
-    options: ["Quantization still loses accuracy at INT4", "The memory bandwidth bottleneck in autoregressive generation: each token requires loading all KV cache and model weights from HBM, so generation throughput is bound by memory bandwidth, not compute. The interesting research question is architectures that reduce this bound — not by compressing weights but by reducing the number of sequential memory reads per token.", "Speculative decoding doesn't work for all models", "Context windows are still too short"],
-    correct: 1,
-    explanation: "Quantization accuracy and speculative decoding limitations are known engineering problems with active solutions. The memory bandwidth framing identifies the fundamental bottleneck: generation is memory-bound, not compute-bound. This means bigger GPUs don't help proportionally — you need architectures that generate multiple tokens per memory read (speculative decoding, Medusa) or reduce cache size per token (GQA, MLA). Framing the problem as 'sequential memory reads per token' opens a research direction rather than naming a known limitation.",
-    trap: "Context window length is an engineering constraint. The memory bandwidth framing is a research insight — it explains why the constraint is hard and what class of solutions could address it.",
-    readMore: { postId: "research-engineer-interview", label: "Research Engineer open problems round" } },
-
-  // ─── STAFF / LEAD ─────────────────────────────────────────────────────────────
-  { id: "staff-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You join as staff ML engineer. The recommendation system has 'high technical debt.' What is the first thing to do in week 1?",
-    options: ["Propose a rewrite using a modern two-tower architecture", "Read the on-call runbook to understand what actually breaks, how often, and what the manual workarounds are — before forming any technical opinion", "Set up a team meeting to present your experience and approach", "Run the test suite to understand coverage"],
-    correct: 1,
-    explanation: "The on-call runbook is the ground truth of system health. It tells you what breaks (not what looks messy in code review), what the team has learned the hard way, and where manual intervention is still required. Technical debt that never fires an alert is low priority. Technical debt that fires alerts at 3am every Tuesday is the actual problem. Proposing a rewrite before reading the runbook signals you haven't understood the system — because you haven't.",
-    trap: "The rewrite instinct is almost always wrong in week 1. The existing system has embedded knowledge about failure modes that a rewrite loses. The runbook is where that knowledge lives.",
-    readMore: { postId: "staff-ai-engineer-week-one", label: "Staff AI engineer week 1" } },
-
-  { id: "staff-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "As a staff AI engineer, you need to decide whether to build a custom embedding model or use a third-party API for a new feature. The correct framing is:",
-    options: ["Build is always better for long-term control", "Map the decision to reversibility: API is reversible (switch providers, bring in-house later), custom build is expensive to reverse. Unless the API can't meet quality/latency/cost requirements, start with the API and collect data to inform whether a custom model is justified.", "Buy until you reach 1M users then build", "Custom models always outperform APIs on domain-specific tasks"],
-    correct: 1,
-    explanation: "The reversibility frame: API integration can be replaced in days. A custom model trained on 6 months of data cannot be undone — it becomes a dependency. Start with the API: it ships faster, costs less upfront, and produces production traffic that becomes training data for the eventual custom model. Build custom only when the API demonstrably can't meet quality/latency/cost/privacy requirements AND you have enough domain data to justify it. This is the staff engineer's decision framework — not 'build vs. buy' as ideology.",
-    trap: "The 1M user threshold is cargo-cult wisdom. The real signal is: does the API's performance gap cost enough (in user outcomes or money) to justify the custom build cost and maintenance burden?",
-    readMore: { postId: "staff-ai-engineer-week-one", label: "Staff engineer decision frameworks" } },
-
-  { id: "staff-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A mid-level engineer on your team proposes a solution to a recurring production problem. Their approach is technically sound but not how you would have done it. As staff engineer, the right move is:",
-    options: ["Rewrite it your way to ensure quality", "Publicly endorse the proposal in the design review if it's sound, suggest the one most important change as a comment rather than a redesign, and let them own it — sponsorship transfers credibility and develops the engineer", "Schedule a 1:1 to explain your preferred approach", "Ask them to add more documentation before proceeding"],
-    correct: 1,
-    explanation: "Staff influence operates through sponsorship. A technically sound solution that isn't your preferred approach is still a good outcome. Rewriting it is demoralizing, signals distrust, and removes ownership. Suggesting the one most important change in a comment respects their ownership while adding value. Public endorsement in the design review makes the proposal more likely to move forward AND builds the mid-level engineer's credibility with the team. This compounds — sponsored engineers become the next generation of senior engineers who solve problems without your involvement.",
-    trap: "Asking for more documentation before proceeding is a passive block — it delays the work without adding value. If the proposal is sound, approve it.",
-    readMore: { postId: "engineering-influence-without-authority", label: "Engineering influence without authority" } },
-
-  { id: "staff-4", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Your team is stuck in analysis paralysis on a design decision. The most effective staff engineer intervention is:",
-    options: ["Escalate to the engineering manager to make the decision", "Apply the reversibility frame: ask 'how hard is this to reverse in 6 months?' If not hard, make a provisional decision now with an explicit revisit trigger, rather than waiting for certainty that won't come", "Commission a technical spec comparing all options", "Run a team vote"],
-    correct: 1,
-    explanation: "Analysis paralysis usually means the team is treating a reversible decision as irreversible. The reversibility frame breaks the deadlock: if the decision can be undone cheaply, the cost of a wrong decision is low — make it now and learn. Define the revisit trigger explicitly ('if metric X drops below Y in 3 months, we revisit'). This converts the decision from 'permanent choice under uncertainty' to 'experiment with defined success criteria.' Most technical decisions are more reversible than they feel.",
-    trap: "Escalating to the manager abdicates the staff engineer's job. Design decisions at the technical level should be resolved at the technical level — that's what staff engineers are for.",
-    readMore: { postId: "engineering-influence-without-authority", label: "The reversibility frame" } },
-
-  { id: "staff-5", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A team wants to adopt a new ML framework across all their services. As the staff engineer for the platform, you disagree with the choice. The most effective influence approach is:",
-    options: ["Write a document arguing for your preferred framework", "Build a working prototype on the proposed framework using their actual data and use case, show where it works and where it breaks, then propose the decision criteria explicitly — let the team make a better-informed choice", "Block the RFC until they agree with you", "Agree publicly and write down your concerns privately"],
-    correct: 1,
-    explanation: "A working demo collapses uncertainty faster than any document. 'This framework breaks on our data at scale' is abstract. 'Here is the prototype timing out on our 10M-row dataset' is concrete. By building the prototype, you demonstrate engagement rather than opposition, surface real failure modes rather than hypothetical ones, and give the team evidence to make the decision themselves. This is more durable than winning an argument — the team has ownership of the conclusion.",
-    trap: "Writing a document arguing for your view is an opinion doc, not a decision doc. It creates debate rather than convergence. The prototype is the opinion doc made concrete and falsifiable.",
-    readMore: { postId: "engineering-influence-without-authority", label: "Working demo as influence tool" } },
-
-  { id: "staff-6", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You inherit a production ML system with no monitoring. What is the highest-priority monitoring to add first?",
-    options: ["Model accuracy on a held-out test set", "Input distribution monitoring — track feature distributions in production vs. training. Distribution shift is the leading cause of silent model degradation and will alert you to problems before accuracy drops.", "Prediction latency at p99", "Infrastructure cost per request"],
-    correct: 1,
-    explanation: "Accuracy on a held-out set requires labels, which are often unavailable or delayed in production. Latency and cost are infrastructure metrics that don't tell you about model behavior. Input distribution monitoring is available immediately (no labels needed) and is a leading indicator: if the distribution of incoming requests shifts from training, accuracy will degrade — often silently, often for days before anyone notices. Track: feature value distributions, null rates, out-of-vocabulary rates for categorical features, embedding drift. Alert when PSI (Population Stability Index) exceeds threshold.",
-    trap: "Model accuracy is what you ultimately care about, but it requires labels. Input distribution monitoring is the proxy that's available in real-time without labels.",
-    readMore: { postId: "drift-detection-production", label: "Drift detection in production" } },
-
-  { id: "staff-7", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a staff-level system design interview, you're asked to design a recommendation system for 500M users. Before drawing any architecture, the single most important clarification is:",
-    options: ["What cloud provider will be used?", "What is the latency budget at p99, and what happens if you miss it? (user-facing timeout vs. async enrichment are completely different architectures)", "How many engineers will maintain it?", "What is the expected query volume?"],
-    correct: 1,
-    explanation: "Latency budget is the architectural constraint that cascades to every design decision. 50ms p99 → precomputed candidates only, no neural ranker at query time, HNSW mandatory. 200ms p99 → small neural ranker on candidates is feasible. 2s p99 → batch reranking with a large model is possible. Query volume can be addressed with horizontal scaling. Latency cannot — it's a hard constraint that determines whether your design is even possible. At staff level, asking this first signals systems thinking: you understand that latency is a physical constraint, not an engineering trade-off.",
-    trap: "QPS (queries per second) sounds like the scale question. It is, but it's horizontally scalable. Latency is not — you can't add more servers to make a serial operation faster.",
-    readMore: { postId: "ambiguous-system-design-framework", label: "The no-spec system design framework" } },
-
-  { id: "staff-8", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "You are leading a team that wants to ship a new ML feature. The feature works well in offline eval but hasn't been tested in production. The correct rollout approach is:",
-    options: ["Ship to 100% of users — the offline eval is sufficient", "Shadow mode first (run the model, log predictions, don't serve them), then 1% canary with guardrail metrics, then gradual ramp with auto-rollback trigger on any guardrail breach", "A/B test immediately at 50/50", "Ship to internal users only indefinitely"],
-    correct: 1,
-    explanation: "Offline eval cannot capture: distribution shift between offline and online data, user behavior changes in response to new recommendations, system interactions (feature pipeline latency, serving failures), or the specific failure modes that only appear at scale. Shadow mode validates that the serving pipeline works and gives you production predictions to compare against. 1% canary with guardrails lets you catch catastrophic failures before they affect most users. The auto-rollback trigger is the key: it means you can ramp aggressively because the safety net is automated, not manual.",
-    trap: "50/50 A/B immediately exposes half your users to an untested system. If it fails badly, the blast radius is enormous. Shadow mode costs nothing (users aren't affected) and produces real production data.",
-    readMore: { postId: "deployment-patterns-ml", label: "ML deployment patterns" } },
-
-  // ─── FDE ──────────────────────────────────────────────────────────────────────
-  { id: "fde-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a 90-minute FDE build round, you receive the brief: 'Build a document Q&A system for a customer's PDF library.' The first thing to do is:",
-    options: ["Start building a RAG pipeline immediately", "Ask three clarifying questions: What does success look like for the demo? What is the primary user action? What can be hardcoded or mocked? Then state your scope plan and get confirmation before writing code.", "Set up the vector database and embedding model", "Ask for the customer's tech stack constraints"],
-    correct: 1,
-    explanation: "Two clarifying questions at the start saves 40 minutes of building the wrong thing. 'Document Q&A' could mean: semantic search over PDFs (no LLM), extractive QA (find the span), generative QA (RAG pipeline), or a chat interface over a single document. These are completely different builds. Getting the primary user action and success criteria defined in 5 minutes determines whether you build a 20-line search function or a 200-line RAG system. Interviewers reward clarification because it's what FDEs do with real customers.",
-    trap: "Starting to set up the vector database immediately assumes RAG is the right approach. If the customer has 5 documents, a vector DB is overkill — grep or simple semantic search is faster to build and works better.",
-    readMore: { postId: "fde-build-round-survival", label: "FDE build round survival guide" } },
-
-  { id: "fde-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a 90-minute build round at minute 30, you realize you need a specific API you're unfamiliar with. The correct move is:",
-    options: ["Spend time reading the full API documentation", "Stub the API call with a hardcoded response, continue building the rest of the system, and add the real API call at minute 60 if time permits — verbalize this to the interviewer explicitly", "Ask the interviewer for help with the API", "Switch to a different approach that avoids that API"],
-    correct: 1,
-    explanation: "A working demo with a stubbed API call is demonstrable. A broken pipeline that failed on an unfamiliar API is not. Stubs are legitimate in build rounds — they demonstrate you know what the system needs to do even if you're replacing one component with a mock. Verbalizing it ('I'm stubbing this API call for now and will replace it at minute 60') shows judgment: you know it's not production-ready, you're making a deliberate choice to stay on schedule. Switching approach at minute 30 usually costs more time than the stub.",
-    trap: "Reading full API documentation at minute 30 in a 90-minute round is a time management failure. Skim for the one method you need, call it with the right shape, and move on.",
-    readMore: { postId: "fde-build-round-survival", label: "Stub aggressively" } },
-
-  { id: "fde-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Your 90-minute build is complete at minute 80. The demo works for the happy path. What should you add in the final 10 minutes?",
-    options: ["Add comprehensive error handling and edge cases", "Add one detail that shows taste — a meaningful error message, a loading state, or a graceful fallback for the most obvious failure mode — then prepare a 2-minute demo narrative that names your shortcuts explicitly", "Refactor the code for readability", "Add logging and monitoring"],
-    correct: 1,
-    explanation: "One taste detail is more valuable than broad error handling in a demo context. A loading state that says 'Searching 1,247 documents...' vs. a blank spinner shows you think about user experience. A graceful fallback ('No relevant documents found — try rephrasing your question') vs. an uncaught exception shows you thought about failure modes. The demo narrative is equally important: naming your shortcuts ('I hardcoded the PDF parser — in production I'd use PyMuPDF') shows self-awareness and prevents the interviewer from thinking you don't know your own limitations.",
-    trap: "Comprehensive error handling in 10 minutes will be incomplete and may introduce new bugs. One polished detail + a clear narrative is a stronger signal than broad but shallow error coverage.",
-    readMore: { postId: "fde-build-round-survival", label: "The demo narrative" } },
-
-  { id: "fde-4", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A customer brief says: 'We need an AI assistant for our support team that can answer questions from our knowledge base.' In 90 minutes, which scope is most appropriate?",
-    options: ["Full RAG pipeline: PDF ingestion, chunking, embedding, vector DB, retrieval, LLM generation, and a chat UI", "Single-document semantic search with an LLM synthesis layer over 3-5 hardcoded documents, demonstrating the core flow without the ingestion pipeline", "Just the chat UI with a GPT-4 system prompt", "Semantic search only, no generation"],
-    correct: 1,
-    explanation: "Full RAG in 90 minutes is possible but leaves no time for polish, debugging, or the demo narrative. A single-document demo with hardcoded documents proves the core value proposition — you can ask questions about company knowledge and get accurate answers — without building the ingestion pipeline, which is infrastructure, not intelligence. The ingestion pipeline can be described ('in production, this would process your PDF library nightly') rather than built. Interviewers know what you're doing. They're watching whether you scoped correctly, not whether you built everything.",
-    trap: "Chat UI with GPT-4 system prompt doesn't demonstrate retrieval from a knowledge base — it's just a chatbot. The core value prop of the brief is knowledge base grounding, which requires at least a simple retrieval step.",
-    readMore: { postId: "fde-build-round-survival", label: "Scope ruthlessly" } },
-
-  { id: "fde-5", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "After your 90-minute build demo, the interviewer asks: 'What would you do next if you had another week?' The strongest answer is:",
-    options: ["Add more features to the UI", "Name the highest-priority gap with a specific fix: 'The biggest limitation is the chunking strategy — I used fixed-size chunks which break mid-sentence. I'd replace it with sentence-aware chunking and run a quick eval on 20 representative queries to verify retrieval quality improved before touching anything else.'", "Optimize the embedding model", "Add user authentication"],
-    correct: 1,
-    explanation: "This question tests whether you understand your own system's limitations and can prioritize correctly. Naming a specific technical gap (chunking strategy) with a specific fix (sentence-aware chunking) and a specific validation method (20-query eval) shows engineering judgment. 'Add more features' or 'optimize the model' are generic answers that don't demonstrate you thought carefully about your specific build. The best FDE answer also orders the work correctly: measure the current gap first, then fix it, rather than fixing things blind.",
-    trap: "User authentication is infrastructure, not product. In a demo context, it's never the highest-leverage next step — product quality is.",
-    readMore: { postId: "fde-build-round-survival", label: "FDE build round judgment signals" } },
-
-  // ─── BAYESIAN EXTENSION ───────────────────────────────────────────────────────
-  { id: "bayesext-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Conformal prediction gives a coverage guarantee of 1-α. What exactly does this guarantee mean?",
-    options: ["The model's predicted probability is within α of the true probability", "For any α and any model and any data distribution (as long as calibration and test data are exchangeable), the prediction set will contain the true label at least (1-α)% of the time — a finite-sample, distribution-free guarantee", "The model will be wrong at most α% of the time on the training set", "The confidence interval has width α"],
-    correct: 1,
-    explanation: "Conformal prediction's guarantee is stronger than calibration. Calibration says 'when I predict 90% confidence, I'm right ~90% of the time on average.' Conformal says 'the set I output contains the true label at least 1-α of the time, for ANY model, ANY distribution, with no assumptions except exchangeability between calibration and test data.' This is a finite-sample guarantee — it holds for n=100 calibration examples, not just asymptotically. The cost: you get a set (possibly containing multiple labels) rather than a point estimate.",
-    trap: "Calibration and conformal prediction are different. Calibration checks that confidence scores match empirical frequencies on average. Conformal prediction guarantees set coverage per-prediction, distribution-free.",
-    readMore: { postId: "conformal-prediction-production", label: "Conformal prediction in production" } },
-
-  { id: "bayesext-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In an Applied Scientist interview: 'How would you build a model that knows when it doesn't know?' Which answer is most rigorous?",
-    options: ["Use softmax probabilities — high confidence means the model knows", "Three-layer answer: (1) calibration ensures confidence scores match accuracy on average, (2) conformal prediction gives set-valued outputs with guaranteed coverage, (3) distance-based uncertainty (how far is this input from training data in embedding space) catches out-of-distribution inputs that calibration misses.", "Use dropout at inference time for MC sampling", "Train with temperature scaling on a held-out set"],
-    correct: 1,
-    explanation: "Softmax is overconfident and gives no OOD signal. MC Dropout is a Bayesian approximation that's expensive and only measures epistemic uncertainty within the training distribution. Temperature scaling fixes average calibration but gives no per-prediction guarantee. The rigorous three-layer answer: calibration for in-distribution confidence, conformal prediction for guaranteed set coverage, and embedding-space distance for OOD detection. Each layer addresses a different failure mode. No single technique addresses all three.",
-    trap: "MC Dropout sounds rigorous because it's Bayesian. It's expensive, and it still fails silently on OOD inputs that look in-distribution to the model. Embedding distance is the OOD detector that MC Dropout lacks.",
-    readMore: { postId: "conformal-prediction-production", label: "Conformal prediction vs calibration" } },
-
-  { id: "bayesext-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "In a Bayesian network, X → Z ← Y (a collider). X and Y are marginally independent. After conditioning on Z, they become:",
-    options: ["Still independent", "Dependent — conditioning on a collider opens the path between its parents, creating statistical dependence between previously independent variables", "More independent", "Causally related"],
-    correct: 1,
-    explanation: "Collider bias (Berkson's paradox): Disease and Injury are independent causes of Hospitalization. P(Disease) and P(Injury) are independent in the general population. But among hospitalized patients — conditioning on Hospitalization — they become negatively correlated: if a hospitalized patient doesn't have an injury, they're more likely to have a disease. Conditioning on Z opens the blocked path X → Z ← Y. This is the collider bias that causes selection bias in observational studies: selecting on a common effect of two variables creates spurious correlation between them.",
-    trap: "The intuition that conditioning reduces dependence is wrong for colliders. For chains and forks, conditioning on the middle variable blocks the path (creates independence). For colliders, conditioning opens the path (creates dependence).",
-    readMore: { postId: "probabilistic-graphical-models", label: "D-separation and collider bias" } },
-
-  { id: "bayesext-4", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Why does the EM algorithm for Gaussian Mixture Models converge to a local optimum rather than the global one?",
-    options: ["Because the M-step uses gradient descent which can get stuck", "Because the marginal likelihood P(X|θ) is non-convex in θ — the ELBO that EM maximizes is tight only at the current parameters, so each E+M step climbs the ELBO but may converge to a different local maximum depending on initialization", "Because the E-step approximation is inaccurate", "Because GMMs always overfit with too many components"],
-    correct: 1,
-    explanation: "EM is guaranteed to monotonically increase the marginal likelihood P(X|θ) at each step. But P(X|θ) for a GMM has multiple local maxima — each corresponding to a different assignment of data points to clusters. EM converges to a local maximum, which one depends on initialization. The guarantee is convergence, not global optimality. Fix: run EM from multiple random initializations (k-means++ for GMM is a common good initialization), keep the solution with the highest final log-likelihood.",
-    trap: "The M-step for GMMs is not gradient descent — it has closed-form updates. The non-convexity is in the likelihood surface itself, not in the optimization method.",
-    readMore: { postId: "probabilistic-graphical-models", label: "EM algorithm for latent variable models" } },
-
-  { id: "bayesext-5", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A production content moderation model outputs P(toxic) = 0.82 for a borderline post. How should an Applied Scientist present this uncertainty to the moderation team?",
-    options: ["Report 82% confidence — the model is fairly sure", "Report a conformal prediction set with guaranteed coverage: 'At 90% coverage threshold, this post falls in the uncertain region requiring human review. The model's calibrated confidence interval is [0.71, 0.91] based on similar posts in the calibration set.'", "Run the post through 10 model variants and report the mean", "Report that the model exceeds the 0.8 threshold and should be removed"],
-    correct: 1,
-    explanation: "82% softmax confidence is a point estimate with unknown reliability. For content moderation, the cost asymmetry (false positive removes legitimate speech, false negative allows harmful content) means you need to know how uncertain 0.82 actually is. Conformal prediction gives a prediction set: if the set includes both 'toxic' and 'not toxic,' human review is required. The calibrated interval from similar calibration examples tells the team whether 0.82 is reliably above the threshold or just noise around 0.5. This is how Applied Scientists communicate model uncertainty to operational teams.",
-    trap: "Thresholding at 0.8 and auto-removing ignores the uncertainty in the 0.82 estimate itself. For a moderately calibrated model, 0.82 might have a true accuracy of anywhere from 70% to 90% on similar examples.",
-    readMore: { postId: "conformal-prediction-production", label: "Conformal prediction for uncertainty quantification" } },
-
-  // ─── INDIC NLP ────────────────────────────────────────────────────────────────
-  { id: "indic-1", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A Sarvam/Krutrim interviewer asks: 'Why does BPE tokenization work poorly for Hindi?' The correct first-principles answer is:",
-    options: ["Hindi has too many words for BPE to cover", "Devanagari vowels appear as diacritics (matras) attached to consonants — BPE treats them as separate characters. A vocabulary trained on English text rarely contains common Devanagari consonant+matra units, so a Hindi sentence tokenizes into many more tokens than an equivalent English sentence, consuming context window faster.", "Hindi sentences are longer than English sentences", "BPE requires transliteration to work on non-Latin scripts"],
-    correct: 1,
-    explanation: "The core issue is tokenization efficiency: 'खेल' (khel, play) should be one token but tokenizes as 3-4 subword pieces under an English-dominated BPE vocabulary. A 512-token context window holds ~380 English words but only ~170 Hindi words. Downstream effects: models have less context for Hindi tasks, longer inference time, higher cost per token. Fix: Indic-specific vocabulary (IndicBERT, IndicTrans use Indic-biased tokenizers), or morphologically-aware tokenization that keeps consonant+matra as atomic units.",
-    trap: "BPE doesn't require Latin script — it works on any unicode. The issue is vocabulary coverage and tokenization efficiency, not script compatibility.",
-    readMore: { postId: "indic-nlp-challenges", label: "BPE failure modes for Indic scripts" } },
-
-  { id: "indic-2", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "A user sends: 'Mujhe ek coffee chahiye with extra milk.' This is code-switched Hindi-English. What breaks in a standard NLP pipeline?",
-    options: ["The spell checker fails", "Language detection returns a single language label, but token-level processing requires per-token language identification. English-trained embeddings have no representation for Hindi tokens ('Mujhe', 'chahiye'), producing out-of-vocabulary or near-zero embeddings that degrade downstream tasks.", "The sentence is too short", "Punctuation handling fails"],
-    correct: 1,
-    explanation: "Language detection at the sentence level returns 'Hindi' or 'English' or 'unknown' — all wrong for a code-switched sentence. The practical failures cascade: if you route to an English-only model, 'Mujhe', 'chahiye', 'ek' get unknown token embeddings. If you route to a Hindi model, 'coffee', 'with', 'extra', 'milk' get unknown embeddings. Fix: multilingual model (XLM-R, mBERT) with per-token language ID, fine-tuned on code-switched data from your specific user population (Hindi-English code-switching patterns are domain-specific).",
-    trap: "The OOV problem is the immediate failure, but the deeper issue is that routing to a single-language model is architecturally wrong for code-switched input. The fix is multilingual modeling, not better language detection.",
-    readMore: { postId: "indic-nlp-challenges", label: "Code-switching in Indic NLP" } },
-
-  { id: "indic-3", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Users type Hindi in Latin script (Romanized Hindi): 'Mujhe paani chahiye', 'Muje pani chahiye', 'Mujhe paanee chahiye' all mean the same thing. The best production approach is:",
-    options: ["Reject non-standard spellings", "Train on Romanized text as-is rather than normalizing — normalization is fragile (many-to-one mappings with ambiguity), loses user signal, and a model trained on raw Romanized data with enough examples will learn the variation implicitly", "Convert all Romanized text to Devanagari before processing using a transliteration dictionary", "Use a spell checker to standardize spellings"],
-    correct: 1,
-    explanation: "Transliteration normalization is many-to-one with ambiguity: 'raja' could be the Hindi word राजा (king) or a proper noun Rāja. Rule-based normalization fails on ambiguous cases and requires constant maintenance. A spell checker trained on English won't know what 'correct' looks like for Romanized Hindi. Training directly on raw Romanized text with sufficient data lets the model learn the variation from examples rather than rules — this is more robust to the long tail of spellings real users produce.",
-    trap: "Dictionary-based transliteration to Devanagari sounds principled but requires resolving ambiguities at every step. 'paani' → पानी (water) is correct, but 'pani' might be a name in context. The model handles this better than the rule.",
-    readMore: { postId: "indic-nlp-challenges", label: "Transliteration ambiguity" } },
-
-  { id: "indic-4", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Sarvam AI is building a voice assistant for tier-2 cities where users speak regional languages mixed with Hindi. Of the following, which problem should be solved first in the engineering roadmap?",
-    options: ["Improve the language model's reasoning ability", "ASR (Automatic Speech Recognition) quality for accented and code-switched speech — transcription errors compound downstream. A perfect LLM on bad transcripts produces bad responses. The bottleneck is almost always ASR quality, not LM quality, for voice interfaces in low-resource language settings.", "Add more languages to the vocabulary", "Build a better text-to-speech system"],
-    correct: 1,
-    explanation: "Error propagation: ASR error rate of 20% means 20% of inputs to the LM are garbage. No matter how good the LM is, it can't recover from systematic transcription errors. In voice interfaces for Indic languages, ASR is almost always the weakest link because: (1) pretraining data for accented Indian English and regional languages is scarce, (2) code-switching in speech is harder than in text (prosody changes at language boundaries), (3) background noise in tier-2 city environments degrades ASR further. Fix ASR first, then evaluate whether LM quality is the bottleneck.",
-    trap: "Improving LM reasoning sounds high-leverage. But a more capable LM on wrong transcripts produces wrong answers more confidently. Fix the data first.",
-    readMore: { postId: "indic-nlp-challenges", label: "ASR as the bottleneck for Indic voice AI" } },
-
-  { id: "indic-5", topic: "ml-fundamentals", difficulty: "hard", gated: true, type: "mcq",
-    question: "Krutrim is building a model for Dogri (a low-resource Indic language with ~3M speakers and limited digital text). The most practical first approach is:",
-    options: ["Collect 100M Dogri sentences before training", "Multilingual pretraining on all available Indic data including Dogri, then zero-shot or few-shot transfer — Dogri uses Devanagari script like Hindi, so vocabulary overlap enables some transfer even with minimal Dogri-specific data", "Build a Dogri-specific tokenizer first", "Use English as a pivot language for all Dogri tasks"],
-    correct: 1,
-    explanation: "Script sharing is the key leverage point: Dogri uses Devanagari. A model trained on Hindi and other Devanagari-script languages has subword vocabulary coverage for Dogri. Zero-shot transfer is possible for simple tasks (classification, basic NLU). For generation tasks, few-shot fine-tuning on even 1K–10K Dogri examples can produce usable results by adapting the language model's distribution toward Dogri while retaining its general capabilities. Waiting for 100M sentences is impractical — Dogri's written corpus may never reach that scale. English-as-pivot adds translation quality as a bottleneck.",
-    trap: "A Dogri-specific tokenizer is valuable but secondary. You need a model before you need an optimal tokenizer — and the model needs to be pretrained on something. Start with multilingual pretraining, then fine-tune tokenizer if quality is insufficient.",
-    readMore: { postId: "indic-nlp-challenges", label: "Low-resource Indic languages" } },
-,
-
   // ─── LEAD / EM TRACK ──────────────────────────────────────────────────────────
   { id: "lead-1", topic: "leadership", difficulty: "medium", gated: false, type: "mcq",
     question: "A new engineering manager is asked 'What will you change in your first 30 days?' The strongest answer is:",
@@ -6537,6 +6111,181 @@ export const PREP_QUESTIONS = [
     explanation: "Standard MHA: one K/V head per Q head — full capacity, large KV cache. MQA: single K/V head shared by all Q heads — tiny KV cache, small quality drop. GQA groups Q heads sharing K/V heads (e.g., 32 Q heads → 8 K/V groups) — 4–8x KV cache reduction with minor quality loss. Used in LLaMA 2 70B, Mistral 7B, Gemma. Decision rule: MHA for max benchmark accuracy at any cost; GQA for production serving with strict memory/latency SLAs; MQA only for highly constrained edge devices. Verify quality impact empirically before committing to architecture.",
     trap: "Assuming GQA is a free lunch. At small group sizes (2 K/V heads for 32 Q heads), quality degradation is measurable. The empirical finding: GQA with ≥4 groups recovers most of MHA quality. The architecture choice locks in for the model's life — benchmark before committing.",
     readMore: { label: "MHA vs MQA vs GQA", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
+  },
+  {
+    id: "found-llm-1", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Your team is extending a model's context window from 4K to 32K tokens post-training. The original model used learned absolute position embeddings. What's the problem, and what's the fix?",
+    options: [
+      "The attention mechanism itself has a hardwired 4K length limit baked into its matrix dimensions, so it needs re-architecture from scratch",
+      "Learned position embeddings work fine at any length — the real bottleneck is purely the KV cache memory budget",
+      "Learned embeddings have no representation past the trained range, so the model needs a relative scheme like RoPE or ALiBi to extrapolate",
+      "ALiBi and RoPE both fail past their original training length the same way absolute embeddings do, so nothing solves this"
+    ],
+    correct: 2,
+    explanation: "Learned absolute position embeddings are a lookup table indexed by position — position 5,000 simply has no trained vector if the model only ever saw up to 4,096. RoPE (rotary) and ALiBi (linear attention bias) are relative schemes: they encode position as a function applied to the query/key vectors or as a distance-based penalty, both of which extrapolate more gracefully past the training length. In practice, extending context still needs some intervention — position interpolation (rescaling positions to fit the trained range) or RoPE frequency scaling (NTK-aware, YaRN) — but the starting point matters: a RoPE-based model is fixable with a scaling trick; one built on learned absolute embeddings needs a harder architectural change.",
+    trap: "Assuming attention itself is the length limit. Attention is a sum over however many tokens are present — it has no hardwired length limit. The limit comes from the positional encoding scheme not having meaningful values past its trained range.",
+    readMore: { label: "Positional Encoding Variants", tab: "groundtruth", postId: "positional-encoding-variants" }
+  },
+  {
+    id: "found-llm-2", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "You're choosing a vocabulary size for a new tokenizer serving a mostly-English, some-code product. A colleague proposes jumping from the common 32K to a 128K vocab to 'reduce token count and lower inference cost.' What's the real tradeoff?",
+    options: [
+      "A larger vocabulary shortens sequences but enlarges the embedding table, adding real parameters and compute cost",
+      "Larger vocabularies always hurt inference speed alone, since the tokenizer searches more merge rules per token",
+      "Vocabulary size has no real effect on parameter count, since the embedding table is a fixed-size lookup structure",
+      "128K vocabularies only matter for multilingual products — for English-and-code traffic the choice is close to free"
+    ],
+    correct: 0,
+    explanation: "Vocabulary size sets the size of the embedding table (vocab_size × hidden_dim) and the output projection (often tied to the embedding). Going from 32K to 128K at hidden_dim=4096 adds roughly (128,000−32,000)×4096×2 ≈ 786M parameters — not free, and it grows GPU memory and matmul cost on the output layer for every forward pass. The real payoff of a larger vocab is shorter sequences (less compute spent on attention and fewer forward passes for the same text), so the decision is a genuine tradeoff between sequence-length savings and the fixed parameter/compute cost of a bigger vocabulary — not a free win.",
+    trap: "Treating vocab size as purely a tokenization-efficiency knob with no cost. It changes the model's actual parameter count and the cost of every softmax over the vocabulary at generation time.",
+    readMore: { label: "BPE Tokenization From Scratch", tab: "groundtruth", postId: "bpe-tokenization-from-scratch" }
+  },
+  {
+    id: "found-llm-3", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "A 4K-context model needs to handle 16K-token legal documents without retraining from scratch. Two engineers propose: (A) linearly interpolate position indices to fit the new length into the trained range, (B) rescale RoPE's rotation frequencies (NTK-aware / YaRN-style) so high-frequency dimensions stay accurate at longer distances. What should guide the choice?",
+    options: [
+      "Option A is always preferable since it needs no extra math beyond a simple rescale of the position indices",
+      "Neither approach can work at all without full pretraining from scratch on documents at the new, much longer target length",
+      "Option B is strictly worse because it changes how the model attends to tokens within the original 4K range",
+      "Linear interpolation blurs nearby distances uniformly; frequency-aware rescaling preserves short-range precision better"
+    ],
+    correct: 3,
+    explanation: "Plain position interpolation squeezes 16K real positions into the 4K range the model was trained on, uniformly stretching every distance — this preserves overall structure but degrades the model's sense of exactly how far apart two nearby tokens are, since fine positions get compressed along with distant ones. NTK-aware / YaRN-style scaling instead treats RoPE's frequency components non-uniformly: low-frequency (long-range) components get scaled to reach further, while high-frequency (short-range) components are left closer to their original precision. This is why YaRN-extended models need only a short fine-tuning pass rather than full retraining, and why it's become the default recipe for context extension in practice.",
+    trap: "Believing frequency-aware scaling changes short-range attention. It's designed specifically to preserve short-range precision — that's the entire motivation over naive linear interpolation.",
+    readMore: { label: "The Context Window", tab: "groundtruth", postId: "context-window-guide" }
+  },
+  {
+    id: "found-llm-4", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Your team runs an LLM server where KV cache is allocated as one large contiguous block per request. Under load, you observe GPU memory is only 60% utilized by actual tokens but new requests still get rejected with 'out of memory.' What's happening?",
+    options: [
+      "The GPU has a hardware-level memory leak in this scenario, fixable only with a driver update to the stack",
+      "Contiguous pre-allocation reserves the max sequence length per request, fragmenting memory that paged attention would reuse",
+      "The model's attention heads are consuming more memory than expected due to a misconfigured head dimension somewhere",
+      "The batch scheduler is starving new requests by prioritizing already-running long sequences over incoming short ones entirely"
+    ],
+    correct: 1,
+    explanation: "Naive KV cache allocation reserves a contiguous buffer sized for the maximum sequence length a request might reach — most requests finish well short of that, but the reserved memory can't be reused by other requests because it's one contiguous block. This is internal fragmentation: memory is 'used' on paper but empty in practice. Paged attention (vLLM's core idea) borrows the OS virtual-memory trick — KV cache is allocated in small fixed-size blocks on demand, and a request's logical sequence maps to non-contiguous physical blocks via a block table. This raises real GPU utilization from ~60% to 90%+ and is why vLLM-style serving supports far higher request throughput than naive contiguous allocation.",
+    trap: "Assuming this is a hardware or scheduling issue. The symptom (memory 'used' but tokens absent) is the specific signature of fragmentation from over-provisioned contiguous allocation, not a leak or a scheduling bug.",
+    readMore: { label: "vLLM & Paged Attention", tab: "groundtruth", postId: "vllm-paged-attention-explained" }
+  },
+  {
+    id: "found-llm-5", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "An inference server batches requests statically: it waits to collect 32 requests, runs them together, and only starts the next batch once all 32 finish generating. Throughput is far below what the GPU should support. What's the fix?",
+    options: [
+      "Switch to continuous batching, evicting finished sequences and admitting new requests as slots free up",
+      "Increase the static batch size from 32 to 64 so that more requests get processed together in each round",
+      "Reduce the static batch size to 8 so each round of generation finishes and clears more quickly",
+      "Move batching to the CPU entirely, since GPU-side batching has a hard ceiling around 32 requests"
+    ],
+    correct: 0,
+    explanation: "Static batching's throughput killer is that generation lengths vary — if 31 requests finish in 20 tokens and one runs to 500 tokens, the GPU sits mostly idle waiting for the slowest one, and no new work can start until the whole batch clears. Continuous batching evicts finished sequences and injects new requests into freed batch slots on every generation step, keeping the GPU near-saturated regardless of individual request lengths. This is the single largest throughput lever in modern LLM serving (vLLM, TGI, TensorRT-LLM all default to it) — increasing or decreasing the static batch size only shifts where the same idle-GPU problem shows up.",
+    trap: "Tuning the static batch size up or down. The bottleneck is the batching strategy itself — variable-length generation with a fixed batch boundary always wastes GPU cycles, regardless of the chosen size."
+  },
+  {
+    id: "found-llm-6", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "You're evaluating speculative decoding to speed up a 70B model: a small 7B 'draft' model proposes several tokens ahead, and the 70B model verifies them in one forward pass. A colleague worries this adds overhead since two models now run per request. When does the speedup actually materialize?",
+    options: [
+      "Only once the draft model has been carefully fine-tuned to match the target model's quality almost exactly ahead of time",
+      "There is no real speedup at all — running two models per request is always slower than using just one single model",
+      "Whenever the draft model's tokens are accepted often, since verification is one parallel pass, so accepted tokens are close to free",
+      "Only once the target model itself is quantized down to reduce the cost of its own forward pass"
+    ],
+    correct: 2,
+    explanation: "The core mechanism: the 70B model verifies K draft tokens in one forward pass (roughly the cost of generating one token, since it's parallelized over the K positions), instead of K sequential forward passes. If the draft model's tokens are accepted at a high rate, you get K tokens for close to the cost of 1 — a real speedup net of the small draft model's own cheap generation cost. The draft model doesn't need to match the target's quality — it only needs to guess tokens the target model would also pick often enough that verification isn't wasted. Low acceptance rates erode the speedup because rejected tokens fall back to standard one-at-a-time generation from that point.",
+    trap: "Assuming the draft model must be strong to help. A weak-but-fast draft model with even moderate acceptance is often the sweet spot — a draft model too close in size/cost to the target erodes the speed advantage.",
+    readMore: { label: "Speculative Decoding Explained", tab: "groundtruth", postId: "speculative-decoding-explained" }
+  },
+  {
+    id: "found-llm-7", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Under a fixed 2-second p99 latency budget, your team is deciding between (A) deploying a larger base model that answers in one pass, or (B) deploying a smaller model that spends part of the latency budget on extra reasoning steps before answering (test-time / inference-time compute). What determines which is the better call?",
+    options: [
+      "Option A is always correct, since serving one larger model end-to-end is architecturally simpler than a reasoning system overall",
+      "Option B is always correct, since test-time compute has fully replaced base-model scaling for every task type",
+      "The right choice should be made purely on hosting cost, independent of what the underlying task actually needs",
+      "It depends on whether the task decomposes into steps — multi-step tasks gain more from reasoning, simple ones from scale"
+    ],
+    correct: 3,
+    explanation: "Test-time compute (chain-of-thought at inference, self-consistency sampling, o1-style extended reasoning) spends latency budget on the model 'thinking' rather than on more parameters processing the input once. For tasks with real intermediate structure — multi-step math, planning, code with several dependent steps — extra reasoning steps often buy more accuracy per millisecond than a bigger single-pass model would. For tasks closer to pattern-matching or classification with little benefit from decomposition, a larger single-pass model usually wins because there's no intermediate structure to exploit. The same 'bigger isn't automatically better' principle behind Chinchilla applies here in a different dimension: more compute at inference time only helps if the task has structure that benefits from it.",
+    trap: "Picking a side as a blanket rule. Both 'always use test-time compute' and 'always scale the base model' ignore that the payoff of extra reasoning steps depends on whether the task decomposes into steps that benefit from deliberation."
+  },
+  {
+    id: "found-llm-8", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Your product has a fixed 200-page policy manual that changes twice a year. An engineer proposes stuffing the entire manual into a long-context model's prompt on every request instead of building a RAG pipeline. When is this actually the right call?",
+    options: [
+      "Never — a dedicated retrieval pipeline is strictly better than full context, regardless of corpus size or update frequency",
+      "When the corpus is small and stable, since avoiding retrieval failure modes is worth the extra token cost per request",
+      "Only once the context window is at least ten times larger than the document, leaving room for the answer",
+      "Always — long-context models have made retrieval pipelines obsolete for any collection under a million tokens"
+    ],
+    correct: 1,
+    explanation: "Stuffing a full corpus into context trades a fixed, predictable engineering cost (no chunking, no retrieval tuning, no reranker) for a recurring, scaling cost (every request pays for the full document's input tokens, and latency grows with prompt length). For a 200-page manual that changes twice a year, this can be the pragmatic choice — no retrieval pipeline to build or debug, and the failure mode of 'retriever missed the relevant chunk' disappears entirely. It stops being the right call once the corpus grows large enough that per-request token cost and latency become the bottleneck, or once the corpus updates so often that re-sending the whole thing on every request wastes cost the user never benefits from.",
+    trap: "Treating RAG-vs-long-context as a religious debate. The two approaches trade off recurring inference cost against one-time retrieval engineering cost — the right choice depends on corpus size, update frequency, and query volume."
+  },
+  {
+    id: "found-llm-9", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "A team building a 12-language model debates vocabulary size: 32K (English-centric) vs 250K (multilingual-balanced, like XLM-R's). The 32K option looks cheaper on paper. What's the hidden cost of choosing it for the non-English 80% of expected traffic?",
+    options: [
+      "A 32K vocab trained on mostly English text fragments non-English scripts into far more tokens per sentence",
+      "A smaller vocabulary always trains faster regardless of the language mix in the corpus, so 32K is the right call",
+      "Vocabulary size only affects the embedding layer and has no bearing on tokenization efficiency across languages",
+      "32K vocabularies cannot represent non-Latin scripts at all, so tokenization would fail outright rather than being inefficient"
+    ],
+    correct: 0,
+    explanation: "BPE vocabulary quality depends on the training corpus it was built from. A 32K vocab trained with an English-majority corpus allocates most of its merge rules to English subword patterns, leaving non-English scripts covered mostly by single-byte or single-character fallbacks. The practical effect: a Hindi or Korean sentence that would be 15 tokens under a properly-balanced multilingual vocabulary might take 40+ tokens under an English-centric 32K vocab — directly inflating cost, latency, and how much of the context window that traffic consumes. Since Unicode allows any vocab to technically represent any script via byte-level fallback, the failure mode is inefficiency, not incapability.",
+    trap: "Assuming vocabulary size mainly trades off training speed. For a multilingual product, the language distribution of expected traffic — not raw vocab size — determines the real cost, and an undersized, English-skewed vocab quietly taxes most of your actual users.",
+    readMore: { label: "BPE Tokenization From Scratch", tab: "groundtruth", postId: "bpe-tokenization-from-scratch" }
+  },
+  {
+    id: "found-llm-10", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "You need to deploy a 7B model on a device with 6GB of available memory. fp16 needs ~14GB, INT8 needs ~7GB, INT4 needs ~3.5GB. INT4 is the only option that fits, but a teammate is nervous about quality loss. What should guide the final call?",
+    options: [
+      "Reject INT4 outright, since any quantization below INT8 is considered too lossy for production use across every task type",
+      "Accept INT4 automatically, since it's the only precision level that technically fits the 6GB memory budget here",
+      "Run your actual eval suite at INT4 versus fp16, since degradation varies by model, task, and calibration method",
+      "Switch to a smaller 3B model at fp16 instead, since a smaller full-precision model is always the safer choice"
+    ],
+    correct: 2,
+    explanation: "Memory constraints can force a technical option (only INT4 fits), but they don't determine whether that option is acceptable for your task — that's an empirical question. INT4 quantization degradation ranges from negligible (with good calibration, e.g., GPTQ/AWQ on many chat/classification tasks) to noticeable (especially on tasks requiring precise numeric or multi-step reasoning). The only reliable answer comes from running your actual production eval suite at INT4 versus the full-precision baseline and looking at the specific failure modes, not a blanket rule about what precision is 'safe.'",
+    trap: "Treating quantization safety as a fixed threshold (e.g., 'INT8 is fine, INT4 is not'). Degradation depends heavily on the model, the calibration dataset, and the task — measuring on your own eval set is the only thing that actually resolves the concern."
+  },
+  {
+    id: "found-llm-11", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "A startup is evaluating a Mixture-of-Experts model advertised as having 47B total parameters but only 13B 'active' parameters per token. An engineer assumes this means it will be as cheap to serve as a dense 13B model. What's wrong with that assumption?",
+    options: [
+      "MoE models are inherently slower than dense models with the same active parameter count, purely from router overhead",
+      "The 'active parameters' figure is essentially a marketing number with no real bearing on compute or memory at all",
+      "MoE models only need to load the currently-active experts into memory, so the assumption about matching cost is correct",
+      "Every expert's weights must stay resident in memory, so serving cost tracks the 47B total, not the 13B active figure"
+    ],
+    correct: 3,
+    explanation: "Active parameters describe the FLOPs spent per forward pass — a router selects a subset of experts, so a given token's compute cost tracks the ~13B active figure, not the full 47B. But which experts get selected can change token-to-token and batch-to-batch, so unless you're willing to page experts in and out of GPU memory (adding its own latency cost), every expert needs to be resident to serve arbitrary traffic. That means the memory budget for serving is closer to the 47B total — GPU VRAM requirements don't shrink the way compute does. This is the actual tradeoff MoE offers: cheaper compute per token at roughly the memory footprint of the full parameter count, not a free reduction on both axes.",
+    trap: "Conflating 'active parameters' (a compute metric) with the actual GPU memory requirement, which tracks total parameters since any expert might be needed on the next token."
+  },
+  {
+    id: "found-llm-12", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "Your team is designing a very deep (100+ layer) transformer and debating layer normalization placement: the original Transformer paper's post-LN (normalize after the residual add) versus pre-LN (normalize before each sublayer, inside the residual branch). Why do most large modern LLMs use pre-LN?",
+    options: [
+      "Pre-LN simply performs fewer normalization operations overall, which makes it computationally cheaper regardless of network depth",
+      "Post-LN renormalizes the residual path every layer, compounding instability at depth; pre-LN's clean residual trains more easily",
+      "Pre-LN produces strictly better final model quality than post-LN at every depth and every model size, no tradeoff",
+      "Post-LN is fundamentally incompatible with the Adam optimizer, which is the specific reason it was phased out"
+    ],
+    correct: 1,
+    explanation: "Post-LN (as in the original 'Attention Is All You Need' architecture) applies LayerNorm after adding the sublayer output to the residual stream — the residual path itself gets renormalized at every layer, and gradients flowing backward must pass through that normalization each time. At shallow depths this is manageable with careful warmup; at 100+ layers it becomes a genuine training-stability problem, often requiring very long or delicate learning-rate warmup to avoid divergence early in training. Pre-LN normalizes the input to each sublayer while leaving the residual stream itself unnormalized end-to-end, giving gradients a cleaner path back to earlier layers. This is the main reason GPT-2 onward, LLaMA, and most large modern LLMs default to pre-LN — it trades a small amount of final-loss headroom for dramatically easier training at scale.",
+    trap: "Claiming pre-LN is unconditionally better quality-wise. The tradeoff is training stability at depth versus a small quality ceiling — pre-LN wins the practical argument for very deep models specifically because it removes a real training failure mode."
+  },
+  {
+    id: "found-llm-13", topic: "foundations", difficulty: "intermediate", gated: true, type: "mcq",
+    question: "A team doubles the training batch size for a pretraining run to improve GPU utilization, keeping the learning rate fixed. Loss curves become smoother, but the run converges to a worse final loss than the smaller-batch run. What's the most likely explanation?",
+    options: [
+      "A lower-variance gradient, hence the smoother curve, can support a larger learning rate that was left unscaled",
+      "Larger batches always produce worse final loss regardless of the learning rate, so batch size should be minimized",
+      "Batch size has no real interaction with learning rate, so the regression is likely an unrelated data pipeline bug",
+      "Doubling the batch size effectively doubles the epochs seen, which caused the model to overfit the training data"
+    ],
+    correct: 0,
+    explanation: "A larger batch gives a lower-variance (more accurate) estimate of the true gradient — that's exactly why the loss curve gets smoother. But a less noisy gradient can support a larger step size, and standard practice (linear or square-root learning-rate scaling rules) increases the learning rate together with batch size for this reason. Holding the learning rate fixed while doubling the batch effectively takes smaller relative steps per unit of data seen, and over a fixed compute budget that can converge to a worse final loss even though each individual step looks 'cleaner.' The fix is to scale the learning rate up alongside the batch size, not just accept smoother curves as proof nothing needs adjusting.",
+    trap: "Treating a smoother loss curve as proof the change was strictly beneficial. Smoothness reflects lower gradient variance, not necessarily better use of the compute budget — the learning rate needs to be re-tuned when batch size changes."
   },
 
   // ── RAG — Intermediate (4) ─────────────────────────────────────────────────

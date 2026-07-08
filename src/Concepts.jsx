@@ -12496,7 +12496,22 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
 
 // ─── FOUNDATIONS APP ──────────────────────────────────────────────────────────
 
-export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
+// 2026-07-08 deep-linking pass: pushes the real "#concepts/<gymId>[/<moduleId>]" hash segment
+// for whatever the user just clicked, via history.pushState — a REAL history entry (not
+// replaceState), so browser Back walks module → gym → gym-selector one step at a time, and a
+// refresh/copy-pasted URL restores the exact spot (see App.jsx's parseConceptsHash + the
+// "browser-back / history-routing audit" + "C6" entries in docs/GSL_PLAN.md for the design
+// rationale). pushState deliberately does NOT fire hashchange/popstate, so this never loops back
+// through App.jsx's own hash-sync effects.
+function syncConceptsHash(gymId, moduleId) {
+  try {
+    const seg = moduleId ? `concepts/${gymId}/${moduleId}` : gymId ? `concepts/${gymId}` : "concepts";
+    const newHash = "#" + seg;
+    if (window.location.hash !== newHash) window.history.pushState(null, "", newHash);
+  } catch {}
+}
+
+export default function ConceptsApp({ onNavigate, initialGym, initialModule, initialModuleOrigin = "tracks", navKey = 0 }) {
   const [active, setActive] = useState(null);
   const [activeGym, setActiveGym] = useState(null);
   const [mastery, setMastery] = useState(() => {
@@ -12504,25 +12519,39 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
     catch { return new Set(); }
   });
 
-  // Deep-link to a specific gym when navigated from a lab sidebar chip
-  useEffect(() => {
-    if (initialGym) setActiveGym(initialGym);
-  }, [initialGym]);
-
-  // Deep-link straight to a specific module (e.g. "Study →" from My Tracks) —
-  // resolve its gym from GYMS.moduleIds and open the module runner directly.
-  // C6 fix (2026-07-08 LAB-STANDARDS audit): also remember that this open
-  // came from My Tracks, so the module's own "← Back" returns there instead
-  // of dropping the user into the gym's module list (GSL's C6 was FAIL — the
-  // only lab where Study→ couldn't return to the originating track).
+  // Deep-link entry into Concepts — two origins sharing the same {activeGym, active} target:
+  //  'tracks' — My Tracks "Study →" / other onNavigate({tab:'concepts', gymId, moduleId}) callers
+  //             (App.jsx's navigateTo). Sticky-set only (never auto-clears) + marks
+  //             openedFromTracks so the in-page "← Back" returns to My Tracks instead of the
+  //             gym list (C6 fix, 2026-07-08 LAB-STANDARDS audit).
+  //  'hash'   — the URL hash itself: initial page load/refresh, a pasted module link, or
+  //             browser Back/Forward across gym/module hash segments (App.jsx's popstate
+  //             listener). This one also CLEARS activeGym/active when the hash no longer
+  //             carries them, so Back actually closes the module/gym view instead of leaving
+  //             stale state on screen (2026-07-08 deep-linking pass — the item-level hash-encoding
+  //             half of C1/C2/C3 that GSL_PLAN.md's C6 entry deliberately left open).
+  // navKey increments on every nav event from either origin (even a repeated id) so this effect
+  // re-applies reliably instead of depending on initialGym/initialModule reference equality.
   const [openedFromTracks, setOpenedFromTracks] = useState(false);
   useEffect(() => {
-    if (!initialModule) return;
-    const gym = GYMS.find(g => g.moduleIds?.includes(initialModule));
-    if (gym) setActiveGym(gym.id);
-    setActive(initialModule);
-    setOpenedFromTracks(true);
-  }, [initialModule]);
+    if (!navKey) return;
+    if (initialModuleOrigin === "hash") {
+      setActiveGym(initialGym || null);
+      setActive(initialModule || null);
+      setOpenedFromTracks(false);
+    } else {
+      if (initialGym) setActiveGym(initialGym);
+      if (initialModule) {
+        if (!initialGym) {
+          const gym = GYMS.find(g => g.moduleIds?.includes(initialModule));
+          if (gym) setActiveGym(gym.id);
+        }
+        setActive(initialModule);
+        setOpenedFromTracks(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navKey]);
 
   function handleBack() {
     if (openedFromTracks) {
@@ -12531,6 +12560,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
       onNavigate({ tab: "my-tracks" });
     } else {
       setActive(null);
+      syncConceptsHash(activeGym, null);
     }
   }
 
@@ -12564,6 +12594,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
     // A normal in-gym browse — any pending "opened from My Tracks" origin
     // from an earlier deep-link is now stale.
     setOpenedFromTracks(false);
+    syncConceptsHash(activeGym, id);
     track("concept_module_opened", { module: id, source: activeGym || "direct" });
   }
 
@@ -12581,7 +12612,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
   if (!active && !activeGym) {
     return (
       <div className="flex-1 overflow-y-auto">
-        <GymSelectorView mastery={mastery} onEnterGym={id => setActiveGym(id)} />
+        <GymSelectorView mastery={mastery} onEnterGym={id => { setActiveGym(id); syncConceptsHash(id, null); }} />
       </div>
     );
   }
@@ -12594,7 +12625,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
           gymId={activeGym}
           mastery={mastery}
           onOpenModule={openModule}
-          onBack={() => setActiveGym(null)}
+          onBack={() => { setActiveGym(null); syncConceptsHash(null, null); }}
           onNavigate={onNavigate}
         />
       </div>
@@ -12614,7 +12645,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
     <div className="w-52 shrink-0 overflow-y-auto py-4 hidden sm:block" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
       <div className="px-3 mb-3 space-y-2">
         <button
-          onClick={() => currentGym ? handleBack() : setActiveGym(null)}
+          onClick={() => currentGym ? handleBack() : (setActiveGym(null), syncConceptsHash(null, null))}
           className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 flex items-center gap-1 transition-colors"
         >
           ← {openedFromTracks ? "My Tracks" : (currentGym ? currentGym.label : "Foundations")}
@@ -12624,7 +12655,12 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule }) {
           value={currentGym?.id || ""}
           onChange={e => {
             const g = GYMS.find(x => x.id === e.target.value);
-            if (g) { setActiveGym(g.id); setActive(sortIdsByLevel(g.moduleIds)[0] || null); }
+            if (g) {
+              const firstId = sortIdsByLevel(g.moduleIds)[0] || null;
+              setActiveGym(g.id);
+              setActive(firstId);
+              syncConceptsHash(g.id, firstId);
+            }
           }}
           className="w-full text-[11px] rounded border px-2 py-1.5 outline-none cursor-pointer"
           style={{ background: "var(--surface-2, #18181b)", borderColor: "var(--border)", color: "#d4d4d8" }}

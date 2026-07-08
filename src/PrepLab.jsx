@@ -136,6 +136,41 @@ const TOPIC_COLORS = {
   reasoning: "bg-teal-500/20 text-teal-300 border-teal-500/30",
   serving: "bg-purple-500/20 text-purple-300 border-purple-500/30",
   foundations: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+  // Concept-level topics (L0/L1/L2 authoring push, 2026-07-03) — colors were
+  // missing entirely (TopicChip rendered no color class for these; 2026-07-08 fix).
+  tokenizer: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+  embeddings: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+  lora: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+  rlhf: "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30",
+  dpo: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+  moe: "bg-lime-500/20 text-lime-300 border-lime-500/30",
+  distillation: "bg-stone-500/20 text-stone-300 border-stone-500/30",
+  "prompt-engineering": "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+  // Gap-module topics (2026-07-04) — same missing-color issue
+  "agent-eval": "bg-violet-500/20 text-violet-300 border-violet-500/30",
+  "rag-ingestion": "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+  "model-routing": "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  "llm-security": "bg-red-500/20 text-red-300 border-red-500/30",
+  // 2026-07-08 fix: verified via grep against src/data/preplabQuestions.js + src/data/questions/*.js
+  // — these topic values are used by real questions but had no color entry at all.
+  alignment: "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30",
+  attention: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+  caching: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  constrained: "bg-teal-500/20 text-teal-300 border-teal-500/30",
+  context: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+  design: "bg-pink-500/20 text-pink-300 border-pink-500/30",
+  evals: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+  inference: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  leadership: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  llm: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+  merging: "bg-lime-500/20 text-lime-300 border-lime-500/30",
+  "ml-fundamentals": "bg-slate-500/20 text-slate-300 border-slate-500/30",
+  production: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  quantization: "bg-stone-500/20 text-stone-300 border-stone-500/30",
+  recommendations: "bg-green-500/20 text-green-300 border-green-500/30",
+  streaming: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  sysdesign: "bg-pink-500/20 text-pink-300 border-pink-500/30",
+  transformers: "bg-sky-500/20 text-sky-300 border-sky-500/30",
 };
 
 const TOPIC_LABELS = {
@@ -153,6 +188,26 @@ const TOPIC_LABELS = {
   // Gap-module topics (2026-07-04)
   "agent-eval": "Agent Evaluation", "rag-ingestion": "RAG Ingestion",
   "model-routing": "Model Routing", "llm-security": "LLM Security",
+  // 2026-07-08 fix: verified via grep against src/data/preplabQuestions.js + src/data/questions/*.js
+  // — these topic values are used by real questions but had no label entry at all (rendered "undefined").
+  alignment: "Alignment (RLHF)",
+  attention: "Attention Mechanisms",
+  caching: "Prompt / KV Caching",
+  constrained: "Constrained Generation",
+  context: "Context Windows",
+  design: "Applied System Design",
+  evals: "Eval Scenarios",
+  inference: "Inference Optimization",
+  leadership: "Engineering Leadership",
+  llm: "Scaling Laws & LLM Fundamentals",
+  merging: "Model Merging",
+  "ml-fundamentals": "ML Fundamentals",
+  production: "Production Engineering",
+  quantization: "Quantization",
+  recommendations: "Recommender Systems",
+  streaming: "Streaming Responses",
+  sysdesign: "System Design",
+  transformers: "Transformer Architecture",
 };
 
 // Topic group tiles — aligned to challenge area names (R8 redesign)
@@ -307,12 +362,30 @@ function shuffle(arr) {
   return a;
 }
 
-// Stable difficulty ordering: easy → medium → hard, preserving input order within a
-// band. Used only by the Browse view (the scannable flat list); Drill mode stays shuffled.
-const DIFF_RANK = { easy: 0, medium: 1, hard: 2 };
+// ─── DIFFICULTY TAXONOMY (2026-07-08 normalization) ──────────────────────────
+// Canonical UI vocabulary going forward: beginner / intermediate / advanced — matches
+// the module-level `level:` field already used in Concepts.jsx. The underlying question
+// DATA still carries older/mixed values (easy/medium/hard/Easy/Medium/Hard/beginner-
+// intermediate/staff/daunting — owned by a concurrent content pass, not touched here).
+// This maps old → canonical for DISPLAY/SCORING only, via a function, never by mutating
+// the data. staff/daunting/beginner-intermediate had no distinct FILTERING behavior
+// found anywhere in this file (only their own color/label) — folded into "advanced" per
+// the fix spec. `type: "daunting"` (a separate field from `difficulty`) still does real
+// work — it's filtered out of the Trainer drill pool below — and is untouched.
+function normalizeDifficulty(d) {
+  const key = (d || "").toLowerCase();
+  if (key === "beginner" || key === "easy") return "beginner";
+  if (key === "intermediate" || key === "medium") return "intermediate";
+  return "advanced"; // hard, staff, daunting, beginner-intermediate, or unrecognized
+}
+const DIFF_RANK_CANON = { beginner: 0, intermediate: 1, advanced: 2 };
+
+// Stable difficulty ordering: beginner → intermediate → advanced, preserving input
+// order within a band. Used only by the Browse view (the scannable flat list); Drill
+// mode stays shuffled.
 function sortByDifficulty(arr) {
   return arr
-    .map((q, i) => ({ q, i, r: DIFF_RANK[(q.difficulty || "").toLowerCase()] ?? 1 }))
+    .map((q, i) => ({ q, i, r: DIFF_RANK_CANON[normalizeDifficulty(q.difficulty)] }))
     .sort((a, b) => a.r - b.r || a.i - b.i)
     .map(x => x.q);
 }
@@ -336,6 +409,30 @@ function recordHistory(questionId, correct) {
       }));
     }
   } catch {}
+}
+
+// Selective reset (2026-07-08 fix): history entries are keyed by questionId
+// (see recordHistory above), so removing just one question — or a whole practice
+// set's worth of questions — is a filter over that same object. Used by TrainerMode
+// (reset current question / reset current filtered set) and WeaknessHeatmapMode
+// (reset one hard question) so users aren't forced into an all-or-nothing wipe.
+// Returns the updated history object (or null on storage failure) so callers can
+// sync their own `history` state without a second localStorage read.
+function removeHistoryEntries(questionIds) {
+  try {
+    const prev = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
+    const idSet = new Set(questionIds);
+    const next = Object.fromEntries(Object.entries(prev).filter(([id]) => !idSet.has(id)));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+    // Also clear any pending spaced-repetition schedule for these questions —
+    // otherwise a "due for review" entry can survive a history reset.
+    const spaced = getSpacedState();
+    const nextSpaced = Object.fromEntries(Object.entries(spaced).filter(([id]) => !idSet.has(id)));
+    localStorage.setItem(SPACED_KEY, JSON.stringify(nextSpaced));
+    return next;
+  } catch {
+    return null;
+  }
 }
 
 function drawQuestions(count, focus, difficulty) {
@@ -591,25 +688,22 @@ function MCQOptions({ options, selected, onSelect }) {
   );
 }
 
+// 2026-07-08: reduced to the 3 canonical buckets (see normalizeDifficulty above).
+// Raw data values are mapped through normalizeDifficulty(), never compared directly.
 const DIFF_ACCENT = {
-  beginner: "rgba(52,211,153,0.9)", "beginner-intermediate": "rgba(45,212,191,0.9)",
-  intermediate: "rgba(56,189,248,0.9)", easy: "rgba(59,130,246,0.9)",
-  medium: "rgba(245,158,11,0.85)", hard: "rgba(239,68,68,0.9)",
-  staff: "rgba(129,140,248,0.9)", daunting: "rgba(167,139,250,0.95)",
+  beginner: "rgba(52,211,153,0.9)",
+  intermediate: "rgba(245,158,11,0.85)",
+  advanced: "rgba(239,68,68,0.9)",
 };
 const DIFF_CHIP = {
   beginner: "bg-emerald-950/50 text-emerald-400 border border-emerald-800/40",
-  "beginner-intermediate": "bg-teal-950/50 text-teal-400 border border-teal-800/40",
-  intermediate: "bg-sky-950/50 text-sky-400 border border-sky-800/40",
-  easy: "bg-blue-950/50 text-blue-400 border border-blue-800/40",
-  medium: "bg-amber-950/50 text-amber-400 border border-amber-800/40",
-  hard: "bg-red-950/50 text-red-400 border border-red-800/40",
-  staff: "bg-indigo-950/50 text-indigo-400 border border-indigo-800/40",
-  daunting: "bg-violet-950/50 text-violet-400 border border-violet-800/40",
+  intermediate: "bg-amber-950/50 text-amber-400 border border-amber-800/40",
+  advanced: "bg-red-950/50 text-red-400 border border-red-800/40",
 };
 function QuestionCard({ q, gaps = [] }) {
-  const diffAccent = DIFF_ACCENT[q.difficulty] || "rgba(245,158,11,0.85)";
-  const diffChip = DIFF_CHIP[q.difficulty] || "bg-amber-950/50 text-amber-400 border border-amber-800/40";
+  const diffCanon = normalizeDifficulty(q.difficulty);
+  const diffAccent = DIFF_ACCENT[diffCanon];
+  const diffChip = DIFF_CHIP[diffCanon];
   const [trackPopoverOpen, setTrackPopoverOpen] = useState(false);
   const trackBtnRef = useRef(null);
   const inTracks = getTracksForQuestion(q.id);
@@ -627,7 +721,7 @@ function QuestionCard({ q, gaps = [] }) {
       <div className="flex items-center gap-2 flex-wrap">
         <TopicChip topic={q.topic} />
         <span className={`text-[10px] font-mono font-black uppercase tracking-widest px-2.5 py-0.5 rounded ${diffChip}`}>
-          {q.difficulty || "medium"}
+          {diffCanon}
         </span>
         <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{q.type === "mcq" ? "multiple choice" : q.type === "multi" ? "select all that apply" : "open answer"}</span>
         {gaps.includes(q.topic) && (
@@ -1445,7 +1539,10 @@ function ExamMode({ onExit, onNavigate, onNavigateTo, reviewQuestions, user = nu
 const TRAINER_TOPICS = ["all", ...Array.from(new Set(PREP_QUESTIONS.map(q => q.topic))).sort()];
 
 function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
-  const [groupFilter, setGroupFilter] = useState(initialGroup || "all");
+  // Multi-topic select (2026-07-08 fix): was a single string ("all" | one group id).
+  // Empty array = "all". initialGroup (a single id, used when jumping in from Browse's
+  // "Drill this topic" button) seeds a one-item array.
+  const [groupFilters, setGroupFilters] = useState(() => (initialGroup && initialGroup !== "all" ? [initialGroup] : []));
   const [diffFilter, setDiffFilter] = useState("all");
   const [tierFilter, setTierFilter] = useState("all"); // "all" | "L0" | "L1" | "L2"
   const [questions, setQuestions] = useState(() => shuffle(PREP_QUESTIONS));
@@ -1481,10 +1578,13 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
 
   // Recompute filtered+shuffled questions whenever filters change
   useEffect(() => {
-    const groupTopics = groupFilter === "all" ? null : TOPIC_GROUPS.find(g => g.id === groupFilter)?.topics;
+    // Union of topics across every selected group; empty selection = all topics.
+    const groupTopics = groupFilters.length === 0
+      ? null
+      : groupFilters.flatMap(gid => TOPIC_GROUPS.find(g => g.id === gid)?.topics || []);
     const filtered = PREP_QUESTIONS.filter(q => {
       const topicOk = !groupTopics || groupTopics.includes(q.topic);
-      const diffOk = diffFilter === "all" || q.difficulty === diffFilter;
+      const diffOk = diffFilter === "all" || normalizeDifficulty(q.difficulty) === diffFilter;
       const tierOk = tierFilter === "all" || questionTier(q) === tierFilter;
       const weakOk = !weakOnly || (history[q.id]?.wrong > 0);
       return topicOk && diffOk && tierOk && weakOk;
@@ -1495,7 +1595,19 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
     setSubmitted(false);
     setIsCorrect(false);
     setExpandedId(null);
-  }, [groupFilter, diffFilter, tierFilter, weakOnly]);
+  }, [groupFilters, diffFilter, tierFilter, weakOnly]);
+
+  // Fix 3(a): reset just the current filtered set's recorded history (not the whole bank).
+  function resetCurrentSet() {
+    const ids = questions.map(qq => qq.id);
+    const next = removeHistoryEntries(ids);
+    if (next) setHistory(next);
+  }
+  // Fix 3(a): reset just the currently-displayed question's recorded history.
+  function resetCurrentQuestion(questionId) {
+    const next = removeHistoryEntries([questionId]);
+    if (next) setHistory(next);
+  }
 
   // Keyboard shortcuts: 1-4 selects MCQ option; Enter submits or advances
   useEffect(() => {
@@ -1612,25 +1724,26 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
         {viewMode === "drill" && <PBar value={current} max={questions.length} />}
         {/* Filters */}
         <div className="space-y-3">
-          {/* Topic group tiles */}
+          {/* Topic group tiles — multi-select (2026-07-08 fix): tap "All Topics" to clear
+              the selection, tap any tile to toggle it in/out of the active set. */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <button
-              onClick={() => setGroupFilter("all")}
-              style={groupFilter === "all" ? {
+              onClick={() => setGroupFilters([])}
+              style={groupFilters.length === 0 ? {
                 background: "linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(139,92,246,0.06) 100%)",
                 border: "1px solid rgba(139,92,246,0.5)",
               } : {
                 background: "rgba(39,39,42,0.6)",
                 border: "1px solid rgba(63,63,70,0.7)",
               }}
-              className={`col-span-2 sm:col-span-3 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-left ${groupFilter === "all" ? "text-violet-200" : "text-zinc-400 hover:text-white"}`}>
+              className={`col-span-2 sm:col-span-3 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-left ${groupFilters.length === 0 ? "text-violet-200" : "text-zinc-400 hover:text-white"}`}>
               All Topics — {PREP_QUESTIONS.length} questions
             </button>
             {TOPIC_GROUPS.map(g => {
               const count = PREP_QUESTIONS.filter(q => g.topics.includes(q.topic)).length;
-              const active = groupFilter === g.id;
+              const active = groupFilters.includes(g.id);
               return (
-                <button key={g.id} onClick={() => setGroupFilter(active ? "all" : g.id)}
+                <button key={g.id} onClick={() => setGroupFilters(prev => prev.includes(g.id) ? prev.filter(x => x !== g.id) : [...prev, g.id])}
                   style={active ? {
                     background: "linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(139,92,246,0.06) 100%)",
                     border: "1px solid rgba(139,92,246,0.5)",
@@ -1640,16 +1753,20 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                     border: "1px solid rgba(63,63,70,0.7)",
                   }}
                   className={`py-3 px-3 rounded-xl text-xs font-semibold transition-all text-left hover:-translate-y-px hover:shadow-md hover:shadow-black/30 ${active ? "text-violet-200" : "text-zinc-300 hover:text-white"}`}>
-                  <div className={`font-bold mb-0.5 ${active ? "text-violet-200" : "text-zinc-200"}`}>{g.label}</div>
+                  <div className={`font-bold mb-0.5 flex items-center gap-1.5 ${active ? "text-violet-200" : "text-zinc-200"}`}>
+                    <span className={`inline-block w-3 h-3 rounded-sm border shrink-0 ${active ? "bg-violet-500 border-violet-400" : "border-zinc-600"}`} />
+                    {g.label}
+                  </div>
                   <div className="text-[10px] text-zinc-500 font-normal leading-snug mb-1.5">{g.desc}</div>
                   <div className={`text-[10px] font-mono ${active ? "text-violet-400" : "text-zinc-500"}`}>{count}q</div>
                 </button>
               );
             })}
           </div>
-          {/* Difficulty + count */}
+          {/* Difficulty + count — canonical taxonomy (2026-07-08): beginner/intermediate/advanced,
+              matched against the raw data via normalizeDifficulty(), not literal string compare. */}
           <div className="flex items-center gap-2">
-            {["all", "medium", "hard"].map(d => {
+            {["all", "intermediate", "advanced"].map(d => {
               const active = diffFilter === d;
               return (
                 <button key={d} onClick={() => setDiffFilter(d)}
@@ -1705,12 +1822,21 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                 <span className="text-xs text-zinc-500">Showing questions you've answered wrong</span>
               )}
               {Object.keys(history).length > 0 && (
-                <button
-                  onClick={() => { setHistory({}); try { localStorage.removeItem(HISTORY_KEY); } catch {} }}
-                  className="text-[10px] text-zinc-500 hover:text-zinc-500 transition-colors ml-auto"
-                >
-                  Clear history
-                </button>
+                <>
+                  <button
+                    onClick={resetCurrentSet}
+                    title="Clear recorded history for only the questions in the current filtered set"
+                    className="text-[10px] text-zinc-500 hover:text-amber-400 transition-colors ml-auto"
+                  >
+                    Reset this set
+                  </button>
+                  <button
+                    onClick={() => { setHistory({}); try { localStorage.removeItem(HISTORY_KEY); } catch {} }}
+                    className="text-[10px] text-zinc-500 hover:text-red-400 transition-colors"
+                  >
+                    Clear all history
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -1725,7 +1851,8 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
           <div className="space-y-1.5">
             {sortByDifficulty(questions).map(bq => {
               const isExp = expandedId === bq.id;
-              const diffColor = bq.difficulty === "hard" ? "#ef4444" : bq.difficulty === "medium" ? "#f59e0b" : "#3b82f6";
+              const bqDiffCanon = normalizeDifficulty(bq.difficulty);
+              const diffColor = bqDiffCanon === "advanced" ? "#ef4444" : bqDiffCanon === "intermediate" ? "#f59e0b" : "#3b82f6";
               const bqGroup = TOPIC_GROUPS.find(g => g.topics.includes(bq.topic))?.id || "all";
               return (
                 <div key={bq.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderLeft: `3px solid ${diffColor}40` }}
@@ -1741,10 +1868,10 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                       <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${TIER_META[questionTier(bq)].chip}`}
                         title={TIER_META[questionTier(bq)].blurb}>{TIER_META[questionTier(bq)].label}</span>
                       <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                        bq.difficulty === "hard" ? "bg-red-950/50 text-red-400 border border-red-800/40"
-                        : bq.difficulty === "medium" ? "bg-amber-950/50 text-amber-400 border border-amber-800/40"
+                        bqDiffCanon === "advanced" ? "bg-red-950/50 text-red-400 border border-red-800/40"
+                        : bqDiffCanon === "intermediate" ? "bg-amber-950/50 text-amber-400 border border-amber-800/40"
                         : "bg-blue-950/50 text-blue-400 border border-blue-800/40"
-                      }`}>{bq.difficulty[0].toUpperCase()}</span>
+                      }`} title={bqDiffCanon}>{bqDiffCanon[0].toUpperCase()}</span>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                         className={`text-zinc-600 transition-transform duration-150 ${isExp ? "rotate-180" : ""}`}>
                         <polyline points="6 9 12 15 18 9"/>
@@ -1809,7 +1936,7 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                         </>
                       )}
                       <button
-                        onClick={() => { setGroupFilter(bqGroup); setViewMode("drill"); setExpandedId(null); setCurrent(0); }}
+                        onClick={() => { setGroupFilters(bqGroup === "all" ? [] : [bqGroup]); setViewMode("drill"); setExpandedId(null); setCurrent(0); }}
                         className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:brightness-125"
                         style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
                         Drill this topic →
@@ -1834,8 +1961,17 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
                 <div className="relative">
                   <QuestionCard q={q} />
                   {history[q.id]?.wrong > 0 && (
-                    <span className="absolute top-2 right-2 text-[10px] text-red-400 font-semibold">
-                      <Icon name="x" size={14} /> {history[q.id].wrong}× wrong
+                    <span className="absolute top-2 right-2 flex items-center gap-2">
+                      <span className="text-[10px] text-red-400 font-semibold">
+                        <Icon name="x" size={14} /> {history[q.id].wrong}× wrong
+                      </span>
+                      <button
+                        onClick={() => resetCurrentQuestion(q.id)}
+                        title="Clear recorded history for this question only"
+                        className="text-[10px] text-zinc-500 hover:text-amber-400 transition-colors"
+                      >
+                        Reset
+                      </button>
                     </span>
                   )}
                 </div>
@@ -2361,6 +2497,11 @@ function WeaknessHeatmapMode({ onExit }) {
     try { localStorage.removeItem(HISTORY_KEY); } catch {}
     setHistory({});
   }
+  // Fix 3(a): reset just one question's recorded history, not the whole map.
+  function resetQuestion(questionId) {
+    const next = removeHistoryEntries([questionId]);
+    if (next) setHistory(next);
+  }
 
   if (totalAttempts === 0) {
     return (
@@ -2382,7 +2523,7 @@ function WeaknessHeatmapMode({ onExit }) {
       <div className="flex items-center gap-3 mb-6">
         <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
         <h2 className="text-lg font-bold flex-1 text-white">My Weakness Map</h2>
-        <button onClick={clearHistory} className="text-[11px] text-zinc-600 hover:text-red-400 transition-colors">Reset</button>
+        <button onClick={clearHistory} className="text-[11px] text-zinc-600 hover:text-red-400 transition-colors">Reset all</button>
       </div>
       <div className="flex items-center gap-5 mb-5 p-4 bg-zinc-900 rounded-xl border border-zinc-800">
         <div>
@@ -2444,6 +2585,13 @@ function WeaknessHeatmapMode({ onExit }) {
                       <div className="shrink-0 text-right">
                         <div className="text-sm font-mono text-red-400">{entry?.wrong}x</div>
                         <div className="text-[10px] text-zinc-600">{wrongPct}% wrong</div>
+                        <button
+                          onClick={() => resetQuestion(q.id)}
+                          title="Clear recorded history for this question only"
+                          className="text-[9px] text-zinc-600 hover:text-amber-400 transition-colors mt-0.5"
+                        >
+                          Reset
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -2804,17 +2952,20 @@ const BROWSE_SELECT_STYLE = {
   cursor: "pointer",
 };
 function BrowseMode({ onExit }) {
-  const [topic, setTopic] = useState("all");
-  const [diff, setDiff] = useState("all");
+  // Multi-topic select (2026-07-08 fix): was a single string ("all" | one topic).
+  // Empty array = "all".
+  const [topics, setTopics] = useState([]);
+  const [diff, setDiff] = useState("all"); // "all" | "beginner" | "intermediate" | "advanced" (canonical)
   const [expanded, setExpanded] = useState({});
   const [reviewed, setReviewed] = useState({});
   const [openAnswers, setOpenAnswers] = useState({}); // { [qId]: { [answerIdx]: bool } }
 
   const allTopics = Array.from(new Set(PREP_QUESTIONS.map(q => q.topic))).sort();
+  const toggleTopic = (t) => setTopics(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
 
   const filtered = PREP_QUESTIONS.filter(q => {
-    if (topic !== "all" && q.topic !== topic) return false;
-    if (diff !== "all" && q.difficulty !== diff) return false;
+    if (topics.length > 0 && !topics.includes(q.topic)) return false;
+    if (diff !== "all" && normalizeDifficulty(q.difficulty) !== diff) return false;
     if (q.type === "scenario") return false; // scenarios don't suit browse
     return true;
   });
@@ -2844,23 +2995,41 @@ function BrowseMode({ onExit }) {
         )}
       </div>
 
-      {/* Filters — R11 (Rev-2): topic + difficulty as dark-theme dropdowns (was pill rows) */}
+      {/* Filters — R11 (Rev-2): topic + difficulty as dark-theme dropdowns (was pill rows).
+          2026-07-08 fix: topic converted to a multi-select checkbox dropdown (was a single
+          <select>); difficulty reduced to the 3 canonical buckets (see normalizeDifficulty). */}
       <div className="shrink-0 px-4 sm:px-6 py-3 flex flex-wrap gap-4 items-center" style={{ borderBottom: "1px solid var(--border)" }}>
         <label className="flex items-center gap-2">
           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Topic</span>
-          <select value={topic} onChange={e => setTopic(e.target.value)} style={BROWSE_SELECT_STYLE}>
-            <option value="all">All topics</option>
-            {allTopics.map(t => (
-              <option key={t} value={t}>{TOPIC_LABELS[t] || t}</option>
-            ))}
-          </select>
+          <details style={{ ...BROWSE_SELECT_STYLE, position: "relative", padding: 0 }}>
+            <summary style={{ listStyle: "none", padding: "6px 10px" }}>
+              {topics.length === 0 ? "All topics" : `${topics.length} topic${topics.length > 1 ? "s" : ""} selected`}
+            </summary>
+            <div style={{
+              position: "absolute", zIndex: 30, marginTop: 4, left: 0,
+              background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8,
+              padding: 8, display: "flex", flexDirection: "column", gap: 4,
+              maxHeight: 260, overflowY: "auto", minWidth: 220,
+            }}>
+              <button type="button" onClick={() => setTopics([])}
+                className="text-left text-[11px] text-violet-400 hover:text-violet-300 mb-1">
+                Clear selection
+              </button>
+              {allTopics.map(t => (
+                <label key={t} className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
+                  <input type="checkbox" checked={topics.includes(t)} onChange={() => toggleTopic(t)} />
+                  {TOPIC_LABELS[t] || t}
+                </label>
+              ))}
+            </div>
+          </details>
         </label>
         <label className="flex items-center gap-2">
           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Difficulty</span>
           <select value={diff} onChange={e => setDiff(e.target.value)} style={BROWSE_SELECT_STYLE}>
             <option value="all">All difficulties</option>
-            {["beginner", "beginner-intermediate", "intermediate", "easy", "medium", "hard", "staff", "daunting"].map(d => (
-              <option key={d} value={d}>{d.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</option>
+            {["beginner", "intermediate", "advanced"].map(d => (
+              <option key={d} value={d}>{d[0].toUpperCase() + d.slice(1)}</option>
             ))}
           </select>
         </label>
@@ -2874,17 +3043,14 @@ function BrowseMode({ onExit }) {
         {filtered.map((q, idx) => {
           const isOpen = !!expanded[q.id];
           const isDone = !!reviewed[q.id];
+          // 2026-07-08 fix: reduced to the 3 canonical buckets (see normalizeDifficulty).
           const diffColorMap = {
             beginner: "text-emerald-400 border-emerald-900/50 bg-emerald-950/20",
-            "beginner-intermediate": "text-teal-400 border-teal-900/50 bg-teal-950/20",
-            intermediate: "text-sky-400 border-sky-900/50 bg-sky-950/20",
-            easy: "text-blue-400 border-blue-900/50 bg-blue-950/20",
-            medium: "text-amber-400 border-amber-900/50 bg-amber-950/20",
-            hard: "text-red-400 border-red-900/50 bg-red-950/20",
-            staff: "text-indigo-400 border-indigo-900/50 bg-indigo-950/20",
-            daunting: "text-violet-400 border-violet-900/50 bg-violet-950/20",
+            intermediate: "text-amber-400 border-amber-900/50 bg-amber-950/20",
+            advanced: "text-red-400 border-red-900/50 bg-red-950/20",
           };
-          const diffColor = diffColorMap[q.difficulty] || "text-amber-400 border-amber-900/50 bg-amber-950/20";
+          const qDiffCanon = normalizeDifficulty(q.difficulty);
+          const diffColor = diffColorMap[qDiffCanon];
 
           return (
             <div key={q.id} className={`rounded-xl border transition-all ${isDone ? "border-emerald-800/40 bg-emerald-950/10" : "border-zinc-800 bg-zinc-900/40"} ${isOpen ? "border-violet-700/60" : ""}`}>
@@ -2894,7 +3060,7 @@ function BrowseMode({ onExit }) {
                 <span className="text-zinc-600 font-mono text-[11px] shrink-0 mt-0.5">{String(idx + 1).padStart(3, "0")}</span>
                 <span className="flex-1 text-sm text-zinc-200 leading-snug">{q.question}</span>
                 <div className="shrink-0 flex items-center gap-2">
-                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${diffColor}`}>{q.difficulty}</span>
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${diffColor}`}>{qDiffCanon}</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                     className={`text-zinc-500 transition-transform ${isOpen ? "rotate-180" : ""}`}>
                     <polyline points="6 9 12 15 18 9"/>
@@ -2971,7 +3137,7 @@ function BrowseMode({ onExit }) {
 
                   {/* Footer: mark reviewed */}
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] font-mono text-zinc-600">{TOPIC_LABELS[q.topic] || q.topic} · {q.difficulty}</span>
+                    <span className="text-[10px] font-mono text-zinc-600">{TOPIC_LABELS[q.topic] || q.topic} · {qDiffCanon}</span>
                     <button onClick={() => markReviewed(q.id)}
                       className={`text-[11px] px-2.5 py-1 rounded font-mono transition-all border ${isDone ? "border-emerald-700 bg-emerald-900/30 text-emerald-400" : "border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500"}`}>
                       {isDone ? "✓ Reviewed" : "Mark reviewed"}

@@ -4,6 +4,8 @@
 import { useState, useRef } from "react";
 import { FOUNDATION_SCENES } from "./components/nicheViz/foundationScenes.jsx";
 import HighlightPopover from "./components/HighlightPopover.jsx";
+import GlossaryTerm from "./components/GlossaryTerm.jsx";
+import { GLOSSARY } from "./data/glossary.js";
 
 export default function FoundationsRunner({
   moduleId,
@@ -23,6 +25,21 @@ export default function FoundationsRunner({
   const contentRef = useRef(null);
   const alreadyDone = mastery?.has(moduleId);
   const hasInteractive = !!Component;
+
+  // ── Glossary hover/tap terms (2026-07-08) ──────────────────────────────────
+  // "Already shown" is tracked per rendered module page — a fresh Set whenever
+  // moduleId changes — so only the FIRST occurrence of a given glossary term
+  // gets wrapped, not every repeat. tokenizeInline (below, module scope) reads
+  // this via the mutable _glossaryCtx handoff set just before render, since
+  // tokenizeInline/InlineMd are plain functions outside this component and this
+  // app's synchronous single-tree rendering makes that handoff safe.
+  const shownGlossaryRef = useRef(new Set());
+  const prevGlossaryModuleId = useRef(moduleId);
+  if (prevGlossaryModuleId.current !== moduleId) {
+    shownGlossaryRef.current = new Set();
+    prevGlossaryModuleId.current = moduleId;
+  }
+  _glossaryCtx = { moduleId, onNavigate, shown: shownGlossaryRef.current };
 
   const mcqList = runnerData.mcqs
     ? runnerData.mcqs
@@ -76,7 +93,7 @@ export default function FoundationsRunner({
   }
 
   function handleComplete() {
-    markComplete?.();
+    markComplete?.(moduleId);
   }
 
   const allSubmitted = mcqList.length === 0 || submitted.every(Boolean);
@@ -433,12 +450,31 @@ const INLINE_RULES = [
   { re: /_([^_\n]+)_/,           kind: "em" },
 ];
 
+// ── Glossary hover/tap terms (2026-07-08) ──────────────────────────────────────
+// _glossaryCtx is handed off synchronously by FoundationsRunner right before it
+// renders (see the component body above) — safe because this app only ever
+// renders one FoundationsRunner tree at a time. tokenizeInline reads it below
+// to decide (a) whether a candidate glossary match should win the "earliest
+// match" competition against bold/italic/code/highlight, and (b) whether that
+// term has already been wrapped once on this module's page.
+let _glossaryCtx = { moduleId: null, onNavigate: null, shown: null };
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Longest key first so multi-word terms (e.g. "scaled dot-product attention")
+// win over a shorter substring (e.g. "attention") sitting inside them.
+const GLOSSARY_ENTRIES = Object.entries(GLOSSARY)
+  .sort((a, b) => b[0].length - a[0].length)
+  .map(([key, entry]) => ({ key, entry, re: new RegExp(`\\b(${escapeRegExp(key)})\\b`, "i") }));
+
 function tokenizeInline(str) {
   const out = [];
   let rest = str;
   let guard = 0;
   while (rest.length && guard++ < 5000) {
-    // Find the earliest matching rule.
+    // Find the earliest matching rule (bold/highlight/code/em).
     let best = null;
     for (const rule of INLINE_RULES) {
       const m = rule.re.exec(rest);
@@ -446,10 +482,46 @@ function tokenizeInline(str) {
         best = { m, kind: rule.kind };
       }
     }
-    if (!best) {
+
+    // Find the earliest not-yet-shown glossary term, skipping a term whose
+    // full lesson IS the module currently rendering (no self-referential popup).
+    let glossaryBest = null;
+    const shown = _glossaryCtx.shown;
+    if (shown) {
+      for (const g of GLOSSARY_ENTRIES) {
+        if (shown.has(g.key)) continue;
+        if (g.entry.sourceModuleId === _glossaryCtx.moduleId) continue;
+        const gm = g.re.exec(rest);
+        if (gm && (glossaryBest === null || gm.index < glossaryBest.m.index)) {
+          glossaryBest = { m: gm, g };
+        }
+      }
+    }
+
+    // Glossary only wins the competition if it's strictly earlier than any
+    // markdown token — a markdown span (bold/code/etc.) always takes priority
+    // over a glossary match starting at the same position or later.
+    const useGlossary = glossaryBest && (!best || glossaryBest.m.index < best.m.index);
+
+    if (!best && !useGlossary) {
       out.push(rest);
       break;
     }
+
+    if (useGlossary) {
+      const { m, g } = glossaryBest;
+      if (m.index > 0) out.push(rest.slice(0, m.index));
+      const key = out.length;
+      shown.add(g.key);
+      out.push(
+        <GlossaryTerm key={key} term={g.entry} currentModuleId={_glossaryCtx.moduleId} onNavigate={_glossaryCtx.onNavigate}>
+          {m[1]}
+        </GlossaryTerm>
+      );
+      rest = rest.slice(m.index + m[0].length);
+      continue;
+    }
+
     const { m, kind } = best;
     if (m.index > 0) out.push(rest.slice(0, m.index));
     const inner = m[1];

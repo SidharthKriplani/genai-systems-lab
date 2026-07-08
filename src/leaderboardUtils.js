@@ -7,18 +7,33 @@ import { PREP_QUESTIONS } from "./data/preplabQuestions";
 
 // ─── SCORING WEIGHTS ──────────────────────────────────────────────────────────
 // PrepLab questions (per correct answer, by difficulty)
+//
+// 2026-07-08 taxonomy normalization: canonical UI vocabulary is now beginner /
+// intermediate / advanced (matches the module-level `level:` field used in
+// Concepts.jsx). The underlying question DATA still carries older/mixed values
+// (easy/medium/hard/Easy/Medium/Hard/beginner-intermediate/staff/daunting — owned
+// by a concurrent content pass, not touched here). `normalizeDifficulty` maps old →
+// canonical for SCORING only, via a function, never by mutating the data. This is a
+// deliberate small duplicate of the same helper in PrepLab.jsx (kept local here to
+// avoid a cross-module import cycle for one tiny pure function — keep both in sync
+// if the taxonomy changes again).
+//
+// staff/daunting/beginner-intermediate had no distinct scoring behavior beyond their
+// own point value — folded into "advanced" per the fix spec (same as PrepLab.jsx's
+// display maps). `daunting` questions are browse-only (never answered/scored in
+// Trainer), so folding it into "advanced" is inert in practice — Q_SCORE_MAP below
+// is never populated for a question a user can't answer.
+function normalizeDifficulty(d) {
+  const key = (d || "").toLowerCase();
+  if (key === "beginner" || key === "easy") return "beginner";
+  if (key === "intermediate" || key === "medium") return "intermediate";
+  return "advanced"; // hard, staff, daunting, beginner-intermediate, or unrecognized
+}
+
 const DIFF_SCORE = {
-  beginner:              1,
-  "beginner-intermediate": 2,
-  easy:                  2,
-  Easy:                  2,
-  intermediate:          3,
-  medium:                3,
-  Medium:                3,
-  hard:                  5,
-  Hard:                  5,
-  staff:                 8,
-  daunting:              0, // browse-only, not scored
+  beginner:     1,
+  intermediate: 3,
+  advanced:     5,
 };
 
 const CONCEPTS_MODULE_SCORE = 3;  // per mastered Concepts module
@@ -26,7 +41,7 @@ const SCENARIO_PASS_SCORE   = 5;  // per passed RAG Lab scenario
 
 // Build a lookup: questionId → difficulty score (for O(1) access)
 const Q_SCORE_MAP = Object.fromEntries(
-  PREP_QUESTIONS.filter(Boolean).map(q => [q.id, DIFF_SCORE[q.difficulty] ?? 3])
+  PREP_QUESTIONS.filter(Boolean).map(q => [q.id, DIFF_SCORE[normalizeDifficulty(q.difficulty)]])
 );
 
 // ─── SCORE COMPUTATION ────────────────────────────────────────────────────────
