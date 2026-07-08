@@ -1662,3 +1662,219 @@ no separate esbuild run was required for those.
 
 ### Not pushed
 Per root CLAUDE.md — no git commands run this session; human reviews and pushes separately.
+
+## 2026-07-08 (later) — AI Agents S-tier writer pass: agent-react, agent-tool-design, agent-eval-trajectory
+
+Writer-pass-only task (3B1B-STANDARD.md), scoped to the 3 tier-S "AI Agents" modules
+(`src/data/moduleTiers.js`). No UI/component files touched, no question-bank/glossary files touched.
+Pass-2 adversarial audit intentionally NOT run here — separate task, separate context, per the spec's
+own enforcement section (a writer re-reading its own draft doesn't reliably catch its own blind spots).
+
+**Files/module locations confirmed by grep before editing** (not assumed from naming convention):
+`agent-react` and `agent-tool-design` live in `src/data/agents/agent-core.js`; `agent-eval-trajectory`
+lives in `src/data/foundations/gap-agenteval-ragingest.js` (NOT in an `agent-*.js` file — it was authored
+in the earlier gap-module session alongside `rag-ingestion-pipeline`, which was left untouched, out of
+scope).
+
+**agent-react — already at the current bar, no changes.** Full read of groundUp/explanation/scenario:
+crisis→inevitability arc present (stateless-LM constraint → ReAct loop), jargon-second ("ReAct" and the
+Thought/Action/Observation split are named only after the loop concept is built up), pause-and-predict
+beats present in both groundUp ("Pause on that...") and scenario ("Take a moment before reading on..."),
+one continuous running example (the order-#4471 refund story) carried from scenario through the
+illustration, explicit mechanical labeling in the illustration, closing line references "the interactive"
+generically with no "above/below" positional language (prerender-safe). No factual, numeric, or precision
+issues found. Left untouched per the brief's own instruction not to rewrite content that already clears
+the bar.
+
+**agent-tool-design — already at the current bar, no changes.** Same read depth: "little text card"
+(tool schema) crisis→inevitability framing, concrete weak-vs-strong schema illustration with correct JSON,
+one continuous running example (the HR `search` tool regression), MCP correctly described as the interface
+standard. No issues found. Left untouched.
+
+**agent-eval-trajectory — real content, but needed 4 targeted precision fixes** (not a rewrite; this
+module was authored end-to-end in an earlier session from a StubModule skeleton and the prose itself was
+already solid — the bugs were narrow and mechanical):
+1. **Broken cross-reference (factual bug):** explanation[0] said "the same Thought → Action → Observation
+   loop from ReAct (see the **agent-fundamentals** module)" — `agent-fundamentals` is not a real module id
+   anywhere in the codebase (confirmed via `grep -rn "agent-fundamentals" src/` — the only hit was this
+   line). The actual module is `agent-react` ("The ReAct Pattern"). Fixed to "(see the ReAct module)".
+2. **Numeric self-check failure (real miss, caught by recomputation, not vibes):** the "Trajectory 2
+   (broken path, lucky)" illustration claimed `TRAJECTORY EVAL: 1/6 steps ok` but the visible per-step
+   marks only flagged 3 of 6 steps with ✗ (wrong arg, hallucinated call, ignored failure) and marked the
+   final reply ✓ "(looks right)" — recounting literally by the visible marks gives 3/6 ok, not 1/6, an
+   internal contradiction a reader could catch by counting the checkmarks themselves. Recomputed the
+   intended tally (only the opening Thought is genuinely sound; the Observation is on the wrong order, and
+   the final reply is unearned despite sounding right) and re-marked all 6 steps explicitly (✓/✗) so the
+   visible marks and the stated 1/6 now agree exactly. Also added the missing ✓ marks to Trajectory 1's
+   Thought step for symmetry (was previously the only unmarked step there too).
+3. **Garbled illustration label:** "Outcome (process) metrics vs process (trajectory) metrics" (stray
+   duplicated parenthetical, unreadable) → "Outcome metrics vs. process (trajectory) metrics".
+4. **Prerender-awareness violation (Definition of Done #6):** closing paragraph said "The interactive
+   **below** lets you score a trajectory..." — a positional reference that breaks on the static prerendered
+   SEO page (no interactive renders there). Removed "below" to match the plain "the interactive lets you…"
+   phrasing already used consistently in agent-react and agent-tool-design's closing lines.
+
+**Verification:** both touched files re-verified with
+`npx -y esbuild@0.21.5 <file> --bundle --format=esm --loader:.jsx=jsx --external:react --external:react-dom
+--external:react/jsx-runtime --external:recharts --external:lucide-react --outfile=/dev/null` after edits —
+clean (`gap-agenteval-ragingest.js` 40.1kb, `agent-core.js` 57.1kb, both "Done" with no errors/warnings).
+
+### Not pushed
+No git commands run this session; human reviews and pushes separately, per root CLAUDE.md.
+
+### Next
+Pass-2 adversarial audit on all 3 modules (separate agent/context, given only the finished draft, checked
+against 3B1B-STANDARD.md's falsifiable per-rule checklist) — not started.
+
+## 2026-07-08 (later still) — AI Agents S-tier: Pass-2 adversarial audit (agent-react, agent-tool-design, agent-eval-trajectory)
+
+Ran as a genuinely separate context from the writer pass above — read the 3 modules cold, no writer
+notes/reasoning consulted, per 3B1B-STANDARD.md's own enforcement section. Full falsifiable checklist
+(voice rules 1/2/3/4/7/8/10/11/12 + the numeric self-check) plus the CONTENT-AUDIT-RUBRIC.md 10-smell pass,
+against `src/data/agents/agent-core.js` (agent-react, agent-tool-design) and
+`src/data/foundations/gap-agenteval-ragingest.js` (agent-eval-trajectory).
+
+**Numeric self-check on the reported tally bug — independently reverified, holds up.** Recounted the
+"Trajectory 2 (broken path, lucky)" illustration by hand, mark by mark: Thought ✓, Action ✗, Observation
+✗, Action ✗, Observation ✗, Action ✗ = 1 check out of 6 steps. This matches the stated `TRAJECTORY EVAL:
+1/6 steps ok` exactly — the writer pass's fix (logged above) is correct and internally consistent now.
+Trajectory 1's `4/4 steps ok` also recounted clean (4 steps, all ✓). No other numeric/tally claims exist
+in any of the 3 modules that need recomputation (no other cumulative sums, percentages-derived-from-counts,
+or threshold comparisons present — the "92% task success" and "8–12 steps" figures are narrative flavor/
+heuristics, not computed values with a checkable derivation).
+
+**agent-react — clean, zero violations.** Jargon-second holds (ReAct and the Thought/Action/Observation
+split are both preceded by an un-named narrative description of the same behavior in groundUp before being
+formalized in explanation[0]); precision rule holds (every named role cashes out to an exact definition in
+the same sentence); one continuous running example (order #4471) carried scenario→illustration; explicit
+labeling in the illustration; pause-and-predict present in both groundUp and scenario; failure-mode mapping
+(bad Thought/Action/Observation → different fix) is a genuine causal payoff, not a bolted-on list; explicit
+forward handoff to agent-tool-design ("this is exactly why tool design is its own module") closes the
+dangling-thread smell. No factual claims found that don't check out. No fix needed.
+
+**agent-tool-design — one real fix, otherwise clean.** Found and fixed one CONTENT-AUDIT-RUBRIC smell #3
+(asserted, not shown): "a `query` field with the hint '...' **measurably improves retrieval**, because the
+model imitates the example" claimed a quantified, measured effect with no measurement, study, or number
+anywhere in the module to back it — a reader has no way to know if "measurably" is true or decorative.
+Fixed by dropping the word: "...improves retrieval, because the model imitates the example." (the causal
+claim — the model imitates the example — is the part actually taught and defensible; "measurably" was the
+unearned part). Rest of the module holds: jargon-second ("text card" metaphor precedes "tool schema"),
+precision rule holds throughout, one worked illustration (weak-vs-strong schema), one running example (the
+HR `search` regression), explicit MCP definition at first use, no dangling references.
+
+**agent-eval-trajectory — clean after the writer pass's 4 fixes; independently reverified all 4, plus one
+minor sibling-depth observation flagged (not fixed).** Cross-reference now correctly says "(see the ReAct
+module)"; the tally now agrees exactly (see numeric self-check above); the illustration label reads clean;
+the closing paragraph names "the interactive" and, separately, "the closing scenario" by name rather than
+by position — both prerender-safe, no "above/below" anywhere in the module. Two-opposite-failures framing
+(false pass / false fail) is evenly developed on both sides. The false-pass/false-fail vs. keep-both-metrics
+confusability is explicitly pre-empted (MCQ2 and the takeaway both state outcome-for-shipping,
+trajectory-for-debugging, so a careful reader can't mistake trajectory eval as replacing outcome eval).
+**Judgment-call flag, not fixed:** of the four trajectory metrics named in explanation[3] (tool-call
+accuracy, step success rate, redundant/hallucinated calls, error-recovery), "step success rate" gets one
+short clause ("what fraction of steps produced a valid, expected observation") versus a full sentence or
+more for each of its three siblings — a mild instance of CONTENT-AUDIT-RUBRIC smell #8. Leaving as a
+judgment call rather than expanding it myself, since it's a word-count/emphasis choice, not a factual gap
+— tool-call accuracy and error-recovery are also the two metrics the module's own MCQs and scenario
+actually exercise, so the asymmetry may be intentional (teach hardest first, list the rest).
+
+**Cross-module continuity (voice rule 11) — checked against the gold-standard template, not flagged.**
+Neither agent-tool-design's nor agent-eval-trajectory's `groundUp` opens by literally naming the specific
+point its predecessor module left off at (agent-tool-design doesn't name agent-react; agent-eval-trajectory
+doesn't name agent-config-lab, its predecessor in the Agent gym's `moduleIds` order in `Concepts.jsx`).
+Checked this against the actual gold-standard `embeddings` module (`src/data/foundationsRunnerData.js`)
+before flagging it as a defect: `embeddings`' own groundUp opens with a generic "Let's start with a small
+puzzle" rather than naming its predecessor (tokenizer) by name either. Since the reference template itself
+doesn't apply rule 11 this literally at every module boundary, flagging its absence here would be
+inconsistent with observed practice rather than a real regression — left as an observation, not a fix.
+
+**Verification:** `agent-core.js` and `gap-agenteval-ragingest.js` re-run through
+`npx -y esbuild@0.21.5 <file> --bundle --format=esm --loader:.jsx=jsx --external:react --external:react-dom
+--external:react/jsx-runtime --external:recharts --external:lucide-react --outfile=/dev/null` after the one
+edit above — both clean (57.1kb / 40.1kb, no errors/warnings).
+
+**Verdict: all 3 modules pass Pass-2 clean after 1 targeted fix (agent-tool-design).** No second loop
+needed. `rag-ingestion-pipeline` (same file as agent-eval-trajectory) was NOT in scope for this audit and
+was not read/touched.
+
+### Not pushed
+Per root CLAUDE.md — no git commands run this session; human reviews and pushes separately.
+
+## 2026-07-08 (later still) — Glossary harvest + "agents" PrepLab bucket audit from the 3 finalized modules
+
+Harvested from the now-finalized `agent-react`, `agent-tool-design`, `agent-eval-trajectory` (writer pass +
+Pass-2 audit both clean, see the two entries directly above). Content-only harvest — none of the 3 modules'
+own text was touched.
+
+### Task 1 — Glossary: 21 new terms added to `src/data/glossary.js` (37 → 58, 0 duplicate keys)
+Confirmed the consuming mechanism first: `src/FoundationsRunner.jsx`'s `tokenizeInline`/`GLOSSARY_ENTRIES`
+(longest-key-first, word-boundary match, skips self-referential module, first-occurrence-only) is
+**unchanged** — only `glossary.js` data was touched. Deliberately avoided single generic English words as
+keys (e.g. bare "Thought"/"Action"/"Observation") since those would hijack unrelated prose across every other
+module's rendered page — used the module's own specific compound terms instead. All defs are lightly-trimmed
+sentences pulled from each module's own `explanation[]`/`keyPoints`, matching the file's stated convention.
+
+- **agent-react (6):** `react (reason + act)`, `thought–action–observation loop`, `generation stop point`,
+  `max-step limit`, `fabricated observation`, `grounding (agent loop)`.
+- **agent-tool-design (6):** `tool schema`, `negative guidance (tool description)`, `tool granularity`,
+  `structured error`, `mcp (model context protocol)`, `parameter description`.
+- **agent-eval-trajectory (9):** `outcome evaluation`, `trajectory evaluation`, `false pass (trajectory)`,
+  `false fail (trajectory)`, `tool-call accuracy`, `step success rate`, `golden trajectory`, `llm-as-judge`,
+  `agent eval harness`.
+
+Verified no key collisions against the existing 37 (grep'd the full existing key list before writing) and
+confirmed programmatically after (`Object.keys(GLOSSARY).length === 58`, dedup check = 0 dupes).
+`glossary.js` and `FoundationsRunner.jsx` both re-verified via `npx -y esbuild@0.21.5 ... --outfile=/dev/null`
+— clean.
+
+### Task 2 — "agents" PrepLab bucket audit: found and partially fixed a real, undiscovered MCQ length-tell regression
+`src/data/preplabQuestions.js`'s `agents` topic already had **103 questions** (90 MCQ + 13 text) — the
+largest bucket in the bank (rag is next at 94) — so it was **not thin**; no volume was added. Per the
+instruction to audit before adding, read every MCQ/text question currently tagged `agents`.
+
+**Grounding: no generic/wrong questions found.** Content across `react-*`, `agents-2..12`, `mcp-*`, `rel-*`,
+`toolprod-*`, `sec-*`, `govern-*`, `obs-*`, `agtest-*`, `a2a-*`, `k8sagent-*`, `taskqueue-*`, `apiback-*`,
+`langgraph-*`, `lchain-*`, `vibe-*` is well-grounded — verified a sample against real GSL surfaces (GroundTruth
+posts `react-pattern`, `tool-use-design`, `mcp-explained`, `agent-security`, `agent-governance`,
+`agent-observability`, `agent-testing-strategies`, `agent-tool-use-production` all exist in
+`groundTruthIndex.js`/`groundTruthPosts.js`). `react-1/2/3` specifically match the finalized `agent-react`
+module's Thought/Action/Observation framing and ablation claims precisely — no rewrite needed on meaning,
+only on option length (below). No question was found testing something the gym doesn't actually teach; none
+replaced.
+
+**MCQ length-tell — critical finding.** Wrote a PrepLab-shaped variant of the repo's own
+`_verify_mcq_balance.mjs` (that script targets `RUNNER_DATA`-shaped foundation modules; `PREP_QUESTIONS` is a
+flat array with a different shape) — untracked scratch file `_verify_prep_balance.mjs`, repo root, same
+disposable-script convention as `_verify_mcq_balance.mjs`. Result on the full `agents` bucket **before any
+edit: 89/90 MCQs flagged (98.9%)** — the correct answer was the single longest option in nearly every
+question, often by 2–7x the average distractor length. This is the exact bug class the 2026-07-08 "quiz MCQ
+length-tell fix" session (logged earlier the same day) fixed for `RUNNER_DATA` takeaway quizzes and the
+newly-added PrepLab questions in the immediately-prior log entry — but that work never touched this
+pre-existing `agents` bucket, which had apparently never been audited for this bug at all.
+
+Given the scope of this task (harvest from 3 specific modules), fixed the **35 questions directly grounded
+in ReAct / tool design / trajectory evaluation** rather than silently rewriting the full 103-question bucket
+(which spans many topics unrelated to the 3 modules — A2A protocol, LangGraph internals, Kubernetes serving,
+task queues, vibe-coding — a separate, larger audit): `react-1/2/3`, `agents-3/4/5/7/8/9/10/12`, `mcp-q1/q2`,
+`rel-q1/q2`, `mcp-1..6`, `toolprod-1..6`, `sec-2`, `obs-1/2`, `agtest-3/4/6/7/8`. Rebalanced each in 2–3
+passes (lengthened/shortened option text without changing which answer is correct or its meaning) until the
+verify script showed 0/35 flagged. Confirmed via direct grep of the script's flagged-id list against these
+35 ids: zero matches. Full bucket after this pass: **54/90 flagged (60.0%)**, down from 89/90 — the 35 fixed
+are the ones this task owned; the remaining ~54 (all outside the 3 modules' scope: `a2a-*`, `vibe-*`,
+`trap-*`, `ama-*`, `langgraph-*`, `agentctx-*`, `quantiphi-*`, `lchain-*`, `sec-1/3/4/5/6`, `govern-*`,
+`apiback-*`, `taskqueue-*`, `k8sagent-*`, `obs-3/4/6`, `agtest-1/2/5`) are **explicitly NOT fixed** and
+flagged here as a known open issue for whoever next touches those topics — do not assume this bucket is
+clean; only the 35 ReAct/tool-design/trajectory-eval questions were rebalanced.
+
+**Verification:** `npx -y esbuild@0.21.5 src/data/preplabQuestions.js --bundle ... --outfile=/dev/null` clean
+after all edits. `_verify_prep_balance.mjs agents` re-run after the final edit: the 35 target ids all absent
+from the flagged list.
+
+### Files touched
+`src/data/glossary.js` (21 new entries appended), `src/data/preplabQuestions.js` (35 MCQ option arrays
+rebalanced, no `correct` indices changed, no question text or explanations changed). New untracked scratch
+file: `_verify_prep_balance.mjs` (repo root, disposable, same convention as `_verify_mcq_balance.mjs` — not
+to be committed).
+
+### Not pushed
+No git commands run this session; human reviews and pushes separately, per root CLAUDE.md.

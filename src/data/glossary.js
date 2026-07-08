@@ -19,6 +19,12 @@
 // Seed batch: ~35 terms drawn from 5 already-3B1B-rewritten modules —
 // tokenizer, attention, sampling, kv-cache, rlhf. Definitions are trimmed
 // from each module's own explanation[] / groundUp text, not invented fresh.
+//
+// Batch 2 (2026-07-08): +20 terms harvested from the 3 Agents-gym modules that
+// just went through a writer pass + independent adversarial audit and were
+// confirmed finalized: agent-react, agent-tool-design, agent-eval-trajectory.
+// Same convention — definitions are lightly-trimmed sentences pulled straight
+// from each module's own explanation[]/keyPoints, not invented fresh.
 
 export const GLOSSARY = {
   "tokenizer": {
@@ -246,5 +252,137 @@ export const GLOSSARY = {
     def: "When a policy learns to game the reward model's imperfect judgment — padding answers with filler, or being sycophantic — driving the reward score up without genuinely improving the response humans meant to reward.",
     sourceModuleId: "rlhf",
     sourceModuleTitle: "RLHF and DPO: Aligning Model Behavior",
+  },
+
+  // ── agent-react ──────────────────────────────────────────────────────────
+  "react (reason + act)": {
+    term: "ReAct (Reason + Act)",
+    def: "A loop that interleaves two things a language model is already good at — writing out reasoning as text (Thought) and emitting a structured tool call (Action) — then lets the runtime execute the real world and feed the result back in (Observation), so each new step is grounded in reality instead of a guess.",
+    sourceModuleId: "agent-react",
+    sourceModuleTitle: "The ReAct Pattern",
+  },
+  "thought–action–observation loop": {
+    term: "Thought → Action → Observation Loop",
+    def: "The three-role loop ReAct runs: Thought is the model's reasoning as plain text, Action is a structured tool call after which the model must stop generating, and Observation is the real tool result the runtime — never the model — appends back into context.",
+    sourceModuleId: "agent-react",
+    sourceModuleTitle: "The ReAct Pattern",
+  },
+  "generation stop point": {
+    term: "Generation Stop Point",
+    def: "Treating a model's Action (tool call) as a hard halt on decoding, so nothing after it — including a fabricated Observation — can come from the model on that turn; modern function-calling APIs end the turn natively at the tool call.",
+    sourceModuleId: "agent-react",
+    sourceModuleTitle: "The ReAct Pattern",
+  },
+  "max-step limit": {
+    term: "Max-Step Limit",
+    def: "A hard cap (e.g. 8–12 steps) on how many Thought → Action → Observation iterations an agent loop may run before it must gracefully report that it could not complete the task — mandatory because nothing in the ReAct pattern itself guarantees termination.",
+    sourceModuleId: "agent-react",
+    sourceModuleTitle: "The ReAct Pattern",
+  },
+  "fabricated observation": {
+    term: "Fabricated Observation",
+    def: "An Observation the model wrote itself instead of a real tool result — the classic production bug, since a hallucinated 'fact' in that slot can drive a real action (like an unauthorized refund) with nothing to stop it.",
+    sourceModuleId: "agent-react",
+    sourceModuleTitle: "The ReAct Pattern",
+  },
+  "grounding (agent loop)": {
+    term: "Grounding",
+    def: "Conditioning each new Thought on a real Observation that didn't exist when the reasoning began — what lets a ReAct agent recover from a 404, an empty search, or a wrong assumption instead of committing to a guessed plan up front.",
+    sourceModuleId: "agent-react",
+    sourceModuleTitle: "The ReAct Pattern",
+  },
+
+  // ── agent-tool-design ────────────────────────────────────────────────────
+  "tool schema": {
+    term: "Tool Schema",
+    def: "The name, description, and typed parameter list that make up the model's entire view of a tool — it never sees the underlying code, so a tool call is chosen purely from this text, making the schema a specification interface rather than documentation.",
+    sourceModuleId: "agent-tool-design",
+    sourceModuleTitle: "Tool Use Design",
+  },
+  "negative guidance (tool description)": {
+    term: "Negative Guidance",
+    def: "An explicit 'do NOT use for…' clause in a tool's description — the single highest-leverage line for stopping a model from over-triggering a vague, catch-all-sounding tool.",
+    sourceModuleId: "agent-tool-design",
+    sourceModuleTitle: "Tool Use Design",
+  },
+  "tool granularity": {
+    term: "Tool Granularity",
+    def: "The design choice of how much a single tool should do — the rule of thumb is one tool = one clear verb over one clear noun, since a mega-tool with a mode flag overloads the argument space and too many micro-tools collide on selection.",
+    sourceModuleId: "agent-tool-design",
+    sourceModuleTitle: "Tool Use Design",
+  },
+  "structured error": {
+    term: "Structured Error",
+    def: "A tool failure returned as an actionable object — e.g. { error: 'not_found', message, suggestion } — rather than a bare null or stack trace, so the agent's reasoning loop can tell not-found apart from down or bad-argument and self-correct instead of failing blindly.",
+    sourceModuleId: "agent-tool-design",
+    sourceModuleTitle: "Tool Use Design",
+  },
+  "mcp (model context protocol)": {
+    term: "MCP (Model Context Protocol)",
+    def: "A standard that lets you expose a tool once from an MCP server and have any MCP-speaking client call it, instead of re-writing a bespoke integration for every LLM client — it formalises exactly the schema/description/parameter grammar good tool design already calls for.",
+    sourceModuleId: "agent-tool-design",
+    sourceModuleTitle: "Tool Use Design",
+  },
+  "parameter description": {
+    term: "Parameter Description",
+    def: "The type and constraint text attached to each tool argument — a precise example (e.g. 'remote meal expense policy 2024', not 'expenses') improves retrieval because the model imitates it, and enums are preferred over free strings wherever the value space is closed.",
+    sourceModuleId: "agent-tool-design",
+    sourceModuleTitle: "Tool Use Design",
+  },
+
+  // ── agent-eval-trajectory ────────────────────────────────────────────────
+  "outcome evaluation": {
+    term: "Outcome Evaluation",
+    def: "Grading only whether an agent's final output matched the expected answer — sufficient for a one-shot model call, but for a multi-step agent it collapses an entire trajectory into a single pass/fail and discards everything that happened along the way.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
+  },
+  "trajectory evaluation": {
+    term: "Trajectory Evaluation",
+    def: "Scoring an agent's process step by step — tool-call accuracy, step success rate, redundant or hallucinated calls, and error recovery — instead of only its final answer, because an agent can reach the right answer through a broken, unsafe, or lucky path that outcome eval can't see.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
+  },
+  "false pass (trajectory)": {
+    term: "False Pass",
+    def: "An agent reaching the correct final answer through a path that is broken, unsafe, or simply lucky — e.g. calling a destructive tool nobody asked for and still emitting a plausible final sentence — which outcome-only evaluation scores as PASS.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
+  },
+  "false fail (trajectory)": {
+    term: "False Fail",
+    def: "An agent reasoning correctly and calling the right tools with the right arguments, but the underlying data was stale or a downstream API errored — outcome eval says FAIL and sends you to debug the agent's reasoning when the real fault lived in the environment.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
+  },
+  "tool-call accuracy": {
+    term: "Tool-Call Accuracy",
+    def: "Whether an agent, at each step, selected the right tool and called it with the right arguments — tool-selection accuracy and tool-argument accuracy are the two things this metric checks.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
+  },
+  "step success rate": {
+    term: "Step Success Rate",
+    def: "The fraction of steps in an agent's trajectory that produced a valid, expected observation — one of the core process metrics trajectory evaluation tracks alongside tool-call accuracy and error recovery.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
+  },
+  "golden trajectory": {
+    term: "Golden Trajectory",
+    def: "A hand-authored reference run used for per-step assertions — this ticket should call lookup_order with the exact ID and should never call issue_refund — that becomes a regression suite catching a reintroduced bug in CI.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
+  },
+  "llm-as-judge": {
+    term: "LLM-as-Judge (Trajectory)",
+    def: "Handing a full step-by-step agent trace to a strong model with a rubric to grade open-ended quality assertions can't specify — it scales to fuzzy judgments but inherits judge biases (fluent-but-wrong, verbosity, non-determinism), so it's anchored with golden examples and human spot-audits.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
+  },
+  "agent eval harness": {
+    term: "Agent Eval Harness",
+    def: "A test harness that runs an agent against a fixed suite of tasks in a controlled, reproducible environment (mocked or recorded tools), captures the full trajectory of every run, and reports outcome and process metrics side by side so every regression is localizable to the exact step where it diverged.",
+    sourceModuleId: "agent-eval-trajectory",
+    sourceModuleTitle: "Agent Evaluation: Trajectory vs Outcome",
   },
 };
