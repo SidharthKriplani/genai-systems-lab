@@ -158,18 +158,18 @@ export const RECAP_PATCH_A = {
 
   "vector-db-index-mechanics": {
     keyPoints: [
-      "**Exact search is O(N·d) and doesn't scale.** Comparing a query to all 10M vectors at d=1,536 is ~15B operations per query — fast at 100K, seconds at 10M.",
-      "**ANN indexes trade a little accuracy for orders-of-magnitude speed** by restricting search to a relevant subspace rather than all N.",
-      "**HNSW navigates a multi-layer graph.** M (connections per node, build time) and ef_search (candidates explored, query time) must scale with N — a fixed ef_search explores a subgraph 100× too small at 10M.",
-      "**IVF searches only the nearest clusters.** With nlist≈sqrt(N), keeping nlist=316 at 10M leaves ~31,600 vectors per cluster — each cluster search is 100× more expensive.",
-      "**Parameters set for one scale degrade at another.** A 100× dataset growth with no reconfiguration almost always explains 100× latency degradation.",
-      "**The fix is index reconfiguration, not migration.** Rebuild HNSW with scaled M/ef_search, or IVF with nlist≈3,162 then tune nprobe for acceptable recall.",
+      "**Flat (brute-force) search is exact — O(n) per query.** Correct by definition, no tuning, fine below ~50K vectors, unacceptable at 10M since it scans everything on every query.",
+      "**ANN indexes trade a little accuracy for orders-of-magnitude speed** by restricting search to a relevant subset rather than scanning everything.",
+      "**HNSW navigates a multi-layer graph.** M (edges per node, fixed at build) trades memory for connectivity; efSearch (beam width, query-time) trades latency for recall — turn both up together for higher recall at more memory and latency cost.",
+      "**IVF searches only the nprobe nearest clusters** out of nlist total, clustered once at build time; recall degrades for vectors near a cluster boundary that fall outside the searched clusters.",
+      "**IVF pairs naturally with product quantization (PQ)** to compress stored vectors, and its batch-built clusters suit corpora that update in scheduled chunks rather than continuously.",
+      "**The three-way dial is recall vs. latency vs. memory** — HNSW: high recall/low latency, memory-hungry; IVF(+PQ): smaller footprint, batch-friendly, more recall loss at boundaries; flat: your correctness baseline, never your production index above ~50K.",
     ],
     recap: [
-      "**Index performance is parameter-, not just database-, dependent.**",
-      "**HNSW: M, ef_search. IVF: nlist, nprobe** — both must scale with dataset size.",
-      "**Fixed ef_search/nlist at 10M → 100× too small a search space** — recall collapses, latency spikes.",
-      "**100× growth, no reconfig → 100× latency** — rebuild the index before migrating.",
+      "**Flat = exact, O(n) per query** — correctness baseline, not a production index at scale.",
+      "**HNSW: M (memory/connectivity), efSearch (latency/recall)** — both tunable, both cost something.",
+      "**IVF: nlist (clusters), nprobe (clusters searched)** — smaller footprint, batch-friendly, boundary recall loss; pairs with PQ.",
+      "**Pick by constraint: RAM to spare → HNSW; memory-bound + batch inserts → IVF+PQ; <~50K vectors → flat.**",
     ],
   },
 
@@ -179,14 +179,14 @@ export const RECAP_PATCH_A = {
       "**Exact technical tokens aren't synonyms.** Error messages, function names, version numbers, API endpoints — a token that doesn't literally match is wrong, not a paraphrase.",
       "**BM25 is built for literal matching.** It scores by exact term frequency and finds the document containing those exact characters, regardless of semantic similarity.",
       "**Neither method alone covers the full query distribution.** Dense handles conceptual queries, sparse handles exact-match — a technical doc tool needs both.",
-      "**RRF fuses in rank space to avoid score incompatibility.** BM25 scores are unbounded and length-dependent; cosine is bounded [-1,1]. RRF = 1/(rank+k), k=60, so position 1 from either contributes equally.",
-      "**Adaptive weighting improves on static hybrid.** A fast heuristic classifier ('exact' vs 'conceptual' via identifier density and punctuation) weights sparse higher for exact queries, dense higher for conceptual.",
+      "**RRF fuses in rank space to avoid score incompatibility.** BM25 scores are unbounded and length-dependent; cosine is bounded [-1,1]. RRF = 1/(rank+k), k=60, so position 1 from either contributes equally, and a document ranked well in *both* lists can outrank one that's first in only one.",
+      "**A cross-encoder reranker is the next lever, not a replacement for RRF.** It scores query+document together over the fused top-N for extra precision, at more per-query cost — a layer on top of fusion, not instead of it.",
     ],
     recap: [
       "**Dense fails exact-match; sparse fails conceptual** — need both.",
       "**Dense can't distinguish 'similar' from 'identical'** — exact error strings match general docs.",
-      "**RRF fuses in rank space (1/(rank+60))** — sidesteps incompatible BM25/cosine scales.",
-      "**Adaptive weighting:** classify query exact vs conceptual, weight sparse/dense accordingly.",
+      "**RRF fuses in rank space (1/(rank+60))** — rewards agreement across both lists, sidesteps incompatible BM25/cosine scales.",
+      "**Optional next step: cross-encoder rerank the fused top-N** for extra precision.",
     ],
   },
 

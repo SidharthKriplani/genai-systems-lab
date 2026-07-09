@@ -3085,3 +3085,112 @@ the 6 modules that only ever got mechanical recap/keyPoints backfill and zero co
 `vision-language-arch`, `multimodal-rag`).
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+## 2026-07-09 (cont. 5) — Backlog batch 3b closed: cold-audit + fix the 6 modules that had zero content review (system-prompts, ocr-pipeline-design, vector-db-index-mechanics, hybrid-search-design, vision-language-arch, multimodal-rag)
+
+Context: continuation of the content-completion initiative (batch 3a closed the 5 "one-shot triage"
+modules). This batch covers the 6 modules that had only ever received mechanical recap/keyPoints
+backfill — never a writer pass, never an independent Pass-2 audit. These findings were markedly more
+severe than batch 3a's.
+
+### Method
+Ground truth pulled from two independent sources per module: the bespoke interactive component in
+`src/Concepts.jsx` (`VectorIndexModule`, `HybridSearchModule`, `SystemPromptsModule`,
+`VisionLanguageModule`, `MultimodalRAGModule`, `OcrPipelineModule`) and, for 5 of the 6, the parallel
+`MODULE_SPECS` object also in `Concepts.jsx` (a second, independently-rendered ground-truth source).
+6 independent cold Pass-2 audit agents were dispatched in parallel, each checking the full 3B1B-STANDARD.md
+enforcement checklist and all 10 CONTENT-AUDIT-RUBRIC.md smells against both ground-truth sources, with
+zero visibility into writer intent.
+
+### Findings and fixes
+
+**`vector-db-index-mechanics`** — full rewrite of groundUp/scenario/explanation/mcqs/takeaway, most severe
+finding of the batch alongside multimodal-rag. The draft's entire causal spine — a fabricated "100K→10M
+vectors, 20ms→2,000ms" growth scenario built around an `nlist≈sqrt(N)` heuristic — fails numeric
+recomputation against the real `VectorIndexModule`, which doesn't model vector count as a variable at all:
+it's a fixed 100,000-vector corpus with deterministic formulas purely in terms of M/efSearch (HNSW) and
+nlist/nprobe (IVF). Rewrote entirely around the real mechanics: flat search as the O(n) correctness
+baseline, HNSW's M (memory/connectivity)+efSearch (latency/recall) tradeoff, IVF's nlist/nprobe+PQ
+compression tradeoff, and the real three-way recall/latency/memory dial — closing on a scenario adapted
+from MODULE_SPECS' own decision check (8M vectors, one modest box, nightly batches → IVF+PQ). Replaced all
+3 MCQs. Rewrote `keyPoints`/`recap` in `recap-patch-a.js` to match.
+
+**`hybrid-search-design`** — targeted fix. The draft invented an "adaptive weighting" subsystem (a query
+classifier that reweights BM25 vs. dense) that doesn't exist anywhere in the real `HybridSearchModule` or
+in `MODULE_SPECS` — it displaced the one real, spec-documented next lever: an optional cross-encoder
+reranker over the fused top-N. Removed the fabrication from groundUp/scenario/explanation/takeaway and
+MCQ2; replaced it with the real cross-encoder-rerank framing, and grounded the RRF explanation in the real
+component's own "transformer attention mechanism" preset query (dense rank 3 / BM25 rank 5 / RRF rank 1 for
+the Vaswani paper) as a worked illustration. Kept the real AttributeError/BM25/RRF core, which was
+already accurate. Rewrote `keyPoints`/`recap` in `recap-patch-a.js` to match.
+
+**`system-prompts`** — full rewrite. The entire draft narrative (scope-by-inclusion-vs-exclusion,
+over-refusal, prompt length) never once referenced the real `SystemPromptsModule` interactive at all — a
+complete text-scene lock break (Rule 5): no mention of the real 4-block builder (persona/constraints/
+format/domain context), no real token costs (28/32/35/45), no mention that the domain-context block ships
+off by default, and no coverage of the real injection-test mechanic (only the constraints block contains
+any counter-instruction, making it the sole functional defense in the interactive). Rewrote entirely
+around the real 4 blocks, their exact token costs and failure-when-off messages, the domain-block-off
+default, and the constraints-is-the-primary-injection-surface finding (verified against the real
+`INJECTION_ATTACKS` list and `testInjection()` logic). Replaced all 3 MCQs and the takeaway. Rewrote
+`keyPoints`/`recap` in `recap-patch-b.js` to match.
+
+**`vision-language-arch`** — full rewrite (auditor's verdict: "never received any 3B1B voice work at
+all"). Draft had no groundUp field and several unverifiable specifics (a "minimum 200 DPI" threshold not
+present anywhere in the real component or MODULE_SPECS). Added groundUp; rewrote scenario/explanation/mcqs
+around the real 5-stage pipeline (`VisionLanguageModule`'s Image→ViT Encoder [196 patches×768d]→Projector
+[→4096d]→Token Embedding [~256 tokens]→LLM) and its real key insight that the projector is the only
+component trained from scratch (ViT and LLM can both stay frozen). Kept the invoice-extraction scenario
+framing but grounded every specific claim in the real component's stated dimensions instead of invented
+DPI thresholds. Replaced all 3 MCQs. Rewrote `keyPoints`/`recap` in `recap-patch-b.js` to match.
+
+**`multimodal-rag`** — full rewrite, most severe finding of the batch (auditor's verdict: "cannot ship as a
+targeted fix... facts, not just prose, are wrong"). The draft's entire recommended mechanism — VLM figure
+captioning at index time plus separate Camelot/pdfplumber/Textract structured table extraction — is
+backwards relative to the real `MultimodalRAGModule` and MODULE_SPECS, both of which teach page-as-image
+retrieval (ColPali-style visual retriever, no chunking, no parsing) as the fix, with the real component's
+own UI explicitly framing OCR-parsed text as the losing/red path (38 tokens, "table layout destroyed,
+chart data missing entirely") and page-image retrieval as the winning/green path (256 tokens, "full visual
+context preserved"). Added groundUp (continuity-correct: vision-language-arch immediately precedes this
+module in the same track); rewrote scenario/explanation/mcqs entirely around the real 38-vs-256-token
+demo and the real decision criteria (tables/charts/forms/scans → multimodal; clean prose → text RAG;
+latency-critical → text RAG). Replaced all 3 MCQs. Rewrote `keyPoints`/`recap` in `recap-patch-b.js` to
+match.
+
+**`ocr-pipeline-design`** — full rewrite plus a structural fix. Draft had no groundUp field and its
+`explanation` field was a single flat string rather than the array format every other module uses (a
+Definition-of-Done structural defect independent of scene-scope). Numeric claims ("10-100x more expensive"
+for vision LLMs, "5-15x" blended for hybrid) don't hold precisely against the real component's own stated
+per-tier price ranges when checked at the extremes (true span is closer to 5x-300x) — resolved by quoting
+exact dollar ranges directly rather than asserting a derived multiplier. Also missing a real MODULE_SPECS-
+documented lesson: for pure Q&A tasks on scanned documents, OCR can be skipped entirely in favor of direct
+VLM page-reading — distinct from the pre-existing "programmatic PDF → skip OCR" lesson, which the draft did
+have. Added groundUp; converted explanation to an array (with one illustration block carrying the real
+3-tier cost/accuracy/failure-mode table verbatim from `OcrPipelineModule`); added the VLM-skip-OCR
+diagnostic branch with a cross-reference to multimodal-rag; rewrote the scenario to walk the full
+diagnostic sequence. Replaced all 3 MCQs. Rewrote `keyPoints`/`recap` in `recap-patch-b.js` to match.
+
+### Verification
+All 12 replacement fragments (6 module content blocks + 2 `recap-patch-a.js` module blocks + 4
+`recap-patch-b.js` module blocks) syntax-checked standalone via Node `eval()` against a wrapper object
+literal before splicing. Splice done via a field-boundary-aware Python script (locates each field's exact
+start via its `\n    fieldName:` marker rather than hand-transcribing old content, avoiding transcription
+risk on ~18KB of new text) with an explicit backup of all 3 target files taken first. Full-file
+`@babel/parser` (`sourceType: module`, `jsx` plugin) re-verified after all edits → parse OK on
+`foundationsRunnerData.js`, `recap-patch-a.js`, and `recap-patch-b.js`. Post-patch checks confirmed: all
+fabricated content is gone (the fake vector-growth scenario, `nlist≈sqrt(N)`, "adaptive weighting", the
+scope-by-inclusion system-prompts framing, the 200-DPI threshold, the flat-string OCR explanation, the
+captioning-centric multimodal-rag mechanism); the real content is present (flat/HNSW/IVF three-way
+tradeoff, `IVF + PQ` verdict, cross-encoder reranker, the real RRF Vaswani-paper worked example, the
+4-block system-prompts structure with real token counts, the real 5-stage VLM pipeline dimensions, the
+real page-image-retrieval mechanism with the 38/256-token demo and ColPali reference, the real OCR price
+tiers); each of the 6 modules has exactly one `groundUp`, one `scenario`, one `explanation`, one
+`takeaway`, and exactly 3 MCQ questions; each module key appears exactly once in each file it was edited
+in.
+
+**Backlog batch 3b is now complete** — all 11 previously fully-unaudited modules (5 from batch 3a + 6 from
+batch 3b) have now been through the full writer-pass-if-needed + cold Pass-2 audit + fix cycle. Next up:
+Batch 4 — PrepLab answer-key correctness audit for the ~26 remaining question-bucket topics (~466
+questions) that were only length-rebalanced, never correctness-audited.
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
