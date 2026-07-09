@@ -3611,3 +3611,81 @@ modules, `eval-loop`/`rag-pipeline` — 17 modules. Plus the separately-scoped h
 pass work for the 10 `agent-lab`/safety modules, not started.
 
 Not pushed yet — git commands below.
+
+## 2026-07-09 (cont. 12) — Writer-pass batch 2: 12 HIGH-interviewWeight modules get groundUp openers
+
+Per the user's explicit correction ("are all the other main foundations that are higher weighted for
+interviews completed first?" → "then work on those first"): re-derived the missing-groundUp set filtered
+by `interviewWeight: "high"` and worked that set exhaustively before anything else, rather than continuing
+in file/track order. 12 HIGH-weight modules were missing `groundUp` across 4 files:
+
+- `src/data/tracks/code-generation.js` (4): `codegen-model-training-fim`, `codegen-repo-context-retrieval`,
+  `codegen-agentic-loops`, `codegen-eval-passk-swebench`. (`codegen-security-sandboxing` is `medium` —
+  left for the medium-weight batch.)
+- `src/data/playground/playground-labs.js` (5): `injection-lab`, `hallucination-lab`, `bias-lab`,
+  `context-budget-lab`, `failure-sim-lab`. (`prompt-library`, `streaming-lab` are `medium` — left.)
+- `src/data/foundationsRunnerData.js` (2): `eval-loop`, `rag-pipeline` — both structurally migrated to
+  RUNNER_DATA earlier but never given a writer pass.
+- `src/data/foundations/market-gap.js` (1): `grpo-rlvr`.
+
+All 12 already had strong scenario/explanation/mcqs/takeaway content — the gap was purely the missing
+`groundUp` opener. Wrote one groundUp per module (2-3 paragraphs, naive-path-tried-and-closed pattern,
+concept named only after the constraint that requires it), matching the established pattern.
+
+### Pass-2 adversarial audit (12 parallel blind agents, one per module, cold — given only the standard's
+7 principles + the new groundUp text + the module's own scenario/first-explanation-paragraph for
+cross-check)
+
+All 12 came back with findings. 11 of 12 needed a fix; `hallucination-lab` only had a non-blocking minor
+note. Every module also got a "Principle 1 borderline — opens on a hypothesis, not a live incident" flag —
+this is the same "Suppose..." / "Picture the simplest way..." framing established by `tokenizer`'s original
+groundUp and accepted across every prior batch (the concrete incident lands one section later, in
+Production Scenario), so it was not treated as a fix.
+
+Real spoiler/duplication and structural findings, all fixed via exact-string replacement:
+- `codegen-model-training-fim`: near-verbatim phrase reused from the explanation's opening line
+  ("conversation only ever grows...") — reworded.
+- `codegen-repo-context-retrieval`: near-verbatim "cannot show the model the codebase" / "tens of
+  thousands" phrasing duplicated the explanation's opener — reworded.
+- `codegen-agentic-loops`: fully resolved the loop mechanism itself, plus reused the scenario's exact
+  "running forever" phrase — trimmed to stop before the resolution.
+- `codegen-eval-passk-swebench`: fully resolved the module's central text-vs-behavior reframe, duplicating
+  the explanation's own highlighted payoff line — rewritten to end on an open question instead.
+- `injection-lab`: pre-delivered the mechanism's substance ("reads everything as words") right before the
+  explanation's own reveal of the same insight — converted to an open question.
+- `bias-lab`: fully resolved "no rule needed, bias is inherited" before the explanation's own reveal —
+  softened to stop short of the resolution.
+- `context-budget-lab`: near-verbatim duplicate of the explanation's "hard budget / everything competes /
+  output has to fit" line, plus reused the exact "128,000" figure — reworded, figure dropped.
+- `failure-sim-lab`: near-verbatim duplicate ("adversarial timing", "network call... subject to everything
+  that can go wrong") of the explanation's own marked first-principles line — reworded.
+- `eval-loop`: implicitly enumerated 3 of the module's 4 named properties in the same order the Socratic
+  explanation reveals them one at a time, flattening each worked-example payoff — collapsed to one general
+  question.
+- `rag-pipeline`: reused the scenario's own illustrative example (refund policy) instead of reserving it
+  for a fresh landing — swapped groundUp's example to a different domain (pricing page).
+- `grpo-rlvr`: HIGH-module patience violation (3 distinct costs crammed into one sentence) + closing
+  question near-verbatim duplicated the scenario's own stakeholder question — split the sentence, varied
+  the question.
+
+All 11 fixes applied via exact-string replacement (anchor uniqueness-checked before writing).
+
+### Verification
+`npx esbuild --bundle` clean on all 4 touched files, before and after the fix pass. Confirmed groundUp
+counts: `code-generation.js` (4), `playground-labs.js` (5), `foundationsRunnerData.js` (42 — file-wide
+total across all modules, includes these 2 new ones), `market-gap.js` (3 — file-wide total, includes this
+1 new one). Backups in `_to_delete/backup_writerpass/{code-generation,playground-labs,
+foundationsRunnerData,market-gap}.js.bak`.
+
+**All 12 HIGH-interviewWeight modules that were missing groundUp are now done** — this closes out the
+"then work on those first" instruction. Combined with the Voice AI batch (5 modules, also high/medium
+mix), the writer pass has now covered 17 of the ~22 genuine RUNNER_DATA-backed modules still on old prose.
+
+**Remaining writer-pass backlog:** `infra-edge-ondevice`, `prompt-library`, `streaming-lab`,
+`codegen-security-sandboxing` (all medium-weight) — 4 modules. Plus the separately-scoped
+hardcoded-migration-then-writer-pass work for the 10 `agent-lab`/safety modules (`agent`, `agent-memory`,
+`agent-planning`, `agent-tools`, `agent-tracing`, `multiagent`, `guardrails`, `red-teaming`,
+`jailbreak-taxonomy`, `resolution-token-cost`), not started. Scene-interleaving gap (only `transformer`/
+`attention` have inline 3B1B scenes) remains logged, still deferred.
+
+Not pushed yet — git commands below.
