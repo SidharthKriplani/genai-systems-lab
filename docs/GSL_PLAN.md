@@ -2788,3 +2788,54 @@ independently recomputed against the actual component source, not read-and-nodde
   shape) are the two components to read next.
 
 Not pushed — no git commands run, per standing rule (hand to Sidharth's Mac for build + push).
+
+---
+
+## 2026-07-09 (cont.) — Backlog item 1 COMPLETE: eval-design + debug writer passes, all 3 modules cold-audited + fixed
+
+Finished backlog item 1. `eval-design` and `debug` RUNNER_DATA entries written into the same
+`src/data/foundations/hardcoded-migration.js` (same architecture as `context` — no component/registry
+changes, narrative layers on top of `EvalDesignModule`/`DebugModule` automatically via
+`RUNNER_DATA[active]`). Then ran the full cold Pass-2 adversarial audit on all three modules
+(independent agent, zero visibility into writer reasoning, checked against 3B1B-STANDARD.md +
+CONTENT-AUDIT-RUBRIC.md + the real interactive component's own hardcoded data for text-scene lock) and
+applied a fix-loop round to each. Real bugs caught and fixed, not just style nits:
+
+- **`context`:** unlabeled arithmetic subtotals in the token-budget example; "lost in the middle" named
+  after only one demonstrated instance instead of two (fixed by adding a second real instance from the
+  interactive's own `LITM_RECALL` array — position 2 at 85% vs. position 5 at 52% — before naming the
+  term); an unverifiable "Liu et al. tested Claude" claim (softened to "multiple models," not a specific
+  roster); `128² ≈ 16,000×` loosened a real number that should've been exact (`16,384×`); a couple of
+  unexplained-origin figures (per-token-type rates, the 92/85/75/62/52/48/51/62/75/88 recall curve) — gave
+  each an explicit origin ("the same rates the builder actually charges," "exactly what the explorer
+  below plots").
+- **`eval-design`:** the opening groundUp illustration had an outright arithmetic impossibility — "5% of
+  misses concentrated entirely inside a 4% category" (50 misses can't fit inside 40 items). Rewrote the
+  illustration to be internally consistent (5%-of-set category, then 2%-of-set category, both fully
+  wiped out) and, as a side benefit, a sharper point (identical accuracy → then higher accuracy for the
+  worse model, not just "barely moves"). Also: "recall" named before any demonstration existed (fixed by
+  building two demonstrated instances — 100% catch rate, then 50% — before naming the term); a "roughly
+  71%" naive-bar-crossing claim that recomputes to exactly 71% and doesn't reconcile with the interactive's
+  own 5%-step slider (fixed: exact number, plus explicit slider-step reconciliation — 70%-missed still
+  passes at 85.2%, 75%-missed fails at 84.2%).
+- **`debug`:** a direct factual contradiction — the draft said twice "the fix isn't a bigger top_k," but
+  the real `DEBUG_SCENARIOS[4].explanation` in `Concepts.jsx` explicitly lists "higher top_k with
+  reranker" as a valid alternative fix for the same incident (fixed: both fixes now stated, decomposition
+  framed as more direct but top_k+reranker acknowledged as valid). "Over-abstention" named in the opening
+  enumeration before any instance demonstrated it anywhere in the piece (fixed: removed the premature
+  naming list from para 1, and gave over-abstention its own two-instance build-up before naming, matching
+  every other failure mode's treatment). Also fixed an overstated text-scene claim ("the register lists the
+  GPT-4 API's status directly" — the real chunk never names GPT-4 API, only closes with "others pending
+  review") and two chunk quotes that were truncated inside closing quotation marks as if verbatim-complete.
+
+**Verification:** esbuild-clean on the full file after each fix round; a standalone node check confirms
+all 3 keys present with correct array lengths (context: 7 mcqs/6 keyPoints/10 recap/9 explanation paras;
+eval-design: 6/6/10/7; debug: 6/6/10/8).
+
+**Explicitly NOT done this batch:** glossary + interview-question harvest for all 3 modules (next step —
+glossary target confirmed as `src/data/glossary.js`, 226 existing terms, straightforward; interview-
+question harvest target is the much larger `src/data/preplabQuestions.js` `PREP_QUESTIONS` bank, which
+needs full trap/source/staffLayer fields per question to match its existing quality bar — treating that as
+its own follow-up batch rather than rushing it).
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
