@@ -467,27 +467,6 @@ export const Q_PEFT_RLHF = [
 
   // ----- L2 (Cross-concept) -----
   {
-    id: "rlhf-l2-1",
-    topic: "foundation-models",
-    tier: "L2",
-    difficulty: "hard", band: "advanced",
-    gated: false,
-    type: "mcq",
-    question:
-      "How does DPO (Direct Preference Optimization) differ from classic PPO-based RLHF while targeting the same goal?",
-    options: [
-      "DPO adds a second reward model on top of PPO",
-      "DPO skips training an explicit reward model and online RL rollouts, instead directly optimizing the policy on preference pairs with a classification-style loss derived from the RLHF objective",
-      "DPO requires more human labels than PPO for the same result",
-      "DPO only works for reward modeling, not policy optimization",
-    ],
-    correct: 1,
-    keywords: [],
-    explanation:
-      "DPO reparameterizes the RLHF objective so the optimal policy is expressed directly in terms of preference data. It trains the policy with a simple supervised-style loss on chosen/rejected pairs (implicitly using the reference model as the KL anchor) — no separate reward model, no PPO rollouts, no critic. Simpler and more stable, though it optimizes offline preferences directly.",
-    trap: "A weaker candidate thinks DPO is 'PPO without the KL term.' DPO still encodes the KL-to-reference regularization implicitly via the reference model in its loss; what it drops is the explicit reward model and the online RL loop.",
-  },
-  {
     id: "rlhf-l2-2",
     topic: "foundation-models",
     tier: "L2",

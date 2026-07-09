@@ -3269,3 +3269,66 @@ found in 2 of the 7 question files).
   errors.
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+## 2026-07-09 (cont. 7) — PrepLab rebuild Phase 2: dedup pass, 28 near-duplicate questions cut (798 → 770)
+
+Per `PREPLAB-REBUILD-PLAN.md` Phase 2, thinned the oversized topics before spending audit effort on
+possibly-redundant content. User chose the "spot-check first" option: reviewed the largest topic
+(`foundation-models`, 161 qs) in full before running the same clustering logic across the remaining 4
+oversized topics. Method: cluster each topic's questions by the underlying fact tested (not surface
+wording), applying rubric smell #9 (near-duplicate) — cut the weaker/less-complete member of each pair,
+keep the one with the clearest framing or the more natural home file. All cuts done via brace-matched
+object removal (each candidate's brace balance verified before removal), backed up first
+(`_to_delete/backup_phase2/`), esbuild-verified after each round.
+
+**Round 1 — `foundation-models` (161 → 151, 10 cut), user-approved before execution:**
+- `ft-3` + `rlhf-l2-1` cut, kept `dpo-l2-1` — 3-way duplicate on "DPO vs RLHF/PPO structural difference."
+- `ft-5` cut, kept `finetune-2` — near-verbatim "catastrophic forgetting" definition.
+- `daunt-arch-1` cut, kept `found-staff-1` — near-verbatim "PM: fine-tune 7B vs. prompt 70B vs. RAG" scenario.
+- `redeep-1` cut, kept `rlhf-l1-5` — "reward climbs, human quality drops" (reward hacking/sycophancy).
+- `redeep-2` cut, kept `rlhf-l1-1` — "KL term in RLHF objective, why."
+- `quant-2` + `quantization-l1-3` cut, kept `quant-1` + `quantization-l2-3` — 4-way GPTQ/AWQ comparison overlap.
+- `lora-1` cut, kept `lora-l1-5` — LoRA rank-increase effect (direct vs. scenario framing, same fact).
+- `lora-2` cut, kept `lora-l1-4` — LoRA merge-back tradeoff.
+
+**Round 2 — `retrieval` (132 → 123, 9 cut), `ai-agents` (117 → 113, 4 cut), `production` (81 → 78, 3 cut),
+`ai-safety-alignment` (42 → 40, 2 cut):**
+- retrieval: `rag-6` + `rag-hyde` cut (HyDE definition, near-identical to each other and to kept `qr-2`);
+  `rag-litm` cut, kept `ctx-5` (lost-in-the-middle); `rag-parent-child` cut, kept `rag-5` (parent-child
+  chunking); `rag-reranker` cut, kept `rag-beg-6` (reranker definition); `rag-bi-8` cut, kept
+  `embeddings-l2-5`/`rag-ingestion-l2-3` (embedding-model-upgrade-requires-reindex, 3-way overlap); `vecdb-1`
+  cut, kept `retrieval-1` (SKU/exact-match miss in dense retrieval); `vecdb-2` cut, kept `rag-11` (metadata
+  filtering drops recall); `bienc-2` cut, kept `reranker-4` (two-stage recall_k/rerank_k starvation).
+- ai-agents: `mcp-q1` cut, kept `mcp-3` (why MCP over bespoke integration); `toolprod-2` cut, kept
+  `taskqueue-3` (idempotency key timing); `taskqueue-1` cut, kept `apiback-1` (sync HTTP fails for
+  long-running agent task); `trap-3` cut, kept `agents-10` (agent fails on >15-step tasks).
+- production: `stream-q1` cut, kept `stream-1` (near-verbatim SSE-vs-WebSockets); `pcm-1` cut, kept
+  `promptlab-1` (near-verbatim "23% quality drop, 11 days undetected" prompt regression); `fdedeep-3` cut,
+  kept `fdedeep-1` (near-duplicate live-demo-latency scenario).
+- ai-safety-alignment: `align-q5` cut, kept `rlhf-2`+`rlhf-4` (3-way DPO-vs-RLHF overlap); `ase-1` cut,
+  kept `pid-2` (near-identical hidden-text-exfiltration agent scenario).
+
+ai-agents' 4-question cut count is intentionally conservative — most of that topic's apparent overlap
+(e.g. the bi-encoder/cross-encoder trio, the MCP primitive ladder) is legitimate progressive-depth coverage
+(L0 definition → L1 mechanism → L2 tradeoff), not redundancy, and was left untouched.
+
+### Findings noted, not acted on this phase
+- **`type: "scenario"` is an undocumented third question schema** (`title`/`incident`/`steps`, distinct
+  from `mcq`/`text`) — found while investigating what looked like 4 empty-stem records
+  (`scenario-1/2/4/5`) that turned out to be legitimate multi-step scenario questions, not defects.
+  `PREPLAB-STANDARD.md`'s Mechanics section field list should be updated to document this schema; flagging
+  rather than silently fixing since it changes the doc's contract.
+- **Cross-topic near-duplicates spotted but out of Phase 2's scope** (which is per-topic dedup only): the
+  RLHF KL-divergence-penalty fact is tested near-identically in both `foundation-models` (kept) and
+  `ai-safety-alignment` (`rlhf-1`, not cut); MoE active/total-parameter-fraction is tested with different
+  example models in both `foundation-models` and `production` (`moe-1`, not cut). Left for Phase 3's
+  correctness pass, which reads bank-wide rather than per-topic.
+
+### Verification
+Total bank size after both rounds: 798 → 788 → 770 (28 cut across 5 topics). Every cut candidate's brace
+balance verified before removal; post-removal `npx esbuild src/data/preplabQuestions.js --bundle
+--format=esm --outfile=/dev/null` (plus `q-peft-rlhf.js`/`q-core-deepen.js` for round 1) clean on all
+touched files; topic-count sums re-verified after each round; confirmed none of the 28 cut ids remain
+anywhere in the bank. Backups of every touched file kept in `_to_delete/backup_phase2/`.
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
