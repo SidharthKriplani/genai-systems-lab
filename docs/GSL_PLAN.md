@@ -1947,3 +1947,71 @@ git push origin main
 scene-only pass, one module at a time, each independently esbuild-verified before moving on. Judgment call
 per module on whether geometry genuinely carries the argument (per the user's explicit rule) — not
 mechanically applying a scene to every module regardless of fit.
+
+---
+
+## Log 2026-07-09 — My Tracks "Study →" bug: real root cause found (a hashchange/popstate race), fixed
+
+**Symptom (user-confirmed via screenshots, reproduced live):** clicking "Study →" on a Concepts module item
+in My Tracks (e.g. a Language-Models-tier item like Tokenization) did not open that module — it landed on
+the Foundations gym-selector (`ConceptsApp`'s own View 1, `GymSelectorView`, headed "Foundations") instead.
+
+**Why the earlier static trace missed it:** every individual piece (`MyTracks.jsx`'s `GYMID_BY_MODULE` map,
+`navigateTo()`'s state-setting order, `Concepts.jsx`'s `navKey`-keyed effect, the render conditionals) is
+individually correct — confirmed again this session by re-reading all of it fresh, plus a script-driven data
+audit (extracted `GYMS`/`MODULES`/`moduleSearchIndex.js` and cross-checked all 131 gym-module ids: **0
+mismatches**). The bug only exists in the *interaction* between two independent event listeners, which is
+invisible to a single-pass read of any one file.
+
+**Root cause, concretely:** `navigate(view)` in `App.jsx` (~line 1245) sets `window.location.hash = view`,
+which for a Concepts nav is always the **bare** string `"concepts"` — it never carried the gym/module the
+caller (`navigateTo()`) already knows. Two listeners independently re-derive `conceptsGym`/`conceptsModule`
+from `window.location.hash` whenever it changes:
+1. The `hashchange` listener (~line 1551) — harmless here, since for a plain `"concepts"` hash it only calls
+   `setTopView`, never touches `conceptsGym`/`conceptsModule`.
+2. The `popstate` listener (~line 1578) — **not harmless**: `onPopState()` unconditionally does
+   `setConceptsGym(gymId); setConceptsModule(moduleId)` from whatever `parseConceptsHash(window.location.hash)`
+   returns, with no guard against a same-tick `navigateTo()` call. Its own comment states this listener was
+   deliberately scoped to `popstate` because "popstate fires ONLY for genuine session-history traversal…
+   never for navigate()'s plain `window.location.hash = view` assignment." **That assumption is the bug.**
+
+Built a real, minimal React 18 + jsdom harness (not a re-implementation guess — the exact extracted logic of
+`navigate`/`navigateTo`/the two listeners/`ConceptsApp`'s `navKey` effect, driven through actual
+`act()`-wrapped renders with real async event flushing) to test this empirically rather than trust
+spec-reading alone. Result: **`window.location.hash = "concepts"` does trigger a `popstate` event** (fired
+before `hashchange`, confirmed twice, and specifically NOT triggered by `history.pushState()` in the same
+harness — ruling out "jsdom just fires popstate on everything"). Sequence observed: mount → `navKey` effect
+correctly sets `activeGym`/`active` → module renders → **popstate fires, sees the bare `"concepts"` hash,
+nulls `conceptsGym`/`conceptsModule`, bumps `navKey` again** → `ConceptsApp`'s effect re-runs with
+`origin="hash"` and null gym/module → lands back on `GymSelectorView`. This exactly reproduces the reported
+symptom end-to-end in the harness (`renderLog`: `VIEW1 → VIEW3:tokenizer → VIEW3:tokenizer → VIEW1`).
+
+**Fix (in `src/App.jsx` only):**
+- `navigate(view, conceptsCtx)` — new optional second parameter. When navigating to `"concepts"` and the
+  caller supplies a `gymId`, the hash is now written as `concepts/<gymId>` or `concepts/<gymId>/<moduleId>`
+  (the same segment format `Concepts.jsx`'s own `syncConceptsHash` already uses) instead of the bare
+  `"concepts"`. Falls back to the old bare-hash behavior whenever no gym context is available (e.g. every
+  other `navigate(tab)` call site in the app, unchanged — this is fully backward compatible).
+- `navigateTo({...})` — now calls `navigate(tab, tab === "concepts" ? { gymId, moduleId } : undefined)`
+  instead of `navigate(tab)`.
+- Net effect: **any** later re-derivation from the hash — `hashchange`, a genuine `popstate`, or this
+  spurious one — now reaches the *same correct* `gymId`/`moduleId`, not `null`/`null`. Re-ran the exact same
+  harness with the fix applied: final state is `VIEW3_MODULE:tokenizer` throughout, hash ends as
+  `#concepts/language-models/tokenizer`. (Minor, acceptable side effect: if the spurious popstate fires, the
+  "opened from Tracks" origin flag flips to `origin="hash"`, so the in-page back button falls back to
+  "← Language Models" instead of "← My Tracks" — the module itself still opens correctly, which is the part
+  that was actually broken.)
+
+**Verification:** `npx -y esbuild@0.21.5 src/App.jsx --bundle --format=esm --loader:.jsx=jsx --external:react
+--external:react-dom --external:react/jsx-runtime --external:recharts --external:lucide-react
+--outfile=/dev/null` → clean (0 errors; only pre-existing unrelated `groundTruthIndex.js` duplicate-key
+warnings). Only `src/App.jsx` was touched — `Concepts.jsx`/`MyTracks.jsx` needed no changes.
+
+**NOT pushed** — same approve-first discipline as everything else in this doc.
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/App.jsx docs/GSL_PLAN.md && \
+git commit -m "Fix My Tracks Study-> landing on Foundations hub (hashchange/popstate race)" && \
+git push origin main
+```

@@ -1242,7 +1242,7 @@ export default function App() {
     try { return new Set(JSON.parse(localStorage.getItem("genai_visited") || '["home"]')); }
     catch { return new Set(["home"]); }
   });
-  function navigate(view) {
+  function navigate(view, conceptsCtx) {
     // 2026-07-03 MIGRATION: any legacy nav to a DELETED lab/hub view (agents/agentlab/evallab/
     // llmlab/retrieval/evaluation/agentshub/production) is redirected INTO Foundations, opening
     // the destination gym. No standalone door remains — this catches every internal call site.
@@ -1251,7 +1251,29 @@ export default function App() {
       view = "concepts";
     }
     setTopView(view);
-    window.location.hash = view;
+    // 2026-07-09 bugfix (My Tracks "Study →" landed on the Foundations gym-selector instead of
+    // the requested module): this used to always assign a BARE `view` (e.g. "#concepts") to the
+    // hash. That bare hash carries no gym/module info, but the popstate listener below (and, in
+    // some browsers/engines, `location.hash =` assignment can itself trigger a popstate — verified
+    // empirically in a real DOM/React harness, not just in theory) re-derives conceptsGym/
+    // conceptsModule FROM the hash on any popstate it sees. Seeing nothing in a bare "#concepts"
+    // hash, it wiped the gym/module navigateTo() had just set, one render after the correct one —
+    // landing on the empty gym-selector. Fix: when navigateTo() already knows the destination
+    // gym/module (passed here as conceptsCtx), encode them into the hash we assign so ANY later
+    // re-derivation from the hash (hashchange OR popstate, real or spurious) reaches the SAME
+    // answer instead of nulling it out. Mirrors Concepts.jsx's own syncConceptsHash segment format.
+    if (view === "concepts" && conceptsCtx && conceptsCtx.gymId) {
+      // Only encode when we actually have a gymId — never emit a "concepts/undefined/..."
+      // segment. (Every module currently has a resolvable gymId via moduleSearchIndex.js; if a
+      // caller ever passes a moduleId with no gymId, this falls back to the old bare-hash
+      // behavior rather than writing a broken hash.)
+      const seg = conceptsCtx.moduleId
+        ? `concepts/${conceptsCtx.gymId}/${conceptsCtx.moduleId}`
+        : `concepts/${conceptsCtx.gymId}`;
+      window.location.hash = seg;
+    } else {
+      window.location.hash = view;
+    }
     track("module_opened", { section: view });
     track("tab_navigated", { tab: view });
     if (view === "lab") track("rag_lab_opened", { section: "lab" });
@@ -1441,7 +1463,9 @@ export default function App() {
       if (mode) setPreplabInitialMode(mode);
       else if (topic) setPreplabInitialMode("trainer");
     }
-    navigate(tab);
+    // 2026-07-09 bugfix: pass the gym/module context through so navigate() can encode it into
+    // the hash (see navigate()'s comment) instead of assigning a bare "#concepts" hash.
+    navigate(tab, tab === "concepts" ? { gymId, moduleId } : undefined);
   }
   // 2026-07-08 bugfix: switching tabs/windows and back can drop focus off whatever
   // input was active, so the next keystroke lands on `window` instead of the field
