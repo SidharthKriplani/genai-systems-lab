@@ -2493,3 +2493,68 @@ reformatting of the existing interactive components' own hardcoded text and data
 a future writer pass (writer → adversarial audit → glossary/interview harvest, per the standing pipeline) is
 the next step for these two modules, same as any other Foundations module.
 generic helper, not part of TrainerMode's state/render, and removing it wasn't requested).
+
+## 2026-07-09 (continued) — Retrieval/Agents/Production/Evaluation program: recon + positional fixes + full question-bucket rebalance
+
+User directed the initiative at the four remaining gyms. Full structural recon first (module lists from
+Concepts.jsx GYMS, per-module groundUp/scene/positional scan across all runner-data files):
+
+**Content state found:** most modules already at bar from prior waves. Real gaps logged for later waves:
+(a) 5 hardcoded-component modules with no RUNNER_DATA — `rag-pipeline`, `context`, `eval-loop`,
+`eval-design`, `debug` (the known migration item, real design work); (b) 10 modules missing groundUp —
+9 agents B-tier (`agent-memory-libraries`, `agent-design-challenge`, `agent-loop-simulator`,
+`agent-frameworks`, `agent-mcp`, `agent-computer-use`, `agent-long-running`, `agent-a2a`,
+`agent-config-lab`) + `enterprise-ai-cost-model`; (c) 3 pure-interactive labs (by design, no action).
+
+**Fixed this batch — 21 positional-language refs** across 8 files (foundationsRunnerData.js,
+retrieval-breadth.js, gap-agenteval-ragingest.js, gap-routing-security.js, breadth-2.js, agent-core.js,
+agent-eco.js, agent-sim.js): the recurring "The interactive below lets you...", "given everything above,"
+(6x), and per-file "the X above/below" content refs. All exact-match count-verified; all files
+@babel/parser-clean. Everything else matching above/below was legitimate magnitude/diagram language
+(calibration's reliability-diagram semantics, cost comparisons, thresholds) — deliberately untouched.
+
+**Fixed this batch — question-bucket length-tell rebalance, 156 questions.** `_verify_prep_balance.mjs`
+showed rag 73/74 flagged (98.6%, correct options up to 2.6x longer), evaluation 24/25 (96%), llmops 41/42
+(97.6%), serving 13/14 (92.9%), plus 7 borderline ties in nlp. All rebalanced via writer agents (distractors
+expanded with the misconception each already gestured at; correct-option text byte-verified UNCHANGED
+during apply — every replacement was refused unless the file's correct option matched the fix's
+character-for-character) + hand-fixed ties. Final verifier state: **rag 0/74, evaluation 0/25, llmops 0/42,
+serving 0/14, nlp 0/40, agents 0/90 — all six buckets 0% flagged.** File parses clean.
+
+**Push command (includes the still-uncommitted glossary batch from the NLP entry):**
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/glossary.js src/MockInterviewV2.jsx src/MyTracks.jsx src/ReadinessDiagnostic.jsx src/SpeakMode.jsx \
+  src/data/preplabQuestions.js src/data/foundationsRunnerData.js \
+  src/data/foundations/retrieval-breadth.js src/data/foundations/gap-agenteval-ragingest.js \
+  src/data/foundations/gap-routing-security.js src/data/foundations/breadth-2.js \
+  src/data/agents/agent-core.js src/data/agents/agent-eco.js src/data/agents/agent-sim.js \
+  docs/GSL_PLAN.md && \
+git commit -m "NLP glossary (66 terms) + rebalance rag/evaluation/llmops/serving buckets (156 length-tell fixes) + 21 positional-language fixes across 4 gyms" && \
+git push origin main
+```
+
+**Next waves for this program (not started):** (1) cold Pass-2 content audits for the retrieval/production/
+evaluation modules that were writer-passed but never audited; (2) the 5 hardcoded-module RUNNER_DATA
+migrations; (3) 10 missing groundUps (agents B-tier + enterprise-ai-cost-model); (4) glossary harvests for
+retrieval/production/evaluation (agents already has 20 terms); (5) answer-key cold audit of the rebalanced
+buckets' explanations (existing question content was not re-verified this batch, only rebalanced).
+
+**CORRECTION (minutes later):** user pushed twice more mid-batch — `2e8ec94` (the glossary + 4
+TOPIC_LABELS files from this session) and `9eae7b4` (parallel session: TrainerMode browse-view cut = open
+item resolved, and eval-loop + rag-pipeline migrated to RUNNER_DATA = 2 of this program's 5 migrations
+done; that commit also carried this session's foundationsRunnerData.js positional fixes, verified in HEAD).
+Remaining uncommitted from this batch is only:
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/preplabQuestions.js \
+  src/data/foundations/retrieval-breadth.js src/data/foundations/gap-agenteval-ragingest.js \
+  src/data/foundations/gap-routing-security.js src/data/foundations/breadth-2.js \
+  src/data/agents/agent-core.js src/data/agents/agent-eco.js src/data/agents/agent-sim.js \
+  docs/GSL_PLAN.md && \
+git commit -m "Rebalance rag/evaluation/llmops/serving buckets (156 length-tell fixes) + remaining positional-language fixes" && \
+git push origin main
+```
+Migrations still open after 9eae7b4: `context`, `eval-design`, `debug` (3 of 5).

@@ -30,7 +30,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-1", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "A RAG system has 94% recall but users report wrong answers 30% of the time. Most likely cause?",
-    options: ["Chunk size too small", "Reranker missing — top-k has wrong docs at position 1 despite good recall", "Answer policy too permissive", "Embedding model mismatch"],
+    options: [
+      "Chunk size too small — fragments strip away the context the LLM needs to answer",
+      "Reranker missing — top-k has wrong docs at position 1 despite good recall",
+      "Answer policy too permissive — the model answers even when retrieval comes back empty",
+      "Embedding model mismatch — queries and docs were embedded with two different models"
+    ],
     correct: 1, keywords: [],
     explanation: "High recall means relevant docs exist in the top-k, but without a reranker the most relevant doc may not be at position 1. The LLM anchors on early context, so irrelevant chunks at the top produce wrong answers despite good recall.",
   trap: "Saying the embedding model is wrong or chunk size is too small. High recall + wrong answers points specifically to a reranker gap — relevant docs exist in top-k but aren\'t ranked first. Interviewers want to hear that recall and precision are separate axes.",
@@ -41,7 +46,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-2", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "You increase top_k from 3 to 10. Recall goes up, but LLM answer quality drops. Why?",
-    options: ["Context window overflow", "More irrelevant chunks diluting the signal — LLM loses focus", "Embedding drift", "Token cost is too high"],
+    options: [
+      "Context window overflow — ten chunks exceed the model's limit",
+      "More irrelevant chunks diluting the signal — LLM loses focus",
+      "Embedding drift — vectors degrade as more chunks get retrieved",
+      "Token cost is too high, so the API truncates the extra chunks"
+    ],
     correct: 1, keywords: [],
     explanation: "LLMs degrade with noisy context. Adding 7 more partially-relevant chunks introduces contradictory or off-topic sentences, causing the model to hedge or pick wrong evidence.",
   trap: "Saying \'more context is always better\' or blaming context window limits. The real mechanism is noise injection — each extra chunk adds contradictory or off-topic sentences that dilute the LLM signal. Say instead: \'More retrieval hurts when chunks are partially relevant — each extra one injects noise. The fix is better relevance scoring, not a larger context window.\'",
@@ -52,7 +62,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-3", topic: "rag", difficulty: "easy", type: "mcq",
     question: "Which chunking strategy preserves the most semantic coherence for a technical documentation corpus?",
-    options: ["Fixed 512 tokens", "Sentence-boundary splitting", "Markdown-aware semantic chunking (split at headers/code blocks)", "Character-level with 50-token overlap"],
+    options: [
+      "Fixed 512 tokens — uniform sizes keep embedding quality consistent",
+      "Sentence-boundary splitting — sentences are the atomic semantic unit",
+      "Markdown-aware semantic chunking (split at headers/code blocks)",
+      "Character-level with 50-token overlap — overlap heals any split context"
+    ],
     correct: 2, keywords: [],
     explanation: "Technical docs have natural semantic units defined by headers and code blocks. Markdown-aware chunking keeps code examples with their explanatory prose, reducing mid-explanation splits.",
     readMore: { label: "Chunking Strategies", tab: "concepts" }
@@ -60,7 +75,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-4", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "You build a RAG system over versioned policy docs (2021 and 2024 coexist). User asks about current policy. System confidently returns 2021 rules. Root cause?",
-    options: ["Embedding model cannot handle dates", "Semantic similarity selects the most linguistically similar chunk regardless of recency", "Vector DB is corrupted", "Top_k is too high"],
+    options: [
+      "Embedding model cannot parse dates, so the year tokens get dropped from the vectors",
+      "Semantic similarity selects the most linguistically similar chunk regardless of recency",
+      "Vector DB index corruption — stale entries from the 2021 ingestion overwrite the 2024 rows",
+      "Top_k is set too high, so older chunks crowd the 2024 policy out of the context window"
+    ],
     correct: 1, keywords: [],
     explanation: "Embeddings encode semantic meaning, not temporal relevance. Both policy versions discuss the same topic similarly. The retriever has no freshness signal. Metadata filtering on document date is required.",
   trap: "Saying \'use a newer embedding model\' or \'increase chunk size.\' Embeddings encode semantic meaning, not temporal recency. The fix is metadata filtering at query time — embeddings can\'t distinguish 2021 from 2024 policy text.",
@@ -82,7 +102,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-6", topic: "rag", difficulty: "easy", gated: true, type: "mcq",
     question: "HyDE (Hypothetical Document Embeddings) improves retrieval by:",
-    options: ["Caching embeddings for faster lookup", "Generating a fake answer first, embedding it, then retrieving similar docs", "Fine-tuning the embedding model on queries", "Re-ranking results using a cross-encoder"],
+    options: [
+      "Caching query embeddings so repeated lookups skip the embedding model call entirely",
+      "Generating a fake answer first, embedding it, then retrieving similar docs",
+      "Fine-tuning the embedding model on query-document pairs mined from your own domain",
+      "Re-ranking the retrieved results with a cross-encoder before they reach generation"
+    ],
     correct: 1, keywords: [],
     explanation: "HyDE generates a hypothetical answer to the query using an LLM, embeds that answer, and uses that embedding for retrieval. This bridges the query-document distribution gap since the hypothetical answer is linguistically closer to real documents.",
   trap: "Saying HyDE \'retrieves hypothetical documents\' or \'generates fake data.\' The mechanism is embedding the hypothetical answer, not the query. Confusing query rewriting with document generation reveals a surface-level understanding.",
@@ -92,7 +117,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-7", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "Your RAG pipeline groundedness score is 0.91 but citation accuracy is 0.48. What does this pattern indicate?",
-    options: ["The LLM is paraphrasing correctly but attributing claims to wrong source chunks", "The evaluation metrics are misconfigured", "Retrieval is failing but generation is strong", "Token budget is too low"],
+    options: [
+      "The LLM is paraphrasing correctly but attributing claims to wrong source chunks",
+      "The evaluation metrics are misconfigured — the two scores come from different judges",
+      "Retrieval is failing outright while strong generation masks the missing context entirely",
+      "Token budget is too low, so citations get truncated before they can even be scored"
+    ],
     correct: 0, keywords: [],
     explanation: "High groundedness means claims are supported by retrieved context. Low citation accuracy means the model is citing the wrong document ID. Classic reranker misconfiguration or chunk boundary issue.",
   trap: "Saying \'the LLM is hallucinating\' or \'the retriever is returning wrong chunks.\' The groundedness/citation split pattern specifically points to a citation attribution bug — the model is grounded but cites incorrectly.",
@@ -103,7 +133,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-8", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "A cross-encoder reranker improves answer quality but adds 800ms latency. The best production solution is:",
-    options: ["Remove the reranker", "Use the reranker only for queries classified as high-stakes via a lightweight classifier", "Switch to BM25 only", "Reduce top_k to 1 before reranking"],
+    options: [
+      "Remove the reranker entirely — 800ms of added latency always costs more than quality gains",
+      "Use the reranker only for queries classified as high-stakes via a lightweight classifier",
+      "Switch to BM25-only retrieval, which needs no reranking because its scores are already exact",
+      "Reduce top_k to 1 before reranking so the cross-encoder only scores a single candidate"
+    ],
     correct: 1, keywords: [],
     explanation: "A query classifier (fast, cheap) can route complex/high-stakes queries through the reranker while simple queries skip it. This preserves quality where it matters without paying the latency cost on every request.",
   trap: "Saying \'just remove the reranker\' or \'use a faster server.\' The production answer is query routing — a classifier dispatches only complex queries through the reranker. Knowing adaptive serving separates senior from mid-level candidates.",
@@ -124,7 +159,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-10", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "Multi-vector retrieval (ColBERT) outperforms single-vector retrieval on which specific failure mode?",
-    options: ["Queries where the answer is a single exact phrase", "Queries requiring matching of multiple distinct concepts in one passage", "Queries that exceed context window limits", "Queries involving numerical reasoning"],
+    options: [
+      "Queries where the answer is one exact phrase that BPE splits across several tokens",
+      "Queries requiring matching of multiple distinct concepts in one passage",
+      "Queries that exceed context window limits, since ColBERT compresses passage tokens",
+      "Queries involving numerical reasoning over values spread throughout one passage"
+    ],
     correct: 1, keywords: [],
     explanation: "ColBERT computes token-level similarity, catching cases where a single embedding averages out distinct concepts. Superior for multi-faceted queries where a passage must satisfy several independent criteria.",
   trap: "Saying ColBERT is \'more accurate generally\' or \'uses larger embeddings.\' The specific failure mode it solves is polysemy — queries where a single embedding averages out distinct meanings. Naming the mechanism is the differentiator.",
@@ -135,7 +175,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-11", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "You add metadata filtering (department=HR) to your vector search. Recall drops from 88% to 61%. Most likely cause?",
-    options: ["Vector DB is slow", "Metadata was not populated correctly during ingestion for a significant document subset", "The embedding model does not support metadata", "Filter is too broad"],
+    options: [
+      "Vector DB latency — the filter forces a slow full scan, so queries time out before completion",
+      "Metadata was not populated correctly during ingestion for a significant document subset",
+      "The embedding model does not encode metadata, so the filtered vectors lose semantic signal",
+      "The filter is too broad, matching so many documents that the relevant ones fall out of top-k"
+    ],
     correct: 1, keywords: [],
     explanation: "Metadata filtering applies a pre-filter before ANN search. If documents were not tagged correctly at ingestion time, they are silently excluded. The recall drop is invisible unless you have per-filter recall monitoring.",
   trap: "Blaming vector search or the filter threshold. The specific cause is tagging errors at ingestion — wrong metadata means the filter correctly excludes correctly-labeled docs that don\'t match. It\'s an upstream data quality problem.",
@@ -146,7 +191,12 @@ export const PREP_QUESTIONS = [
   {
     id: "rag-12", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "Contextual compression in RAG (extracting only relevant sentences from retrieved chunks before passing to LLM) primarily helps with:",
-    options: ["Reducing embedding cost", "Reducing LLM distraction from irrelevant context within a chunk", "Improving retrieval recall", "Handling multilingual documents"],
+    options: [
+      "Reducing embedding cost, since compressed chunks re-embed cheaply",
+      "Reducing LLM distraction from irrelevant context within a chunk",
+      "Improving retrieval recall by matching on the extracted sentences",
+      "Handling multilingual documents by compressing to a pivot language"
+    ],
     correct: 1, keywords: [],
     explanation: "Retrieved chunks often contain relevant and irrelevant sentences mixed together. Contextual compression extracts only the relevant portion, reducing noise that causes the LLM to generate hallucinated or confused answers.",
   trap: "Saying contextual compression \'reduces hallucination directly.\' The primary benefit is context window efficiency — removing irrelevant sentences makes room for more chunks. Hallucination reduction is secondary.",
@@ -279,7 +329,12 @@ export const PREP_QUESTIONS = [
   {
     id: "eval-1", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "You are evaluating a RAG system. ROUGE-L score is 0.71 but users report factual errors 40% of the time. Best explanation?",
-    options: ["ROUGE measures word overlap not factual accuracy — high overlap does not mean correct facts", "Evaluation set is too small", "Model is hallucinating mid-sentence only", "Chunking is wrong"],
+    options: [
+      "ROUGE measures word overlap not factual accuracy — high overlap does not mean correct facts",
+      "The evaluation set is too small — 40% error rates only surface when samples under-cover the domain",
+      "The model is hallucinating mid-sentence only, so sentence-level ROUGE scoring never sees the errors",
+      "Chunking is wrong — oversized chunks inflate n-gram overlap while feeding the model stale evidence"
+    ],
     correct: 0, keywords: [],
     explanation: "ROUGE measures n-gram overlap. A response can be high-ROUGE by using similar words while still asserting wrong facts. Factual accuracy requires separate evaluation: fact-checking or LLM-as-judge with factual decomposition.",
   trap: "Saying \'ROUGE is a bad metric\' or \'switch to a better metric.\' The specific insight is what ROUGE is *blind to* — factual accuracy. High ROUGE + high factual error rate is a named failure mode, not a general metric complaint.",
@@ -290,7 +345,12 @@ export const PREP_QUESTIONS = [
   {
     id: "eval-2", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "G-Eval scores your outputs at 4.2/5 consistently. What is the main risk of trusting this?",
-    options: ["Model is biased toward longer outputs", "Positional bias — the LLM judge may score consistently high for stylistic reasons unrelated to actual quality", "G-Eval only works for summarization", "Token cost is too high"],
+    options: [
+      "The generation model is biased toward producing longer outputs, and longer outputs inflate judge scores",
+      "Positional bias — the LLM judge may score consistently high for stylistic reasons unrelated to actual quality",
+      "G-Eval only works for summarization tasks, so applying it to any other task type invalidates the score",
+      "Token cost is too high — chain-of-thought judge passes at a constant flat 4.2/5 add real expense without adding any signal"
+    ],
     correct: 1, keywords: [],
     explanation: "LLM-as-judge has known biases: verbosity bias, positional bias, self-preference bias. A consistently high score may indicate the judge is rewarding style rather than semantic accuracy. Calibration against human ratings is essential.",
   trap: "Accepting the score at face value or reporting it as a success. A consistently high, non-varying LLM judge score is a signal of verbosity bias or calibration drift — real quality distributions are never this flat. Say instead: 'A judge that scores everything 9/10 has collapsed — calibrate it against human labels before trusting any LLM judge at scale.'",
@@ -312,7 +372,12 @@ export const PREP_QUESTIONS = [
   {
     id: "eval-4", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "Your eval set has 200 questions from one domain. You ship a new model. Evals pass. Production CSAT drops. Why?",
-    options: ["The eval set has too many questions", "Eval set does not represent the full distribution of production queries — distribution shift", "Model needs fine-tuning", "LLM judge was biased"],
+    options: [
+      "The eval set has too many questions, so pass thresholds average away the failures users notice",
+      "Eval set does not represent the full distribution of production queries — distribution shift",
+      "The model needs fine-tuning — base models always regress on CSAT until they see domain data",
+      "The LLM judge was biased and passed outputs that production users immediately rejected as wrong"
+    ],
     correct: 1, keywords: [],
     explanation: "An eval set sampled from one domain will miss out-of-distribution queries. Production has long-tail edge cases, adversarial inputs, and evolving language patterns not captured in a static narrow eval set.",
   trap: "Saying \'the evals are wrong\' or \'the model regressed.\' The real pattern is eval set distribution mismatch — a single-domain golden set misses the production long tail. This is eval set design failure, not model failure.",
@@ -323,7 +388,12 @@ export const PREP_QUESTIONS = [
   {
     id: "eval-5", topic: "evaluation", difficulty: "easy", gated: true, type: "mcq",
     question: "The difference between online and offline evaluation in LLM systems is:",
-    options: ["Offline is faster", "Offline uses static test sets before deployment; online measures real user signals in production (CSAT, thumbs, task completion)", "Online evaluation uses better metrics", "They are interchangeable"],
+    options: [
+      "Offline evaluation is faster because it runs on cached outputs, while online evaluation must wait for live model inference on real traffic",
+      "Offline uses static test sets before deployment; online measures real user signals in production (CSAT, thumbs, task completion)",
+      "Online evaluation uses better metrics — production signals are statistically stronger, so offline eval is only for teams without traffic",
+      "They are interchangeable — both measure the same quality construct, so mature teams pick whichever is cheaper to operate at their scale"
+    ],
     correct: 1, keywords: [],
     explanation: "Offline eval = pre-deployment, controlled, fast iteration. Online eval = post-deployment, real distribution, real user signals. Both are needed — a system can pass offline eval but fail online.",
   trap: "Saying offline eval \'is not as good as online.\' They serve different jobs — offline for iteration speed, online for real distribution signal. The question tests whether you know when to use each, not which is superior.",
@@ -333,7 +403,12 @@ export const PREP_QUESTIONS = [
   {
     id: "eval-6", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "You ask an LLM judge to rate responses 1-5. Inter-annotator agreement with humans is 0.61 (Cohen kappa). How should you interpret this?",
-    options: ["Strong agreement — ship the judge", "Moderate agreement — use the judge for directional signals but not absolute quality gates", "Weak agreement — the judge is useless", "Good agreement but needs more data"],
+    options: [
+      "Strong agreement — 0.61 clears the 0.5 bar for production, so ship the judge as a quality gate",
+      "Moderate agreement — use the judge for directional signals but not absolute quality gates",
+      "Weak agreement — anything under 0.7 kappa means the judge is unreliable and must be replaced",
+      "Good agreement, but kappa is unstable below 1,000 samples, so gather more data before using it"
+    ],
     correct: 1, keywords: [],
     explanation: "Kappa 0.61 is moderate agreement. Use it for A/B comparisons and regression detection, not as an absolute correctness gate.",
   trap: "Saying kappa 0.61 means the judge is unreliable and should be replaced. 0.61 is moderate agreement — reliable enough for A/B comparisons and regression detection, insufficient as an absolute truth oracle. The answer is context-dependent.",
@@ -354,7 +429,12 @@ export const PREP_QUESTIONS = [
   {
     id: "eval-8", topic: "evaluation", difficulty: "easy", gated: true, type: "mcq",
     question: "RAGAS framework evaluates RAG systems on which 4 dimensions?",
-    options: ["Precision, Recall, F1, Accuracy", "Faithfulness, Answer Relevancy, Context Precision, Context Recall", "Groundedness, Coherence, Fluency, Completeness", "Latency, Cost, Accuracy, Reliability"],
+    options: [
+      "Retrieval Precision, Retrieval Recall, Answer F1, and Answer Accuracy",
+      "Faithfulness, Answer Relevancy, Context Precision, Context Recall",
+      "Answer Groundedness, Coherence, Fluency, Response Completeness",
+      "Answer Latency, Token Cost, Factual Accuracy, System Reliability"
+    ],
     correct: 1, keywords: [],
     explanation: "RAGAS: Faithfulness (claims grounded in context?), Answer Relevancy (does the answer address the question?), Context Precision (are retrieved docs relevant?), Context Recall (were relevant docs retrieved?).",
   trap: "Saying \'precision, recall, F1, and accuracy\' or generic ML metrics. RAGAS has specific dimension names: Faithfulness, Answer Relevancy, Context Precision, Context Recall. Mixing in standard ML metric names is the immediate tell.",
@@ -365,7 +445,12 @@ export const PREP_QUESTIONS = [
   {
     id: "eval-9", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "You run an A/B test. Version B has +12% groundedness but -8% answer relevancy. You should:",
-    options: ["Ship B — groundedness is more important", "Roll back to A", "Investigate whether the relevancy drop is in a critical query category before deciding", "Run more tests"],
+    options: [
+      "Ship B — groundedness protects against hallucination, which outweighs a relevancy dip",
+      "Roll back to A immediately — any relevancy regression is user-facing and unacceptable",
+      "Investigate whether the relevancy drop is in a critical query category before deciding",
+      "Keep running more tests until both metrics improve together, since mixed results indicate noise"
+    ],
     correct: 2, keywords: [],
     explanation: "Aggregate metrics hide per-category behavior. A -8% relevancy drop might be uniformly small or concentrated in high-value query types. Always decompose metric changes by query category before shipping.",
   trap: "Shipping version B because groundedness is more important than relevancy. The correct answer is: disaggregate by category before deciding. A uniform -8% relevancy is different from a concentrated -40% on your most critical queries.",
@@ -386,7 +471,12 @@ export const PREP_QUESTIONS = [
   {
     id: "eval-11", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "Evals pass on your golden dataset but fail on a newly collected adversarial set. The correct production response is:",
-    options: ["Discard the adversarial set as outliers", "Add representative adversarial examples to your eval suite and treat it as a permanent regression category", "Switch to a bigger model", "Increase temperature"],
+    options: [
+      "Discard the adversarial set as outliers — hand-crafted attack prompts are not representative of real traffic",
+      "Add representative adversarial examples to your eval suite and treat it as a permanent regression category",
+      "Switch to a bigger model, since adversarial robustness scales predictably with the parameter count",
+      "Increase temperature so outputs vary enough to escape the exact patterns the adversarial set targets"
+    ],
     correct: 1, keywords: [],
     explanation: "Golden datasets calcify. Production evolves. Adversarial failures reveal real distribution gaps. Incorporate them into your eval suite so future regressions are caught before deployment.",
   trap: "Saying \'the adversarial set is too hard\' or \'adversarial evals are unfair.\' Adversarial failures are the highest-signal data you have — they reveal real distribution gaps that golden sets are blind to. The correct response is to incorporate them.",
@@ -398,7 +488,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-1", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "Your LLM API p99 latency is 4.2s. Users are complaining. The first optimization to try (before switching models) is:",
-    options: ["Increase server count", "Streaming responses — let users see tokens as they generate, reducing perceived wait time", "Reduce prompt length", "Switch to a smaller model"],
+    options: [
+      "Increase server count — more replicas mean each request queues less and finishes sooner end to end",
+      "Streaming responses — let users see tokens as they generate, reducing perceived wait time",
+      "Reduce prompt length aggressively, since input tokens dominate total generation time at the p99 mark",
+      "Switch to a smaller model immediately — model size is the only lever that truly moves token latency"
+    ],
     correct: 1, keywords: [],
     explanation: "Streaming does not reduce actual latency but dramatically reduces perceived latency. Users start reading at first token. This is the cheapest win and should always precede model changes.",
   trap: "Immediately recommending a model switch or adding caching. The first optimization is streaming — zero infrastructure change, immediate perceived latency improvement. Jumping to infrastructure changes first signals inexperience with quick wins.",
@@ -409,7 +504,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-2", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "You are spending $12K/month on LLM API calls. The single most impactful cost reduction technique (without degrading quality) is typically:",
-    options: ["Switch to open source models", "Semantic caching — serve identical or near-identical queries from cache instead of re-calling the API", "Reduce max_tokens", "Use smaller context windows"],
+    options: [
+      "Switch to open source models — self-hosting removes per-token pricing, making every call effectively free at scale",
+      "Semantic caching — serve identical or near-identical queries from cache instead of re-calling the API",
+      "Reduce max_tokens on every request — output tokens cost the most, so capping them cuts the bill roughly in half",
+      "Use smaller context windows so each call carries fewer input tokens, compounding into large monthly savings"
+    ],
     correct: 1, keywords: [],
     explanation: "Semantic caching catches repeated or near-identical queries and returns cached results. Hit rates of 20-40% are typical, directly reducing API spend proportionally.",
   trap: "Saying \'switch to a cheaper model\' as the first step. Semantic caching has zero quality tradeoff for repeated queries with typical 20-40% hit rates. Model downgrade trades quality; caching doesn\'t. Starting with downgrades signals the wrong optimization priority.",
@@ -430,7 +530,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-4", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "Speculative decoding improves LLM inference throughput by:",
-    options: ["Using a larger model for important tokens only", "Using a small draft model to generate candidate tokens, verified in parallel by the large model", "Caching KV states across requests", "Quantizing the model weights"],
+    options: [
+      "Using the larger model selectively for only the most important tokens while a cheap model handles the rest",
+      "Using a small draft model to generate candidate tokens, verified in parallel by the large model",
+      "Caching KV states across requests so repeated prefixes never need to be recomputed by the large model at all",
+      "Quantizing the model weights to lower precision so that each forward pass takes fewer GPU cycles overall"
+    ],
     correct: 1, keywords: [],
     explanation: "A small draft model generates N candidate tokens quickly. The large model verifies them in one forward pass. Net result: 2-3x throughput improvement on suitable workloads.",
   trap: "Saying speculative decoding \'uses a smaller model that is faster\' without explaining the parallel verification. The mechanism — draft model generates, large model verifies in one pass — is the key insight. Missing the verification step is the tell.",
@@ -440,7 +545,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-5", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "You deploy a new model version. All evals pass. Production error rate spikes 3x in 2 hours. First diagnostic step?",
-    options: ["Roll back immediately", "Check if the spike is correlated with specific query types, time of day, or a new user segment before rolling back", "Scale up servers", "Check API quota"],
+    options: [
+      "Roll back immediately — every minute at 3x error rate compounds user harm; diagnosis can happen offline from the logs later",
+      "Check if the spike is correlated with specific query types, time of day, or a new user segment before rolling back",
+      "Scale up servers first — an error spike two hours post-deploy is usually load-related, since the new version passed evals",
+      "Check API quota consumption — new versions often use more tokens per call, and quota exhaustion produces this exact pattern"
+    ],
     correct: 1, keywords: [],
     explanation: "A targeted error spike might be from a specific query category. Understanding the cause before rollback enables either a targeted fix or a confident rollback decision with a known root cause.",
   trap: "Immediately rolling back. Rollback loses diagnostic data and may not solve the problem if it is category-specific. Triage first — identify which query type is spiking. This is the difference between a reactive and a systematic incident response.",
@@ -450,7 +560,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-6", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "KV cache eviction in long-context inference primarily causes:",
-    options: ["Model to forget early context, degrading response quality for queries requiring full-document understanding", "Increased token generation speed", "Reduced memory footprint", "Better instruction following"],
+    options: [
+      "Model to forget early context, degrading response quality for queries requiring full-document understanding",
+      "Faster token generation as its main effect, since attention now scans fewer cached entries at every single decoding step",
+      "Reduced memory footprint as its main consequence — eviction exists purely so long sessions can fit on smaller, cheaper GPUs",
+      "Better instruction following, because dropping stale early context lets the model concentrate attention on the newest turns"
+    ],
     correct: 0, keywords: [],
     explanation: "KV cache stores computed attention keys/values. When evicted, the model loses access to that context. For long documents requiring full-context reasoning, this causes quality degradation.",
   trap: "Saying KV cache eviction \'slows down the model\' or \'increases cost.\' The actual impact is quality degradation — evicted tokens are functionally gone from the context, equivalent to removing text from the prompt. It is a correctness problem, not a speed problem.",
@@ -461,7 +576,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-7", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "You are running batch inference on 10,000 documents. The most cost-effective approach vs. real-time API is:",
-    options: ["Use more API keys to parallelize", "Use batch API endpoints (e.g., OpenAI Batch API) — typically 50% cheaper at the cost of higher latency", "Run 24/7 to distribute cost", "Use streaming to reduce memory"],
+    options: [
+      "Use more API keys to parallelize — spreading requests across accounts multiplies rate limits and total throughput",
+      "Use batch API endpoints (e.g., OpenAI Batch API) — typically 50% cheaper at the cost of higher latency",
+      "Run the job 24/7 at a steady trickle to spread cost evenly while staying inside the standard per-minute rate limits",
+      "Use streaming on every request to cut memory pressure, letting you push far more concurrent documents per worker"
+    ],
     correct: 1, keywords: [],
     explanation: "Batch APIs process requests asynchronously (24h window) at half the per-token price. For non-latency-sensitive workloads like document processing, this is the dominant cost-saving strategy.",
   trap: "Saying batch inference \'is less accurate\' or only discussing speed. The key differentiator is cost: batch APIs offer 50% cost reduction. Not knowing the cost differential (only the latency trade-off) signals surface-level production awareness.",
@@ -483,7 +603,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-9", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "Continuous batching in LLM serving (vs. static batching) improves GPU utilization because:",
-    options: ["It uses larger batch sizes", "Completed sequences are immediately replaced with new requests — GPU never idles waiting for slowest sequence in batch", "It reduces memory usage per request", "It enables multi-GPU inference"],
+    options: [
+      "It uses much larger batch sizes than static batching can, so every forward pass amortizes weight loading across more sequences",
+      "Completed sequences are immediately replaced with new requests — GPU never idles waiting for slowest sequence in batch",
+      "It reduces the memory footprint of each request, letting the scheduler pack substantially more sequences onto a single GPU",
+      "It enables multi-GPU inference by splitting each batch across devices so no single accelerator ever becomes the bottleneck"
+    ],
     correct: 1, keywords: [],
     explanation: "Static batching waits for all sequences to finish before processing the next batch — GPU idles as some sequences finish early. Continuous batching inserts new requests the moment a slot frees.",
   trap: "Saying continuous batching \'processes more requests simultaneously\' without explaining the static batching problem. The key is that static batching idles the GPU waiting for the slowest sequence — continuous batching is the fix for that specific inefficiency.",
@@ -494,7 +619,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-10", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "You are choosing between prompt caching and fine-tuning to reduce cost for a system with a 4000-token system prompt used on every request. Correct analysis?",
-    options: ["Always fine-tune for cost savings", "Prompt caching eliminates redundant computation on the static system prompt — often better ROI for long static prefixes than fine-tuning", "They solve the same problem", "Fine-tuning is always cheaper"],
+    options: [
+      "Always fine-tune for cost savings — baking the system prompt into the weights removes those 4000 tokens from every request, which caching cannot match",
+      "Prompt caching eliminates redundant computation on the static system prompt — often better ROI for long static prefixes than fine-tuning",
+      "They solve the same problem in different ways, so the decision comes down purely to which provider's discount structure fits your traffic best",
+      "Fine-tuning is always cheaper at this scale, because a tuned model runs with an empty system prompt while per-token prices stay identical after tuning"
+    ],
     correct: 1, keywords: [],
     explanation: "Prompt caching (Anthropic, OpenAI) caches KV computations for static prefix tokens. A 4000-token system prompt cached = 4000 tokens not computed per request. Fine-tuning bakes knowledge into weights but still incurs all inference costs.",
   trap: "Recommending fine-tuning as the cost solution for a long static prompt. Fine-tuning adds training cost, maintenance overhead, and introduces behavioral drift risk. Prompt caching is the right answer for a fixed prefix — same output, no training.",
@@ -505,7 +635,12 @@ export const PREP_QUESTIONS = [
   {
     id: "llmops-11", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "Shadow deployment (running new model in parallel, not serving its output to users) primarily helps with:",
-    options: ["Reducing API costs", "Safe quality validation under real traffic distribution before cutover — catches distribution-specific regressions evals missed", "Improving model speed", "A/B testing user preferences"],
+    options: [
+      "Reducing API costs — the shadow copy absorbs a share of production traffic, so the primary deployment needs fewer replicas to serve users",
+      "Safe quality validation under real traffic distribution before cutover — catches distribution-specific regressions evals missed",
+      "Improving model speed under load, since the parallel deployment warms caches and autoscaling before the new model ever takes live traffic",
+      "A/B testing user preferences directly, because each model's outputs reach a different user segment whose reactions can be compared live"
+    ],
     correct: 1, keywords: [],
     explanation: "Shadow deployment lets you run both models on real traffic, compare outputs offline, and catch regressions that your eval set did not cover — all without any user impact.",
   trap: "Saying shadow deployment is \'for performance testing\' or \'A/B testing.\' Its primary purpose is regression detection on real traffic before committing to a new model version — not user-facing experimentation. Say instead: \'Shadow deployment is a regression detection tool — you run the new model on live traffic without exposing users to its outputs, then compare quality before promoting it.\'",
@@ -1110,7 +1245,12 @@ export const PREP_QUESTIONS = [
   {
     id: "so-q1", topic: "llmops", difficulty: "medium", type: "mcq",
     question: "JSON mode vs. tool/function calling for structured output — key difference?",
-    options: ["JSON mode is faster", "JSON mode guarantees valid JSON but NOT schema compliance; tool calling enforces the schema exactly", "Tool calling only works with OpenAI", "JSON mode supports nested objects better"],
+    options: [
+      "JSON mode is faster, because skipping the tool-call wrapper saves both output tokens and a parsing pass",
+      "JSON mode guarantees valid JSON but NOT schema compliance; tool calling enforces the schema exactly",
+      "Tool calling only works reliably on OpenAI models; JSON mode is the portable cross-provider standard",
+      "JSON mode supports deeply nested objects better, as tool schemas are limited to flat key-value fields"
+    ],
     correct: 1, keywords: [],
     explanation: "JSON mode gives you syntactically valid JSON — the model may still omit required fields, add unexpected fields, or use wrong types. Tool calling forces the model to call a function matching a specific schema — highest reliability for production structured extraction.",
     trap: "Saying \'they\'re basically the same.\' JSON mode constrains output format only; the model still chooses field names/values. Function calling provides a schema the model must conform to exactly, enabling reliable parsing.",
@@ -1119,7 +1259,12 @@ export const PREP_QUESTIONS = [
   {
     id: "so-q2", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "Your structured extraction pipeline has a 4% validation failure rate in production. Best first action?",
-    options: ["Switch to a larger model", "Log all failures with input+output, categorize by failure type (schema drift, type error, truncation), fix the top category", "Increase max_tokens", "Add more examples to the prompt"],
+    options: [
+      "Switch to a larger model first — validation failures at 4% almost always mean the model lacks capacity for the schema's complexity",
+      "Log all failures with input+output, categorize by failure type (schema drift, type error, truncation), fix the top category",
+      "Increase max_tokens across the board, since truncated generations are by far the dominant cause of validation failures in production",
+      "Add more few-shot examples to the prompt immediately — showing the schema in action fixes most failures without any logging effort"
+    ],
     correct: 1, keywords: [],
     explanation: "4% failure rate is high but diagnosable. Without logging, you're guessing. Categorizing failures by type reveals whether you need: retry logic (schema drift), type coercion (type errors), bigger max_tokens (truncation), or schema simplification. Each has a different fix.",
     trap: "Saying \'switch to a more capable model.\' 4% schema failure is a prompting/architecture issue. Constrained generation (Outlines, Guidance) or strict function calling fixes schema compliance without a model change.",
@@ -1128,7 +1273,12 @@ export const PREP_QUESTIONS = [
   {
     id: "ctx-q1", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "Gemini 1.5 has 1M token context. When should you still use RAG instead of stuffing the whole corpus?",
-    options: ["Never — 1M context makes RAG obsolete", "When corpus is larger than 1M tokens, dynamically updated, or cost/latency constraints make full-context inference infeasible", "Only when using Claude", "When documents are in PDF format"],
+    options: [
+      "Never — a 1M-token window makes RAG obsolete, since attention weighs every document in context equally regardless of its position",
+      "When corpus is larger than 1M tokens, dynamically updated, or cost/latency constraints make full-context inference infeasible",
+      "Only when using Claude, since other model families process long contexts with sliding-window attention that silently drops early tokens",
+      "When documents are in PDF format, because layout-heavy files lose their structure when flattened into a single long context window"
+    ],
     correct: 1, keywords: [],
     explanation: "1M context is transformative but not universal. Corpora often exceed 1M tokens; real-time/user-specific data changes faster than you can ingest; processing 1M tokens costs 50–200× a RAG call; TTFT for 1M contexts adds seconds. RAG remains essential for dynamic, large, or cost-sensitive workloads.",
     trap: "Saying \'1M context eliminates the need for RAG.\' The trap misses latency cost (1M prefill takes seconds), dollar cost, and the Lost in the Middle problem — relevant chunks buried in the middle of 1M tokens get missed.",
@@ -1139,7 +1289,12 @@ export const PREP_QUESTIONS = [
   {
     id: "dep-q2", topic: "llmops", difficulty: "medium", type: "mcq",
     question: "When does self-hosting Llama 3.1 70B become more cost-effective than OpenAI API?",
-    options: ["Always — open source is always cheaper", "Never — managed APIs scale better", "At approximately $50K+/month API spend where GPU costs justify the engineering overhead", "When you have more than 100 users"],
+    options: [
+      "Always — open source is always cheaper, because you stop paying the provider's margin on every token",
+      "Never — managed APIs scale better, and their bulk GPU pricing cannot be beaten by self-hosted setups",
+      "At approximately $50K+/month API spend where GPU costs justify the engineering overhead",
+      "Once you pass roughly 100 active users, since fixed GPU costs amortize quickly at even modest usage"
+    ],
     correct: 2, keywords: [],
     explanation: "Below ~$50K/month API spend, engineering cost (infra setup, monitoring, ops) exceeds savings. Above that threshold, self-hosting on dedicated A100/H100 GPUs typically costs 70–90% less per token. The crossover depends on team size, traffic predictability, and data privacy requirements.",
     trap: "Saying \'open source is always cheaper.\' Break-even requires sustained high volume. GPU reservation, ops engineering, uptime requirements, and on-call burden mean self-hosting only wins at significant scale (500K+ tokens/day sustained).",
@@ -1230,7 +1385,12 @@ export const PREP_QUESTIONS = [
   {
     id: "kv-1", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "Prefix caching reduces KV cache recomputation cost when:",
-    options: ["Model weights are quantized", "Multiple requests share an identical prompt prefix — the KV states for that prefix are computed once and reused", "The context window exceeds 32K tokens", "Batch size is greater than 8"],
+    options: [
+      "Model weights are quantized to lower precision, shrinking each cached entry enough to keep far more of them resident",
+      "Multiple requests share an identical prompt prefix — the KV states for that prefix are computed once and reused",
+      "The context window exceeds 32K tokens — the point where recomputing attention costs more than any possible cache lookup",
+      "Batch size is greater than 8, because at that point sequences within a batch start sharing KV pages in the allocator"
+    ],
     correct: 1, keywords: [],
     explanation: "KV cache prefix caching works by hashing the token sequence of a prefix. If a new request shares the same prefix (identical system prompt, RAG preamble), the KV states are served from cache — zero recomputation. Anthropic's cache_control, OpenAI's prompt caching, and vLLM's prefix caching all use this pattern. Savings: 60-80% cost reduction for repetitive prefixes.",
     staffLayer: "The senior framing is: KV cache engineering is fundamentally about understanding that the attention mechanism must reconstruct key-value pairs for every token in context on every forward pass — unless those pairs are cached. The production implication is that prompt design and caching strategy are linked: you want your expensive, static content (system prompt, long instructions, reference documents) at the beginning of the context where it can be cached across requests. Dynamic content (the user query, retrieved chunks) goes at the end. This prefix caching pattern is what allows Anthropic's prompt caching to deliver 90%+ cost reduction on prompts with large static prefixes.",
@@ -1247,7 +1407,12 @@ export const PREP_QUESTIONS = [
   {
     id: "kv-3", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "Cache-aware routing (as used in llm-d) improves KV cache hit rates by:",
-    options: ["Compressing cache entries", "Routing requests with identical prefixes to the same serving replica so cached KV states are available locally", "Precomputing KV for all possible prompts", "Using a global shared KV cache across all GPUs"],
+    options: [
+      "Compressing cache entries so each replica holds many more prefixes resident, raising the odds a request finds its match",
+      "Routing requests with identical prefixes to the same serving replica so cached KV states are available locally",
+      "Precomputing KV states for the most common prompts ahead of time so popular requests never miss on their first arrival",
+      "Using one global KV cache shared across all GPUs so every replica can read any cached prefix over the interconnect"
+    ],
     correct: 1, keywords: [],
     explanation: "Without cache-aware routing, a request with a cached prefix on GPU-1 might land on GPU-2 (cache miss). llm-d and similar systems hash the request prefix and route to the replica most likely to have that prefix cached — dramatically improving cache hit rates without requiring a shared (expensive) cross-replica cache.",
     trap: "Saying \'caching saves token costs.\' KV cache hit rate is a latency and throughput metric — it reduces time-to-first-token by avoiding re-prefill of cached prompts. The saving is compute, not token billing. Say instead: \'KV cache hit rate is a latency metric, not a billing metric. High hit rate means lower TTFT because the prefill step is skipped — the saving is compute time, not token count.\'",
@@ -1256,7 +1421,12 @@ export const PREP_QUESTIONS = [
   {
     id: "kv-4", topic: "llmops", difficulty: "hard", type: "mcq",
     question: "KV cache eviction under memory pressure in vLLM uses PagedAttention because:",
-    options: ["It is faster than standard attention", "Memory is managed in fixed-size pages that can be evicted and reloaded without fragmentation — like virtual memory for KV cache", "It reduces the number of attention heads needed", "It eliminates the KV cache entirely"],
+    options: [
+      "It computes attention itself faster than standard implementations, so evicted pages can be regenerated cheaply whenever they are needed",
+      "Memory is managed in fixed-size pages that can be evicted and reloaded without fragmentation — like virtual memory for KV cache",
+      "It reduces the number of attention heads that must be cached, cutting the total KV footprint before eviction ever becomes necessary",
+      "It eliminates the KV cache entirely by recomputing keys and values on demand, so memory pressure can simply never build up at all"
+    ],
     correct: 1, keywords: [],
     explanation: "Traditional KV allocation wastes memory through fragmentation (reserving max_seq_len memory upfront). PagedAttention allocates KV cache in small pages (typically 16 tokens), allowing fine-grained eviction of least-recently-used sequences and near-zero fragmentation. This is why vLLM achieves 2-4× better throughput than naive implementations.",
     readMore: { label: "KV Cache Engineering →", tab: "systems" }
@@ -1302,7 +1472,12 @@ export const PREP_QUESTIONS = [
   {
     id: "moe-1", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "A Mixture-of-Experts model with 64 experts and top-2 routing activates what fraction of parameters per token?",
-    options: ["100% — all experts process every token", "~3% — only the 2 selected experts run, plus shared components", "50% — top-2 of 64 is 3%, but shared layers add ~47%", "6% — top-2 of 64 specialists only"],
+    options: [
+      "100% — the router only weights each expert's vote; all 64 run",
+      "~3% — only the 2 selected experts run, plus shared components",
+      "50% — the 2 experts are ~3%, but shared layers add roughly 47% more",
+      "6% — the two chosen experts, counting each one at about 3% apiece"
+    ],
     correct: 1, keywords: [],
     explanation: "MoE sparse activation: only top-K experts process each token. For top-2 of 64 experts, the expert fraction is 2/64 ≈ 3%. Adding shared components (embedding, attention layers, output head) brings total activated parameters to roughly 10-20% of total model size depending on architecture. DeepSeek-V3 (671B total) activates ~37B per token this way.",
     trap: "Saying \'it uses all parameters at once.\' The defining MoE property: only top-K experts activate per token. Total parameters are large but active FLOPs per token are sparse — this is the memory vs. compute tradeoff.",
@@ -1311,7 +1486,12 @@ export const PREP_QUESTIONS = [
   {
     id: "moe-2", topic: "llmops", difficulty: "easy", gated: true, type: "mcq",
     question: "Expert collapse in MoE training means:",
-    options: ["Experts learn the same features and the model degrades to a dense model", "A single expert handles all tokens — load balancing fails, most experts get no gradient signal and remain untrained", "All experts collapse into one weight matrix", "The router stops learning"],
+    options: [
+      "Experts gradually learn identical features, so the network silently degrades into a costly dense model made of redundant copies",
+      "A single expert handles all tokens — load balancing fails, most experts get no gradient signal and remain untrained",
+      "All expert weight matrices merge into one during optimization, collapsing the parameter count that the router was built around",
+      "The router stops receiving gradients and freezes, sending every token wherever it happened to route at weight initialization"
+    ],
     correct: 1, keywords: [],
     explanation: "Without load balancing loss, the router learns to send all tokens to a few experts that became slightly better early in training. Those experts improve; others atrophy. Result: effectively a small model despite large parameter count. Fix: auxiliary load balancing loss penalizes routing imbalance, forcing utilization across all experts.",
     readMore: { label: "MoE Architecture →", tab: "systems" }
@@ -1319,7 +1499,12 @@ export const PREP_QUESTIONS = [
   {
     id: "moe-3", topic: "llmops", difficulty: "medium", type: "mcq",
     question: "Serving a 671B MoE model like DeepSeek-V3 requires less memory than a 671B dense model because:",
-    options: ["MoE uses 8-bit weights by default", "Only activated expert weights need to be in GPU VRAM at inference time — but all experts must fit somewhere across the cluster", "MoE weights are compressed during training", "Sparse attention reduces memory regardless of expert count"],
+    options: [
+      "MoE checkpoints ship with 8-bit expert weights by default, halving memory relative to the fp16 layout that dense models must use",
+      "Only activated expert weights need to be in GPU VRAM at inference time — but all experts must fit somewhere across the cluster",
+      "Expert weights get compressed during training through the sparsity penalty, so the stored model is far smaller than its nominal size",
+      "Sparse attention cuts activation memory so aggressively that the total footprint drops regardless of how many experts stay resident"
+    ],
     correct: 1, keywords: [],
     explanation: "All expert weights must reside in memory (GPU or fast CPU/NVMe) but only activated experts are loaded to GPU registers per forward pass. For a cluster with enough GPUs, each GPU holds a shard of experts and the network routes tokens. Memory per GPU is fraction_of_experts × weight_size. This is why MoE models work well with expert parallelism across many GPUs.",
     trap: "Saying \'because it is quantized.\' MoE memory efficiency comes from sparsity — only activated expert weights need to be loaded during inference, not all 671B parameters simultaneously.",
@@ -1328,7 +1513,12 @@ export const PREP_QUESTIONS = [
   {
     id: "moe-4", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "DeepSeek-V3's 'shared experts' innovation addresses which MoE limitation?",
-    options: ["Memory usage", "The router overhead — shared experts always activate, ensuring there is always a fallback for tokens the router misclassifies or for generalizable features", "Gradient vanishing in experts", "Inference latency on single GPUs"],
+    options: [
+      "Memory usage — shared experts are stored once and reused across every layer, cutting the total parameter footprint that has to stay resident on the GPUs during inference",
+      "The router overhead — shared experts always activate, ensuring there is always a fallback for tokens the router misclassifies or for generalizable features",
+      "Gradient vanishing inside rarely-selected experts — because shared experts always fire, they propagate gradient signal into every expert's weights and keep them all trainable",
+      "Inference latency on single GPUs — always-on shared experts skip the routing round-trip, so the majority of tokens finish without ever waiting on expert dispatch overhead"
+    ],
     correct: 1, keywords: [],
     explanation: "Pure sparse routing can leave tokens without the right expert if routing is noisy, especially early in training. Shared experts (always-on subset, 2 in DeepSeek-V3) handle general patterns while specialist experts handle domain-specific features. This hybrid — 2 shared + top-K sparse — improves training stability and final model quality.",
     trap: "Saying \'it improves routing accuracy.\' Shared experts address expert collapse (load imbalance) — a subset processes every token regardless of routing, ensuring stable base capability while specialist experts handle specifics.",
@@ -1464,7 +1654,12 @@ export const PREP_QUESTIONS = [
   {
     id: "serving-1", topic: "serving", difficulty: "easy", type: "mcq",
     question: "PagedAttention (used in vLLM) solves which core serving problem?",
-    options: ["Slow tokenization for long prompts", "KV cache memory fragmentation and waste from pre-allocation", "Load imbalancing across multiple GPUs", "Slow attention computation for long sequences"],
+    options: [
+      "Slow byte-pair tokenization latency on very long input prompts",
+      "KV cache memory fragmentation and waste from pre-allocation",
+      "Uneven request load balancing across replicated GPU workers",
+      "Slow attention score computation over long input sequences"
+    ],
     correct: 1, keywords: [],
     explanation: "Before PagedAttention, serving systems pre-allocated a contiguous KV cache block for each request's maximum sequence length. This caused internal fragmentation (reserved but unused memory) and made it impossible to share KV cache across requests. PagedAttention stores KV cache in non-contiguous 'pages' (like OS virtual memory), enabling near-zero waste and 2-4× more concurrent requests.",
     readMore: { label: "Flash Attention →", tab: "systems" }
@@ -1472,7 +1667,12 @@ export const PREP_QUESTIONS = [
   {
     id: "serving-2", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
     question: "Continuous batching improves GPU throughput over static batching by:",
-    options: ["Running smaller batch sizes to reduce memory pressure", "Allowing new requests to join the batch as sequences complete mid-iteration", "Pre-computing KV caches for all requests before starting generation", "Quantizing the KV cache to INT8 during serving"],
+    options: [
+      "Running smaller per-step batch sizes to reduce GPU memory pressure and stalls",
+      "Allowing new requests to join the batch as sequences complete mid-iteration",
+      "Pre-computing the KV caches for all queued requests before generation begins",
+      "Quantizing the KV cache to INT8 so more sequences fit in each static batch"
+    ],
     correct: 1, keywords: [],
     explanation: "Static batching must wait for the longest sequence in a batch to finish before accepting new requests, leaving GPUs idle. Continuous (or iteration-level) batching processes one token generation step per iteration and immediately adds new requests as slots free up. This keeps GPU utilization near 100% and dramatically improves throughput (2-4×) for heterogeneous sequence lengths.",
     readMore: { label: "Flash Attention →", tab: "systems" }
@@ -1480,7 +1680,12 @@ export const PREP_QUESTIONS = [
   {
     id: "serving-3", topic: "serving", difficulty: "hard", type: "mcq",
     question: "SGLang's RadixAttention outperforms standard prefix caching when:",
-    options: ["Serving very short prompts under 100 tokens", "Multiple requests share multi-level common prefixes in a tree structure", "Running on CPUs rather than GPUs", "Using INT4 quantized models"],
+    options: [
+      "Serving very short single-turn prompts under roughly 100 tokens each",
+      "Multiple requests share multi-level common prefixes in a tree structure",
+      "Running inference on CPU clusters where cache reuse is cheaper than on GPUs",
+      "Serving INT4-quantized models whose smaller KV entries are cheaper to cache"
+    ],
     correct: 1, keywords: [],
     explanation: "RadixAttention organizes cached KV states in a radix tree, enabling efficient reuse even when prefixes share only partial overlaps (e.g., same system prompt + different few-shot examples). Standard prefix caching only handles exact prefix matches. For agent systems and multi-turn conversations with branching contexts, RadixAttention achieves much higher cache hit rates.",
     readMore: { label: "Flash Attention →", tab: "systems" }
@@ -1488,7 +1693,12 @@ export const PREP_QUESTIONS = [
   {
     id: "serving-4", topic: "serving", difficulty: "medium", gated: true, type: "mcq",
     question: "When choosing between vLLM and TensorRT-LLM for production, the primary differentiator is:",
-    options: ["vLLM supports more model architectures; TRT-LLM gives higher throughput on NVIDIA hardware with more engineering", "TRT-LLM is open source; vLLM is proprietary", "vLLM only supports A100 GPUs; TRT-LLM supports all NVIDIA GPUs", "TRT-LLM uses continuous batching; vLLM uses static batching"],
+    options: [
+      "vLLM supports more model architectures; TRT-LLM gives higher throughput on NVIDIA hardware with more engineering",
+      "TRT-LLM is fully open source and community governed; vLLM is proprietary and needs a commercial license to deploy in production",
+      "vLLM only runs on A100-class GPUs, while TRT-LLM supports every NVIDIA GPU generation including consumer workstation cards",
+      "TRT-LLM schedules requests with continuous batching, while vLLM is limited to static batching with fixed-size request groups"
+    ],
     correct: 0, keywords: [],
     explanation: "vLLM is the most flexible framework (wide model support, simple deployment, excellent for most teams) while TensorRT-LLM requires model-specific engine compilation but achieves higher raw throughput on NVIDIA GPUs via custom CUDA kernels and TensorRT optimization. For most teams vLLM is the right starting point; TRT-LLM is worth the complexity only at very high scale.",
     trap: "Saying \'TensorRT-LLM is always better.\' TRT-LLM requires NVIDIA hardware and compilation overhead. vLLM wins on hardware flexibility and rapid model iteration; TRT-LLM wins on peak NVIDIA throughput with stable model versions.",
@@ -1637,10 +1847,10 @@ export const PREP_QUESTIONS = [
     id: "rag-reranker", topic: "rag", difficulty: "easy", type: "mcq",
     question: "In a RAG system, what is the primary purpose of the 'reranker' step after initial retrieval?",
     options: [
-      "To reduce the number of API calls to the embedding model",
+      "To reduce the number of embedding API calls by caching frequently issued query vectors",
       "To reorder retrieved chunks by relevance to the query using a cross-encoder",
-      "To merge overlapping chunks before passing to the LLM",
-      "To translate retrieved documents into the query language"
+      "To merge overlapping chunks into one clean passage before it is passed on to the LLM",
+      "To translate retrieved documents into the query's language ahead of final generation"
     ],
     correct: 1, keywords: [],
     explanation: "Initial retrieval (bi-encoder / vector search) is fast but approximate. A reranker (typically a cross-encoder) scores each (query, chunk) pair jointly — much more accurate but too slow to run over the full index. The two-stage approach gives recall of bi-encoder + precision of cross-encoder. Popular rerankers: Cohere Rerank, BGE-Reranker, Jina Reranker.",
@@ -1650,10 +1860,10 @@ export const PREP_QUESTIONS = [
     id: "rag-hyde", topic: "rag", difficulty: "medium", type: "mcq",
     question: "Hypothetical Document Embeddings (HyDE) improves RAG retrieval quality by:",
     options: [
-      "Generating hypothetical questions from each document chunk at index time",
+      "Generating hypothetical questions from each chunk at index time and embedding those instead",
       "Having the LLM generate a hypothetical answer first, then embedding that for retrieval",
-      "Embedding documents at multiple chunk sizes and taking the max similarity",
-      "Using the LLM's attention weights to weight chunk embeddings"
+      "Embedding every document at multiple chunk sizes and keeping the maximum similarity score",
+      "Using the LLM's attention weights over the query to reweight the stored chunk embeddings"
     ],
     correct: 1, keywords: [],
     explanation: "HyDE addresses the query-document embedding mismatch: user queries are short and vague, documents are dense and specific. HyDE asks the LLM to generate a hypothetical document that would answer the query, then embeds that hypothetical document for retrieval. The hypothetical document lives in the same embedding space as real documents, dramatically improving recall on factual and technical queries.",
@@ -1664,10 +1874,10 @@ export const PREP_QUESTIONS = [
     id: "rag-litm", topic: "rag", difficulty: "easy", type: "mcq",
     question: "'Lost in the middle' is a RAG failure mode where:",
     options: [
-      "Retrieved chunks are not relevant to the query",
+      "Retrieved chunks are topically adjacent but never actually relevant to the query",
       "The LLM ignores information placed in the middle of a long context window",
-      "The embedding model loses semantic meaning for long documents",
-      "Chunk boundaries split key sentences across adjacent chunks"
+      "The embedding model loses semantic meaning for documents beyond its token limit",
+      "Chunk boundaries split key sentences across adjacent chunks, orphaning the answer"
     ],
     correct: 1, keywords: [],
     explanation: "Research shows LLMs attend more strongly to information at the beginning and end of the context window, and underweight content in the middle. In RAG, placing the most relevant chunks in the middle of a 10+ chunk context window degrades answer quality. Mitigation: put most relevant chunks at the start or end, use Lost-In-The-Middle-aware ordering, or reduce context size.",
@@ -1677,10 +1887,10 @@ export const PREP_QUESTIONS = [
     id: "rag-parent-child", topic: "rag", difficulty: "medium", type: "mcq",
     question: "Parent-child chunking in RAG addresses which specific problem?",
     options: [
-      "Embedding models having a maximum token limit",
+      "Embedding models having a hard maximum token limit that silently truncates any chunk exceeding it",
       "Small chunks losing context needed for accurate embedding; large chunks being too noisy for generation",
-      "The reranker being unable to handle chunks longer than 512 tokens",
-      "Vector databases not supporting variable-length embeddings"
+      "The cross-encoder reranker being unable to score chunks longer than 512 tokens, so long chunks never reach the LLM",
+      "Vector databases not supporting variable-length embeddings, which forces every chunk to a single fixed size"
     ],
     correct: 1, keywords: [],
     explanation: "Small chunks (128 tokens) embed well — they capture specific facts without noise — but lack surrounding context. Large chunks (1024 tokens) provide context but embed poorly as averaged-meaning representations. Parent-child chunking embeds small child chunks for retrieval precision, then returns the parent chunk (with full context) to the LLM. This gives the best of both: accurate retrieval + rich generation context.",
@@ -2425,10 +2635,10 @@ export const PREP_QUESTIONS = [
     id: "stream-q1", topic: "llmops", difficulty: "medium", type: "mcq",
     question: "Server-Sent Events (SSE) are preferred over WebSockets for LLM token streaming because:",
     options: [
-      "SSE is bidirectional, making it better suited for interactive chat",
+      "SSE is fully bidirectional, which suits interactive chat where clients stream typing signals back on the very same channel",
       "SSE is unidirectional (server→client), simpler to implement, and works over standard HTTP without protocol upgrade",
-      "SSE automatically handles backpressure when the client is slow",
-      "SSE has lower latency than WebSockets for small payloads"
+      "SSE automatically applies backpressure whenever the client renders slowly, pausing generation so no tokens are ever dropped",
+      "SSE delivers lower wire latency than WebSockets for small payloads because its frames skip per-message framing overhead"
     ],
     correct: 1,
     keywords: [],
@@ -2621,9 +2831,9 @@ export const PREP_QUESTIONS = [
     question: "In LLM serving, the prefill phase and the decode phase have fundamentally different bottlenecks because:",
     options: [
       "Prefill processes multiple tokens in parallel (compute-bound); decode generates one token at a time (memory-bandwidth-bound)",
-      "Prefill uses INT8 arithmetic; decode uses FP16 to maintain quality",
-      "Prefill runs on the CPU; decode runs on the GPU to balance resource usage",
-      "Prefill is bottlenecked by tokenization speed; decode is bottlenecked by sampling overhead"
+      "Prefill runs in low-precision INT8 arithmetic for speed, while decode must run in FP16 to maintain generation quality token by token",
+      "Prefill is scheduled on the CPU to prepare inputs, while decode runs on the GPU, so the two phases contend for different processors",
+      "Prefill is bottlenecked by tokenization speed on long prompts; decode is bottlenecked by sampling and detokenization overhead per step"
     ],
     correct: 0, keywords: [],
     explanation: "During prefill, all prompt tokens are processed in one forward pass — this is highly parallel and GPU-compute-bound. During decode, one token is generated per step by loading the full model's weights from HBM to compute a single output — this is sequential and memory-bandwidth-bound. These different bottlenecks explain why Flash Attention improves TTFT (prefill) while speculative decoding improves throughput (decode), and why large prompt + short output workloads need different serving configs than short prompt + long output.",
@@ -2634,10 +2844,10 @@ export const PREP_QUESTIONS = [
     id: "serving-6", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
     question: "Tensor parallelism in multi-GPU LLM serving splits the model by:",
     options: [
-      "Assigning different layers to different GPUs (pipeline parallelism)",
+      "Assigning contiguous groups of transformer layers to different GPUs, which is pipeline parallelism",
       "Splitting weight matrices across GPUs so each GPU handles a slice of every layer simultaneously",
-      "Routing different requests to different GPU replicas with no weight sharing",
-      "Replicating the full model on every GPU and averaging gradients after each step"
+      "Routing different incoming requests to independent GPU replicas that never share any weights",
+      "Replicating the full model on every GPU and averaging the gradients across devices after each step"
     ],
     correct: 1, keywords: [],
     explanation: "Tensor parallelism (Megatron-style) splits each attention head group and FFN across GPUs — for 8-way tensor parallel, each GPU holds 1/8 of every weight matrix and processes 1/8 of the attention heads. An all-reduce synchronizes after each layer. This keeps all GPUs active on every token but requires high-bandwidth GPU interconnects (NVLink). Pipeline parallelism (different layers on different GPUs) is orthogonal and used at larger scale. Data parallelism (separate replicas) improves throughput but not single-request latency.",
@@ -2647,10 +2857,10 @@ export const PREP_QUESTIONS = [
     id: "serving-7", topic: "serving", difficulty: "medium", type: "mcq",
     question: "When should you prefer optimising for throughput over latency in LLM serving?",
     options: [
-      "Always — throughput is the primary business metric for all LLM deployments",
+      "Always — throughput is the primary business metric for every LLM deployment and directly sets cost per token",
       "For async batch workloads (document processing, offline eval, embeddings) where user wait time is irrelevant",
-      "For interactive chat products where users tolerate up to 30 seconds for high-quality responses",
-      "When the model is quantized to INT4 — latency optimisation no longer applies"
+      "For interactive chat products, since users will tolerate waits of up to 30 seconds for higher-quality responses",
+      "When the model is quantized to INT4, because latency optimisation no longer applies once weights are compressed"
     ],
     correct: 1, keywords: [],
     explanation: "Throughput (tokens/second across all requests) and latency (time per request) are in tension — maximising throughput means larger batches and more queuing, which increases per-request latency. For real-time chat, you optimise for P95 TTFT and TBT. For async workloads (nightly document processing, embedding generation, offline evals), you maximise GPU utilisation via large batch sizes. Many teams run two serving tiers: a low-latency interactive cluster and a high-throughput batch cluster with the same model.",
@@ -2661,10 +2871,10 @@ export const PREP_QUESTIONS = [
     id: "serving-8", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
     question: "KV cache eviction policies matter when GPU memory is full because:",
     options: [
-      "Evicting the wrong KV cache entries forces a full model reload from disk",
+      "Evicting the wrong KV cache entries forces the serving system to reload full model weights from disk",
       "Evicted requests must recompute their KV cache from scratch (recompute cost) or be dropped entirely",
-      "KV cache eviction triggers a CUDA out-of-memory error that crashes the serving process",
-      "Eviction always causes the associated request to be served with lower quality output"
+      "KV cache eviction races with new allocations, triggering CUDA out-of-memory crashes in the server",
+      "Eviction always degrades the affected request, which must finish with lower-quality truncated output"
     ],
     correct: 1, keywords: [],
     explanation: "When GPU memory is exhausted, the serving system must either evict (free) KV cache for some in-flight requests or reject new ones. An evicted request's KV cache is lost — the system must either recompute it (latency hit equal to the full prefill time) or terminate the request with an error. vLLM uses a priority-based eviction policy (longest-waiting requests, shortest remaining sequences first). This is why KV cache memory management is a first-class concern in production LLM serving, not an afterthought.",
@@ -2789,7 +2999,12 @@ export const PREP_QUESTIONS = [
   {
     id: "cos-1", topic: "rag", difficulty: "hard", type: "mcq",
     question: "Two chunks have cosine similarity 0.92 to the query. A third chunk has similarity 0.61. The reranker returns the third chunk at rank 1. This is because:",
-    options: ["The reranker is broken", "Cosine similarity measures angle between embeddings — the reranker uses a cross-encoder that reads query and chunk together, capturing relevance the embedding model missed", "The third chunk has more tokens", "The embedding model is wrong"],
+    options: [
+      "The reranker is broken — a working reranker must preserve the embedding model's ordering, because cosine similarity is the ground-truth relevance signal the cross-encoder was trained to reproduce",
+      "Cosine similarity measures angle between embeddings — the reranker uses a cross-encoder that reads query and chunk together, capturing relevance the embedding model missed",
+      "The third chunk has more tokens, and rerankers systematically favour longer passages because extra tokens give the cross-encoder more attention mass from which to accumulate relevance score",
+      "The embedding model is wrong and needs retraining — a chunk scoring 0.61 can only outrank two 0.92 chunks if the underlying embedding space itself has become corrupted"
+    ],
     correct: 1, keywords: [],
     explanation: "Bi-encoders (embedding models) compute query and chunk independently, then compare. Cross-encoders (rerankers) read both together — they see the actual query-chunk interaction. A chunk can be semantically adjacent (high cosine similarity) but not actually answer the question. The reranker catches this; the embedding model cannot.",
     readMore: { label: "Cosine Similarity Explorer", tab: "explore" }
@@ -2806,7 +3021,12 @@ export const PREP_QUESTIONS = [
   {
     id: "cos-3", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "Your RAG system returns correct answers 90% of the time but a random 10% of queries get completely wrong results. Most likely root cause?",
-    options: ["Chunk size too large", "Orthogonal queries — these queries embed in a direction where the correct document is at cosine similarity near 0, so retrieval returns unrelated but non-orthogonal chunks instead", "LLM hallucination rate is exactly 10%", "Embedding model dimension too low"],
+    options: [
+      "Chunk size too large — oversized chunks average many topics into a single embedding, and on roughly 10% of queries that averaging pushes the correct chunk just below the similarity cutoff",
+      "Orthogonal queries — these queries embed in a direction where the correct document is at cosine similarity near 0, so retrieval returns unrelated but non-orthogonal chunks instead",
+      "LLM hallucination at a fixed 10% rate — decoder sampling guarantees a constant fraction of generations ignore the retrieved context entirely, independent of retrieval quality upstream",
+      "Embedding dimension too low — 768-dim vectors can only separate about 90% of query clusters, so one query in ten collides with an unrelated region of the vector space by construction"
+    ],
     correct: 1, keywords: [],
     explanation: "When a query embeds into a region of vector space not populated by your document corpus, all retrieval scores are mediocre (0.3–0.5). The system retrieves the least-wrong documents and the LLM makes up an answer from irrelevant context. This is the 'distribution mismatch' failure: your embedding model was trained on text unlike your documents. Fix: domain-specific fine-tuning of the embedding model, or hard-negative mining.",
     trap: "Saying \'the embedding model is wrong.\' 10% random noise pattern suggests retrieval score threshold or top-k configuration issue, not model quality. Model quality failures are systematic by query type, not random.",
@@ -2817,7 +3037,12 @@ export const PREP_QUESTIONS = [
   {
     id: "lctx-1", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "A RAG system uses a 128K context window and stuffs the entire document corpus in. Users report missing answers that are definitely in the corpus. Most likely cause?",
-    options: ["The model has insufficient parameters", "Lost-in-the-middle — facts buried at ~50% through the context are retrieved at ~60% recall vs 95%+ at document boundaries", "Context window overflow", "Tokenization error"],
+    options: [
+      "The model has insufficient parameters — reading a corpus this large needs model capacity that grows with document count",
+      "Lost-in-the-middle — facts buried at ~50% through the context are retrieved at ~60% recall vs 95%+ at document boundaries",
+      "Context window overflow — the corpus silently exceeds 128K tokens and the API truncates from the front of the prompt",
+      "Tokenization errors — very long inputs accumulate encoding drift, so later documents arrive garbled at the attention layers"
+    ],
     correct: 1, keywords: [],
     explanation: "Lost-in-the-middle is a documented failure mode: LLMs attend strongly to the beginning and end of context but poorly to the middle. A 128K context window does not mean uniform recall across 128K tokens. Retrieval that places the relevant chunk at position 0 outperforms full-context stuffing for mid-document facts.",
     readMore: { label: "Long Context Patterns →", tab: "systems" }
@@ -2825,7 +3050,12 @@ export const PREP_QUESTIONS = [
   {
     id: "lctx-2", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "You need to synthesise findings across 200 research papers. Which pattern is correct?",
-    options: ["Full context — concatenate all 200 papers", "Map-reduce — extract key findings per paper in parallel, then synthesise the extractions", "Chunk-then-summarise — summarise each paper sequentially", "Single embedding lookup per paper"],
+    options: [
+      "Full context — concatenate all 200 papers so the model sees every cross-paper link at once",
+      "Map-reduce — extract key findings per paper in parallel, then synthesise the extractions",
+      "Chunk-then-summarise — summarise each paper sequentially so each summary builds on the last",
+      "Single embedding lookup per paper, ranking all 200 against the synthesis question directly"
+    ],
     correct: 1, keywords: [],
     explanation: "Map-reduce is the right pattern for synthesis across many documents. The map step extracts relevant findings per paper (cheap, parallelisable). The reduce step synthesises across extractions. Full context fails because 200 papers vastly exceed any context window. Chunk-then-summarise is sequential (slow) and loses cross-paper relationships.",
     trap: "Saying \'use a 1M context window.\' Even with large context, synthesis quality degrades across 200 papers — the model cannot reliably attend to all sources. Map-reduce over structured per-paper extractions consistently outperforms context stuffing at this scale.",
@@ -2834,7 +3064,12 @@ export const PREP_QUESTIONS = [
   {
     id: "lctx-3", topic: "llmops", difficulty: "medium", type: "mcq",
     question: "A user queries the same 500-page legal document 100 times per day with different questions. Best cost-optimisation strategy?",
-    options: ["Full context on every query", "Re-embed the document on every query", "Chunk-then-summarise once and cache the compressed representation; query the summaries", "Use a smaller model to reduce cost"],
+    options: [
+      "Send the full document as context on every query — prompt tokens are cheap at this scale",
+      "Re-embed the entire document on each query so retrieval always reflects the latest question",
+      "Chunk-then-summarise once and cache the compressed representation; query the summaries",
+      "Use a smaller, cheaper model on every query and accept a modest accuracy loss on answers"
+    ],
     correct: 2, keywords: [],
     explanation: "Chunk-then-summarise amortises the summarisation cost across all queries. Pay once to compress 500 pages into a summary, then send only the summary (much fewer tokens) on each of the 100 daily queries. Full context at 100K tokens/query × 100 queries = 10M tokens/day. Summarise once (100K tokens) then query at 5K tokens each = 600K tokens/day — ~16× cheaper.",
     trap: "Saying \'use RAG to chunk the document.\' 100 queries/day on the same 500-page document means prompt caching is the right tool. Cache the document prefix, pay 90% less per query — RAG adds retrieval latency and complexity without benefit when the full document is reused.",
@@ -2854,7 +3089,12 @@ export const PREP_QUESTIONS = [
   {
     id: "vdb-1", topic: "rag", difficulty: "medium", type: "mcq",
     question: "Your team already runs Postgres and has 8M document vectors. Which vector DB choice minimises operational overhead?",
-    options: ["Pinecone — managed SaaS removes all ops", "pgvector — Postgres extension, no new infrastructure", "Chroma — easiest to set up", "Weaviate — best hybrid search"],
+    options: [
+      "Pinecone — the managed SaaS removes all operational load",
+      "pgvector — Postgres extension, no new infrastructure",
+      "Chroma — the quickest of all vector stores to stand up",
+      "Weaviate — hybrid search built in, minimal ops burden"
+    ],
     correct: 1, keywords: [],
     explanation: "pgvector as a Postgres extension means zero new infrastructure: install the extension, add a vector column, create an HNSW index. You keep your existing Postgres ops knowledge, backups, monitoring, and SQL query patterns. At 8M vectors it comfortably fits in RAM with HNSW. Pinecone is the right call when you need to scale past what Postgres can handle or have no ops team — not when you are already on Postgres.",
     trap: "Saying \'use Pinecone for production.\' When the team already runs Postgres with 8M vectors, pgvector eliminates operational overhead and keeps vectors co-located with source data. Managed vector DBs add cost and complexity unjustified at this scale.",
@@ -2863,7 +3103,12 @@ export const PREP_QUESTIONS = [
   {
     id: "vdb-2", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "You need sub-5ms p99 vector search over 20M vectors with high recall. Which index type and key trade-off applies?",
-    options: ["IVFFlat — faster to build, lower memory, tune nprobe for recall", "HNSW — higher memory (full graph in RAM), very fast queries, high recall at default settings", "IVF+PQ — best for this scale, no trade-offs", "Flat — exact search, no approximation needed at this scale"],
+    options: [
+      "IVFFlat — faster to build and lower memory; nprobe tuning makes its p99 latency fully deterministic",
+      "HNSW — higher memory (full graph in RAM), very fast queries, high recall at default settings",
+      "IVF+PQ — product quantization is strictly best at this scale, compressing with zero recall trade-off",
+      "Flat — exact search stays under 5ms at 20M vectors, making any approximation unnecessary overhead"
+    ],
     correct: 1, keywords: [],
     explanation: "HNSW is the right choice for low-latency, high-recall requirements when data fits in RAM. 20M 1536-dim float32 vectors = ~115GB — requires a large-memory instance. The trade-off is memory cost vs query speed. IVFFlat uses less memory but requires tuning nprobe to hit recall targets, and p99 latency is less predictable. Flat exact search at 20M vectors is orders of magnitude too slow for sub-5ms.",
     trap: "Saying \'use cosine similarity with flat index.\' Flat index is O(N) linear scan — it will not meet p99 latency at 20M vectors. HNSW provides O(log N) approximate nearest-neighbour search at the required recall level.",
@@ -2872,7 +3117,12 @@ export const PREP_QUESTIONS = [
   {
     id: "vdb-3", topic: "rag", difficulty: "medium", type: "mcq",
     question: "A RAG system over a product catalog frequently misses queries like 'SKU-48291' or 'CVE-2024-12345'. Root cause and fix?",
-    options: ["Embedding model dimension too small — increase to 3072", "Dense retrieval fails on exact strings — add BM25 sparse retrieval and merge with RRF for hybrid search", "Chunk size too small — increase to capture more context", "Reranker model needed"],
+    options: [
+      "Embedding dimension too small — upgrading from 1536 to 3072 dims gives vectors room to encode identifiers",
+      "Dense retrieval fails on exact strings — add BM25 sparse retrieval and merge with RRF for hybrid search",
+      "Chunk size too small — larger chunks capture surrounding context that anchors SKU strings semantically",
+      "A reranker is needed — a cross-encoder reading query and chunk together recovers the exact-match signal"
+    ],
     correct: 1, keywords: [],
     explanation: "Dense (vector) retrieval finds semantically similar content but is poor at exact string matching. Product codes, CVE identifiers, and serial numbers don't have semantic neighbors — they need exact lexical match. BM25 sparse retrieval handles this natively. Hybrid search merges dense + sparse results using Reciprocal Rank Fusion (RRF score = Σ 1/(k+rank_i)), ensuring both semantic similarity and keyword matches contribute to final ranking.",
     trap: "Saying \'fine-tune the embedding model.\' Exact-match failures on identifiers are an architecture issue, not model quality. Dense embeddings cannot reliably match rare identifiers — hybrid search (BM25 + dense with RRF fusion) is the correct fix.",
@@ -2881,7 +3131,12 @@ export const PREP_QUESTIONS = [
   {
     id: "vdb-4", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "A multi-tenant RAG system serves 500 customers. Each customer should only retrieve their own documents. Correct architecture?",
-    options: ["Separate vector DB index per customer — safest isolation", "Single index with customer_id metadata filter applied before vector search", "Single index, post-filter results by customer_id after retrieval", "Namespace per customer in Pinecone"],
+    options: [
+      "Separate vector DB index per customer — physical isolation is always safest",
+      "Single index with customer_id metadata filter applied before vector search",
+      "Single index, post-filtering the results by customer_id right after retrieval",
+      "A namespace per customer in Pinecone, or one collection per tenant elsewhere"
+    ],
     correct: 1, keywords: [],
     explanation: "A single index with pre-filtering by customer_id metadata is the standard production pattern. Pre-filtering (applied before ANN search) ensures the search space is restricted to the tenant's documents — correct isolation and efficient. Post-filtering (retrieve top-K globally, then filter) leaks information about other tenants' document existence in edge cases and wastes compute retrieving documents that will be discarded. Separate indexes per customer creates 500× the operational overhead.",
     trap: "Saying \'use separate vector collections per customer.\' 500 collections adds significant operational overhead. Namespace or partition isolation within one collection with metadata filtering is the production-standard approach.",
@@ -3014,10 +3269,10 @@ export const PREP_QUESTIONS = [
     id: "lcp-1", topic: "rag", difficulty: "hard", type: "mcq",
     question: "A research assistant processes a 200-page report. The relevant answer is in paragraph 3 of page 47. You've stuffed the whole document into a 128K context window. What failure mode should you expect?",
     options: [
-      "The model will refuse to answer — it can't process 200 pages",
+      "The model will refuse to answer — 200 pages exceeds what any model will attempt, since providers reject prompts filling more than half of the advertised context window",
       "Lost-in-the-middle: models attend better to content at the beginning and end of context; content in the middle is more likely to be missed or underweighted",
-      "The model will hallucinate because the document is too long",
-      "Cost will be high but accuracy will be fine"
+      "The model will hallucinate because document length itself raises the effective sampling temperature, making long-context generations progressively less grounded in the text",
+      "Cost will be high but accuracy will be fine — within the advertised window, attention treats every token position identically, so recall stays uniform across all 200 pages"
     ],
     correct: 1,
     explanation: "Lost-in-the-middle is a well-documented failure mode: LLMs show a U-shaped attention curve over long contexts — they attend strongly to tokens near the beginning and end of the window, and systematically underweight the middle. A key fact on page 47 of 200 lands in the middle of the context and is more likely to be missed or underweighted than the same fact on page 1 or page 200. Solutions: (1) Map-reduce — split the document, process each chunk independently, aggregate answers. (2) Reranking — retrieve the relevant chunk first, place it at the start of context. (3) Needle-in-a-haystack eval — test your specific model and document length to understand where the degradation actually starts.",
@@ -3027,10 +3282,10 @@ export const PREP_QUESTIONS = [
     id: "lcp-2", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "You have 50 customer support tickets per day. A new ticket arrives and you want to answer it using patterns from all previous tickets. RAG retrieves the top-5 most similar past tickets. A colleague suggests instead loading all 50 today's tickets into a 128K context. Which approach is better and why?",
     options: [
-      "Full context is better — the model can reason over all 50 tickets simultaneously",
+      "Full context is better — the model reasons over all 50 tickets simultaneously, and with every precedent visible in a single window nothing can be missed the way a top-5 similarity cutoff inevitably misses relevant edge-case precedents",
       "RAG is better for this use case — similarity retrieval finds the most relevant precedents, avoids lost-in-the-middle on 50 tickets, and scales to thousands of historical tickets without hitting context limits",
-      "They are equivalent — the model sees the same information either way",
-      "Full context is better only if the tickets are under 1,000 tokens each"
+      "They are equivalent — the model ends up conditioning on the same underlying information either way, so retrieval versus full-context stuffing is purely a cost optimisation with no measurable effect on answer quality at this scale",
+      "Full context is better only if the tickets are under 1,000 tokens each, since 50 short tickets fit comfortably inside 128K and short documents are immune to the positional attention effects that degrade longer ones"
     ],
     correct: 1,
     explanation: "RAG wins here for three reasons: (1) Scale — 50 tickets today is 18,000 per year. RAG scales to any history size; full-context does not. (2) Lost-in-the-middle — stuffing 50 tickets into context means 45 of them land in positions where the model underweights them anyway. RAG places the 5 most relevant tickets at the start of a short context, which is exactly where attention is strongest. (3) Cost and latency — 50 tickets at 500 tokens each is 25K tokens per query. RAG is ~3K tokens per query at full precision on the relevant examples. Full-context is only preferable when you need the model to reason over relationships across all documents simultaneously (e.g., find contradictions across 10 contracts) — that's a different task where retrieval loses cross-document signal.",
@@ -3040,10 +3295,10 @@ export const PREP_QUESTIONS = [
     id: "lcp-3", topic: "rag", difficulty: "medium", type: "mcq",
     question: "What is the 'chunk-then-summarise' long context pattern and when should you use it instead of map-reduce?",
     options: [
-      "Chunk-then-summarise splits documents into chunks and embeds each one. Use it instead of map-reduce when you need vector search.",
+      "Chunk-then-summarise splits documents into chunks and embeds each one for vector search. Use it instead of map-reduce whenever you need similarity-based lookup rather than exhaustive processing of every chunk in the corpus, since embeddings make retrieval sublinear.",
       "Chunk-then-summarise creates a compressed summary of each chunk, then operates over the summaries rather than raw text. Use it when you need cross-chunk synthesis that map-reduce misses because it processes chunks independently.",
-      "Chunk-then-summarise is the same as map-reduce — both summarise individual chunks before aggregating.",
-      "Chunk-then-summarise is a retrieval pattern; map-reduce is a generation pattern. They solve different problems."
+      "Chunk-then-summarise is the same as map-reduce — both summarise individual chunks before aggregating, and the two names simply describe the identical processing pattern as coined by the data-engineering and LLM communities respectively.",
+      "Chunk-then-summarise is a retrieval-time pattern while map-reduce is a generation-time pattern; they operate at different stages of the pipeline and solve entirely different problems, so a choice between them never actually arises in practice."
     ],
     correct: 1,
     explanation: "Map-reduce processes each chunk independently and then aggregates answers — it works when the answer exists within a single chunk. Chunk-then-summarise first compresses each chunk to a dense summary (preserving key facts, discarding filler), then feeds all summaries into a single context for synthesis. The advantage: cross-chunk reasoning. If the answer requires combining information from chunk 3 and chunk 17, map-reduce misses it (each chunk is processed alone). Summaries fit more chunks into a single context pass, enabling the model to see the whole picture simultaneously. Trade-off: summarisation loses detail — if the exact wording matters (legal, compliance), chunk-then-summarise can drop critical nuance that raw map-reduce would preserve.",
@@ -3056,10 +3311,10 @@ export const PREP_QUESTIONS = [
     id: "tok-1", topic: "rag", difficulty: "medium", type: "mcq",
     question: "A multilingual RAG system needs to chunk documents in Hindi, Japanese, and English. Which tokenizer property matters most for ensuring fair, consistent chunk sizes across languages?",
     options: [
-      "Vocabulary size — larger vocabularies always produce more consistent tokenization",
+      "Vocabulary size — a larger vocabulary always yields more uniform token counts, since more scripts receive dedicated tokens",
       "Byte-level fallback — ensures no character in any language is unknown and token counts are comparable across scripts",
-      "Subword merging frequency — BPE merge count determines quality",
-      "Case sensitivity — case-insensitive tokenizers handle multilingual text better"
+      "Subword merging frequency — the BPE merge count determines how consistently each language's text gets compressed",
+      "Case sensitivity — case-insensitive tokenizers normalise across scripts, so token counts converge between languages"
     ],
     correct: 1,
     explanation: "Byte-level coverage is the critical property for multilingual consistency. Tokenizers without byte-level fallback assign unknown tokens ([UNK]) to characters outside their training vocabulary — common for scripts like Hindi (Devanagari) or Japanese (Kanji/Kana) in English-biased tokenizers. Unknown tokens mean the model has no meaningful representation for that text, and chunk size estimates become unreliable (one Japanese paragraph may be 50 tokens in a well-trained tokenizer or 200 [UNK] tokens in a poorly-adapted one). SentencePiece (used by T5, LLaMA) and tiktoken (used by GPT-4) both support byte-level fallback, making them safer for multilingual workloads. Vocabulary size matters but is secondary to coverage.",
@@ -3070,10 +3325,10 @@ export const PREP_QUESTIONS = [
     id: "tok-2", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "You're migrating a RAG pipeline from GPT-3.5 (tiktoken cl100k_base) to an open-source model using SentencePiece. Your chunk size is set to 512 tokens. What do you need to recalibrate and why?",
     options: [
-      "Nothing — token counts are standardized across modern tokenizers",
+      "Nothing — token counts are standardized across modern tokenizers, since BPE and SentencePiece converge on nearly identical vocabularies when trained on comparable web-scale corpora",
       "The chunk size in tokens, because different tokenizers produce different token counts for the same text — your 512-token chunks may become 400 or 650 tokens in the new tokenizer",
-      "Only the embedding model — tokenizers don't affect chunking",
-      "The model temperature — tokenizer changes affect generation randomness"
+      "Only the embedding model — tokenization is an internal model detail that never affects chunking, because chunk boundaries are defined over characters before any tokenizer runs",
+      "The model temperature — a new tokenizer shifts the vocabulary distribution, so generation randomness must be re-tuned to keep outputs comparable across the migration"
     ],
     correct: 1,
     explanation: "Token counts are tokenizer-specific. The same sentence tokenizes to a different number of tokens in tiktoken cl100k_base vs SentencePiece, often varying by 20–40% depending on content. Your hardcoded '512 token' chunk limit was calibrated for tiktoken. After migration, those same chunks may be 400 tokens (under-utilizing context) or 650 tokens (overflowing the model's expected input). You need to: (1) Re-measure average token counts per chunk with the new tokenizer on your actual corpus. (2) Recalibrate the chunk limit to achieve the same character/word coverage you intended. (3) Re-embed all chunks — embeddings from the old model are incompatible with the new one anyway. Tokenizer migration always requires a full re-indexing pass.",
@@ -3083,10 +3338,10 @@ export const PREP_QUESTIONS = [
     id: "tok-3", topic: "rag", difficulty: "medium", type: "mcq",
     question: "Why do code-heavy prompts (Python, SQL) often cost significantly fewer tokens than equivalent prose in models using BPE tokenizers like tiktoken?",
     options: [
-      "Code is compressed by the API before tokenization",
+      "Code is compressed by the API gateway before tokenization — providers detect code blocks and apply dictionary compression, so the billed token count reflects the compressed representation rather than the raw source text",
       "BPE tokenizers trained on large code corpora learn to merge common code patterns (def , import , SELECT , ()) into single tokens, while prose has more unique word combinations that resist merging",
-      "Code has fewer characters than prose on average",
-      "Code uses ASCII only, which tokenizes more efficiently than Unicode prose"
+      "Code has fewer characters than equivalent prose on average, because identifiers and operators abbreviate ideas prose must spell out in full words, and fewer characters mechanically translates into fewer tokens",
+      "Code uses ASCII only, and ASCII bytes tokenize one-to-one while Unicode prose requires multi-byte sequences, so any ASCII-heavy input is automatically cheaper per character than natural-language text"
     ],
     correct: 1,
     explanation: "BPE (Byte Pair Encoding) builds its vocabulary by iteratively merging the most frequent byte or character pairs in the training corpus. Models like GPT-4 are trained on massive code datasets, so patterns like 'def ', 'import ', 'return ', 'SELECT * FROM', and common syntax like '():' become single high-frequency merge tokens. A Python function signature might be 8–10 characters but 2–3 tokens. By contrast, prose sentences have higher vocabulary diversity — unusual word combinations rarely merge. The practical implication: when estimating token budgets for mixed code/prose prompts, you cannot assume a uniform character-to-token ratio. Code typically runs 3–5 characters per token; formal prose runs 4–5; casual text varies more widely.",
@@ -3100,10 +3355,10 @@ export const PREP_QUESTIONS = [
     id: "qr-1", topic: "rag", difficulty: "hard", type: "mcq",
     question: "A user asks 'What is the company policy on remote work?' but your HR documents use the term 'distributed work arrangement.' Simple vector similarity retrieval returns nothing relevant. Which query refinement strategy is the lowest-cost fix?",
     options: [
-      "HyDE — generate a hypothetical answer and embed it",
-      "Multi-query retrieval — generate 5 variants and merge results",
+      "HyDE — generate a hypothetical answer and embed that for retrieval",
+      "Multi-query retrieval — generate five phrasings and merge all their results",
       "Query rewriting — use an LLM to rewrite the query in document vocabulary",
-      "Decomposition — break the question into sub-questions"
+      "Decomposition — split the question into sub-questions and answer each one"
     ],
     correct: 2,
     explanation: "Query rewriting is the right tool when the gap is vocabulary mismatch. The user says 'remote work', the document says 'distributed work arrangement' — one LLM call bridges that. HyDE is more expensive and better suited for conceptual queries with no obvious keywords. Multi-query is 3-5x the retrieval cost. Decomposition adds latency without benefit for a simple single-concept question.",
@@ -3113,10 +3368,10 @@ export const PREP_QUESTIONS = [
     id: "qr-2", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "HyDE (Hypothetical Document Embeddings) generates a fake document that would answer the query, then retrieves real documents similar to it. What is the primary risk of this approach?",
     options: [
-      "It doubles the embedding cost",
+      "It doubles the embedding cost, since both the query and the hypothetical document must be embedded",
       "The hypothetical document may contain hallucinated facts that bias retrieval toward wrong documents",
-      "It cannot handle multi-part questions",
-      "It requires a fine-tuned embedding model"
+      "It cannot handle multi-part questions, because one single hypothesis collapses the distinct sub-intents",
+      "It requires a fine-tuned embedding model, since generic embeddings cannot represent generated text"
     ],
     correct: 1,
     explanation: "HyDE's core risk is hallucination bias. The LLM generates a plausible-sounding answer, but that answer may contain incorrect facts. The retrieval system then finds documents that are similar to this hallucinated answer — confidently pulling the wrong content. This is why HyDE works well for abstract conceptual queries (where the hypothesis shape matters more than the exact facts) but poorly for factual queries where precision is critical.",
@@ -3127,10 +3382,10 @@ export const PREP_QUESTIONS = [
     id: "qr-3", topic: "rag", difficulty: "hard", type: "mcq",
     question: "Your RAG system handles complex financial analysis questions that often require data from multiple document sections. Retrieval precision matters more than latency. Which strategy fits best?",
     options: [
-      "Original query — keep it simple",
-      "Query rewriting — fix vocabulary",
+      "Original query — keep it simple, since rewrites only add retrieval noise",
+      "Query rewriting — fix the vocabulary gap between the query and documents",
       "Query decomposition — break into sub-questions, answer each, synthesise",
-      "HyDE — generate a hypothesis"
+      "HyDE — generate a hypothesis and retrieve documents that resemble it"
     ],
     correct: 2,
     explanation: "Decomposition is purpose-built for multi-part questions requiring synthesis from multiple sources. Breaking 'How did Q4 revenue compare to plan and what drove the variance?' into 'What was Q4 revenue?', 'What was the Q4 plan?', and 'What were the key drivers?' produces focused, high-precision retrievals for each sub-question. The synthesis step combines them into a coherent answer. The latency cost is justified when precision matters.",
@@ -3149,10 +3404,10 @@ export const PREP_QUESTIONS = [
     id: "pcm-1", topic: "llmops", difficulty: "hard", type: "mcq",
     question: "A one-line change to a customer support system prompt caused a 23% quality drop that went undetected for 11 days. What is the most direct technical fix?",
     options: [
-      "Add more examples to the system prompt",
-      "Switch to a larger model",
+      "Add several more few-shot examples so the prompt stays robust to small wording changes",
+      "Switch to a larger model whose outputs are less sensitive to prompt phrasing",
       "Build a prompt regression test suite that runs on every prompt change in CI/CD",
-      "Monitor CSAT scores daily and roll back when they drop"
+      "Monitor CSAT scores daily with automated alerts and roll back on any dip"
     ],
     correct: 2,
     explanation: "CSAT monitoring is reactive — it tells you 11 days later that something broke. A prompt regression test suite with LLM-as-judge scoring catches the regression before deployment. The suite runs canonical inputs through the modified prompt, scores the outputs, and blocks the PR if quality drops below threshold. This is the direct fix: move detection from production (11 days latency) to CI/CD (minutes latency).",
@@ -3162,10 +3417,10 @@ export const PREP_QUESTIONS = [
     id: "pcm-2", topic: "llmops", difficulty: "medium", type: "mcq",
     question: "What is the role of LLM-as-judge in a prompt regression suite, and what is its main limitation?",
     options: [
-      "It generates the test cases automatically; limitation is it needs to be retrained monthly",
+      "It generates the regression test cases automatically from sampled production traffic; the limitation is that the judge must be retrained monthly as traffic distribution shifts",
       "It scores test case outputs against quality criteria; limitation is ~85% agreement with human judgment — not perfect, and the judge prompt itself needs calibration",
-      "It deploys prompt changes to production; limitation is latency",
-      "It monitors production traffic; limitation is cost"
+      "It deploys prompt changes to production once they pass, acting as the release gate; the main limitation is the extra latency it adds to every single deployment cycle it gates",
+      "It monitors live production traffic and scores every response as it is served to users; the main limitation is the cost of running a judge call on each production request"
     ],
     correct: 1,
     explanation: "LLM-as-judge scores each test case output on defined criteria (task completion, faithfulness, format compliance). The limitation: it agrees with human judgment ~85% of the time on well-defined tasks, lower on complex multi-criteria assessments. This means the regression suite will have false positives (blocking good changes) and false negatives (allowing bad ones). Calibration on known good/bad outputs before deploying the judge is essential, and the judge prompt itself is code that needs versioning.",
@@ -3243,10 +3498,10 @@ export const PREP_QUESTIONS = [
     id: "graph-rag-3", topic: "rag", difficulty: "medium", type: "mcq",
     question: "What is multi-hop retrieval and why does dense vector retrieval fail to answer multi-hop queries?",
     options: [
-      "Multi-hop retrieval means retrieving from multiple vector indices; it fails because indices are not synchronized",
+      "Multi-hop retrieval means querying multiple vector indices in sequence; it fails because the indices refresh on different schedules, so any hop that depends on a stale index returns entities that no longer exist in the other indices",
       "Multi-hop retrieval follows a chain of entity relationships across documents to reach an answer; vector retrieval fails because the relationship only emerges from graph traversal, not from any single document's embedding",
-      "Multi-hop retrieval uses multiple embedding models; it fails because they produce incompatible vector spaces",
-      "Multi-hop retrieval re-ranks results multiple times; it fails because rerankers have poor recall on complex queries"
+      "Multi-hop retrieval uses several embedding models within one pipeline; it fails because each model produces a geometrically incompatible vector space, so similarity scores cannot be compared across hops without a learned projection",
+      "Multi-hop retrieval re-ranks the candidate set repeatedly; it fails because every reranking pass discards tail candidates, and over several passes that recall loss compounds until the answer document has been pruned away entirely"
     ],
     correct: 1,
     keywords: [],
@@ -3344,10 +3599,10 @@ export const PREP_QUESTIONS = [
     id: "reranker-3", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
     question: "A bi-encoder retrieves candidates by embedding query and documents independently and ranking by cosine similarity. What is the primary limitation of this approach that a cross-encoder fixes?",
     options: [
-      "It cannot handle documents longer than 512 tokens",
+      "It cannot handle documents longer than 512 tokens, so longer passages get silently truncated",
       "It misses relevance signals that only emerge when reading the query and document together",
-      "It requires GPU hardware unavailable in most production environments",
-      "It cannot rank more than 1,000 documents at once"
+      "It requires GPU hardware at query time, which most production environments cannot provision",
+      "It cannot rank more than 1,000 documents at once because similarity memory grows quadratically"
     ],
     correct: 1,
     keywords: ["bi-encoder", "cross-encoder", "independent encoding", "joint scoring", "relevance"],
@@ -3385,8 +3640,8 @@ export const PREP_QUESTIONS = [
     id: "semcache-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "A team builds an FAQ chatbot serving 10,000 queries/day. They implement semantic caching with a cosine similarity threshold of 0.92. Which type of query CANNOT safely be served from cache?",
     options: [
-      "What is your return policy?",
-      "How long does shipping take?",
+      "What is your policy on item returns?",
+      "How long does standard shipping take?",
       "What is the current price of item X?",
       "What payment methods do you accept?"
     ],
@@ -3474,10 +3729,10 @@ export const PREP_QUESTIONS = [
     id: "retrieval-1", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
     question: "A RAG system for a medical device knowledge base retrieves the wrong documents when users query specific model numbers like 'Medtronic 3830'. What is the root cause and correct fix?",
     options: [
-      "Increase top_k to retrieve more candidates",
+      "Increase top_k so more candidates are retrieved — the right document is in the index and will surface with a wider net",
       "Switch from dense-only retrieval to hybrid search — BM25 handles exact term matching that dense retrieval misses",
-      "Fine-tune the embedding model on medical device documentation",
-      "Add a reranker to improve precision after retrieval"
+      "Fine-tune the embedding model on medical device documentation so model numbers gain dedicated vector directions",
+      "Add a cross-encoder reranker after retrieval — precision at position 1 is what decides the final answer quality"
     ],
     correct: 1,
     explanation: "Dense (vector) retrieval works by semantic similarity in embedding space. Rare identifiers like 'Medtronic 3830', CVE numbers, SKUs, and model names are often not in the embedding model's training vocabulary — their vectors don't cluster near the relevant documents. BM25 (sparse) retrieval uses inverted index exact matching and handles these cases perfectly: it matches the exact token string '3830' regardless of semantic context. Hybrid search (dense + BM25 with RRF fusion) handles both semantic queries and exact-match queries in one retrieval pass.",
@@ -3489,10 +3744,10 @@ export const PREP_QUESTIONS = [
     id: "retrieval-2", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
     question: "In RRF (Reciprocal Rank Fusion), why is the score formula rank-based (1/(k+rank)) rather than score-based (direct cosine similarity)?",
     options: [
-      "Cosine similarity is slower to compute than rank position",
+      "Cosine similarity is much slower to recompute at fusion time than rank positions, which arrive already sorted",
       "Dense and sparse scores are not on the same scale — rank normalises them without requiring calibration",
-      "RRF was designed to work without an inverted index",
-      "Score-based fusion requires a minimum of 3 retrievers"
+      "RRF was designed for engines without an inverted index, where raw relevance scores are never available",
+      "Score-based fusion needs at least 3 retrievers to triangulate a scale; rank-based works with only 2"
     ],
     correct: 1,
     explanation: "Dense retrieval produces cosine similarity scores (0–1 range, distribution depends on model). Sparse BM25 produces TF-IDF scores (0 to ∞, distribution depends on corpus statistics). These are on completely different scales with different distributions — you cannot average them directly. RRF uses rank position rather than raw scores, so both retrievers contribute based on 'this was the Nth most relevant document' rather than 'this had score X.' This makes fusion possible without any calibration step, which is why RRF became the standard approach.",
@@ -3569,10 +3824,10 @@ export const PREP_QUESTIONS = [
     id: "promptlab-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "A prompt change caused a 23% quality drop that went undetected for 11 days. The change was a single softened instruction — no structural change, no new variables. What architecture was missing?",
     options: [
-      "A model fine-tuned on the new prompt to detect regressions",
+      "A model fine-tuned on the previous prompt's outputs, which would flag behavioural drift after changes",
       "A regression test suite: canonical input-output pairs scored by an LLM-as-judge before the change merges",
-      "A larger context window so the model could process more instructions simultaneously",
-      "Manual review by a domain expert on every prompt change"
+      "A much larger context window, letting the model hold every instruction at once so softening one cannot matter",
+      "Mandatory manual review by a domain expert on every prompt change, however small the diff appears to be"
     ],
     correct: 1,
     explanation: "The missing layer is a prompt regression suite. Canonical inputs are representative queries with expected outputs. Before any prompt change merges, the suite runs all canonical pairs through the new prompt and scores them with an LLM-as-judge. If the score drops more than a defined threshold (e.g. 3%), the merge is blocked. This is the direct equivalent of unit tests for code — it defines 'what correct looks like' at the time the prompt is written and enforces it on every change. Manual review cannot scale to 40+ canonical cases per change. Fine-tuning is the wrong layer — that changes model weights, not prompt behaviour.",
@@ -3595,10 +3850,10 @@ export const PREP_QUESTIONS = [
     id: "promptlab-3", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "A data extraction pipeline has a 4% JSON parse error rate using a system prompt instruction 'always output valid JSON'. You switch to JSON mode. The parse error rate drops to 1.5% but schema validation errors remain. What is the correct next step and why?",
     options: [
-      "Add more examples of correct JSON output to the system prompt",
+      "Add many more examples of correct JSON output to the system prompt so the model internalizes the schema through demonstration",
       "Switch to function calling with strict: true — schema enforcement moves from instruction-following to constrained decoding",
-      "Increase the model's temperature so it explores the correct schema more thoroughly",
-      "Add a retry loop that re-runs the query on parse errors"
+      "Increase the model's temperature so decoding explores more candidate structures until it settles into the correct schema",
+      "Add a retry loop that re-runs failing queries — at a 1.5% error rate, a single retry drives failures to effectively zero"
     ],
     correct: 1,
     explanation: "JSON mode guarantees syntactic validity — you will always get parseable JSON. But it does not enforce your schema. The model decides which fields to include, what types to use, and whether to include optional fields. Schema validation errors (wrong types, missing required fields, unexpected keys) persist because the model is still making free choices within the syntactic constraint. Function calling with strict: true moves schema enforcement to constrained decoding at the API level — the model generates tokens within a grammar defined by your schema, and cannot deviate from it. This is a structural guarantee rather than a probabilistic one. Retry loops address symptoms not causes; more examples shift the probabilistic distribution but do not eliminate schema drift under distribution shift.",
@@ -3621,10 +3876,10 @@ export const PREP_QUESTIONS = [
     id: "promptlab-5", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "A summarisation model produces fluent, confident-sounding output at temperature 0.9. Reviewers flag that 12% of summaries contain plausible-sounding facts not present in the source. Lowering temperature to 0.1 reduces hallucinations but users complain outputs are repetitive and miss nuance. What is the correct architectural fix?",
     options: [
-      "Use temperature 0.5 as a middle ground between creativity and accuracy",
+      "Use temperature 0.5 as a calibrated midpoint, trading away a little creativity for a proportionate cut in hallucinations",
       "Add a grounding verification step: pass each summary through a separate check-facts-against-source pass before returning",
-      "Use beam search decoding to select the most probable sequence and eliminate sampling variation",
-      "Increase the system prompt specificity — tell the model explicitly not to hallucinate"
+      "Switch to beam search decoding so the single most probable sequence is always chosen, removing sampling variation entirely",
+      "Increase system prompt specificity — an explicit instruction never to fabricate facts constrains sampling at every step"
     ],
     correct: 1,
     explanation: "Temperature controls sampling diversity. At 0.9, the model samples from a wide distribution including lower-probability tokens — plausible-sounding facts that weren't in the source but are likely completions of the sentence pattern. At 0.1, the model locks to the highest-probability token at every step — less hallucination but high repetition and loss of edge-case coverage. Splitting the temperature problem in two is the correct architecture: use a higher temperature for the generative pass (0.7) to preserve fluency and nuance, then run a separate grounding pass that checks each claim in the summary against the source document. The grounding check can be another LLM call or a simpler entailment model. This decouples creativity from factuality at the architectural level rather than trying to solve both with a single temperature knob.",
@@ -4165,10 +4420,10 @@ export const PREP_QUESTIONS = [
     id: "quantiphi-4", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "Your production RAG pipeline calls an LLM API synchronously. The API begins returning 429 (rate limit) errors on 15% of requests during a traffic spike. Which combination best handles this at the infrastructure level?",
     options: [
-      "Retry immediately 3 times — rate limits are transient and clear within milliseconds",
+      "Retry immediately up to 3 times per request — rate-limit windows clear within milliseconds, so tight retries recover most calls before users ever notice",
       "Exponential backoff with jitter on retries, queue overflow requests rather than dropping them, alert when queue depth exceeds a threshold",
-      "Switch all traffic to a cheaper model — rate limits only affect expensive models",
-      "Return an error on first 429 — retries create duplicate LLM requests"
+      "Shift all traffic to a cheaper model tier for the duration of the spike — rate limits are set per model, so the cheaper tiers have far more headroom left",
+      "Fail fast and return an error on the first 429 — retried LLM calls produce duplicate generations and double your spend for the length of the incident"
     ],
     correct: 1,
     explanation: "Exponential backoff with jitter prevents the thundering herd problem — if all clients retry at the same interval, they re-hit the rate limit simultaneously. Jitter spaces retries out across the window. A queue absorbs traffic during the spike and drains when capacity recovers. Alerting on queue depth gives operational visibility before backlog becomes user-visible. Immediate retry (option A) amplifies the original problem. Model switching (option C) doesn't address capacity limits, which apply per account not per model tier. Dropping on first error (option D) is correct for timeouts but wrong for rate limits — 429s are temporary capacity constraints, not permanent failures.",
@@ -4185,10 +4440,10 @@ export const PREP_QUESTIONS = [
     id: "quantiphi-6", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "A prompt change was deployed to production. Three days later, an analyst notices answer quality dropped on a specific query type. No alerts fired. What process failure does this reveal?",
     options: [
-      "The deployment pipeline should have required a senior engineer to review the prompt diff",
+      "The deployment pipeline should have required a senior engineer to review and sign off on the prompt diff before the change could ever reach production traffic",
       "Prompt changes should be version-controlled, tested against a regression suite before deployment, and monitored with automated quality metrics post-deploy",
-      "Prompts should be locked after initial deployment — changes require a full feature release cycle with sign-off",
-      "The analyst should have been monitoring production logs in real-time instead of after the fact"
+      "Prompts should be frozen after their initial deployment — any later change must go through a full feature release cycle with formal sign-off from every stakeholder",
+      "The analyst should have been watching production logs in real time, because quality regressions of this kind are only ever catchable through human inspection"
     ],
     correct: 1,
     explanation: "Prompts are code. The three-day detection lag reveals three missing practices: (1) No regression testing — a regression suite of representative queries with expected quality benchmarks, run before every prompt change, would have caught the degradation before deploy. (2) No version control — a prompt not in git cannot be rolled back or audited. (3) No automated quality monitoring — a post-deploy quality signal (LLM-as-judge sampling production traffic, or embedding similarity distribution monitoring) would have alerted within hours, not days. The minimum production prompt engineering stack: version control + regression suite + shadow eval + post-deploy monitoring.",
@@ -4201,10 +4456,10 @@ export const PREP_QUESTIONS = [
     id: "ann-1", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
     question: "You need ANN search over 10M vectors with <5ms p99 latency and can tolerate 5% recall loss. Which FAISS index is the right starting point?",
     options: [
-      "IndexFlatIP — exact search, guaranteed recall",
+      "IndexFlatIP — exact search guarantees full recall, and 10M vectors is small enough for brute force",
       "IndexIVFFlat — inverted file with nprobe tuning gives recall/latency tradeoff at this scale",
-      "IndexHNSWFlat — graph-based, best latency but high memory",
-      "IndexIVFPQ — best for memory-constrained GPU deployments"
+      "IndexHNSWFlat — graph search is the fastest option and memory overhead is negligible at this scale",
+      "IndexIVFPQ — quantization is mandatory at 10M vectors to fit the whole index inside GPU memory"
     ],
     correct: 1,
     explanation: "IndexIVFFlat partitions vectors into clusters and searches only nprobe clusters at query time. At 10M vectors, Flat is too slow. HNSW has high memory cost (~1.5 bytes/dim for graph links). IVFFlat gives direct recall/latency control via nprobe — increase nprobe to improve recall, decrease to reduce latency.",
@@ -4215,10 +4470,10 @@ export const PREP_QUESTIONS = [
     id: "ann-2", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
     question: "In HNSW, increasing the M parameter (number of connections per node) has which effect?",
     options: [
-      "Improves recall and reduces memory — more connections means fewer hops",
+      "Improves recall while also reducing memory — more connections mean fewer hops and layers to store",
       "Improves recall but increases memory and build time — denser graph catches more neighbours",
-      "Reduces recall — more connections introduce false neighbours at long distances",
-      "Has no effect on recall — only affects build speed"
+      "Reduces recall — the denser graph pulls in false neighbours from distant regions of the space",
+      "Has no effect on recall — M only changes how quickly the graph gets constructed at index time"
     ],
     correct: 1,
     explanation: "M controls the number of bidirectional connections each node has in the HNSW graph. Higher M builds a denser graph: recall improves because more neighbours are reachable from each entry point. Cost: memory grows roughly linearly with M (each edge stored twice), and build time increases. Typical production values: M=16 for balanced recall/memory, M=32-64 for high-recall at memory cost.",
@@ -4229,10 +4484,10 @@ export const PREP_QUESTIONS = [
     id: "ann-3", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "Product Quantization (PQ) in FAISS trades what for what?",
     options: [
-      "Search speed for recall — PQ is an exact index that skips distance computation",
+      "Search speed for recall — PQ is an exact index that skips distance computation entirely, so results never degrade",
       "Memory for recall — PQ compresses vectors aggressively (10–25x), small recall drop, dramatically smaller index",
-      "Build time for latency — PQ builds slowly but searches fast",
-      "Recall for throughput — PQ parallelises distance computation across sub-vectors"
+      "Build time for latency — PQ spends hours training codebooks so that every query afterwards runs in constant time",
+      "Recall for throughput — PQ parallelises distance computation across sub-vectors, trading accuracy for query volume"
     ],
     correct: 1,
     explanation: "PQ splits each vector into M sub-vectors, quantizes each sub-vector independently, and stores only the codebook index (1-2 bytes per sub-vector). A 768-dim float32 vector (3072 bytes) becomes ~96 bytes with PQ96 — a 32x compression. Recall drops slightly because distances are approximated. This enables billion-scale indexes on commodity hardware that would be impossible with full-precision vectors.",
@@ -4251,10 +4506,10 @@ export const PREP_QUESTIONS = [
     id: "ann-5", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
     question: "When is IndexFlatIP (exact brute-force search) the right FAISS choice in production?",
     options: [
-      "Never — approximate methods always outperform exact search on latency",
+      "Never — approximate methods always outperform exact search on latency, so Flat exists purely for offline debugging use",
       "When the corpus is small (<100K vectors) and recall-at-1 must be perfect, e.g. deduplication or safety filtering",
-      "When index build time is the bottleneck — Flat builds in O(1)",
-      "When the embedding dimension is high (>1024) — approximate methods break at high dimensions"
+      "When index build time is the bottleneck — Flat builds in O(1), so it wins whenever documents are ingested continuously",
+      "When the embedding dimension is high (>1024) — approximate graph methods break down beyond a thousand dimensions or so"
     ],
     correct: 1,
     explanation: "Flat is exact brute-force. At small corpus sizes (<100K vectors), it is fast enough for production latency requirements. It's the correct choice when: (a) you cannot accept recall loss (dedup, safety checks, PII detection), (b) the corpus is small, or (c) you need a recall baseline to calibrate approximate indexes. ANN approximation methods earn their overhead starting around 100K–1M vectors.",
@@ -4267,10 +4522,10 @@ export const PREP_QUESTIONS = [
     id: "ltr-1", topic: "rag", difficulty: "medium", gated: false, type: "mcq",
     question: "What is the key advantage of listwise LTR (e.g. LambdaMART) over pairwise LTR (e.g. RankNet) for production ranking?",
     options: [
-      "Listwise trains faster — fewer pairs to compare",
+      "Listwise trains faster — it compares whole lists at once, so there are far fewer pairs to enumerate and the training set shrinks dramatically",
       "Listwise directly optimizes a ranking metric (NDCG) rather than pairwise preference, which can diverge from the metric you care about",
-      "Listwise requires fewer labels — pairs need two relevant docs, lists need only one",
-      "Listwise models are smaller — pairwise generates O(n²) parameters"
+      "Listwise requires far fewer labels — pairwise needs two relevant documents per comparison, while a list needs only one judged item to learn from",
+      "Listwise models are smaller — pairwise training generates O(n²) comparison parameters that must all be stored inside the final ranking model"
     ],
     correct: 1,
     explanation: "Pairwise LTR optimizes whether item A should rank above item B — a surrogate that does not directly optimize NDCG or MAP. You can win every pairwise comparison but still have poor NDCG if your errors are concentrated at top positions. LambdaMART addresses this with LambdaGradients: it weights each pair's gradient by the change in NDCG that swapping those items would cause. This means errors at rank 1 receive much larger gradient updates than errors at rank 50.",
@@ -4280,7 +4535,12 @@ export const PREP_QUESTIONS = [
   {
     id: "ltr-2", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
     question: "A search system returns 4 docs with relevance scores [3, 1, 0, 2] (rank 1 to 4). The ideal order is [3, 2, 1, 0]. NDCG@4 is approximately:",
-    options: ["1.0 — all relevant docs are present", "0.92 — close to ideal but 2 is at rank 4 instead of rank 2", "0.75 — rank 3 is irrelevant (score 0)", "0.50 — two docs are out of ideal order"],
+    options: [
+      "1.0 — all relevant docs are present, so the ranking is ideal",
+      "0.92 — close to ideal but 2 is at rank 4 instead of rank 2",
+      "0.75 — the irrelevant doc (score 0) at rank 3 costs a quarter",
+      "0.50 — two of the four docs sit outside their ideal positions"
+    ],
     correct: 1,
     explanation: "DCG@4 = 3/log2(2) + 1/log2(3) + 0/log2(4) + 2/log2(5) ≈ 3.0 + 0.631 + 0 + 0.861 = 4.492. IDCG@4 = 3/log2(2) + 2/log2(3) + 1/log2(4) + 0/log2(5) ≈ 3.0 + 1.261 + 0.5 + 0 = 4.761. NDCG = 4.492/4.761 ≈ 0.944. The discount on position 4 (log2(5)≈2.32) reduces the penalty for having score=2 buried there.",
     trap: "Saying NDCG is 1.0 because 'all relevant docs are returned.' NDCG penalizes relevant docs appearing at low ranks — returning all relevant docs does not guarantee a high score if they are not ordered correctly. The key: DCG discounts each position by log2(rank+1), so a grade-2 doc at rank 4 contributes much less than a grade-2 doc at rank 2.",
@@ -4290,10 +4550,10 @@ export const PREP_QUESTIONS = [
     id: "ltr-3", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "Which feature type typically provides the strongest signal in a Learning to Rank model for e-commerce search?",
     options: [
-      "Document features only (product description length, price, stock status)",
-      "Query features only (query length, detected intent, user session length)",
+      "Document features only (product description length, price, stock status) — they describe intrinsic quality across all queries",
+      "Query features only (query length, detected intent, user session length) — they capture what the shopper is actually seeking",
       "Query-document interaction features (BM25 score, embedding similarity, click-through rate for this query-item pair)",
-      "Position features (expected CTR at rank K from historical data)"
+      "Position features (expected CTR at rank K from historical data) — position drives clicks more strongly than relevance does"
     ],
     correct: 2,
     explanation: "Query-document interaction features capture the relationship between a specific query and a specific document — which is exactly what ranking needs. BM25 score, embedding cosine similarity, and historical click-through rate for the (query, item) pair encode information neither the query nor the document alone can express. Pure document features (popularity, rating) are query-agnostic and cannot distinguish which items are relevant to which queries.",
@@ -4314,10 +4574,10 @@ export const PREP_QUESTIONS = [
     id: "bm25-1", topic: "rag", difficulty: "easy", gated: false, type: "mcq",
     question: "What does BM25 add over classic TF-IDF that makes it better for long documents?",
     options: [
-      "BM25 adds semantic understanding via contextual embeddings",
+      "BM25 adds semantic understanding via contextual embeddings, letting it match synonyms and paraphrases that raw TF-IDF term counting misses",
       "BM25 saturates TF so that repeating a term 100 times isn't proportionally better than 10 times, and normalizes by document length",
-      "BM25 uses a neural reranker to boost relevant long docs",
-      "BM25 adds bigram matching that TF-IDF misses"
+      "BM25 attaches a lightweight neural reranker on top of TF-IDF scores, boosting relevant long documents that would otherwise be ranked too low",
+      "BM25 adds bigram and phrase matching that TF-IDF misses, so multi-word terms in long documents get scored as units rather than single tokens"
     ],
     correct: 1,
     explanation: "BM25 improves TF-IDF on two axes: (1) TF saturation — the k1 parameter caps the contribution of repeated terms; a word appearing 100× gets a score close to one appearing 10×. In TF-IDF, frequency increases score linearly, which over-rewards repetitive long documents. (2) Document length normalization — the b parameter penalizes long documents proportionally, preventing length from masquerading as relevance.",
@@ -4328,10 +4588,10 @@ export const PREP_QUESTIONS = [
     id: "bm25-2", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
     question: "In a hybrid search system (BM25 + dense retrieval), a product manager asks: 'Can we just use dense retrieval everywhere and drop BM25?' What is the strongest argument for keeping BM25?",
     options: [
-      "BM25 is faster at query time — no GPU required",
+      "BM25 is dramatically faster at query time — it needs no GPU or embedding model, so dropping it would multiply the serving cost of every single search request",
       "BM25 handles exact keyword matches (product codes, proper nouns, rare terms) that dense retrieval misses because they appear rarely in training data",
-      "BM25 has lower operational cost — no embedding model to maintain",
-      "BM25 produces interpretable scores — you can explain why a doc ranked where it did"
+      "BM25 has lower operational cost — there is no embedding model to version, retrain, or maintain, and that savings matters more than any retrieval-quality difference",
+      "BM25 produces interpretable scores — you can explain exactly why a document ranked where it did, and that auditability is the main reason hybrid systems retain it"
     ],
     correct: 1,
     explanation: "Dense retrieval fails on out-of-vocabulary or rare terms because the embedding model has little or no signal for them. A product SKU like 'B07XJ8C8F5', a drug name like 'pembrolizumab', or a person's name rarely seen in training produces a generic embedding that retrieves by accident. BM25 finds exact matches deterministically. The production evidence: hybrid search (BM25 + dense) consistently outperforms dense-only on queries containing rare or exact-match terms, which are common in enterprise and e-commerce settings.",
@@ -4352,10 +4612,10 @@ export const PREP_QUESTIONS = [
     id: "deploy-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "In a canary deployment for an ML model, why must routing be user-consistent (same user always hits the same model) rather than request-random?",
     options: [
-      "User-consistent routing is faster — fewer cache misses when the model is hot",
+      "User-consistent routing is faster in production — each user keeps hitting a warm model, so cache misses and cold-start paths become rare",
       "Request-random causes both models to receive the same user's behavior, polluting the canary signal and creating inconsistent UX",
-      "Request-random increases infrastructure cost — two models must be warm simultaneously",
-      "User-consistent is easier to implement in nginx upstream configs"
+      "Request-random doubles infrastructure cost, because both model versions must stay warm simultaneously to answer any given user's requests",
+      "User-consistent hashing is simply easier to implement in standard nginx upstream configs than per-request random selection would ever be"
     ],
     correct: 1,
     explanation: "If a user hits Model A on request 1 and Model B on request 2, two problems arise: (1) the canary metrics are contaminated because each user's behavior is split across models — you cannot cleanly attribute a conversion or churn to either model; (2) the user experiences inconsistent behavior (different answers, different formatting, different product recommendations) which degrades UX independently of model quality. Hash on user_id to route consistently: same user always gets the same model for the entire canary period.",
@@ -4366,10 +4626,10 @@ export const PREP_QUESTIONS = [
     id: "deploy-2", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "You want to validate a new model's prediction distribution on real production traffic without any risk to users. Which deployment pattern is correct?",
     options: [
-      "Canary at 1% — only 1% of users are affected",
+      "Canary at 1% — the affected slice is so small that any regression is statistically invisible and risk-free",
       "Shadow mode — new model receives all requests, outputs are logged but discarded, users see only production model",
-      "Blue-green — spin up green, test it, then switch",
-      "Champion-challenger — serve challenger to 10% of users permanently"
+      "Blue-green — spin up the green environment, validate it against replayed traffic, then cut over once checks pass",
+      "Champion-challenger — serve the challenger to a fixed 10% of users permanently so its distribution stays observable"
     ],
     correct: 1,
     explanation: "Shadow mode is the only pattern with zero user exposure. The new model runs alongside production, receives every request via an async fork, and its outputs are logged for comparison. Users exclusively see the production model. This enables collecting the full production input distribution before any user sees the new model's output — the right first step before a canary or blue-green deployment.",
@@ -4380,10 +4640,10 @@ export const PREP_QUESTIONS = [
     id: "deploy-3", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "What is the primary advantage of blue-green deployment over canary for ML model releases?",
     options: [
-      "Blue-green provides real user feedback during the rollout period",
+      "Blue-green provides real user feedback during the rollout, since both environments serve live traffic",
       "Blue-green enables instant rollback — one load balancer switch reverts all traffic in seconds",
-      "Blue-green costs less — only one environment needs to run at a time",
-      "Blue-green is better for gradual confidence building — you control the traffic percentage"
+      "Blue-green costs less to operate, because only one environment ever needs to be running at any given time",
+      "Blue-green builds confidence gradually — you dial the traffic percentage upward as the metrics come in"
     ],
     correct: 1,
     explanation: "Blue-green's killer feature is rollback speed. If the green (new) model causes an incident, flipping the load balancer back to blue takes seconds — no redeployment, no traffic ramp-down, no race condition. Canary rollback requires removing the canary slice, which has latency proportional to your infrastructure update speed. The tradeoff: blue-green requires running two full environments simultaneously (double infrastructure cost), and the new model gets no real user signal before the full flip.",
@@ -4394,10 +4654,10 @@ export const PREP_QUESTIONS = [
     id: "deploy-4", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "Champion-Challenger differs from a standard A/B test primarily because:",
     options: [
-      "Champion-Challenger uses statistical tests; A/B tests use business metrics",
+      "Champion-Challenger relies on formal statistical significance tests, whereas A/B tests are judged on business metrics like revenue and conversion instead",
       "Champion-Challenger is a permanent traffic split used to continuously evaluate candidates before promotion; A/B tests are time-bounded experiments",
-      "Champion-Challenger requires more traffic — A/B tests work at lower sample sizes",
-      "A/B tests are for product features; Champion-Challenger is only for ML models"
+      "Champion-Challenger requires substantially more traffic to reach statistical significance — A/B tests are designed to work at much lower sample sizes",
+      "A/B tests are reserved for product features, while Champion-Challenger is the equivalent mechanism used exclusively for machine learning model rollouts"
     ],
     correct: 1,
     explanation: "In a Champion-Challenger setup, the production model (champion) permanently serves the majority of traffic while challenger candidates receive a minority slice. The split is ongoing, not time-bounded — new challenger models can be inserted as candidates continuously. Contrast with a standard A/B test, which has a defined start and end with a specific hypothesis to test. Champion-Challenger is an always-on experimentation infrastructure, not a one-off experiment.",
@@ -4410,10 +4670,10 @@ export const PREP_QUESTIONS = [
     id: "drift-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "A fraud detection model's precision drops after a marketing campaign brings a new user cohort. Is this data drift, concept drift, or label drift?",
     options: [
-      "Concept drift — the definition of fraud changed",
+      "Concept drift — the campaign changed what fraud looks like, so the mapping from features to the fraud label itself shifted",
       "Data drift — P(X) changed because the new cohort has different behavioral features than the training distribution",
-      "Label drift — the base rate of fraud changed with the new users",
-      "Model drift — the model itself changed during the campaign"
+      "Label drift — the marketing campaign changed the base rate of fraud, and precision is directly a function of that base rate",
+      "Model drift — serving infrastructure updated the model mid-campaign, so its decision boundary moved underneath the traffic"
     ],
     correct: 1,
     explanation: "Data drift (covariate shift): P(X) changes but P(Y|X) is unchanged. The new cohort has different behavioral patterns (session duration, device type, geographic distribution) than the training population — the input distribution shifted. The relationship between behavior and fraud probability is the same; the inputs themselves are different. Concept drift would mean fraud itself changed in nature (new fraud technique). Label drift would mean the overall fraud rate changed.",
@@ -4424,10 +4684,10 @@ export const PREP_QUESTIONS = [
     id: "drift-2", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "A PSI (Population Stability Index) value of 0.22 on your model's primary input feature means:",
     options: [
-      "Minor drift — acceptable, continue monitoring",
+      "Minor drift — values below 0.25 are acceptable noise, so simply continue routine monitoring without action",
       "Significant drift — the feature distribution has changed substantially, model retraining is likely needed",
-      "Catastrophic drift — immediately roll back the model",
-      "The feature is missing — PSI of 0.22 indicates null data"
+      "Catastrophic drift — anything above 0.2 means the model is unsafe and must be rolled back immediately",
+      "A data pipeline fault — PSI values landing near 0.22 characteristically indicate the feature arriving null"
     ],
     correct: 1,
     explanation: "PSI thresholds: <0.1 = negligible drift (no action), 0.1–0.2 = moderate drift (investigate), >0.2 = significant drift (act). PSI of 0.22 exceeds the 0.2 threshold — the feature's distribution has shifted significantly from the baseline. This does not automatically mean roll back, but it does mean: investigate whether model performance has degraded, check if the new distribution is systematically different, and plan retraining on data reflecting the new distribution.",
@@ -4438,10 +4698,10 @@ export const PREP_QUESTIONS = [
     id: "drift-3", topic: "evaluation", difficulty: "hard", gated: true, type: "mcq",
     question: "Your retrieval model uses sentence embeddings. You want to detect drift in the embedding space. Why is PSI insufficient here and what should you use instead?",
     options: [
-      "PSI is insufficient because embedding models don't produce probability distributions",
+      "PSI is insufficient because embedding models don't produce probability distributions — PSI needs calibrated probabilities as input, so it only applies to classifier outputs. Use KS tests on raw model scores instead.",
       "PSI works on univariate distributions. Embeddings are high-dimensional vectors — PSI on any single dimension ignores correlations. Use Maximum Mean Discrepancy (MMD) or centroid distance on the full vector.",
-      "PSI is insufficient for real-time monitoring — use KL divergence for lower latency",
-      "PSI requires ground truth labels — embeddings are unsupervised"
+      "PSI is insufficient for real-time monitoring because its binning step adds latency. Use KL divergence, which streams over raw vectors without binning and therefore detects embedding drift with far lower detection lag.",
+      "PSI is insufficient because it requires ground truth labels to define its bins, and embeddings are unsupervised. Use a drift classifier trained on outcome labels to separate old embedding batches from new ones."
     ],
     correct: 1,
     explanation: "PSI operates on a single scalar distribution. Embedding vectors are 768 or 1536 dimensional. Running PSI per dimension ignores inter-dimensional correlations (two embeddings can have identical per-dimension distributions but wildly different covariance structure). MMD (Maximum Mean Discrepancy) computes the distance between two multivariate distributions using a kernel function — it is the right tool for detecting shift in embedding spaces. Centroid distance (comparing mean embedding vectors across time periods) is a cheaper proxy that catches distributional mean shifts.",
@@ -4452,10 +4712,10 @@ export const PREP_QUESTIONS = [
     id: "drift-4", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "Ground truth labels for your recommendation model arrive with a 14-day lag. What drift signal can you use as a leading indicator before accuracy degrades?",
     options: [
-      "Nothing — you cannot monitor drift without ground truth labels",
+      "Nothing — drift is defined relative to ground truth, so without labels every monitoring signal is statistically meaningless and you must simply wait out the fourteen days",
       "Input feature drift (PSI on behavioral features) and model score distribution drift — both are available immediately at serving time and degrade before accuracy falls",
-      "Wait 14 days, compute accuracy, then retrain if needed",
-      "Monitor CPU and memory — infrastructure anomalies predict model degradation"
+      "Wait the 14 days, compute accuracy on the labelled batch, and retrain only if it fell — reacting any earlier just adds noise-driven retraining cycles to the serving pipeline",
+      "Monitor infrastructure metrics like CPU, memory, and queue depth — resource anomalies reliably precede model degradation because both stem from the same traffic changes"
     ],
     correct: 1,
     explanation: "Input drift and score distribution drift are observable at serving time with zero label latency. Input drift (PSI on features) detects when the model is seeing input it wasn't trained on. Score distribution drift (mean, entropy of output probabilities shifting) detects when the model itself is behaving differently. Both are leading indicators that typically precede accuracy degradation by days. The 14-day label lag makes them essential — they alert you to potential problems 14 days before you could otherwise detect them.",
@@ -4468,10 +4728,10 @@ export const PREP_QUESTIONS = [
     id: "featstore-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "A data scientist computes rolling 30-day features in Python for training, but an engineer re-implements them in Java for the serving stack. Two months later, the model underperforms offline benchmarks. Most likely cause?",
     options: [
-      "The Java implementation is slower, increasing latency which degrades quality",
+      "The Java implementation is slower than the Python original, and the added serving latency causes intermittent timeouts that silently degrade the quality of the feature values that actually reach the model",
       "Training-serving skew — the Python and Java implementations handle edge cases (timezone, null values, window boundaries) differently, so the model sees different feature values at train vs. serve time",
-      "The model overfit to the training data and generalized poorly",
-      "Rolling 30-day features are too slow to compute at serving time"
+      "The model overfit to its training data and generalized poorly — a delay of roughly two months before underperformance appears is the classic signature of an overfit model finally meeting genuinely fresh data in production",
+      "Rolling 30-day windows are too expensive to compute at serving time, so the Java stack is almost certainly serving stale precomputed values that lag the true feature state by many hours or even whole days"
     ],
     correct: 1,
     explanation: "Training-serving skew is the canonical feature store problem. Even when two implementations nominally compute the 'same' feature, differences in timezone handling, null imputation, off-by-one errors in window boundaries, or rounding produce systematically different values. The model was trained on one distribution and served on another. Feature stores solve this by implementing features once and materializing them to both an offline store (training) and online store (serving) from the same computation graph.",
@@ -4482,10 +4742,10 @@ export const PREP_QUESTIONS = [
     id: "featstore-2", topic: "llmops", difficulty: "hard", gated: true, type: "mcq",
     question: "What does 'point-in-time correct join' mean in the context of training data generation, and what does it prevent?",
     options: [
-      "It joins features from multiple tables at exactly the same row count, preventing misaligned joins",
+      "It joins feature tables at exactly matching row counts and keys, preventing the silent row misalignment that otherwise corrupts training sets when the tables update at different cadences",
       "It retrieves the feature value that was actually available at the time of each training event (not the current value), preventing label leakage from future feature states",
-      "It caches join results to prevent redundant database queries during training",
-      "It validates that timestamps in the feature table match the event log timestamps exactly"
+      "It caches join results between training runs to prevent redundant database scans, protecting the feature store from the repeated full-table reads that training jobs would otherwise trigger",
+      "It validates that every timestamp in the feature table matches the event log exactly, preventing the clock-skew mismatches that silently corrupt joins across separate ingestion pipelines"
     ],
     correct: 1,
     explanation: "Point-in-time correctness means: for a training event at timestamp T (e.g. a user churned on March 1), the join retrieves the feature value as it existed just before T — not the current value. Without this, you might join a user's rolling 30-day engagement as of today onto an event that happened in January: the model sees future information during training and learns spurious correlations. This is temporal leakage. Feature stores implement point-in-time joins natively, hiding the complexity from data scientists.",
@@ -4506,10 +4766,10 @@ export const PREP_QUESTIONS = [
     id: "retrain-1", topic: "llmops", difficulty: "medium", gated: false, type: "mcq",
     question: "Why is 'retrain every Monday at 2am' a poor default retraining strategy for most ML models?",
     options: [
-      "Monday is a high-traffic day and retraining adds server load",
+      "Monday is a high-traffic day in most products, and running a heavy retraining job alongside peak load starves the serving stack of the compute headroom it needs",
       "Schedule-based retraining is blind to actual model quality — it retrains when it doesn't need to and may not retrain when it does (major data shift mid-week)",
-      "Weekly retraining is too infrequent — models should retrain daily",
-      "Weekend data is unrepresentative — training on it biases the model"
+      "Weekly retraining is far too infrequent — production models should retrain at least daily to stay aligned with input distributions that shift continuously",
+      "Weekend data dominates the freshest slice of the training window, and weekend behaviour is unrepresentative enough to bias every Monday-morning model"
     ],
     correct: 1,
     explanation: "Schedule-based retraining wastes compute when the model is still performing well and potentially misses urgent retraining needs — a major product change or traffic shift on Wednesday means the model runs degraded until next Monday. Trigger-based retraining (PSI > 0.2, accuracy below threshold, business event) retrains when needed. The schedule is a comfort blanket, not a signal. The right mental model: retraining has a cost; it should be incurred when performance data or distribution data warrants it, not on a calendar.",
@@ -4521,9 +4781,9 @@ export const PREP_QUESTIONS = [
     question: "You implement a rolling 30-day retraining window to handle concept drift. What failure mode does this introduce that full-retraining avoids?",
     options: [
       "The model forgets rare but important patterns (seasonal events, rare classes) that appear in data older than 30 days but are legitimate test cases",
-      "Rolling windows overfit to recent data — the model performs better on old data than new data",
-      "Rolling windows require more compute — 30 days of data processes faster than full history",
-      "The model cannot be evaluated on historical test sets when trained on rolling windows"
+      "Rolling windows overfit to the most recent data — the model scores better on old held-out data than on new data, inverting the pattern you would expect",
+      "Rolling windows consume more total compute, since re-processing an overlapping 30-day slice on every cycle costs more than one full-history training pass",
+      "The model can no longer be evaluated against historical test sets, because a rolling-window model is only defined over its most recent training slice"
     ],
     correct: 0,
     explanation: "A 30-day rolling window discards all data older than 30 days. For patterns that appear less frequently — a seasonal spike, a rare fraud technique, a low-frequency product category — the model may have seen only a handful of examples in the current window. Full retraining uses all historical data, preserving coverage of rare but valid patterns. The tradeoff: rolling windows adapt faster to concept drift but forget rare patterns; full retraining preserves rare pattern coverage but adapts more slowly. The production solution is often a weighted window — recent data upweighted, not historical data discarded.",
@@ -4534,10 +4794,10 @@ export const PREP_QUESTIONS = [
     id: "retrain-3", topic: "llmops", difficulty: "medium", gated: true, type: "mcq",
     question: "When is warm-start retraining (initializing from previous model weights) preferred over full cold-start retraining?",
     options: [
-      "Always — warm start always converges faster than cold start",
+      "Always — initializing from trained weights strictly dominates random initialization, converging faster on any data distribution the model could plausibly encounter in the next period",
       "When the data distribution shift is moderate: warm start leverages learned representations from the previous period while adapting to new data, converging faster than cold start",
-      "When you have less training data — warm start compensates for data scarcity",
-      "Only for neural networks — tree-based models always require cold start"
+      "When training data is scarce — warm start compensates for a small dataset by importing knowledge from the previous cycle's weights, effectively multiplying your usable sample size",
+      "Only for neural networks — tree ensembles carry no meaningful weight state forward between fits, so gradient-boosted and random forest models must always retrain from a cold start"
     ],
     correct: 1,
     explanation: "Warm start is appropriate for moderate drift — the new data is similar enough to the previous period that old weights are a better initialization than random. Benefits: faster convergence (fewer epochs to plateau), lower compute cost per retraining cycle. Risk: if the distribution shift is large (new task, new domain, new label schema), old weights can anchor the model in an inappropriate local minimum — cold start provides a clean slate. The test: if your held-out eval shows warm start quality < cold start quality after the same compute budget, the shift is too large for warm start to help.",
@@ -4550,10 +4810,10 @@ export const PREP_QUESTIONS = [
     id: "calib-1", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
     question: "A clinical risk model outputs confidence 0.85 for a positive prediction. The model is well-calibrated. What does this mean about the actual outcome?",
     options: [
-      "The model is 85% accurate overall on the test set",
+      "The model is 85% accurate overall on the test set from which this patient was drawn",
       "Approximately 85% of patients the model scores at 0.85 have the positive outcome",
-      "The model is certain of this prediction — 85% is above the 0.5 threshold",
-      "The prediction will be correct 85% of the time regardless of score"
+      "The model is certain of this prediction, since 0.85 sits well above the 0.5 threshold",
+      "The prediction will be correct 85% of the time regardless of the score the model gives"
     ],
     correct: 1,
     explanation: "Calibration means predicted probabilities match empirical outcome frequencies. A calibrated model scoring 0.85 means: in the group of all predictions scored 0.80–0.90, approximately 85% should have the positive outcome. This is distinct from overall accuracy (which averages across all predictions) or threshold behavior (0.85 > 0.5 says nothing about calibration). Calibration is essential in medical AI because clinicians use the probability value directly for treatment decisions, not just the binary threshold.",
@@ -4567,7 +4827,7 @@ export const PREP_QUESTIONS = [
       "Increases confidence — sharpens the probability distribution toward the predicted class",
       "Decreases confidence — softens the distribution, reducing overconfident predictions",
       "Changes the predicted class — the argmax of the logits shifts after temperature scaling",
-      "Increases accuracy — temperature scaling is a form of model ensembling"
+      "Increases accuracy — temperature scaling acts as a lightweight form of model ensembling"
     ],
     correct: 1,
     explanation: "Dividing logits by T > 1 before softmax brings the logits closer together, producing a softer probability distribution. The highest-probability class gets a lower score (e.g. 0.97 → 0.81) and lower-probability classes get proportionally higher scores. This reduces overconfidence without changing the predicted class (argmax is preserved). T is a single learnable scalar fit on a held-out calibration set. Guo et al. (2017) showed this simple operation often matches or outperforms Platt scaling and isotonic regression.",
@@ -4578,10 +4838,10 @@ export const PREP_QUESTIONS = [
     id: "calib-3", topic: "evaluation", difficulty: "hard", gated: true, type: "mcq",
     question: "Guo et al. (2017) found that modern deep neural networks are systematically overconfident compared to older models. What architectural factor most contributes to this?",
     options: [
-      "Larger datasets — more data makes models overfit to confident predictions",
+      "Larger datasets — more training data lets modern networks overfit to confident predictions on the training manifold",
       "Depth and batch normalization — deep networks with BN learn sharp decision boundaries that produce extreme logits",
-      "Adam optimizer — SGD-trained models are better calibrated",
-      "Weight decay — L2 regularization increases overconfidence"
+      "The Adam optimizer — its adaptive step sizes inflate the logits, and SGD-trained models stay far better calibrated",
+      "Weight decay — L2 regularization shrinks weights unevenly across layers, which drives up logit overconfidence"
     ],
     correct: 1,
     explanation: "Guo et al. found that increasing network depth correlates with worsening calibration, and batch normalization plays a key role — it normalizes activations in a way that sharpens class separations during training, producing logits that map to near-certainty softmax outputs. The model learns to place inputs far from class boundaries, which is good for accuracy but produces extreme probabilities far from the empirical frequency. Weight decay (L2) actually improves calibration slightly. The paper is notable for showing that accuracy improvements over the last decade came with calibration regressions.",
@@ -4602,10 +4862,10 @@ export const PREP_QUESTIONS = [
     id: "iaa-1", topic: "evaluation", difficulty: "easy", gated: false, type: "mcq",
     question: "Two annotators label 100 items as positive/negative. They agree on 80 items. The dataset is 90% negative. Why is raw agreement of 80% misleading and what should you compute instead?",
     options: [
-      "80% agreement is misleading because you need at least 90% to trust the labels",
+      "80% agreement is misleading because the accepted reliability bar for binary annotation is 90% — below that threshold labels cannot be trusted. Add a third annotator to adjudicate every disagreement.",
       "80% agreement is misleading because two annotators randomly assigning labels would agree 82% of the time by chance on a 90/10 split. Compute Cohen's Kappa to correct for chance agreement.",
-      "80% agreement is misleading because annotators tend to agree on easy cases and disagree on hard ones, biasing the metric",
-      "80% agreement is misleading because it doesn't account for partial credit in multi-label settings"
+      "80% agreement is misleading because annotators agree on easy cases and disagree on hard ones, inflating the metric with trivial items. Compute agreement on the hard subset only to get the true rate.",
+      "80% agreement is misleading because it gives no partial credit for near-miss labels in multi-label settings. Compute a weighted overlap score so borderline items count fractionally toward agreement."
     ],
     correct: 1,
     explanation: "On a 90% negative dataset, an annotator who always labels 'negative' would agree with a random annotator 81% of the time (0.9×0.9 + 0.1×0.1). Cohen's Kappa corrects for this: Kappa = (P_observed - P_expected) / (1 - P_expected). If both annotators independently achieve 80% agreement on a class-imbalanced dataset, Kappa may be near zero — indicating no better-than-chance agreement. Kappa between 0.6–0.8 is the standard bar for acceptable annotation quality.",
@@ -4616,10 +4876,10 @@ export const PREP_QUESTIONS = [
     id: "iaa-2", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "After two rounds of guideline refinement, Cohen's Kappa for your text classification task is 0.38. What does this tell you and what is the recommended next step?",
     options: [
-      "Kappa 0.38 is excellent — it exceeds the 0.25 acceptance bar for NLP tasks",
+      "Kappa 0.38 is excellent for a subjective NLP task — the commonly cited acceptance bar for text classification is 0.25, so agreement comfortably clears it. Freeze the guidelines, ship the annotation pipeline, and start scaling up the labeled dataset.",
       "Kappa 0.38 indicates only 'fair' agreement despite two iterations. This suggests the label schema itself may be too coarse or ambiguous for the task — consider restructuring labels or using soft labels rather than hard binary classification.",
-      "Kappa 0.38 is a data collection problem — increase the number of annotators to 5+ and the score will improve",
-      "Kappa 0.38 means the annotators are poorly trained — replace them and re-run"
+      "Kappa 0.38 is a data collection problem, not a schema problem — with only two annotators the estimate is statistically unstable. Increase the pool to 5+ annotators per item and majority-vote the labels; the effective agreement score will rise with pool size.",
+      "Kappa 0.38 means the annotators are poorly trained — after two guideline iterations, competent annotators should reach 0.7+. Replace the current annotators with a fresh pool, re-run the onboarding exercises, and measure again before touching the schema."
     ],
     correct: 1,
     explanation: "Kappa < 0.4 after two guideline iterations suggests the task itself is genuinely ambiguous — the label schema does not cleanly map to the phenomenon being measured. Options: (a) Decompose the classification into finer-grained subtasks each with clearer criteria; (b) Switch to ordinal or probabilistic labels (annotators assign probability distributions rather than hard labels); (c) Accept the ambiguity and train a model that outputs a soft label, explicitly acknowledging the task's inherent uncertainty. More annotators do not fix a broken label schema — they just produce more disagreement.",
@@ -4630,10 +4890,10 @@ export const PREP_QUESTIONS = [
     id: "iaa-3", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "You have 4 annotators labeling relevance on a 1–5 ordinal scale, with some items skipped by some annotators. Which agreement metric should you use?",
     options: [
-      "Cohen's Kappa — the standard for annotation tasks",
-      "Percent agreement — most interpretable for ordinal scales",
+      "Cohen's Kappa — the standard agreement metric for annotation tasks, extended pairwise across the 4 annotators",
+      "Percent agreement — the most interpretable choice for ordinal scales, averaged over items all 4 annotators labeled",
       "Krippendorff's Alpha — handles multiple annotators, ordinal scales, and missing values in a single framework",
-      "Spearman correlation — measures rank agreement between two annotators"
+      "Spearman correlation — measures rank agreement between annotators, computed per pair and then averaged together"
     ],
     correct: 2,
     explanation: "Cohen's Kappa requires exactly two annotators and nominal categories. Spearman handles two annotators and ordinality but not missing values. Percent agreement ignores chance and scale. Krippendorff's Alpha handles all three requirements: multiple annotators, ordinal level of measurement (distance between 1 and 2 is the same as between 4 and 5), and missing values (items not labeled by all annotators). It is the standard for NLP annotation studies with multiple annotators and non-binary scales.",
@@ -4646,10 +4906,10 @@ export const PREP_QUESTIONS = [
     id: "ips-1", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
     question: "You collect click data from a search engine where rank 1 gets 10× more clicks than rank 5 on identical items. If you train a ranker directly on raw click counts as relevance labels, what systematic bias does the model learn?",
     options: [
-      "Recency bias — the model favors recently clicked items",
+      "Recency bias — the model favors recently clicked items because click logs oversample fresh sessions, compounding as new data streams in",
       "Position bias — the model learns to rank previously rank-1 items higher regardless of actual relevance, reinforcing the existing ranking",
-      "Popularity bias — the model favors globally popular items",
-      "Session bias — the model favors items clicked in the first session of the day"
+      "Popularity bias — the model favors globally popular items, since raw click counts scale with total item traffic across the whole catalog",
+      "Session bias — the model favors items clicked early in a session, when users click freely before their attention budget is spent for the day"
     ],
     correct: 1,
     explanation: "Position bias: users are more likely to click items in high positions regardless of their actual relevance. If rank-1 items receive 10× more clicks, raw click counts are a function of position probability × relevance. Training on raw clicks teaches the model that 'items that appear at rank 1 are relevant' — reinforcing the previous ranking and creating a feedback loop. The model learns the logging policy's biases rather than true relevance. IPS (Inverse Propensity Scoring) debiases clicks by dividing by the probability of examination at each rank.",
@@ -4660,10 +4920,10 @@ export const PREP_QUESTIONS = [
     id: "ips-2", topic: "evaluation", difficulty: "hard", gated: true, type: "mcq",
     question: "The IPS estimator reweights clicked items by 1/P(examined | rank). What problem does clipping the IPS weights at a maximum value (e.g. 10x) solve?",
     options: [
-      "Clipping prevents the model from learning from rare clicks",
+      "Clipping prevents the model from learning from rare clicks — low-propensity observations are usually logging noise, so capping their weight filters mislabeled training examples out of the gradient",
       "Clipping reduces high variance from extreme weights — a click at rank 10 with P(examined)=0.01 would get weight 100, dominating the gradient update despite being a single observation",
-      "Clipping ensures the weight sum equals 1.0 for valid probability estimates",
-      "Clipping prevents overfitting to the propensity model's errors"
+      "Clipping keeps the weight sum normalized at 1.0 — without a cap the importance weights no longer form a valid probability distribution, and the resulting estimator loses its statistical meaning",
+      "Clipping prevents overfitting to the propensity model's errors — extreme weights occur where propensity estimates are least accurate, so capping them regularizes the ranker's effective capacity"
     ],
     correct: 1,
     explanation: "Unclipped IPS weights can be enormous: if P(examined | rank 10) = 0.01, a click at rank 10 receives weight 100 — 100× the influence of a click at rank 1. A single such click can dominate hundreds of gradient updates, producing high variance estimates that are technically unbiased but practically unreliable. Clipping at 10x (or some threshold) introduces a small bias but drastically reduces variance, producing more reliable gradients. This is the bias-variance tradeoff in debiased learning: clipped IPS is slightly biased but far more stable than unclipped.",
@@ -4674,10 +4934,10 @@ export const PREP_QUESTIONS = [
     id: "ips-3", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "For offline evaluation of a new ranking model using logged click data, what must you log at serving time to enable unbiased evaluation later?",
     options: [
-      "The user's device type and session duration",
+      "The user's device type and session duration — engagement context is what lets you stratify logged clicks into comparable cohorts later",
       "The probability each item was shown (propensity scores) — without propensities, IPS reweighting cannot correct for the logging policy bias",
-      "The full model score for each candidate item, not just the ranked list",
-      "A random sample of items that were not shown"
+      "The full model score for each candidate item, not just the ranked list — logged scores let you replay how a new model would reorder them",
+      "A random sample of items that were not shown — held-out negatives are required so the offline evaluator can score the full candidate distribution"
     ],
     correct: 1,
     explanation: "IPS-based offline evaluation requires knowing P(item shown | logging policy) for each item at each position. If you don't log propensities at serving time, you can only approximate them (e.g. power-law position model) — but the real propensity depends on your actual serving stack's filtering logic, which may differ substantially from a simple position model. Logging propensities at serving time is the production requirement. Without it, offline evaluation of new policies is necessarily approximate and may be systematically wrong.",
@@ -4698,10 +4958,10 @@ export const PREP_QUESTIONS = [
     id: "judge-1", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
     question: "You run a pairwise LLM judge evaluation: 'Is Response A or Response B better?' The same judge consistently prefers whichever response appears first. How do you fix this?",
     options: [
-      "Use a larger judge model — smaller models have position bias",
+      "Use a larger judge model — position bias is a capability gap that disappears at frontier scale",
       "Run each pair twice with positions swapped; only count a win if the same response wins both comparisons",
-      "Add 'ignore the order of responses' to the judge prompt",
-      "Use absolute scoring (1–5) instead of pairwise comparison"
+      "Add 'ignore the order of responses' to the judge prompt so the model weighs both responses equally",
+      "Use absolute scoring (1–5) instead of pairwise — grading each response on its own is strictly more reliable"
     ],
     correct: 1,
     explanation: "Position bias in pairwise LLM evaluation is well-documented. The standard mitigation is running each comparison twice with A/B and B/A orderings. A valid win requires the same response to win in both orderings. Ties (wins in different orderings) are counted as draws. This doubles evaluation cost but eliminates the position bias signal from the results. Prompt instructions alone ('ignore the order') do not reliably eliminate the bias — they reduce it but don't eliminate it.",
@@ -4713,9 +4973,9 @@ export const PREP_QUESTIONS = [
     question: "An LLM judge consistently rates longer responses higher even when shorter responses contain the same information more concisely. What bias is this and what is one structural mitigation?",
     options: [
       "Verbosity bias. Mitigation: instruct the judge to evaluate information density per word, or cap response length in the prompt before judging",
-      "Sycophancy bias. Mitigation: ask the judge to argue for the opposite position first",
-      "Anchoring bias. Mitigation: randomize the order responses are presented",
-      "Frequency bias. Mitigation: filter responses with high token counts before evaluation"
+      "Sycophancy bias. Mitigation: ask the judge to argue for the opposite verdict first, breaking its tendency to agree with the implied preference",
+      "Anchoring bias. Mitigation: randomize the order responses are presented in, so the first response seen no longer sets the reference point",
+      "Frequency bias. Mitigation: filter out responses with unusually high token counts before evaluation so common length patterns dominate scoring"
     ],
     correct: 0,
     explanation: "Verbosity bias is the systematic preference of LLM judges for longer responses. Structural mitigations: (a) Length normalization in the prompt — 'evaluate the information content per unit length, not total information'; (b) Truncate or length-match responses before judging — present both responses at the same target length; (c) Add an explicit conciseness criterion with a rubric definition ('5 = necessary and sufficient information, no padding'). Verbosity bias is distinct from sycophancy (agreeing with the human/user preference) and from anchoring (being influenced by the first response seen).",
@@ -4726,10 +4986,10 @@ export const PREP_QUESTIONS = [
     id: "judge-3", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
     question: "You are evaluating GPT-4o outputs. Which judge setup best reduces self-preference bias?",
     options: [
-      "Use GPT-4o as the judge — it understands its own outputs best",
+      "Use GPT-4o itself as the judge — a model understands its own generation patterns best, so it can recognize and discount its own stylistic quirks instead of mistaking them for quality",
       "Use a model from a different family (e.g. Claude or Gemini) as the judge — cross-family judging reduces the tendency to prefer outputs stylistically similar to the judge's own training",
-      "Use a smaller model as the judge — self-preference is a capability artifact of large models",
-      "Use human annotators for all GPT-4o evaluations — LLMs cannot evaluate their own outputs"
+      "Use a smaller model from the same family as the judge — self-preference is a capability artifact of large models, and a weaker judge lacks the capacity to favor its own style",
+      "Use human annotators for every GPT-4o evaluation — LLMs are architecturally incapable of scoring their own outputs, so automated judging is invalid regardless of which family the judge is from"
     ],
     correct: 1,
     explanation: "Self-preference bias: when an LLM judges its own outputs against another model's, it systematically prefers its own style, tone, and structural conventions — even when the content quality is equivalent. Cross-family judging (using Claude to judge GPT outputs, or Gemini to judge Claude outputs) reduces this because the judge has no stylistic familiarity with the evaluated model's training distribution. This is the most robust structural mitigation available without resorting to expensive human annotation.",
@@ -4750,9 +5010,9 @@ export const PREP_QUESTIONS = [
     id: "rankmetric-1", topic: "evaluation", difficulty: "easy", gated: false, type: "mcq",
     question: "For a question-answering system where each query has exactly one correct answer, which metric is most appropriate?",
     options: [
-      "NDCG@10 — covers the full top-10 ranking",
+      "NDCG@10 — graded relevance over the top 10 gives the fullest picture",
       "MRR@10 — measures how high the single correct answer ranks across queries",
-      "Precision@10 — measures how many of the top 10 are relevant",
+      "Precision@10 — measures how many of the ten returned answers are actually relevant",
       "Recall@10 — measures what fraction of all relevant docs are in the top 10"
     ],
     correct: 1,
@@ -4764,10 +5024,10 @@ export const PREP_QUESTIONS = [
     id: "rankmetric-2", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
     question: "System A achieves NDCG@10 = 0.85. System B achieves NDCG@10 = 0.82 but with higher Precision@1. Which system is better, and how does this depend on the use case?",
     options: [
-      "System A is better — higher NDCG always means better ranking quality",
+      "System A is better — NDCG@10 is the strictest ranking metric, and a 3-point NDCG gap dominates any single-position metric; higher NDCG always means better ranking quality under every reasonable definition of user satisfaction",
       "It depends: NDCG weights top positions heavily but averages over the full top-10. If users typically look only at the first result (high early precision use case), System B's higher P@1 may better reflect user satisfaction",
-      "System B is better — Precision@1 is always the most important metric",
-      "The systems are equivalent — NDCG@10 already captures Precision@1"
+      "System B is better — Precision@1 is always the primary retrieval metric because every interface shows a first result; NDCG differences under 5 points are within noise and should never override an early-precision win",
+      "The systems are equivalent — NDCG@10 already incorporates Precision@1 through its position discounting, so higher NDCG with lower P@1 is arithmetically impossible and these measurements must be re-run"
     ],
     correct: 1,
     explanation: "NDCG@10 aggregates quality over the full ranked list, discounting lower positions. A system with slightly lower overall NDCG but higher P@1 may produce better user outcomes if users rarely scroll past the first result. The right metric depends on user behavior: if analytics show 70% of clicks go to position 1, then P@1 is the dominant signal and NDCG@10 is masking the performance gap. Metric selection should follow from click position distribution in your specific product, not from theoretical completeness.",
@@ -4778,10 +5038,10 @@ export const PREP_QUESTIONS = [
     id: "rankmetric-3", topic: "evaluation", difficulty: "medium", gated: false, type: "mcq",
     question: "Why does NDCG normalize by IDCG (Ideal DCG), and what does this enable that raw DCG does not?",
     options: [
-      "IDCG normalization converts DCG to a probability, making it easier to interpret",
+      "IDCG normalization converts DCG into a probability — dividing by the ideal gain yields the likelihood that a user finds a relevant document, something raw DCG can never express",
       "IDCG normalization makes NDCG comparable across queries with different numbers of relevant documents — a query with 10 relevant docs and one with 2 are on the same 0–1 scale",
-      "IDCG normalization removes the position discount, making NDCG position-independent",
-      "IDCG normalization is a smoothing factor that prevents NDCG from being 0 when no relevant docs are retrieved"
+      "IDCG normalization removes the position discount — dividing by the ideal ranking cancels the log2 terms, making NDCG position-independent where raw DCG is not",
+      "IDCG normalization is a smoothing factor — it prevents NDCG from collapsing to 0 when no relevant docs are retrieved, which would leave cross-query averages undefined"
     ],
     correct: 1,
     explanation: "Raw DCG is not comparable across queries: a query with 10 highly-relevant docs at the top produces a much higher DCG than a query with 2 relevant docs, regardless of ranking quality. Dividing by IDCG (the DCG of the perfect ranking) puts both on a 0–1 scale. This makes it valid to average NDCG across a query set — you are averaging normalized quality, not absolute DCG magnitude. Without normalization, queries with more relevant documents dominate the average.",
@@ -4838,7 +5098,7 @@ export const PREP_QUESTIONS = [
     options: [
       "BPE returns the [UNK] token for genuinely unseen words just as word-level models do; character tokenization is the only scheme that always finds some representation for a brand-new term",
       "BPE decomposes the word into the longest known subword units (falling back to characters if needed); this produces a compact representation even for novel words, unlike word-level models that map to [UNK]",
-      "BPE uses the surrounding context to infer an appropriate existing token for the unseen word, while character tokenization ignores context and simply spells the new term out letter by letter",
+      "BPE uses the surrounding sentence context to infer an appropriate existing token for the unseen word, while character tokenization ignores context entirely and simply spells the new term out letter by letter",
       "BPE cannot handle words absent from its training data — the merge table only covers seen sequences, so novel terms must be added to the vocabulary and the tokenizer retrained from scratch"
     ],
     correct: 1,
@@ -4878,7 +5138,7 @@ export const PREP_QUESTIONS = [
   id: "nlp-prep-3", topic: "nlp", difficulty: "hard", gated: false, type: "mcq",
   question: "Your pipeline pre-splits text on whitespace before subword tokenization. It breaks on Japanese, and decoded output never reconstructs the original spacing exactly. Why does switching to SentencePiece fix both failures at once?",
   options: [
-    "It runs a lemmatizer keyed to each language's dictionary first, so word boundaries come from the lexicon rather than spaces and decoding is exact",
+    "It first runs a lemmatizer keyed to each language's own dictionary, so word boundaries come from the lexicon rather than spaces and decoding becomes exact",
     "It always drops to character level for non-spaced languages, so tokens map one-to-one onto codepoints and the spacing can be rebuilt from those",
     "It stores the original raw string alongside the token ids as metadata, so the decoder can consult that saved copy to restore the exact spacing",
     "It treats raw text as a Unicode stream with the space encoded as a visible meta-symbol, so whitespace is in the token stream — no word-split needed",
@@ -4969,7 +5229,7 @@ export const PREP_QUESTIONS = [
   id: "nlp-w2v-1", topic: "nlp", difficulty: "easy", gated: false, type: "mcq",
   question: "Word2Vec learns that 'termination' and 'cancellation' are similar even though it only ever sees raw text — no dictionary, no synonyms file, no human labels. According to the distributional hypothesis, what signal makes this possible?",
   options: [
-    "Both words share a common Latin root, and the model detects morphological overlap between their character sequences during preprocessing",
+    "Both words share a common Latin root, and the model detects the morphological overlap between their character sequences during a preprocessing pass",
     "Both words appear in similar contexts — near 'contract', 'clause', 'notice' — and those co-occurrence statistics alone carry the meaning",
     "Both words are marked as synonyms in a small seed lexicon that the training pipeline consults before assigning initial vector positions",
     "Both words occur with nearly identical frequency in the corpus, and words whose frequency counts match get pulled toward nearby vectors"
@@ -5061,7 +5321,7 @@ export const PREP_QUESTIONS = [
   question: "With attention added to your translation model, the decoder is about to emit 'student' for the source 'je suis étudiant'. What does the attention mechanism actually compute at this decoding step?",
   options: [
     "It re-encodes the whole source sentence from scratch with fresh encoder weights, producing a new thought vector specialized for this step",
-    "It retrieves the single encoder state whose word appeared most recently, discarding the others to keep the context computation cheap per step",
+    "It retrieves only the single encoder state whose word appeared most recently, discarding all the others to keep the context computation cheap per step",
     "It scores every kept encoder state for relevance, softmaxes into alignment weights (mostly on 'étudiant'), and reads their weighted-sum context",
     "It averages all encoder hidden states uniformly into one context vector, reusing that identical summary unchanged at every decoding step"
   ],
@@ -5230,7 +5490,7 @@ export const PREP_QUESTIONS = [
   question: "Your dashboard's overlap metrics punish good paraphrases, so the team debates two escapes: BERTScore or LLM-as-judge. Which statement captures the real tradeoff between them?",
   options: [
     "LLM-as-judge captures quality no overlap count can, but costs money, latency, and judge biases like position, verbosity, and self-preference",
-    "BERTScore fully eliminates every metric bias, because cosine similarity between contextual embeddings is a mathematically neutral operation",
+    "BERTScore fully eliminates every form of metric bias, because cosine similarity between contextual embeddings is a mathematically neutral operation",
     "LLM-as-judge is strictly cheaper than BERTScore at scale, because one judge prompt replaces computing embeddings for every single token pair",
     "BERTScore still matches tokens by exact string equality, so it inherits the paraphrase blind spot and offers no real benefit over METEOR",
   ],
@@ -5242,7 +5502,7 @@ export const PREP_QUESTIONS = [
   id: "nlp-tl-1", topic: "nlp", difficulty: "easy", gated: false, type: "mcq",
   question: "Pretraining objectives like masked-language modeling are called 'self-supervised'. What does that mean, and why does it matter for how much data you can train on?",
   options: [
-    "A small seed set of human labels gets bootstrapped outward, letting annotators verify only a sample while the model labels the remaining text",
+    "A small seed set of human labels gets bootstrapped outward automatically, letting annotators verify only a sample while the model labels the remaining text",
     "The model supervises its own architecture search during training, automatically adding layers whenever the pretraining loss stops improving",
     "The text itself supplies the answer — the hidden word is the label — so no human labeling is needed and usable training data is effectively unlimited",
     "Two copies of the model alternate between grading each other's outputs, which removes any need for a fixed corpus of raw pretraining text",
@@ -5309,7 +5569,7 @@ export const PREP_QUESTIONS = [
   options: [
     "Siamese/triplet training explicitly pulls similar sentences together and pushes dissimilar apart, shaping a space where cosine closeness means similarity",
     "Training only shrinks the model to hit serving latency; the raw mean-pooled BERT space already ranked sentence similarity correctly at every scale",
-    "Fine-tuning only matters for out-of-domain vocabulary; on in-domain text the masked-LM objective already places sentences by meaning in cosine space",
+    "Fine-tuning only matters for out-of-domain vocabulary; on in-domain text the masked-LM objective already places sentences by their meaning in cosine space",
     "The training teaches the model which pooling operator to apply to each sentence; once pooling is learned, any pretrained vectors become comparable",
   ],
   correct: 0,
@@ -5322,10 +5582,10 @@ export const PREP_QUESTIONS = [
     id: "internals-1", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
     question: "Grouped Query Attention (GQA) with 8 KV heads vs Multi-Head Attention (MHA) with 32 heads: what is the memory saving factor for the KV cache?",
     options: [
-      "2x — GQA halves the number of attention computations",
+      "2x — GQA halves the attention computations, and memory savings track compute one-to-one",
       "4x — KV cache scales with n_kv_heads; 32/8 = 4x fewer KV matrices to store",
-      "32x — GQA eliminates all KV heads except one",
-      "No saving — GQA affects compute, not memory"
+      "32x — GQA collapses all 32 KV heads down to one single shared head per layer",
+      "No saving — GQA reduces attention compute only; KV cache size stays unchanged"
     ],
     correct: 1,
     explanation: "KV cache memory scales directly with n_kv_heads: memory = 2 × n_layers × n_kv_heads × d_head × seq_len × bytes_per_element. With MHA: 32 KV heads. With GQA (8 groups): 8 KV heads. The ratio is 32/8 = 4x memory reduction in the KV cache. For a 70B model at 128K sequence length, this difference determines whether the model fits on 2 GPUs or requires 4. GQA is the architectural choice in Llama 3 and Mistral precisely for this serving cost reduction at long contexts.",
@@ -5336,10 +5596,10 @@ export const PREP_QUESTIONS = [
     id: "internals-2", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
     question: "PagedAttention (used in vLLM) improves LLM serving throughput primarily by solving which problem?",
     options: [
-      "Slow tokenization — paged memory allows batch tokenization of incoming requests",
+      "Slow tokenization — incoming requests queue behind a serial tokenizer, and paged memory lets the server tokenize whole batches of waiting requests in parallel, cutting the time each request spends queued before its first forward pass can begin",
       "KV cache memory fragmentation — fixed contiguous allocation wastes GPU memory on over-provisioned sequence lengths, limiting batch size. Paged allocation uses variable-size blocks, dramatically increasing the number of concurrent sequences.",
-      "Model weight loading — paged memory allows weights to stream from CPU to GPU on demand",
-      "Attention computation — paged blocks enable parallel attention across non-contiguous memory regions"
+      "Model weight loading — GPU memory cannot hold every layer resident at once, and paged memory lets layer weights stream from CPU RAM to the GPU on demand, so the server runs larger models without permanently allocating all weights on the device",
+      "Attention computation — the attention kernel itself is the throughput bottleneck, and paged blocks let scores be computed in parallel across non-contiguous memory regions, finishing each attention pass faster than a contiguous buffer layout allows"
     ],
     correct: 1,
     explanation: "Without PagedAttention, each request pre-allocates a contiguous KV cache block for its maximum sequence length. A request with max_new_tokens=2048 reserves 2048 positions even if it only generates 300 tokens — wasting ~85% of its allocation. This fragmentation limits batch size to far fewer requests than the GPU memory could theoretically fit. PagedAttention uses non-contiguous paged blocks (like OS virtual memory), allocating KV cache memory on demand as tokens are generated. The result: near-zero internal fragmentation, 2–4x more concurrent requests, proportional throughput improvement.",
@@ -5350,10 +5610,10 @@ export const PREP_QUESTIONS = [
     id: "internals-3", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
     question: "RoPE (Rotary Position Encoding) encodes position information differently from sinusoidal embeddings. What is the key practical advantage that makes RoPE the dominant choice in modern LLMs?",
     options: [
-      "RoPE is faster to compute — no addition step required",
+      "RoPE is faster to compute — it skips the embedding addition step entirely, saving one elementwise operation per token per layer; at the scale of trillions of served tokens this accumulated compute saving is what drove labs to adopt it everywhere",
       "RoPE encodes relative positions by rotating Q and K vectors, allowing attention scores to naturally depend on the distance between tokens. This enables better extrapolation to sequence lengths beyond the training context window.",
-      "RoPE uses learned parameters — sinusoidal embeddings are fixed",
-      "RoPE works on embeddings before the attention layer; sinusoidal only works after"
+      "RoPE uses learned rotation parameters that adapt to the training data, while sinusoidal embeddings are fixed functions — this learnability lets the model discover better position representations than any hand-designed encoding scheme could provide",
+      "RoPE injects position information directly into token embeddings before the attention layers, while sinusoidal encodings can only be applied after attention, which forces extra correction layers into modern pre-norm transformer architectures"
     ],
     correct: 1,
     explanation: "Sinusoidal embeddings add absolute position vectors to token embeddings — the model must learn to decode the absolute position from the sum. RoPE applies a rotation to the Q and K vectors based on position, so the dot product Q·K naturally encodes the relative distance between positions (rotation angle difference). Two key advantages: (1) relative position awareness is built into the attention mechanism rather than baked into the embedding; (2) RoPE extrapolates more gracefully to longer sequences at inference time via interpolation tricks (e.g. YaRN, RoPE scaling), which is why LLM context windows have been extended from 4K to 1M+ tokens.",
@@ -5364,10 +5624,10 @@ export const PREP_QUESTIONS = [
     id: "internals-4", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
     question: "Speculative decoding uses a small draft model to generate k tokens which the large model then verifies in parallel. Under what condition does it degrade to the same latency as standard decoding?",
     options: [
-      "When the draft model is more than 10x smaller than the target model",
+      "When the draft model is more than 10x smaller than the target model — beyond that size gap its token proposals stop being usable",
       "When the draft model's acceptance rate is 0 — every proposed token is rejected and must be regenerated by the large model",
-      "When the sequence is short — speculative decoding only helps for sequences longer than 512 tokens",
-      "When KV cache is full — speculative decoding requires free memory for draft tokens"
+      "When the generated sequence is short — speculative decoding only amortizes its overhead on outputs beyond roughly 512 tokens",
+      "When the KV cache fills up — speculative decoding needs free memory for draft tokens, and without headroom verification stalls"
     ],
     correct: 1,
     explanation: "Speculative decoding's speedup comes from the draft model generating multiple tokens that the large model verifies in a single forward pass. If acceptance rate α → 0 (the large model rejects every draft token), the algorithm degenerates: generate k draft tokens, verify and reject all k, generate 1 token from the large model, repeat. This is strictly worse than standard autoregressive decoding because you've spent compute on k draft tokens AND one large-model forward pass to produce 1 accepted token instead of just the large-model pass. Acceptance rate is the critical parameter; values above ~0.7 give meaningful speedup.",
@@ -5408,10 +5668,10 @@ export const PREP_QUESTIONS = [
     id: "kvcache-1", topic: "serving", difficulty: "medium", gated: false, type: "mcq",
     question: "The KV cache in transformer inference avoids recomputing which operation on each new token generation step?",
     options: [
-      "Embedding lookup — avoids re-embedding the full input prompt",
+      "Embedding lookup — without the cache, each generation step would re-embed the entire input prompt, and that repeated table lookup dominates the per-token cost",
       "Key and Value projections for all previous tokens — without the cache, every new token would require recomputing K and V for the entire context",
-      "The softmax operation — softmax is precomputed and stored for each attention head",
-      "The feed-forward network pass — FFN outputs are cached to reduce compute"
+      "The softmax operation — attention probabilities are precomputed and stored for each head, so each new token reuses stored softmax results instead of renormalizing",
+      "The feed-forward network pass — FFN activations for all previous tokens are cached and reused, since the FFN is the most expensive block to recompute each step"
     ],
     correct: 1,
     explanation: "In autoregressive generation, each new token must attend to all previous tokens. Without a KV cache, generating token T+1 requires computing K and V projections for all T previous tokens plus the new one — O(T) compute per step, O(T²) total. The KV cache stores K and V tensors for all previous tokens. Each new token only computes its own K and V projections, then appends them to the cache. This reduces per-step compute from O(T) to O(1), enabling practical long-context generation. The tradeoff: KV cache memory grows as O(T) — the other side of the same constant.",
@@ -5422,7 +5682,10 @@ export const PREP_QUESTIONS = [
     id: "kvcache-2", topic: "serving", difficulty: "hard", gated: true, type: "mcq",
     question: "A 70B model with 80 layers, 8 KV heads, head dimension 128, serving at batch size 32 with max sequence length 8192 in bfloat16. Approximately how much GPU memory does the KV cache require?",
     options: [
-      "~4 GB", "~20 GB", "~40 GB", "~160 GB"
+      "~1.3 GB",
+      "~20 GB",
+      "~40 GB",
+      "~160 GB"
     ],
     correct: 2,
     explanation: "KV cache memory = 2 (K+V) × n_layers × n_kv_heads × d_head × seq_len × batch_size × bytes_per_element. = 2 × 80 × 8 × 128 × 8192 × 32 × 2 bytes. = 2 × 80 × 8 × 128 × 8192 × 32 × 2 ≈ 2 × 80 × 8 × 128 × 262,144 × 2 ≈ 2 × 80 × 8 × 128 × 524,288 bytes ≈ 43 billion bytes ≈ 43 GB ≈ 40 GB. This is roughly half the memory budget of an A100 (80GB) — before model weights (which for a 70B model in bfloat16 are ~140 GB). The KV cache is the reason you need tensor parallelism across multiple GPUs for 70B long-context serving.",
@@ -5482,9 +5745,9 @@ export const PREP_QUESTIONS = [
     question: "Why can a bi-encoder scale to 100 million documents while a cross-encoder cannot?",
     options: [
       "Bi-encoders pre-compute document embeddings offline; cross-encoders require a separate forward pass per (query, document) pair",
-      "Bi-encoders use a smaller model than cross-encoders, making them faster at inference",
-      "Bi-encoders use approximate nearest neighbor search; cross-encoders use exact search",
-      "Cross-encoders require GPU acceleration while bi-encoders run on CPU"
+      "Bi-encoders use a much smaller transformer than cross-encoders, so each forward pass is cheap enough to run across the whole corpus",
+      "Bi-encoders rely on approximate nearest neighbor search, while cross-encoders must use exact search, which scales quadratically",
+      "Cross-encoders require GPU acceleration for every query, while bi-encoders run entirely on CPU and scale on commodity hardware"
     ],
     correct: 0,
     keywords: ["bi-encoder", "cross-encoder", "pre-computation", "scalability", "ANN"],
@@ -5497,9 +5760,9 @@ export const PREP_QUESTIONS = [
     question: "Your two-stage retrieval system (bi-encoder recall → cross-encoder rerank) has good precision but poor recall. Users report missing relevant documents. Where is the bottleneck and how do you fix it?",
     options: [
       "The bi-encoder's recall@K is too low — increase K or improve the bi-encoder; the cross-encoder never sees documents not in top-K",
-      "The cross-encoder's reranking is poor — switch to a larger cross-encoder model",
-      "The ANN index has high recall but low precision — reduce efSearch parameter",
-      "The bi-encoder's embedding dimension is too small — increase to 1024 dimensions"
+      "The cross-encoder's reranking is poor — switch to a larger cross-encoder so relevant documents stop being scored below irrelevant ones",
+      "The ANN index has high recall but low precision — reduce the efSearch parameter so the index returns fewer but more accurate candidates",
+      "The bi-encoder's embedding dimension is too small — increasing it to 1024 gives the vectors room to represent the missing documents"
     ],
     correct: 0,
     keywords: ["recall@K", "two-stage retrieval", "bi-encoder", "bottleneck", "reranking"],
@@ -5512,9 +5775,9 @@ export const PREP_QUESTIONS = [
     question: "ColBERT introduces 'late interaction' between query and document. How does this differ from bi-encoder and cross-encoder, and what problem does it solve?",
     options: [
       "ColBERT pre-computes per-token document embeddings; interaction (MaxSim) happens at query time over token vectors, giving richer matching than cosine similarity but without per-pair forward passes",
-      "ColBERT trains query and document encoders jointly like a cross-encoder but uses ANN search like a bi-encoder",
-      "ColBERT uses a late-fusion approach: it combines BM25 keyword scores with bi-encoder semantic scores at serving time",
-      "ColBERT computes cross-attention only on the final layer instead of all layers, reducing latency by 8x"
+      "ColBERT trains the query and document encoders jointly like a cross-encoder but serves them like a bi-encoder — joint training transfers cross-attention quality into single-vector embeddings searchable by ANN",
+      "ColBERT uses a late-fusion approach: BM25 keyword scores and bi-encoder semantic scores are computed independently and combined at serving time, so lexical and semantic evidence both shape the final ranking",
+      "ColBERT computes cross-attention only on the final transformer layer instead of on all layers, retaining most of the cross-encoder's interaction quality while cutting per-pair inference latency by roughly 8x"
     ],
     correct: 0,
     keywords: ["ColBERT", "late interaction", "MaxSim", "token-level embeddings", "retrieval"],
@@ -5527,9 +5790,9 @@ export const PREP_QUESTIONS = [
     question: "What is the correct inference-time architecture of a cross-encoder, and why does it produce higher quality relevance scores than a bi-encoder?",
     options: [
       "Query and document are concatenated as a single input and processed jointly; full bidirectional attention lets every query token attend to every document token, capturing fine-grained interactions",
-      "Query and document are encoded separately then combined via a learned fusion layer with attention",
-      "A cross-encoder scores the query representation against a weighted average of document token representations",
-      "Cross-encoders use GPT-style causal attention, reading the query first then the document"
+      "Query and document are encoded by separate towers, then a learned fusion layer with attention combines the two representations — that fusion layer is what recovers the fine-grained interactions bi-encoders lose",
+      "A cross-encoder scores the query representation against a weighted average of document token representations, so relevance reflects the whole document rather than a single pooled vector as in a bi-encoder",
+      "Cross-encoders use GPT-style causal attention, reading the query first and then the document, so document tokens condition on query tokens — that one-directional flow is the source of the quality advantage"
     ],
     correct: 0,
     keywords: ["cross-encoder", "joint encoding", "bidirectional attention", "relevance"],
@@ -5543,9 +5806,9 @@ export const PREP_QUESTIONS = [
     question: "What training architecture does Sentence-BERT (SBERT) use, and why does it produce better sentence embeddings than vanilla BERT mean pooling?",
     options: [
       "Siamese network with shared BERT weights trained on NLI labels; contrastive objectives push semantically similar sentences together and dissimilar ones apart",
-      "A single BERT model fine-tuned to minimize cosine distance between paraphrases in the training set",
-      "Two separate BERT models (one for English, one for other languages) trained to align multilingual sentence pairs",
-      "BERT with an additional contrastive pretraining objective added on top of MLM using Wikipedia anchor text"
+      "A single BERT model fine-tuned to minimize cosine distance between known paraphrase pairs in the training set, so identical meanings converge to nearly identical vectors",
+      "Two separate BERT models — one per language family — trained to align multilingual sentence pairs, forcing the shared embedding space to encode meaning rather than surface form",
+      "BERT with an extra contrastive pretraining objective layered on top of masked language modeling, using Wikipedia anchor text as naturally occurring semantic similarity labels"
     ],
     correct: 0,
     keywords: ["SBERT", "siamese network", "NLI", "contrastive learning", "sentence embeddings"],
@@ -5558,9 +5821,9 @@ export const PREP_QUESTIONS = [
     question: "After generating sentence embeddings with a sentence transformer, you L2-normalize all vectors before storing them. What effect does this have on the choice of similarity metric?",
     options: [
       "Cosine similarity and dot product become equivalent; you can use the faster inner product ANN index (FAISS IndexFlatIP)",
-      "L2 normalization makes Euclidean distance equivalent to cosine similarity, so any metric works equally",
-      "Normalization removes magnitude information, making dot product unreliable — always use cosine similarity",
-      "Normalization has no effect on similarity scores, only on storage efficiency"
+      "L2 normalization makes Euclidean distance exactly equivalent to cosine similarity, so any distance metric can be used interchangeably",
+      "Normalization removes magnitude information, which makes raw dot product unreliable — you must always compute true cosine similarity",
+      "Normalization has no effect on similarity rankings at all — it only improves storage efficiency and numerical stability of the index"
     ],
     correct: 0,
     keywords: ["L2 normalization", "cosine similarity", "dot product", "FAISS", "ANN index"],
@@ -5573,9 +5836,9 @@ export const PREP_QUESTIONS = [
     question: "A team fine-tunes a sentence transformer for a legal document retrieval system using 5,000 (query, document) pairs from click logs. Which loss function should they use?",
     options: [
       "MultipleNegativesRankingLoss (MNR): treats other items in the batch as negatives, efficient with large batches",
-      "CosineSimilarityLoss: directly minimizes distance between positive pairs, simple and stable",
-      "TripletLoss with random negatives: trains on (anchor, positive, negative) triples sampled randomly",
-      "MSELoss on pre-computed similarity scores from a cross-encoder teacher model"
+      "CosineSimilarityLoss: it directly minimizes the distance between positive pairs, and it is the simplest and most stable option",
+      "TripletLoss with random negatives: explicit (anchor, positive, negative) triples give the cleanest gradient signal available",
+      "MSELoss on similarity scores pre-computed by a cross-encoder teacher model — distillation always beats training directly"
     ],
     correct: 0,
     keywords: ["MultipleNegativesRankingLoss", "domain adaptation", "sentence transformers", "in-batch negatives"],
@@ -5589,9 +5852,9 @@ export const PREP_QUESTIONS = [
     question: "A vector search returns semantically similar results but misses documents that should match a specific product SKU (e.g., 'SKU-7821'). What is the root cause and correct architecture?",
     options: [
       "Semantic search (vector-only) fails on exact lookups; add hybrid search combining BM25/inverted index with vector search via Reciprocal Rank Fusion",
-      "The embedding model's vocabulary doesn't contain the SKU — switch to a larger model",
-      "Product IDs should be in the metadata filter, not the query text",
-      "ANN recall is too low — increase HNSW efSearch parameter"
+      "The embedding model's vocabulary simply doesn't contain the SKU token — switching to a larger model with a bigger vocabulary restores exact matching",
+      "Product IDs should be moved into the metadata filter rather than the query text, since vector search is only designed to handle natural language",
+      "ANN recall is too low for rare strings — increasing the HNSW efSearch parameter widens the search beam until exact identifiers begin to surface"
     ],
     correct: 0,
     keywords: ["hybrid search", "BM25", "exact match", "Reciprocal Rank Fusion", "vector search"],
@@ -5604,9 +5867,9 @@ export const PREP_QUESTIONS = [
     question: "Your production vector search returns great results for general queries but degrades significantly when users add filters (e.g., 'category=electronics AND in_stock=true'). What is happening?",
     options: [
       "Post-filtering reduces the effective candidate set; with selective filters, ANN top-K may return fewer than K matches, losing recall",
-      "Metadata filtering increases query latency by triggering a full index scan",
-      "The HNSW M parameter needs to be increased to support filtered queries",
-      "Filters should be applied before ANN search using separate keyword indexes"
+      "Metadata filtering forces the engine into a full index scan on every filtered query, so latency balloons and requests start timing out mid-search",
+      "The HNSW M parameter must be increased for filtered queries — filters need a denser graph to keep the search space connected end to end",
+      "Filters are being applied before the ANN search runs, restricting the entry points of the graph so badly that traversal cannot reach matches"
     ],
     correct: 0,
     keywords: ["metadata filtering", "post-filter", "pre-filter", "ANN recall", "vector search"],
@@ -5619,9 +5882,9 @@ export const PREP_QUESTIONS = [
     question: "You're building a RAG system on 500,000 internal documents. Your team wants to use Pinecone. What is a valid reason to use pgvector instead?",
     options: [
       "You're already on Postgres; pgvector with HNSW keeps everything in one system, avoids a new managed service, and scales to 500k vectors easily",
-      "pgvector's HNSW implementation is faster than Pinecone's for corpora under 1 million vectors",
-      "Pinecone doesn't support HNSW — it uses IVF indexes which have lower recall",
-      "pgvector supports hybrid search natively while Pinecone requires a separate BM25 index"
+      "pgvector's HNSW implementation is measurably faster than Pinecone's for corpora under 1 million vectors, so it wins outright on raw query latency",
+      "Pinecone doesn't support HNSW at all — it relies on IVF indexes, which give lower recall than the graph index pgvector provides out of the box",
+      "pgvector supports hybrid keyword-plus-vector search natively, while Pinecone requires bolting on a separate BM25 index from another provider"
     ],
     correct: 0,
     keywords: ["pgvector", "Pinecone", "vector database selection", "HNSW", "Postgres"],
@@ -6134,10 +6397,10 @@ export const PREP_QUESTIONS = [
     id: "rag-beg-1", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
     question: "What is Retrieval-Augmented Generation (RAG)?",
     options: [
-      "A technique to train LLMs on domain-specific data by adding retrieval examples to the training set",
+      "A technique to train LLMs on domain-specific data by adding retrieval examples to the training set during fine-tuning",
       "A system that retrieves relevant documents at inference time and includes them in the LLM's context before generating",
-      "A method that generates multiple outputs and retrieves the best one",
-      "A database that stores LLM outputs for retrieval later"
+      "A method where the model generates several candidate outputs and then retrieves the best one using a learned scoring model",
+      "A database that stores previous LLM outputs so identical future queries can be answered by lookup instead of generation"
     ],
     correct: 1,
     explanation: "RAG (Lewis et al., 2020) separates retrieval from generation. At inference: (1) embed the user query, (2) search a vector store for similar document chunks, (3) inject those chunks into the LLM's context, (4) generate an answer grounded in the retrieved content. The model's weights are unchanged — it reads from the knowledge base each call. This is why RAG handles real-time knowledge and large corpora that cannot fit in context.",
@@ -6148,10 +6411,10 @@ export const PREP_QUESTIONS = [
     id: "rag-beg-2", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
     question: "What is a vector database, and why does RAG use one instead of a traditional SQL database?",
     options: [
-      "A vector database stores data as binary blobs; SQL cannot handle binary files",
+      "A vector database stores documents as binary blobs; traditional SQL engines cannot store or index large binary formats at scale",
       "A vector database indexes high-dimensional embeddings and finds nearest neighbors by semantic similarity, which SQL cannot do",
-      "A vector database is a SQL database with an added JSON column for embeddings",
-      "Vector databases are faster at exact string matching than SQL full-text search"
+      "A vector database is simply a SQL database with an added JSON column for embeddings, wrapped in a friendlier query API",
+      "Vector databases are much faster at exact string matching than SQL full-text search, which is what retrieval mostly needs"
     ],
     correct: 1,
     explanation: "A vector database stores document chunks as embedding vectors and supports approximate nearest-neighbor (ANN) search — finding the N most semantically similar chunks to a query embedding, fast even at millions of documents. SQL 'WHERE text LIKE %keyword%' does exact string matching — it cannot find documents that are semantically related but use different words. Examples: Pinecone, Weaviate, Qdrant, Milvus, pgvector.",
@@ -6163,9 +6426,9 @@ export const PREP_QUESTIONS = [
     question: "What is chunking in a RAG pipeline?",
     options: [
       "Splitting documents into smaller segments for embedding and indexing",
-      "Compressing embeddings to reduce storage size",
+      "Compressing stored embedding vectors to shrink the index footprint",
       "Dividing the user query into multiple sub-questions for parallel retrieval",
-      "Batching multiple documents together to speed up indexing"
+      "Batching multiple documents together to speed up bulk indexing jobs"
     ],
     correct: 0,
     explanation: "Chunking splits long documents into smaller segments (e.g. 512 tokens) before embedding. You cannot embed a 100-page PDF as one vector and expect meaningful retrieval — a single embedding cannot capture every distinct concept across 100 pages. Chunking creates focused, retrievable units. Common strategies: fixed-size (simplest), sentence-aware (clean breaks), semantic (split where topic changes), hierarchical (chunk + parent document).",
@@ -6176,10 +6439,10 @@ export const PREP_QUESTIONS = [
     id: "rag-beg-4", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
     question: "What does a retrieval-focused embedding model capture that a generation embedding model does not prioritize?",
     options: [
-      "Retrieval embeddings capture the emotional tone of a sentence",
+      "Retrieval embeddings capture the emotional tone and sentiment of a sentence, which generation models discard",
       "Retrieval embeddings are trained to place similar-meaning text close in vector space for accurate matching",
-      "Retrieval embeddings encode token position information for re-ranking",
-      "Retrieval embeddings compress text to fewer dimensions for storage efficiency"
+      "Retrieval embeddings encode explicit token position information that downstream re-ranking stages depend on",
+      "Retrieval embeddings compress text into far fewer dimensions, favoring storage efficiency over expressiveness"
     ],
     correct: 1,
     explanation: "Retrieval-focused embedding models (e.g. E5, BGE, GTE) are trained on query-document pairs using contrastive learning — semantically similar pairs are pushed together, dissimilar pairs are pushed apart. Generation models learn to predict tokens, not to measure similarity. Using a generation model for retrieval works but is suboptimal — retrieval-specific models are tuned for the precise recall task RAG needs.",
@@ -6190,10 +6453,10 @@ export const PREP_QUESTIONS = [
     id: "rag-beg-5", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
     question: "What is hybrid search in a RAG pipeline?",
     options: [
-      "Running the same query against two different LLMs and combining outputs",
+      "Running the same query against two different LLMs simultaneously and merging their outputs into one answer",
       "Combining dense vector search (semantic) with sparse keyword search (BM25) to improve retrieval coverage",
-      "Searching both a primary and backup vector database for redundancy",
-      "Using a model to generate multiple query variations and combining results"
+      "Searching both a primary and a backup vector database in parallel so retrieval survives a database outage",
+      "Using a model to generate several rephrased variations of the query and pooling their retrieved results"
     ],
     correct: 1,
     explanation: "Hybrid search runs the query through both: (1) dense retrieval — embed the query, find semantically similar vectors; (2) sparse retrieval — keyword matching via BM25/TF-IDF. Results are merged using reciprocal rank fusion (RRF). Dense search finds semantic matches even without keyword overlap. Sparse search handles exact terms, product codes, names, and rare technical jargon better. Neither alone covers all cases.",
@@ -6204,10 +6467,10 @@ export const PREP_QUESTIONS = [
     id: "rag-beg-6", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
     question: "What is a reranker in a RAG pipeline?",
     options: [
-      "A second LLM that rewrites retrieved chunks before sending them to the main model",
+      "A second LLM that rewrites retrieved chunks into cleaner prose before the main model reads them",
       "A model that scores query-document pairs for relevance and reorders top-k results by that score",
-      "A classifier that filters out off-topic documents from the vector database",
-      "A component that sorts retrieved chunks by publication date"
+      "A classifier that permanently filters off-topic documents out of the vector database at index time",
+      "A component that sorts retrieved chunks by publication date so the freshest content ranks first"
     ],
     correct: 1,
     explanation: "After initial retrieval (bi-encoder finds top-k candidates by embedding similarity), a reranker (cross-encoder) scores each candidate-query pair using a fine-grained relevance model — it reads both together, not just compares vectors. This is expensive per pair but much more accurate. Common rerankers: Cohere Rerank, BGE-reranker, cross-encoder/ms-marco. The pattern: retrieve 50 → rerank to top 5 → pass to LLM.",
@@ -6218,10 +6481,10 @@ export const PREP_QUESTIONS = [
     id: "rag-beg-7", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
     question: "What does 'top-k' mean in the retrieval step of a RAG pipeline?",
     options: [
-      "The K most recently added documents in the vector store",
+      "The K documents most recently added to the vector store, on the assumption newer is better",
       "The K documents with the highest embedding similarity scores, returned to pass to the LLM",
-      "The K tokens in the query that have the highest TF-IDF weight",
-      "The K embedding models tested before selecting the best"
+      "The K tokens in the query carrying the highest TF-IDF weight, used to build the search string",
+      "The K embedding models evaluated side by side before the best one is chosen for production"
     ],
     correct: 1,
     explanation: "Top-k retrieval returns the K most similar documents (by cosine or dot product) to the query embedding. k=5 means 5 chunks enter the LLM context. Tradeoff: k too small → miss relevant chunks (recall drops); k too large → context gets noisy (precision drops, generation cost rises). Typical production values: k=5–20 before reranking, k=3–5 after reranking.",
@@ -6232,10 +6495,10 @@ export const PREP_QUESTIONS = [
     id: "rag-beg-8", topic: "rag", difficulty: "beginner", gated: false, type: "mcq",
     question: "What is the difference between a bi-encoder and a cross-encoder in retrieval?",
     options: [
-      "Bi-encoders are larger models; cross-encoders are smaller and faster",
+      "Bi-encoders are larger, more accurate models; cross-encoders are smaller distilled versions built purely for inference speed",
       "Bi-encoders embed query and document independently; cross-encoders process them jointly for deeper relevance scoring",
-      "Bi-encoders are used for training; cross-encoders are used only at inference",
-      "Bi-encoders work on text; cross-encoders work on code or structured data"
+      "Bi-encoders are used only during training; cross-encoders are the version that is actually deployed at inference",
+      "Bi-encoders operate on natural language text; cross-encoders are specialized for code and structured data inputs"
     ],
     correct: 1,
     explanation: "Bi-encoder: query → embedding, document → embedding, score = cosine similarity. Fast and scalable — precompute document embeddings. Cross-encoder: query + document → relevance score jointly (all attention layers see both). Much more accurate but must process every query-doc pair fresh — too slow for first-stage retrieval at scale. Typical pattern: bi-encoder for fast recall (top-100), cross-encoder reranker for precision (top-5).",
@@ -6248,10 +6511,10 @@ export const PREP_QUESTIONS = [
     id: "rag-bi-1", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
     question: "A RAG pipeline uses fixed-size 512-token chunks. Users report incomplete answers for questions about multi-step processes. What is the most likely root cause?",
     options: [
-      "The embedding model is too small to represent 512-token chunks accurately",
+      "The embedding model is too small to represent 512-token chunks accurately, so long procedures embed to noisy vectors",
       "Fixed-size chunking splits mid-process, separating steps that belong together — retrieved chunk lacks the full context",
-      "512 tokens is too large for the reranker to process efficiently",
-      "The vector database index needs to be rebuilt every time the document is updated"
+      "512 tokens is too large for the reranker to process efficiently, so it silently truncates the later steps of each chunk",
+      "The vector index must be rebuilt whenever a document changes, so stale entries keep dropping steps from the results"
     ],
     correct: 1,
     explanation: "Fixed-size chunking ignores document structure — a 6-step process spanning 600 tokens gets split into two chunks, neither of which has the complete procedure. The retrieved chunk for 'step 3' does not include the prerequisite condition from step 1. Solutions: semantic chunking (split on topic shift, not size), sliding window with overlap, or hierarchical chunking (store full section as parent, retrieve by sub-chunk).",
@@ -6262,10 +6525,10 @@ export const PREP_QUESTIONS = [
     id: "rag-bi-2", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
     question: "Your RAG system misses relevant documents when users use synonyms ('myocardial infarction' instead of 'heart attack'). BM25 fails here. Why does switching to pure vector search not always fix every retrieval gap?",
     options: [
-      "Vector search cannot process medical terminology without a specialized model",
+      "Vector search cannot process specialized medical terminology without a domain-specific model, so general embeddings miss clinical synonym pairs entirely",
       "Vector search handles semantics well, but fails on exact product codes, proper names, and rare technical strings — hybrid is needed to cover both",
-      "Vector search requires stop-word removal, which removes common medical terms",
-      "Vector search only works for documents shorter than 256 tokens"
+      "Vector search pipelines require stop-word removal before embedding, which strips common medical qualifiers and quietly breaks synonym matching downstream",
+      "Vector search only works reliably on documents shorter than 256 tokens, and most clinical notes exceed that limit, so recall degrades across the corpus"
     ],
     correct: 1,
     explanation: "Dense embeddings handle semantic synonymy well — 'heart attack' and 'myocardial infarction' will be close in vector space for a medical model. But dense retrieval over-generalizes on exact strings: 'Error code XK-2291' or a specific drug name may retrieve poorly because the model treats rare tokens as noise. BM25 handles exact matches reliably; dense handles semantics. Hybrid search covers both failure modes.",
@@ -6276,10 +6539,10 @@ export const PREP_QUESTIONS = [
     id: "rag-bi-3", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
     question: "Why is embedding model selection more impactful in RAG than in most NLP classification tasks?",
     options: [
-      "RAG embedding models must compress images as well as text, requiring larger capacity",
+      "RAG embedding models must compress images as well as text, so they need far larger capacity to handle both",
       "In RAG, the embedding model is the retrieval gatekeeper — a missed chunk cannot be recovered downstream",
-      "Classification models ignore embeddings and use only raw tokens",
-      "RAG embedding models must run at 10x the speed of classification models for production viability"
+      "Classification models ignore embeddings entirely and operate on raw tokens, so model choice matters far less",
+      "RAG embeddings must run at ten times the speed of classification models to remain viable in production use"
     ],
     correct: 1,
     explanation: "In classification, a weak embedding model hurts accuracy but the classifier head partially compensates. In RAG, the embedding model decides what the LLM ever sees. If the relevant document is not in top-k, no amount of better generation, reranking, or prompting can fix the answer — that failure is silent, and the model confidently answers from wrong chunks. Embedding model quality directly determines the ceiling of answer quality.",
@@ -6290,10 +6553,10 @@ export const PREP_QUESTIONS = [
     id: "rag-bi-4", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
     question: "Your RAG system already achieves 85% recall (right chunk in top-20). A teammate proposes adding a cross-encoder reranker. What problem does it solve that higher recall alone cannot?",
     options: [
-      "A reranker will push recall above 90% by finding additional relevant chunks",
-      "Rerankers re-encode the full document to improve chunk quality",
+      "A reranker pushes recall above 90% by discovering additional relevant chunks the bi-encoder missed — it is effectively a second, more thorough retrieval pass over the corpus",
+      "Rerankers re-encode the full source document rather than the chunk, repairing context lost at chunking time and improving the quality of the text the LLM ultimately reads",
       "Recall measures presence in top-k; the LLM anchors on top positions — the reranker ensures the most relevant chunk is at position 1, not buried at position 15",
-      "Rerankers filter out documents that are too old to be relevant"
+      "Rerankers filter out documents that are too stale to be relevant, a failure mode recall metrics ignore because they score old and fresh chunks as equally correct answers"
     ],
     correct: 2,
     explanation: "Recall at k tells you the right chunk exists somewhere in the top-k set. But LLMs weight early context more heavily and perform worse when the key fact is buried deep in a long list. A cross-encoder reranker scores each candidate query-document pair with full cross-attention — far more accurate than bi-encoder similarity. It can elevate the most relevant chunk from position 15 to position 1, which changes generation quality even with identical recall.",
@@ -6304,10 +6567,10 @@ export const PREP_QUESTIONS = [
     id: "rag-bi-5", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
     question: "RAG is often described as reducing hallucination. Why doesn't it eliminate hallucination entirely?",
     options: [
-      "RAG does not reduce hallucination — it just adds more text for the model to misquote",
+      "RAG does not actually reduce hallucination at all — it simply gives the model more text to misquote, and every retrieved chunk is one more opportunity for the model to err",
       "The LLM can still hallucinate when retrieved context is incomplete, ambiguous, or when the model falls back on parametric knowledge instead of the retrieved chunk",
-      "Hallucination only occurs during fine-tuning, not inference",
-      "RAG would eliminate hallucination if the vector database had more documents"
+      "Hallucination only occurs during fine-tuning, never at inference time, so a retrieval step that is wired in at inference has no mechanism by which it could change the rate",
+      "RAG would eliminate hallucination completely if the vector database were large enough — any remaining errors just mean the corpus is still missing the relevant documents"
     ],
     correct: 1,
     explanation: "RAG reduces a specific type of hallucination: factual claims about topics absent from the model's training data. But LLMs can still: (1) misquote — correctly retrieve a document but quote it inaccurately; (2) confabulate from context — produce a plausible-sounding synthesis that does not match any retrieved chunk; (3) ignore context — fall back on parametric knowledge when retrieved content is ambiguous. RAG shifts the failure mode from 'model does not know' to 'model misreads what it was given'.",
@@ -6318,10 +6581,10 @@ export const PREP_QUESTIONS = [
     id: "rag-bi-6", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
     question: "Why is chunk overlap (repeating the last 50 tokens of one chunk at the start of the next) useful, and what does it cost?",
     options: [
-      "Overlap prevents duplicate documents and costs nothing — it is a lossless improvement",
+      "Overlap prevents duplicate documents from entering the index and costs nothing — it is effectively a lossless improvement",
       "Overlap preserves context across chunk boundaries, at the cost of increased index size and some retrieval redundancy",
-      "Overlap is only useful for code, not natural language documents",
-      "Overlap increases retrieval speed because smaller distinct chunks are faster to compare"
+      "Overlap is only useful for source code, where statements span lines; natural language documents gain nothing from repeating it",
+      "Overlap increases retrieval speed, because smaller distinct chunks are cheaper for the ANN index to compare at query time"
     ],
     correct: 1,
     explanation: "Chunking without overlap severs context at boundaries. If a key fact straddles two chunks, neither standalone chunk has enough context. Overlap ensures the sentence or paragraph bridging a boundary appears in both adjacent chunks, so either retrieval hit has it. Cost: 10–20% more tokens stored per document; occasional retrieval of near-duplicate content. Worth it for documents with dense mid-paragraph facts.",
@@ -6332,10 +6595,10 @@ export const PREP_QUESTIONS = [
     id: "rag-bi-7", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
     question: "Your RAG system increases top-k from 5 to 20 to improve recall. Answer quality drops despite more relevant chunks being retrieved. What is the most likely cause?",
     options: [
-      "The vector database runs slower with larger k, causing timeout errors",
-      "More chunks add more tokens, increasing cost and making the model's answers reflect the higher price",
+      "The vector database runs measurably slower at larger k, and the resulting timeout errors silently truncate the context before the model ever sees the retrieved chunks",
+      "More chunks mean more tokens per call, and the increased spend triggers provider rate limiting that silently downgrades requests to a smaller, weaker fallback model",
       "The additional 15 chunks add noise — marginally relevant or irrelevant content dilutes the key information and the LLM produces less precise answers",
-      "Top-k above 10 is unsupported by most embedding models"
+      "Top-k values above 10 are unsupported by most embedding models, so the additional fifteen requested chunks come back as padding vectors containing pure noise"
     ],
     correct: 2,
     explanation: "Increasing k improves recall (more chance the right chunk is included) but hurts LLM answer precision. At k=20, the context has 20 chunks — many are marginally relevant. The model averages over a noisier signal, producing hedged or imprecise responses. The correct pattern: high k for retrieval → cross-encoder reranker → low k (3–5 best chunks) → LLM. You get recall benefits without context poisoning.",
@@ -6346,10 +6609,10 @@ export const PREP_QUESTIONS = [
     id: "rag-bi-8", topic: "rag", difficulty: "beginner-intermediate", gated: false, type: "mcq",
     question: "Your team upgrades the RAG system's embedding model from v1 to v2, which improved MTEB benchmarks by 15%. After deploy, retrieval quality is worse than before. What happened?",
     options: [
-      "The v2 model was trained on different data and is biased toward newer documents",
+      "The v2 model was trained on a different corpus and is biased toward newer documents, so older but still-relevant chunks now systematically rank lower",
       "The document index was still encoded with v1 embeddings — v2 query embeddings search a v1 vector space, producing meaningless similarity scores",
-      "v2 embeddings have a different number of dimensions, causing a schema mismatch in the database",
-      "Embedding model updates require 48 hours to propagate through the vector database"
+      "v2 embeddings have a different number of dimensions, and the resulting schema mismatch makes the database silently truncate every stored vector",
+      "Embedding model updates take up to 48 hours to propagate through a distributed vector database, so degraded mixed results are expected until it settles"
     ],
     correct: 1,
     explanation: "Embedding models produce vectors in model-specific spaces. v1 and v2 learned different geometries even if they share architecture. After upgrading the query encoder to v2, queries produce vectors in the v2 space. But documents are still indexed with v1 vectors. Cosine similarity between a v2 query vector and a v1 document vector is not meaningful — you are measuring distance across two different spaces. Fix: re-index all documents with v2 before switching query encoding.",
@@ -6761,10 +7024,10 @@ export const PREP_QUESTIONS = [
     id: "rag-int-1", topic: "rag", difficulty: "intermediate", gated: true, type: "mcq",
     question: "Your RAG system uses dense vector search and achieves 78% recall@5 on internal evals. A data scientist proposes adding BM25 hybrid search. What signals tell you it is worth the added complexity?",
     options: [
-      "Any recall below 80% guarantees BM25 will improve results",
+      "Any recall below 80% guarantees BM25 will improve results — that threshold is the standard industry trigger for moving from dense-only retrieval to hybrid search",
       "Your failure analysis shows users frequently querying with exact product codes, names, or rare technical terms that dense retrieval consistently misses",
-      "Adding BM25 always improves recall — there is no case where it hurts",
-      "BM25 is only useful when the vector database does not support HNSW indexing"
+      "Adding BM25 always improves recall regardless of query mix — there is no documented case where lexical matching hurts, so the added complexity is always justified",
+      "BM25 is only worth adding when the vector database lacks HNSW indexing, since a graph-based index already covers the lexical matches that BM25 would contribute"
     ],
     correct: 1,
     explanation: "Dense retrieval excels at semantic matching — different words, same meaning. BM25 excels at exact lexical matching — product SKUs, model numbers, person names, regulatory codes, rare jargon. The decision trigger: run a failure analysis of dense-only misses. Are the missed queries lexically exact but semantically distant from what you indexed? If yes, BM25 will reclaim them. If your users write mostly natural-language conceptual queries, dense retrieval may already cover 95%+ of cases and BM25 adds noise and operational complexity. The data drives the decision.",
@@ -6775,10 +7038,10 @@ export const PREP_QUESTIONS = [
     id: "rag-int-2", topic: "rag", difficulty: "intermediate", gated: true, type: "mcq",
     question: "You are indexing 100-page technical manuals. One engineer proposes 256-token chunks; another proposes 512-token chunks. What is the correct decision framework?",
     options: [
-      "Always use the largest chunk size the embedding model supports",
-      "256 tokens is always better — smaller chunks mean more precise retrieval",
+      "Always use the largest chunk size the embedding model supports — more context per chunk means the retriever can never accidentally split an answer in half",
+      "256 tokens is always better — smaller chunks give more precise embeddings, and precision is the only retrieval property that affects final answer quality",
       "Match chunk size to the granularity of expected user queries; test both on a representative query sample and measure recall@5 before committing",
-      "Chunk size only matters for documents longer than 50 pages"
+      "Chunk size only matters for documents longer than 50 pages; below that, the whole manual fits in a handful of chunks and either choice performs identically"
     ],
     correct: 2,
     explanation: "Chunk size drives a precision-vs-context tradeoff. Small chunks (128–256 tokens): precise embedding, but the retrieved chunk may lack surrounding context for the LLM to answer. Large chunks (512–1024 tokens): more context, but the embedding becomes a blurry average over many topics — retrieval precision drops. For technical manuals: step-by-step procedure queries want mid-size chunks; specific parameter lookups want small chunks; 'explain how system X works' may need large chunks or parent-document retrieval. Protocol: sample 50 representative queries, test both, measure recall@5. The 30-minute test pays for itself.",
@@ -6789,10 +7052,10 @@ export const PREP_QUESTIONS = [
     id: "rag-int-3", topic: "rag", difficulty: "intermediate", gated: true, type: "mcq",
     question: "Your RAG pipeline has p99 latency of 400ms with bi-encoder retrieval. Adding a cross-encoder reranker is proposed. What should you evaluate before adding it?",
     options: [
-      "Add it unconditionally — rerankers always improve quality with negligible latency impact",
+      "Add it unconditionally — cross-encoder rerankers always improve answer quality, and their latency impact is negligible compared with LLM generation time",
       "Measure the quality gap between current ordering and optimal reranked ordering; model the added latency (typically 100–300ms) against your SLA budget",
-      "Only add a reranker if the bi-encoder was pretrained before 2022",
-      "Rerankers only help when indexing more than 1 million documents"
+      "Only add a reranker if the bi-encoder was pretrained before 2022 — newer bi-encoders already embed cross-attention signals and gain nothing from reranking",
+      "Rerankers only help when the index exceeds one million documents; below that scale, the bi-encoder's ordering is already close enough to the optimal one"
     ],
     correct: 1,
     explanation: "The reranker decision is a quality-vs-latency tradeoff. Cross-encoders score query-document pairs with full attention — more accurate than cosine similarity, but linear in candidate count. Reranking 50 candidates typically adds 100–300ms. If your SLA is 500ms p99 and retrieval + reranker = 500ms, there is nothing left for LLM generation. Diagnosis first: if recall is good (right chunk in top-50) but MRR is poor (right chunk at position 35), a reranker closes that gap. If recall is the problem (right chunk not in top-50), a reranker cannot help — fix retrieval first.",
@@ -6803,10 +7066,10 @@ export const PREP_QUESTIONS = [
     id: "rag-int-4", topic: "rag", difficulty: "intermediate", gated: true, type: "mcq",
     question: "A product manager asks whether to use RAG or fine-tuning to make the LLM answer from the company's internal knowledge base. What conditions favor fine-tuning over RAG?",
     options: [
-      "Always use RAG — it is always more flexible",
+      "Always use RAG — it is strictly more flexible than fine-tuning, so there is no realistic production condition under which baking knowledge into weights wins",
       "Fine-tune when sub-50ms latency is required, the knowledge is stable and small enough to bake into weights, and retrieval latency is unacceptable",
-      "Fine-tune when the knowledge base exceeds 10,000 documents",
-      "Use fine-tuning only when the company cannot afford a vector database"
+      "Fine-tune whenever the knowledge base exceeds 10,000 documents, since beyond that size retrieval indexes become too large to search within a latency budget",
+      "Use fine-tuning only when the company cannot afford a managed vector database, since cost is the only real differentiator between the two approaches"
     ],
     correct: 1,
     explanation: "RAG is right for large, dynamic, or access-controlled knowledge. Fine-tuning wins when: (1) latency is critical — retrieval adds 100–500ms that the SLA cannot absorb; (2) knowledge is stable — facts do not change frequently enough to make retraining impractical; (3) knowledge volume is small enough to bake into weights (hundreds to low thousands of facts, not millions); (4) the knowledge is deeply structural — the model needs to reason with it, not just retrieve it. Warning: fine-tuning for factual knowledge can cause confident hallucination when facts go stale. Hybrid approach (fine-tune for format/style + RAG for dynamic facts) is often the production answer.",
