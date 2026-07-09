@@ -2558,3 +2558,43 @@ git commit -m "Rebalance rag/evaluation/llmops/serving buckets (156 length-tell 
 git push origin main
 ```
 Migrations still open after 9eae7b4: `context`, `eval-design`, `debug` (3 of 5).
+
+## 2026-07-09 (correction + fix) — Language Models gym was 15 modules, not 10: 5 missed modules now brought to bar
+
+**User-caught miss, corrected:** this doc's earlier "Language Models gym COMPLETE" claim was based on the
+wave plan's 10-module list, not the app's real gym list (`Concepts.jsx` GYMS -> `language-models` has 15).
+Missed: `seq-parallel`, `gqa-mqa`, `sparse-attention`, `training-signal`, `nextoken`. User spotted two by
+title ("Sequential vs Parallel: Why the Transformer Exists", "Predict the Next Token").
+
+**Audit of the 5:** bodies were already at 3B1B bar (worked numbers — 0.01% GPU utilization illustration,
+−log(p) tables; precision-rule highlights; causal chains; zero positional-language violations) from an
+earlier rewrite wave. The gap was the same one the NLP gym had: **no groundUp opener on any of the 5**, and
+no cold audit on record.
+
+**Fixed via full writer→adversarial pipeline:** 5 groundUps written (seq-parallel opens the gym truly
+from-zero — no LSTM jargon, gating described by function; gqa-mqa introduces K/V-storing from scratch since
+it precedes the kv-cache module; nextoken does logits/softmax/cross-entropy strictly mechanism-first). Cold
+audit (separate agent) returned 2 CLEAN + 5 real findings on the other 3 — gqa-mqa's opener pre-narrated the
+scenario beat-for-beat, sparse-attention had a false "scenario at the end" positional claim (scenario
+renders right after the opener), nextoken duplicated the scenario's interviewer quote and carried two
+overclaims ("the entire training loop" without the weight update; "and no other" objective exclusivity,
+false vs. masked/denoising objectives). All 5 fixed exact-match count-verified; all 3 files parse clean.
+
+**LM gym status, corrected honestly: 15/15 bodies at bar, 15/15 groundUp, cold-audited.** (Also in the gym
+list but previously known: attention-3d is a separate hardcoded visual module — has scenario/mcqs, no
+groundUp mechanism concern raised; flashattn was already handled in the Production batch.)
+
+**Files touched:** `src/data/foundationsRunnerData.js` (seq-parallel, training-signal, nextoken),
+`src/data/foundations/market-gap.js` (gqa-mqa), `src/data/foundations/breadth-2.js` (sparse-attention) —
+these overlap the pending question-rebalance commit, so one combined command:
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/preplabQuestions.js src/data/foundationsRunnerData.js \
+  src/data/foundations/retrieval-breadth.js src/data/foundations/gap-agenteval-ragingest.js \
+  src/data/foundations/gap-routing-security.js src/data/foundations/breadth-2.js src/data/foundations/market-gap.js \
+  src/data/agents/agent-core.js src/data/agents/agent-eco.js src/data/agents/agent-sim.js \
+  docs/GSL_PLAN.md && \
+git commit -m "Question-bucket rebalance (156 fixes) + positional fixes + LM gym completion: groundUps for the 5 missed modules (seq-parallel, gqa-mqa, sparse-attention, training-signal, nextoken)" && \
+git push origin main
+```
