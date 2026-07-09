@@ -2086,3 +2086,78 @@ git push origin main
 
 **Still open, unchanged from before:** `kv-cache`/`tokenizer` scene-building status unconfirmed; `sampling`
 scene (`SceneMarbleJar`) designed but never merged into `foundationScenes.jsx`/`foundationsRunnerData.js`.
+
+## 2026-07-09 (later still) — Language Models S/A-tier gym: closes out the remaining 4 modules (tokenizer, attention, sampling, kv-cache) + full ground-up rebuild of the attention/relevance scene
+
+User asked to finish the whole Language Models foundation gym and fix the attention interactive from the
+ground up. Read all 4 remaining modules directly off the live device file (not a cached mirror -- learned
+that lesson the hard way earlier this session) before touching anything.
+
+**Real finding, corrects the wave-plan doc:** the "6. Language Models -- tokenizer, attention, transformer,
+sampling, hallucination -- other 4 have older pre-3B1B content, need a fresh audit" line in the earlier
+HANDOFF/wave-plan notes was stale. All 4 remaining modules (`tokenizer`, `attention`, `sampling`, `kv-cache`)
+already had full groundUp openers, causal-chain explanations, jargon-second term introductions, worked
+numeric examples, and pause-and-predict gates -- genuinely close to `transformer`'s gold-standard bar
+already, not old pre-rewrite content. `attention` in particular (the Q/K/V dot-product derivation, the
+softmax-sharpening walkthrough, the sqrt(d_k) "stacking blocks" precision-rule metaphor) reads as strong as
+anything in the gym.
+
+**What was actually wrong, and fixed:** a real, repeated bug -- 10 instances of dangling positional language
+("...example above", "...split above", "...the numbers above skip", "...from the illustration above", etc.)
+across `tokenizer` (3), `attention` (7), `kv-cache` (1). This is a genuine prerender-awareness violation
+(3B1B-STANDARD.md bans "above/below" callbacks since scenes get interleaved and pages can prerender/reflow).
+Fixed all 10 with exact-match, count-verified string replacements; left the legitimate non-positional "above"
+uses alone (tokenizer's "runs well above 1 token per word" -- a magnitude comparison, not a callback). Verified
+via a real `@babel/parser` AST parse of the live file (JSX+module syntax) post-fix, and a follow-up grep
+confirming zero positional "above/below" remain in any of the three modules.
+
+**`sampling` -- confirmed clean**, no positional-language issues found. Still has an old, unresolved gap
+from earlier in this initiative: the `SceneMarbleJar` scene (T=0.5/1.0/2.0 jar distributions, top-p/top-k/
+min-p logic) was designed in a prior session but never actually built/merged into `foundationScenes.jsx`.
+Not done this round -- flagged, not silently dropped. `sampling`'s sibling A-tier modules (tempgame, rope,
+positional-encoding, speculative-decoding) don't have inline scenes either, just illustration blocks, so this
+isn't strictly required to match the gym's own internal bar, but it would bring `sampling` up to what
+`attention`/`transformer` have.
+
+**Attention interactive -- rebuilt ground-up** (`src/components/nicheViz/AttentionScenes.jsx`,
+`SceneRelevanceMatch`, the `attention/relevance` scene). Root cause of the reported bugs: candidate/query
+nodes were fixed-radius circles (14-16px) with labels drawn centered on top of them -- any label longer than
+~2 characters at that radius overflows the circle, which is exactly the text/circle clash in the screenshot.
+Connector line width scaled linearly and unbounded (`w * 34`), so the ~51% match rendered an 17px+ bar while
+9-11% matches were near-invisible hairlines -- the "thick as fuck bar" complaint.
+
+Fix, not a patch: nodes are now auto-width pills sized to their own label text (`pillWidth()`, never smaller
+than the label needs, so a label can't physically overflow its node) for both the query node and all 5
+candidate nodes. Connector stroke width is now clamped to a gentle `1.5px -> 8.5px` range via `sqrt(weight)`
+scaling instead of linear, with opacity and a strength-mapped color (dark zinc at 0% -> bright violet at
+100%) doing most of the "how relevant" signaling instead of raw thickness. Vertical spacing is now evenly
+computed across the viewBox instead of a hand-picked, cramped array. The current top match gets a distinct
+highlight ring (skipped in "equal weighting" mode, where highlighting one node would be misleading since
+none actually wins). All three modes (equal / real Q.K softmax / no-sqrt(d_k) pile-up) and the pause-and-
+predict gate are unchanged in logic -- same numbers, same interaction, just fixed rendering.
+
+**Verification:** live-file `@babel/parser` AST parse (module+JSX) -- clean. Structural grep confirmed zero
+leftover `<circle>` elements, exactly the 2 expected `<rect>` pill shapes, and both the named
+(`SceneRelevanceMatch`) and default exports unchanged, so `foundationScenes.jsx`'s existing import needs no
+changes. Could NOT run a true bundled/executed render test this entry -- the device bridge's sandbox mirror
+proved unreliable mid-session (served stale content after a re-stage, confirmed via hash mismatch against the
+live file) and the device-side Linux VM has no JSX-transform package installed and no network access to fetch
+one. Relied on AST-level syntax verification plus hand-traced arithmetic (pill widths, stroke widths, colors
+all bounded, no NaN/undefined paths) instead. Flagging this explicitly rather than claiming a stronger
+verification than what was actually done -- a real in-browser check is still worth doing before calling this
+fully closed.
+
+**Files touched:** `src/data/foundationsRunnerData.js` (tokenizer, attention, kv-cache positional-language
+fixes), `src/components/nicheViz/AttentionScenes.jsx` (full rebuild). Uncommitted working-tree changes.
+Push command:
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/foundationsRunnerData.js src/components/nicheViz/AttentionScenes.jsx docs/GSL_PLAN.md && \
+git commit -m "Language Models gym: fix positional-language refs (tokenizer/attention/kv-cache) + ground-up rebuild of attention/relevance scene" && \
+git push origin main
+```
+
+**Still open:** `sampling`'s `SceneMarbleJar` scene, designed but never merged (optional, not required to
+match the gym's own bar). A real browser/render check of the rebuilt attention scene before calling it fully
+verified.
