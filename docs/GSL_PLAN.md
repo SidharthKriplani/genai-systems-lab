@@ -3332,3 +3332,66 @@ touched files; topic-count sums re-verified after each round; confirmed none of 
 anywhere in the bank. Backups of every touched file kept in `_to_delete/backup_phase2/`.
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+## 2026-07-09 (cont. 8) — PrepLab rebuild Phase 3, batch 1: foundation-models sub-cluster "fine-tuning & compression fundamentals" (12 questions, 7 fixed)
+
+First correctness-audit batch of Phase 3, per `PREPLAB-REBUILD-PLAN.md`. `foundation-models` (151 questions
+post-Phase-2) is too large for one pass, so it's being worked through in sub-clusters; this batch covers
+`ft-1`, `ft-4`, `syn-q1`, `syn-q2`, `arch-q1`, `quant-1`, `quant-3`, `quant-4`, `finetune-1..4` (12 qs).
+Same author+adversarial two-pass process as `PREPLAB-STANDARD.md`: self spot-check first, then a genuinely
+separate agent ran the full `PREPLAB-AUDIT-RUBRIC.md` 10-smell checklist blind (question objects only, no
+authorial reasoning), independently re-deriving each answer before comparing to `correct`.
+
+### Findings and fixes (7 of 12 questions had real defects)
+- **`ft-1`** — fabricated attribution (`source: "Hugging Face ML engineer interview"`, unverifiable) removed
+  per rule 7. Also fixed a self-contradictory `trap` field that told the candidate not to say "the training
+  data was bad" then concluded the failure *is* "a training data design problem" in the same sentence —
+  rewrote to draw the real distinction (low-quality vs. non-representative data).
+- **`ft-4`** — fabricated attribution (`source: "Google AI research engineering interview"`) removed.
+- **`syn-q1`** — fabricated-precision statistic (rule 4): asserted "LLM-as-judge filtering keeps 50–70% of
+  generated data" as the single correct answer with no citation; real retention rates vary enormously by
+  domain/judge/threshold. Reframed the question to test the qualitative mechanism (why judge-filtering
+  rejects a real, non-trivial share — fluency ≠ correctness) instead of asserting an uncited specific
+  number as ground truth.
+- **`arch-q1`** — stale/wrong technical claim (rule 10): explanation asserted decoder-only LLMs have "no
+  cross-attention bottleneck" vs. encoder-decoder as an advantage — this misapplies the classic
+  fixed-length-vector bottleneck from pre-transformer RNN seq2seq models; transformer encoder-decoders
+  (T5, BART) use full multi-token cross-attention and don't have that bottleneck. Rewrote the option text,
+  explanation, and trap to state the real reason (training/objective simplicity + emergent few-shot
+  behavior at scale) without the false architectural claim.
+- **`quant-3`** — internal self-contradiction: explanation said a 7B model "fits... in FP16 but not INT4...
+  which enables it to run even on 8GB GPUs" — backwards, since INT4 uses less memory than FP16 and fits
+  more easily. Rewrote to state the memory relationship correctly.
+- **`finetune-1`** — minor arithmetic error: "4096×4096 = 16.7M" should be 16.8M (16,777,216). Corrected;
+  the 131K/99.2%-reduction figures were already right.
+- **`finetune-4`** — `trap` field cited "500 high-quality examples... (LIMA paper)" contradicting both the
+  question's own `explanation` field ("1,000 carefully curated examples") and the real LIMA paper (Zhou et
+  al. 2023 used 1,000, not 500). Corrected the number.
+
+`syn-q2`, `quant-1`, `quant-4`, `finetune-2`, `finetune-3` passed clean — no changes.
+
+### Also found and fixed (not a rubric smell, but a Definition-of-Done schema-consistency issue)
+7 of these 12 questions (`quant-1`, `quant-3`, `quant-4`, `finetune-1..4`) all pointed their `readMore`
+field at `{ label: "Flash Attention →", tab: "systems" }` regardless of actual content — clearly a
+copy-paste default, unrelated to quantization, LoRA, or catastrophic forgetting. Repointed each to the
+real, already-existing on-topic cross-reference found elsewhere in the same file: `quant-1/3/4` → "Quantisation →"
+(`tab: systems`); `finetune-1/3` → "LoRA in Practice →" (`tab: groundtruth`, `postId: lora-in-practice`);
+`finetune-2/4` → "Fine-tuning Playbook" (`tab: groundtruth`, `postId: finetune-playbook`). Flagging this as
+a pattern to watch for in later Phase 3 batches — copy-pasted `readMore` defaults may recur elsewhere in
+the bank.
+
+### Verification
+All edits applied via exact-anchor string replacement (each anchor checked for a unique single match before
+writing) or, for `syn-q1` where anchor matching failed on the first attempt (whitespace/quote-escaping
+mismatch), a brace-matched full-object replacement instead. `npx esbuild src/data/preplabQuestions.js
+--bundle --format=esm --outfile=/dev/null` clean after all edits. Total question count unchanged at 770
+(no additions or removals this batch — audit-and-fix only). Backup of the pre-batch file kept in
+`_to_delete/backup_phase2/preplabQuestions_before_batch3a_fixes.js`.
+
+Remaining `foundation-models` sub-clusters not yet audited: merge-1..8/scaling-1..4 (12), fmlab/bert/encdec/
+redeep (13), found-beg (8), found-bi (8), found-staff/found-int (10), found-llm (13), plus the 4 imported
+ladder files (quantization-l*, dpo-l*/distillation-l*, moe-l*, lora-l*/rlhf-l*, ~85 more) — then the other
+3 oversized topics (retrieval 123, ai-agents 113, production 78), then everything else. This will take many
+more batches at this granularity.
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.

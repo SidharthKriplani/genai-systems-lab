@@ -703,9 +703,8 @@ export const PREP_QUESTIONS = [
     options: ["Model overfits to benchmark format not real user queries", "Fine-tuning is always wrong for support", "Not enough training data", "Learning rate too high"],
     correct: 0, keywords: [],
     explanation: "Fine-tuning on curated benchmark-style examples can cause the model to optimize for the format/style of those examples rather than the messy, varied real-user queries. Benchmark and production distributions diverge.",
-  trap: "Saying \'fine-tuning does not work\' or \'the training data was bad.\' The specific failure mode is benchmark overfitting — the model learns the evaluation format rather than the underlying task, which is a training data design problem.",
-  source: "Hugging Face ML engineer interview",
-        staffLayer: "The senior framing is: benchmark overfitting happens when your training data is too similar to your eval set in format and style, not in task difficulty. A model fine-tuned on curated support tickets learns the format of well-written support resolutions — it scores well on similarly-formatted evals and fails on real user queries that are messily stated, multi-intent, or domain-shifted. The diagnostic: run your fine-tuned model on a random sample of real production queries alongside the curated eval. If production performance is significantly lower, you have a distribution mismatch problem. The fix is always training data curation — sample from the real production distribution, not from a cleaned/curated subset.",
+  trap: "Saying \'fine-tuning does not work\' or blaming data volume. The specific failure mode is benchmark overfitting — the model learned to match the eval set\'s format and style, not the messy distribution of real user queries; the data was not low-quality, it was non-representative of production traffic.",
+          staffLayer: "The senior framing is: benchmark overfitting happens when your training data is too similar to your eval set in format and style, not in task difficulty. A model fine-tuned on curated support tickets learns the format of well-written support resolutions — it scores well on similarly-formatted evals and fails on real user queries that are messily stated, multi-intent, or domain-shifted. The diagnostic: run your fine-tuned model on a random sample of real production queries alongside the curated eval. If production performance is significantly lower, you have a distribution mismatch problem. The fix is always training data curation — sample from the real production distribution, not from a cleaned/curated subset.",
   readMore: { label: "Fine-Tuning Best Practices", tab: "concepts" }
   },
   {
@@ -715,8 +714,7 @@ export const PREP_QUESTIONS = [
     keywords: ["fine-tune", "few-shot", "rag", "update", "static", "knowledge", "format", "style"],
     explanation: "RAG: dynamic knowledge that updates frequently, source attribution needed. Few-shot: small behavioral shift, quick iteration. Fine-tuning: stable domain knowledge where latency/cost of long prompts is prohibitive.",
   trap: "Recommending fine-tuning for domain knowledge by default. RAG is better for dynamic, citable, frequently-updated knowledge. Fine-tuning is for behavioral and style changes. Conflating knowledge injection with behavioral alignment is the most common fine-tuning strategy error.",
-  source: "Google AI research engineering interview",
-        staffLayer: "The senior framing is: the decision matrix has two axes — how often does the knowledge change, and how much does style/format matter. RAG is for knowledge that updates frequently (product docs, regulations, news) and where source attribution matters. Fine-tuning is for stable domain knowledge where latency or cost of long prompts is prohibitive, and where behavioral consistency (tone, format, persona) matters more than retrievable sources. Few-shot is for quick behavioral shifts where you have 5-20 good examples and need to iterate fast. The common mistake is using fine-tuning for knowledge injection — it doesn't work reliably because fine-tuning on factual data creates confident hallucination, not reliable factual recall.",
+          staffLayer: "The senior framing is: the decision matrix has two axes — how often does the knowledge change, and how much does style/format matter. RAG is for knowledge that updates frequently (product docs, regulations, news) and where source attribution matters. Fine-tuning is for stable domain knowledge where latency or cost of long prompts is prohibitive, and where behavioral consistency (tone, format, persona) matters more than retrievable sources. Few-shot is for quick behavioral shifts where you have 5-20 good examples and need to iterate fast. The common mistake is using fine-tuning for knowledge injection — it doesn't work reliably because fine-tuning on factual data creates confident hallucination, not reliable factual recall.",
   readMore: { label: "Fine-Tuning vs RAG", tab: "concepts" }
   },
 
@@ -1322,11 +1320,11 @@ export const PREP_QUESTIONS = [
   },
   {
     id: "syn-q1", topic: "foundation-models", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
-    question: "LLM-as-judge filtering in synthetic data generation keeps approximately what fraction of generated data?",
-    options: ["95%+ — judge only removes clearly bad examples", "50–70% — significant portion fails quality threshold when judged rigorously", "10–20% — most LLM-generated data is low quality", "100% — the generator and judge use the same model"],
+    question: "When generating synthetic fine-tuning data, why does a rigorous LLM-as-judge quality filter typically reject a substantial share of the generated examples, not just a small minority?",
+    options: ["It doesn't — a well-designed generator only produces well-formed valid text, so almost everything passes", "Even fluent, well-formatted generations frequently fail on correctness, relevance, or instruction-following under a rigorous judge, so filtering meaningfully thins the pool at any reasonable threshold", "Most LLM-generated data is unusable garbage, so only a small fraction ever passes", "The generator and judge are typically the same model, so the judge always agrees with its own output"],
     correct: 1, keywords: [],
-    explanation: "With a quality threshold of ~0.75/1.0, rigorous LLM-as-judge filtering typically keeps 50–70% of generated data. This is desirable — removing noisy examples reduces overfitting and improves fine-tuning outcomes. The goal is quality over quantity.",
-    trap: "Saying \'keep all generated examples.\' The quality gate is what makes synthetic data effective for fine-tuning. LLM-as-judge filtering typically accepts 50–70% of generated examples — optimising for quantity without quality filtering degrades model performance.",
+    explanation: "LLM generators reliably produce fluent, well-formatted text, but fluency is not correctness. A meaningful share of generations will misunderstand the instruction, drift off-topic, or contain subtle errors invisible without careful judging — so a rigorous judge (checking correctness and relevance, not just formatting) is expected to reject a real, substantial portion, not just an outlier tail. The exact retention rate depends heavily on domain, judge model, and threshold, so no single percentage is a universal constant — but the lesson holds: treat filtered-out output as signal to discard, not noise to keep by lowering the bar.",
+    trap: "Assuming a fixed universal retention percentage, or that keeping everything generated is fine. The quality gate is what makes synthetic data effective for fine-tuning — real deployments see meaningful rejection rates that vary by setup, not a fixed number.",
     readMore: { label: "Synthetic Data →", tab: "systems" }
   },
   {
@@ -1341,10 +1339,10 @@ export const PREP_QUESTIONS = [
   {
     id: "arch-q1", topic: "foundation-models", difficulty: "medium", band: "intermediate", type: "mcq",
     question: "Why do modern LLMs (GPT-4o, Claude, Llama) use decoder-only architecture instead of the original encoder-decoder?",
-    options: ["Decoder-only is cheaper to build", "Decoder-only scales more efficiently — simpler training objective (next-token prediction), no encoder bottleneck, stronger emergent few-shot abilities at scale", "Encoder-decoder can't do generation", "Patents prevent encoder-decoder use"],
+    options: ["Decoder-only is cheaper to build", "Decoder-only scales more efficiently for general-purpose use — a single simple training objective (next-token prediction) and natural support for in-context few-shot prompting, without a separate encoder pretraining objective", "Encoder-decoder can't do generation", "Patents prevent encoder-decoder use"],
     correct: 1, keywords: [],
-    explanation: "After GPT-2/3 demonstrated that decoder-only models develop powerful emergent abilities through scale, the field converged on this architecture. The autoregressive next-token objective is simpler to optimize at scale, there's no cross-attention bottleneck between encoder/decoder, and the architecture naturally supports few-shot prompting.",
-    trap: "Saying \'it is simpler to implement.\' Decoder-only models handle any task as text completion, making the same architecture work for classification, generation, and reasoning without task-specific heads. The autoregressive objective also scales more predictably.",
+    explanation: "After GPT-2/3 demonstrated that decoder-only models develop powerful emergent abilities through scale, the field converged on this architecture for general-purpose LLMs. The autoregressive next-token objective is simpler to train and scale (one unified objective, no separate encoder pretraining task), and the architecture naturally supports in-context few-shot prompting since input and output live in one continuous token stream. This is an empirical convergence, not a proven law — transformer-based encoder-decoders (T5, BART) use full cross-attention over the entire encoder sequence and do not suffer the fixed-vector bottleneck that affected older RNN-based seq2seq models.",
+    trap: "Claiming encoder-decoder architectures have an inherent \'bottleneck\' — that framing describes pre-transformer RNN seq2seq models, not transformer-based encoder-decoders like T5/BART, which use full cross-attention. The real reason decoder-only won out for general-purpose LLMs is training/objective simplicity and emergent few-shot behavior at scale, not an architectural flaw in encoder-decoder.",
     readMore: { label: "Transformer Architecture →", tab: "systems" }
   },
 
@@ -1634,15 +1632,15 @@ export const PREP_QUESTIONS = [
     correct: 0, keywords: [],
     explanation: "GPTQ uses an OBQ (Optimal Brain Quantization) approach: it quantizes weights one-by-one per layer, using the Hessian (second-order information) to compensate for quantization error in remaining weights. This gives better quality than naive round-to-nearest. It only needs a small calibration set (~128 samples), not labeled data.",
     trap: "Saying \'GPTQ is just lower precision.\' GPTQ minimises quantisation error layer-by-layer by solving a second-order optimisation problem using an approximate Hessian — it adjusts remaining weights to compensate for rounding error.",
-    readMore: { label: "Flash Attention →", tab: "systems" }
+    readMore: { label: "Quantisation →", tab: "systems" }
   },
   {
     id: "quant-3", topic: "foundation-models", difficulty: "easy", band: "foundational", type: "mcq",
     question: "A 7B parameter model in FP16 requires approximately how much VRAM?",
     options: ["~3.5 GB", "~7 GB", "~14 GB", "~28 GB"],
     correct: 2, keywords: [],
-    explanation: "FP16 uses 2 bytes per parameter. 7B × 2 bytes = 14 GB for weights alone. During inference you also need activation memory (~1-2 GB), so ~15-16 GB total. This is why a 7B model fits on a 24GB consumer GPU (RTX 3090/4090) in FP16 but not INT4 (~4 GB for weights), which enables it to run even on 8GB GPUs.",
-    readMore: { label: "Flash Attention →", tab: "systems" }
+    explanation: "FP16 uses 2 bytes per parameter. 7B × 2 bytes = 14 GB for weights alone. During inference you also need activation memory (~1-2 GB), so ~15-16 GB total. This is why a 7B model needs roughly a 24GB consumer GPU (RTX 3090/4090) to run comfortably in FP16. Quantizing to INT4 cuts weight memory to ~3.5-4 GB, which is what lets the same 7B model run on much smaller GPUs, including 8GB cards.",
+    readMore: { label: "Quantisation →", tab: "systems" }
   },
   {
     id: "quant-4", topic: "foundation-models", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
@@ -1651,7 +1649,7 @@ export const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "NF4 is an information-theoretically optimal quantization for normally distributed data. It places quantization levels non-uniformly: more levels near zero (where most weights cluster) and fewer at extremes. This minimizes quantization error for pretrained model weights, which empirically follow a normal distribution. It's not a hardware format — operations are dequantized to BF16 for actual compute.",
     trap: "Saying \'it is just 4-bit floating point.\' NF4 places quantisation levels to minimise expected error under a Gaussian distribution — not uniformly. Standard INT4 does not exploit the fact that pretrained weights are normally distributed.",
-    readMore: { label: "Flash Attention →", tab: "systems" }
+    readMore: { label: "Quantisation →", tab: "systems" }
   },
   {
     id: "serving-1", topic: "inference-optimization", difficulty: "easy", band: "foundational", type: "mcq",
@@ -1745,8 +1743,8 @@ export const PREP_QUESTIONS = [
     question: "LoRA (Low-Rank Adaptation) reduces trainable parameters by:",
     options: ["Pruning 90% of attention heads before training", "Decomposing weight updates into two low-rank matrices A and B", "Quantizing gradients to INT8 during backpropagation", "Sharing weights across transformer layers during training"],
     correct: 1, keywords: [],
-    explanation: "LoRA freezes the pretrained weights W and learns ΔW = BA where B ∈ R^(d×r) and A ∈ R^(r×k) with rank r << min(d,k). For a 4096×4096 weight matrix with r=16, trainable params drop from 16.7M to 131K (99.2% reduction). At inference, BA is merged back into W with zero latency overhead. QLoRA adds quantization of the base model to NF4.",
-    readMore: { label: "Flash Attention →", tab: "systems" }
+    explanation: "LoRA freezes the pretrained weights W and learns ΔW = BA where B ∈ R^(d×r) and A ∈ R^(r×k) with rank r << min(d,k). For a 4096×4096 weight matrix with r=16, trainable params drop from 16.8M to 131K (99.2% reduction). At inference, BA is merged back into W with zero latency overhead. QLoRA adds quantization of the base model to NF4.",
+    readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
   },
   {
     id: "finetune-2", topic: "foundation-models", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
@@ -1755,7 +1753,7 @@ export const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "Catastrophic forgetting occurs when fine-tuning on a narrow task distribution overwrites the broader knowledge learned during pretraining. The model may become excellent at the specific task but lose capabilities like coding, math, or multilingual understanding. Mitigations: use LoRA (frozen base), include diverse data, train for fewer epochs, use a small learning rate.",
     trap: "Saying \'the model forgets the training data.\' Catastrophic forgetting is the reverse: the model overwrites general capability while improving on the target task. The model gets better at the new task but loses broader knowledge.",
-    readMore: { label: "Flash Attention →", tab: "systems" }
+    readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
   ,
     staffLayer: "The senior framing is: catastrophic forgetting is proportional to how far the fine-tuning distribution is from pretraining. Three levers. First, data mixing: include 10-20% general instruction data (OpenHermes, ShareGPT) in the fine-tuning mix — this preserves general capabilities at minimal cost to task-specific performance. Second, LoRA: by only training adapter weights, you leave the frozen base entirely intact, which is the most robust forgetting prevention available. Third, measure it — always eval on a general benchmark (MMLU subset, HumanEval) before and after. If general capability drops more than 3-5 points, pull back the learning rate or increase the general data ratio. The framing I use with teams: fine-tuning changes the distribution the model is optimised for; make sure that new distribution still contains general capabilities."},
   {
@@ -1764,7 +1762,7 @@ export const PREP_QUESTIONS = [
     options: ["QLoRA trains faster due to quantized gradient computation", "QLoRA enables fine-tuning 65B+ models on a single 48GB GPU", "QLoRA produces higher quality results on all downstream tasks", "QLoRA doesn't require a calibration dataset"],
     correct: 1, keywords: [],
     explanation: "QLoRA quantizes the frozen base model weights to NF4 (4-bit), reducing VRAM by ~4× compared to FP16 LoRA. This makes it possible to fine-tune large models on consumer hardware — a 65B model needs ~40GB in QLoRA vs ~130GB for FP16 LoRA. Training speed is slightly slower (dequantize to BF16 for compute) but the VRAM savings enable otherwise impossible fine-tunes.",
-    readMore: { label: "Flash Attention →", tab: "systems" }
+    readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
   },
   {
     id: "finetune-4", topic: "foundation-models", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
@@ -1772,8 +1770,8 @@ export const PREP_QUESTIONS = [
     options: ["100–500 examples", "1,000–10,000 high-quality examples", "100,000+ examples required", "Dataset size doesn't matter; only format matters"],
     correct: 1, keywords: [],
     explanation: "Research (LIMA, Alpaca, OpenHermes) consistently shows that 1K–10K high-quality, diverse instruction pairs produce strong behavioral fine-tuning. The LIMA paper demonstrated that 1,000 carefully curated examples match models fine-tuned on 50K+ examples. Quality and diversity matter far more than quantity. Below 500 examples, results are inconsistent. Above 50K, you risk catastrophic forgetting.",
-    trap: "Saying \'the more data, the better.\' 500 high-quality examples is sufficient for meaningful behavioural change (LIMA paper). More low-quality examples can degrade the model. Quality and diversity matter more than volume for instruction fine-tuning.",
-    readMore: { label: "Flash Attention →", tab: "systems" }
+    trap: "Saying \'the more data, the better.\' 1,000 high-quality examples is sufficient for meaningful behavioural change (LIMA paper). More low-quality examples can degrade the model. Quality and diversity matter more than volume for instruction fine-tuning.",
+    readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
   ,
     staffLayer: "The senior framing: dataset size is a proxy metric — quality and diversity are the real variables. LIMA showed you can get strong behavioral change from 1,000 examples if they're high-quality, diverse, and cover the full range of edge cases you care about. The failure mode I see most often is teams collecting 10K examples that are all the same format and query type — they get a model that performs well on that type and poorly on everything adjacent. I always ask: does this dataset cover the failure modes I've seen in production? Does it include hard examples — ambiguous queries, refusal cases, multi-step reasoning? A 1K dataset that covers the distribution beats a 10K dataset that doesn't."},
   {
