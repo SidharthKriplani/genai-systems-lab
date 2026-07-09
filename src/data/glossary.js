@@ -1399,4 +1399,81 @@ export const GLOSSARY = {
     sourceModuleId: "calibration",
     sourceModuleTitle: "Calibration",
   },
+
+  // Batch 5 (2026-07-09): +12 terms harvested from the 3 hardcoded-module RUNNER_DATA migrations
+  // (context, eval-design, debug), after each module's writer pass + cold Pass-2 adversarial audit
+  // + fix loop was finalized. Definitions are lightly-trimmed sentences pulled straight from each
+  // module's own explanation[]/groundUp text, not invented fresh.
+  "context window": {
+    term: "Context Window",
+    def: "The fixed number of tokens a model can hold in view at once -- every instruction, past turn, retrieved fact, and the reply it's still writing, all competing for the same budget; exceed it and the oldest content is silently dropped, not flagged.",
+    sourceModuleId: "context",
+    sourceModuleTitle: "Context Window & Attention Cost",
+  },
+  "quadratic scaling": {
+    term: "Quadratic Scaling (O(n²))",
+    def: "The pattern where attention cost scales with the square of token count, not the count itself -- doubling the tokens quadruples the comparisons, so a 128x longer prompt costs roughly 128² (~16,384x) more compute, not 128x.",
+    sourceModuleId: "context",
+    sourceModuleTitle: "Context Window & Attention Cost",
+  },
+  "lost in the middle": {
+    term: "Lost in the Middle",
+    def: "The effect, documented by Liu et al. (2023), where content placed at the very start or end of a context window is recalled far more reliably than content placed in the middle -- a U-shaped recall curve, so where a retrieved chunk sits matters almost as much as whether it was retrieved at all.",
+    sourceModuleId: "context",
+    sourceModuleTitle: "Context Window & Attention Cost",
+  },
+  "sandwich placement": {
+    term: "Sandwich Placement",
+    def: "A production fix for lost-in-the-middle: put the highest-confidence retrieved chunk first, the second-highest last, and let lower-confidence chunks fill the dead middle -- the position range that was going to be read weakest anyway.",
+    sourceModuleId: "context",
+    sourceModuleTitle: "Context Window & Attention Cost",
+  },
+  "must-never": {
+    term: "Must-Never (eval design)",
+    def: "The category of failures an eval treats as rare and catastrophic, worth a dedicated metric that can't be diluted by anything else -- e.g. omitting a high-risk clause -- as opposed to must-do failures, which are common, lower-cost, and fine to fold into an aggregate score.",
+    sourceModuleId: "eval-design",
+    sourceModuleTitle: "Designing an Eval Suite from Scratch",
+  },
+  "must-do": {
+    term: "Must-Do (eval design)",
+    def: "The category of failures an eval treats as common and lower-cost, fine to fold into an aggregate accuracy score -- e.g. extracting every defined term -- as opposed to must-never failures, which are rare, high-cost, and need a metric of their own.",
+    sourceModuleId: "eval-design",
+    sourceModuleTitle: "Designing an Eval Suite from Scratch",
+  },
+  "load-bearing metric": {
+    term: "Load-Bearing Metric",
+    def: "The one number a ship decision actually depends on -- e.g. recall on must-never categories, not blended accuracy -- fixed as a bar before the number is computed, since an eval answering a question committed to in advance makes a decision, while one interpreted after the fact makes an excuse.",
+    sourceModuleId: "eval-design",
+    sourceModuleTitle: "Designing an Eval Suite from Scratch",
+  },
+  "stale retrieval": {
+    term: "Stale Retrieval",
+    def: "A RAG failure mode where the pipeline retrieves a real but outdated document over a newer one that exists elsewhere in the corpus, because nothing in the pipeline filters or reranks for freshness -- fixed upstream, in what gets retrieved.",
+    sourceModuleId: "debug",
+    sourceModuleTitle: "Debug This RAG System",
+  },
+  "hallucination": {
+    term: "Hallucination (RAG)",
+    def: "A RAG failure mode where the model states a fact that exists nowhere in its retrieved context -- distinct from stale retrieval in exactly the dimension that matters for the fix: retrieval was fine, but the model was permitted to fill a gap by inventing a specific.",
+    sourceModuleId: "debug",
+    sourceModuleTitle: "Debug This RAG System",
+  },
+  "prompt injection": {
+    term: "Prompt Injection (RAG)",
+    def: "A RAG failure mode where real, retrieved content contains an adversarial instruction that hijacks the model the moment it enters the context window -- neither a stale document nor an invented fact, and fixed upstream of both retrieval and generation, at corpus ingestion.",
+    sourceModuleId: "debug",
+    sourceModuleTitle: "Debug This RAG System",
+  },
+  "over-abstention": {
+    term: "Over-Abstention",
+    def: "A RAG failure mode where the answer genuinely exists in the corpus, but a retrieval miss plus an overly conservative answer policy produces a refusal instead of the available answer -- a real failure mode, not a safe default, since silence has a cost too.",
+    sourceModuleId: "debug",
+    sourceModuleTitle: "Debug This RAG System",
+  },
+  "single-hop retrieval failure": {
+    term: "Single-Hop Retrieval Failure",
+    def: "A RAG failure mode where a single retrieval pass on a compound, two-part query systematically favors whichever sub-topic scores higher, every time -- not by chance -- leaving the other sub-question unanswered; fixed by decomposing the query into separate retrieval passes.",
+    sourceModuleId: "debug",
+    sourceModuleTitle: "Debug This RAG System",
+  },
 };

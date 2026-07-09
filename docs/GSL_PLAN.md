@@ -2839,3 +2839,53 @@ needs full trap/source/staffLayer fields per question to match its existing qual
 its own follow-up batch rather than rushing it).
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+---
+
+## 2026-07-09 (cont. 2) — Backlog item 1 fully closed: glossary + interview-question harvest for context/eval-design/debug
+
+Harvested from the finalized (writer-passed, cold-audited, fixed) text of all 3 modules. Confirmed the
+actual GSL conventions first rather than assuming the MSL pattern applied (it doesn't 1:1) — glossary
+lives at `src/data/glossary.js` (`GLOSSARY`, keyed lowercase term → `{term, def, sourceModuleId,
+sourceModuleTitle}`), interview questions live in `src/data/preplabQuestions.js`'s `PREP_QUESTIONS`
+array (flat topic-tagged entries, not the L0/L1/L2 ladder files under `src/data/questions/` — those are
+for brand-new topics, not additions to existing ones).
+
+**Glossary (batch 5): +12 terms, 226 → 238.** Checked every candidate against the existing 226 keys first
+(`cross-encoder`, `golden set`, `reranker` already existed — skipped). New: `context window`, `quadratic
+scaling`, `lost in the middle`, `sandwich placement` (context); `must-never`, `must-do`, `load-bearing
+metric` (eval-design); `stale retrieval`, `hallucination`, `prompt injection`, `over-abstention`,
+`single-hop retrieval failure` (debug). Definitions lightly trimmed from each module's own finalized
+explanation/groundUp text, not invented fresh, per convention.
+
+**Interview questions: +6, appended to existing topic sections (not a new gap file).** Checked for overlap
+first — the `context` topic already had 8 questions (O(n²), sliding window, LLMLingua, YaRN, lost-in-the-
+middle, prompt ordering) and `rag` already had extensive prompt-injection coverage, so new questions were
+picked for genuinely uncovered angles only:
+- `ctx-9`, `ctx-10` (topic `context`): the max_input budget formula worked numerically (32,000−1,000−200),
+  and the three-way distinction between hard overflow / soft overflow / stale drift as a diagnostic
+  framework — neither existed in the prior 8.
+- `eval-12`, `eval-13` (topic `evaluation`): the must-do/must-never + blended-accuracy-vs-recall trap (a
+  legal tool shipping on a passing blended score while must-never recall has collapsed), and annotation
+  budget weighting by failure cost rather than document frequency — neither existed in the prior 11.
+- `rag-13`, `rag-14` (topic `rag`): a structured stale-retrieval-vs-hallucination differential diagnosis
+  question, and the "reranker looks broken but the real cause is a config combination" insight — distinct
+  from the extensive existing prompt-injection questions, which don't cover this diagnostic taxonomy.
+
+All 6 follow the existing `id/topic/difficulty/gated/type/question/options/correct/keywords/explanation/
+trap/source/staffLayer/readMore` shape and quality bar (full staffLayer framing, not just an explanation).
+
+**Verification:** every insertion done via exact-anchor or index-based Python splice (not regex), then
+`@babel/parser` (`sourceType: module`, `jsx` plugin) parse-verified on both files after every edit — one
+insertion attempt failed its first try (an apostrophe-escaping mismatch between my hand-transcribed anchor
+and the file's actual bytes for the `rag-13`/`rag-14` insertion point) and was caught by the assert before
+any write happened, then fixed by re-deriving the anchor programmatically via `content.find()` instead of
+hand-copying. Confirmed no duplicate IDs (`grep -c` each new id → 1), confirmed glossary key count via
+`Object.keys(GLOSSARY).length` at runtime (238).
+
+**Backlog item 1 (3 hardcoded-module migrations to RUNNER_DATA) is now fully complete**: writer pass, cold
+Pass-2 audit + fix loop, and glossary/interview-question harvest done for all of `context`, `eval-design`,
+`debug`. Next up is backlog item 2 (Pass-2 audits for the parallel-session-migrated `eval-loop`/
+`rag-pipeline` RUNNER_DATA content).
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.

@@ -205,6 +205,38 @@ export const PREP_QUESTIONS = [
   readMore: { label: "Advanced RAG Patterns", tab: "concepts" }
   },
 
+  {
+    id: "rag-13", topic: "rag", difficulty: "hard", gated: true, type: "mcq",
+    question: "A RAG assistant gives a confidently wrong answer. Two separate incidents both look like 'a wrong number stated with confidence' on the surface: in incident 1, the retrieved chunk is real but five years out of date; in incident 2, the retrieved chunks are current and real but contain no numbers at all, and the specific figures in the response appear nowhere in any retrieved document. Are these the same failure mode, and does it matter for the fix?",
+    options: [
+      "Yes, same failure mode (hallucination) — the response is wrong either way, so the underlying cause and fix are the same.",
+      "No — incident 1 is stale retrieval (the pipeline retrieved a real but outdated document; the fix is upstream, in what gets retrieved) and incident 2 is hallucination (the model invented facts absent from any retrieved content; the fix is downstream, in what the model is permitted to generate) — different pipeline stage, different fix.",
+      "No — incident 1 is hallucination and incident 2 is stale retrieval; the presence of a real citation always indicates fabrication.",
+      "Both are prompt injection, since any incorrect RAG output ultimately traces back to untrusted content entering the corpus."
+    ],
+    correct: 1, keywords: [],
+    explanation: "Stale retrieval means the evidence is real but outdated — diagnosing it means checking the retrieved chunk's date and whether anything reranks or filters for freshness. Hallucination means the evidence contains nothing supporting the claim at all — diagnosing it means checking whether the specific stated facts appear anywhere in the retrieved chunks. Treating both as the model is wrong and reaching for the same fix sends the fix to the wrong stage of the pipeline in at least one of the two cases.",
+    trap: "Diagnosing from the final answer alone instead of reading the retrieval trace. Two visually similar wrong answers can have root causes in completely different pipeline stages — retrieval versus generation — and the trace, not the answer's fluency or confidence, is what tells them apart.",
+    source: "RAG production debugging interview",
+    staffLayer: "The senior framing is: never diagnose a RAG failure from the final answer text alone — always pull the full trace (query, retrieval config, retrieved chunks with their source/date/similarity score, and the actual response) before naming a root cause. I keep a short mental taxonomy for this: stale retrieval (real but outdated document wins because nothing scores for recency), hallucination (model states facts absent from any retrieved content), prompt injection (adversarial instructions embedded in real retrieved content hijack generation), over-abstention (the answer exists in the corpus but retrieval missed it and the policy refuses to infer), and single-hop failure (a compound query gets one retrieval pass, which systematically favors whichever sub-topic scores higher). Each has a distinct fix location — retrieval, generation policy, or ingestion sanitization — so naming the wrong one sends the engineering effort to the wrong part of the system.",
+    readMore: { label: "Debug This RAG System", tab: "concepts" }
+  },
+  {
+    id: "rag-14", topic: "rag", difficulty: "medium", gated: true, type: "mcq",
+    question: "A RAG system with a working cross-encoder reranker (top_k=3, reranker=true) still hallucinates specific numeric figures that appear in none of its retrieved documents. A teammate says 'the reranker must be broken.' Is that the right diagnosis?",
+    options: [
+      "Yes — if the reranker were working, the model would never hallucinate, since good retrieval always prevents fabrication.",
+      "No — the reranker can be doing its job correctly (surfacing real, relevant chunks) while a separate setting, like a permissive answer policy, lets the model fill gaps in those chunks by inventing specifics; the failure is usually a combination of settings, not one broken component.",
+      "No — hallucination is purely a function of model size and can't be influenced by retrieval configuration at all.",
+      "Yes, but only if top_k is also below 3; at top_k=3 or above the reranker is provably always the cause of any hallucination."
+    ],
+    correct: 1, keywords: [],
+    explanation: "Good retrieval (a working reranker surfacing real, relevant chunks) and a permissive generation policy are independent settings, and a failure can require both: the reranker retrieves real content that simply doesn't contain the specific figure being asked about, and a helpful answer policy lets the model fill that gap with an invented number instead of declining. Fixing only the retrieval side (assuming the reranker is broken) leaves the actual permissive-generation cause untouched.",
+    trap: "Assuming a single component is the culprit because the pipeline's output is wrong. The senior instinct is to check the full config line — retrieval settings and generation policy together — rather than blaming whichever component is easiest to point at first.",
+    source: "RAG production debugging interview",
+    readMore: { label: "Debug This RAG System", tab: "concepts" }
+  },
+
   // ── AGENTS (12) ───────────────────────────────────────────────────────────
   {
     id: "agents-2", topic: "agents", difficulty: "hard", gated: true, type: "text",
@@ -482,6 +514,37 @@ export const PREP_QUESTIONS = [
   trap: "Saying \'the adversarial set is too hard\' or \'adversarial evals are unfair.\' Adversarial failures are the highest-signal data you have — they reveal real distribution gaps that golden sets are blind to. The correct response is to incorporate them.",
   source: "Anthropic red-teaming interview",
     readMore: { label: "Adversarial Evals", tab: "groundtruth", postId: "red-teaming-llms" }
+  },
+  {
+    id: "eval-12", topic: "evaluation", difficulty: "hard", gated: true, type: "mcq",
+    question: "A legal contract-extraction tool scores 89% blended accuracy — comfortably above an 85% ship bar — but recall on its highest-risk clause category (liability caps, indemnification) has actually collapsed to 50%. The team ships anyway, citing the passing accuracy score. What's the design flaw, and what should the ship decision have been based on instead?",
+    options: [
+      "There's no flaw — 89% accuracy is a legitimate pass, and per-category recall is a secondary detail.",
+      "Blended accuracy is dominated by whichever category has the most items (here, common boilerplate clauses), so it can stay high even as recall on a rare, high-cost category collapses; the ship decision should be gated on recall for the must-never categories specifically, with its own pre-committed bar.",
+      "The fix is to retrain the model until blended accuracy reaches 99%, which would proportionally fix the recall gap too.",
+      "This is purely a data-labeling problem — the test set needs more examples, and the metric itself is fine as-is."
+    ],
+    correct: 1, keywords: [],
+    explanation: "Blended accuracy is a weighted average — a category that's 80% of the documents (routine boilerplate) dominates the score, so it can stay high even while a 20% high-risk category's recall collapses. The fix isn't a better blended score; it's designing the eval around must-never failure categories from the start, annotating real documents weighted toward them, and gating the ship decision on a recall bar for exactly those categories, fixed before the number is seen.",
+    trap: "Treating a passing aggregate metric as sufficient evidence to ship. The senior tell is asking which categories a score protects and which it hides before trusting any blended number — a metric dominated by the common case will always be slow to notice the rare, expensive case failing.",
+    source: "Legal-tech AI systems interview",
+    staffLayer: "The senior framing is: an eval is a question you commit to before collecting data, not a score you interpret after the fact. Before annotating a single example, decide what the system must do (common, lower-cost, fine to fold into an aggregate) versus what it must never do (rare, high-cost, needs a dedicated metric that can't be diluted). Then weight the annotation budget toward the must-never categories — 60-70% of it, in a well-run setup — build the golden set from real production documents (not synthetic ones, which don't exercise real failure modes), and gate shipping on recall for the must-never categories specifically, with the bar fixed before the number exists. A blended score that passes is not evidence the must-never categories are safe; it's evidence the common case is fine, which is a different and much weaker claim.",
+    readMore: { label: "Eval Design From Scratch", tab: "concepts" }
+  },
+  {
+    id: "eval-13", topic: "evaluation", difficulty: "medium", gated: true, type: "mcq",
+    question: "You have a fixed budget to hand-annotate 50-100 real documents for a golden eval set on a high-stakes extraction task. Should the annotation effort be split evenly across all clause/category types found in the documents, or weighted?",
+    options: [
+      "Split evenly across categories — uniform sampling avoids bias in the eval set.",
+      "Weight it toward the categories with the highest failure cost, even if they're rare in the documents — coverage should track what a miss actually costs, not how the categories naturally distribute.",
+      "Weight it toward the most frequent categories, since those drive the majority of the aggregate accuracy score anyway.",
+      "The split doesn't matter as long as total annotation volume is large enough; sample size dominates category weighting."
+    ],
+    correct: 1, keywords: [],
+    explanation: "The categories most worth annotating are the ones where a miss is catastrophic, not the ones that happen to be common in the documents. A worst-case-coverage annotation strategy (weighting must-never categories 60-70% of the budget, well above their natural frequency) catches the failures that matter; a proportional or uniform split spends most of the budget re-confirming that the easy, common case works, which it usually already does.",
+    trap: "Defaulting to representative sampling as the safe answer. Representative sampling is correct when every category has similar failure cost — it's actively wrong when failure cost is concentrated in a minority category, which is exactly the situation a golden set for a high-stakes task is built to catch.",
+    source: "ML eval infrastructure interview",
+    readMore: { label: "Eval Design From Scratch", tab: "concepts" }
   },
 
   // ── LLMOPS (11) ───────────────────────────────────────────────────────────
@@ -2822,6 +2885,38 @@ export const PREP_QUESTIONS = [
     correct: 1, keywords: [],
     explanation: "System prompt first establishes the model's role and constraints before any content. Retrieved chunks come next — placing evidence before the question means the model has loaded the relevant context when it reaches the query. Conversation history last, with the most recent turn immediately before the model's response, leverages both primacy (system prompt is highly attended) and recency (recent history is well-recalled). This order minimises the lost-in-the-middle effect for the retrieved evidence and aligns with how attention patterns behave in practice.",
     trap: "Saying \'put the instructions first.\' For RAG systems the optimal ordering is: system prompt → examples → conversation history → retrieved context → current query. Placing retrieved context last (recency effect) maximises recall of the most relevant chunks.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-9", topic: "context", difficulty: "medium", gated: true, type: "mcq",
+    question: "A team building a chat assistant on a model with a 32,000-token context limit reserves 1,000 tokens for the model's response and a 200-token safety margin. What's the maximum they should budget for system prompt + history + retrieved context + the user's query combined, and why reserve a margin at all?",
+    options: [
+      "32,000 tokens — the response budget and safety margin are separate concerns from the input.",
+      "30,800 tokens (32,000 − 1,000 − 200) — reserving max_output and a safety margin before budgeting input prevents the model's own response from being truncated mid-generation.",
+      "31,000 tokens — only the response budget needs to be reserved; a safety margin is optional padding.",
+      "33,000 tokens — the safety margin is added on top of the context limit for extra headroom."
+    ],
+    correct: 1, keywords: [],
+    explanation: "max_input = context_limit − max_output − safety_margin = 32,000 − 1,000 − 200 = 30,800. Budgeting the response and a cushion in advance — rather than discovering the ceiling only when a reply gets cut off mid-sentence — is what separates production context management from just trying to fit under the limit.",
+    trap: "Treating the response budget or the safety margin as optional or separate. Both come out of the same fixed token pool as everything else; skipping either is exactly how a system ends up with a response truncated mid-sentence under real traffic, not just in an edge case.",
+    source: "LLM infra systems-design interview",
+    staffLayer: "The senior framing is: token budgeting has to happen before assembling the prompt, not after. I've seen teams build the full prompt (system + history + RAG chunks + query), send it, and only then discover there's no room left for the response — so it truncates. The fix is a hard budget function computed up front: max_input = context_limit − max_output − safety_margin, and every component (few-shot examples, history turns, retrieved chunks) gets trimmed to fit inside that number before the request goes out, not after. The safety margin isn't paranoia — token counts from different tokenizer implementations can drift by a few percent, and you don't want that drift to be the reason a response gets cut off in production.",
+    readMore: { label: "Context Engineering →", tab: "systems" }
+  },
+  {
+    id: "ctx-10", topic: "context", difficulty: "medium", gated: true, type: "mcq",
+    question: "A production chat system is comfortably under its token limit (60% full) but response quality is noticeably worse than a shorter, more focused prompt — nothing is being truncated. What's the most likely cause, and how does the fix differ from simply reordering the existing content?",
+    options: [
+      "This can't happen — if nothing is truncated, token budget cannot be the cause of degraded quality.",
+      "Soft context overflow: attention is spread too thin across too much included content even though nothing is cut off; past roughly 50% usage, process chunks separately and combine results (map-reduce) rather than reordering what's already there.",
+      "This is the lost-in-the-middle effect, so the fix is to reorder the existing content into a sandwich pattern, with no change to how much content is included.",
+      "The model's sampling temperature is too high; quality degradation with no truncation is a decoding problem, not a context problem."
+    ],
+    correct: 1, keywords: [],
+    explanation: "Being under the hard token limit doesn't mean content is being used efficiently. Soft context overflow is exactly this pattern: quality degrades from attention being spread thin across a lot of included content, without any truncation happening. Unlike lost-in-the-middle (a positional problem, fixed by reordering), soft overflow is a volume problem — the fix is reducing or restructuring how much content goes in at once (e.g. map-reduce), not rearranging it.",
+    trap: "Reaching for the lost-in-the-middle fix (reorder into a sandwich) when the actual symptom is volume, not position. The two failure modes look similar — both are quality degrading even though nothing looks technically wrong — but one needs less content and the other needs the same content in a different order.",
+    source: "RAG systems production interview",
+    staffLayer: "The senior framing is: under the token limit and well within effective capacity are not the same claim, and conflating them is a common blind spot. I distinguish three context failure modes explicitly: hard overflow (over the limit, something gets truncated — fix by budgeting), soft overflow (under the limit but quality decays because attention is diluted across too much content — fix with map-reduce or tighter retrieval), and stale drift (a sliding window silently drops old turns, causing contradictions — fix by summarizing aging-out content into a running prefix). Treating all three as one context problem and reaching for the same fix misses that they need different interventions.",
     readMore: { label: "Context Engineering →", tab: "systems" }
   },
 
