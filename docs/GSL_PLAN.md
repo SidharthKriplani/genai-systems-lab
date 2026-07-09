@@ -2889,3 +2889,97 @@ Pass-2 audit + fix loop, and glossary/interview-question harvest done for all of
 `rag-pipeline` RUNNER_DATA content).
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+## 2026-07-09 (cont. 3) — Backlog item 2 closed: eval-loop/rag-pipeline Pass-2 audits fixed + critical recap-patch-a.js data-corruption bug fixed
+
+### `recap-patch-a.js` — stale-content overwrite bug (found + fixed, not part of the originally scoped task)
+
+While tracing exactly how `eval-loop`/`rag-pipeline` still receive `keyPoints`/`recap` from `RECAP_PATCH_A` (per
+the inline comment at `foundationsRunnerData.js` ~2900-2915: those two ids intentionally have no `keyPoints`/
+`recap` in their base `RUNNER_DATA` entry because both were already authored in the patch file), the same
+patch file was found to contain three **stale, orphaned** blocks keyed `"context"`, `"eval-design"`, `"debug"`
+— leftover `keyPoints`/`recap` from an abandoned earlier content direction, predating this session's writer
+passes on those three modules. The merge loop at the bottom of `foundationsRunnerData.js` unconditionally
+does `RUNNER_DATA[id] = { ...RUNNER_DATA[id], ...patch[id] }` for every id present in both the base data and
+the patch — so once this session added real `context`/`eval-design`/`debug` base entries (each with their
+own authored `keyPoints`/`recap`), those three patch blocks silently started overwriting them at runtime.
+The `"debug"` stale block was the clearest tell: it referenced "oracle test," "clinical values," "loose
+paraphrasing" — vocabulary from a completely different, unrelated module, not the shipped RAG-failure-
+diagnosis `DebugModule`.
+
+**Fix:** removed all three stale blocks (`context` 1,644 chars / `eval-design` 1,577 chars / `debug` 1,581
+chars) from `src/data/foundations/recap-patch-a.js` (19,382 bytes after, down from ~21,000+). `eval-loop` and
+`rag-pipeline` blocks are untouched and still correctly needed — confirmed via a hand-written merge
+simulation that `context`/`eval-design`/`debug` now retain their authored keyPoints (e.g. `context
+keyPoints[0]: "**Attention cost scales quadratically (O(n²)), not linearly."`) while `eval-loop`/
+`rag-pipeline` still correctly receive their patch. Verified via `@babel/parser` parse.
+
+### eval-loop — cold Pass-2 audit findings, fixed
+
+Audited against the real component's ground truth (`EVAL_LOOP_PROPERTIES`, `JUDGE_INDEPENDENCE_CARDS`,
+`EVAL_LOOP_DIAGNOSE_SCENARIOS` in `Concepts.jsx`). Findings and fixes, all applied in
+`src/data/foundationsRunnerData.js`:
+- Scenario named all four properties upfront before any of them were demonstrated — rewritten to pose the
+  ship/no-ship decision as genuine open questions instead.
+- Each of the 4 property paragraphs led with the formal name/definition before any concrete failure —
+  restructured so each leads with a concrete "Suppose..." failure example, then names/bolds the property.
+  Added explicit "Suppose..." bridge sentences connecting each property to the next.
+- "eval-set contamination" was used in the diagnose-scenarios paragraph without ever being defined — now
+  defined explicitly on first use, inside Property 1's paragraph.
+- Property 3's rhetorical placeholder number ("85% could be an improvement or a regression") collided with
+  Scenario B's real 85% threshold — changed to 82%.
+- Property 3 didn't distinguish baseline from threshold (Property 4) even though they're easy to conflate —
+  added an explicit distinguishing clause.
+- The four diagnose-scenario deltas (94−89, 81−76) were stated but never labeled as "5-point" — now labeled
+  explicitly with the arithmetic shown inline.
+- Closing paragraph said "Across all three exercises" when four scenarios (A-D) are actually presented — a
+  real internal singular/plural inconsistency — fixed to "Across all four scenarios."
+- mcqs/takeaway/depthTier/interviewWeight untouched (no findings there).
+
+### rag-pipeline — cold Pass-2 audit findings, fixed
+
+Audited against the real component's ground truth (`RAG_CHUNKS`, `RAG_FINAL_ANSWER`,
+`RAG_FAILURE_SCENARIOS` in `Concepts.jsx`). Findings and fixes:
+- No lead-in demonstrating *why* embeddings/cosine-similarity are needed before naming them — added a new
+  opening paragraph with two concrete instances (synonymous-but-different-wording query; similar-wording-but-
+  opposite-meaning query) before naming "embedding vector" / "cosine similarity."
+- Step 1 stated "a vector store of 1,240 indexed chunks" and the illustration block repeated "Vector store:
+  1,240 chunks indexed" — this number has zero basis in the real component (which only ever shows 3
+  retrieved chunks with no total-index-size claim anywhere) — removed from both the prose and the
+  illustration block, and `top_k` introduced explicitly as the real retrieval parameter instead.
+- Step 2 stated "roughly 840 tokens total" (unsourced) and "a typical 0.70 threshold" (stated as fact) —
+  the 840-token figure removed; the 0.70 threshold softened to an honestly-hedged "0.70–0.75 range" since no
+  ground truth pins an exact production cutoff.
+- Step 3 closed with "No hallucination is possible beyond the context window" — a false absolute (Step 3's
+  own next paragraph is the parametric-override failure mode, which directly contradicts this) — replaced
+  with an honest forward-reference to the failure-mode section instead of a categorical guarantee.
+- A standalone "Failure mode: stale context" paragraph duplicated (with slightly different numbers) content
+  that the later, fuller "Stale Retrieval" failure-mode paragraph already covers completely — deleted as
+  redundant; the 18-months/March-2024/7-day detail is fully preserved in the surviving fuller paragraph.
+  MCQ 1 (which references the 18-month stale chunk) still checks out against the surviving paragraph.
+- The paragraph revisiting the Step-1 similarity scores restated the exact same three numbers verbatim
+  instead of using a recall signal — reworded to reference back to "Chunk 3's borderline score from Step 1"
+  rather than re-listing all three scores.
+- "Precision@k," "reranker," and "LLM-as-judge grounding evals" were used at first mention with no gloss —
+  added inline definitions for each at first use.
+- The Context Grounding Failure reveal had no pause-and-predict beat — added a genuine question ("is the
+  answer now guaranteed to be correct?") before the reveal that the model can still override sourced
+  context.
+- Confirmed and preserved: the "~3,800 tokens" figure in the Noise Injection paragraph is independently
+  accurate against real ground truth (top_k=15 pulling in noise chunks) and was NOT touched, unlike the
+  fabricated 1,240/840/0.70-as-fact figures above.
+- mcqs/takeaway/depthTier/interviewWeight untouched (no findings there).
+
+**Verification:** both fragments syntax-checked standalone (Node `eval()` against a wrapper object literal)
+before splicing, then spliced into `foundationsRunnerData.js` via index-based Python replace with a
+`content.count(old_segment) == 1` guard on each of the two exact original segments, then the full file
+re-verified with `@babel/parser` (`sourceType: module`, `jsx` plugin) → parse OK. Post-patch spot checks:
+"Across all four scenarios" present / "Across all three exercises" absent; "1,240" and "roughly 840 tokens
+total" absent; "roughly 3,800 tokens" still present; "Failure mode: stale context.**" absent; mcqs count
+unchanged at 3/module for both; `"eval-loop": {` / `"rag-pipeline": {` each still occur exactly once.
+
+**Backlog item 2 is now complete.** Next up: backlog item 3 (answer-key correctness audit of older
+PrepLab buckets — rag/evaluation/llmops/serving were only length-rebalanced earlier, never correctness-
+audited).
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.

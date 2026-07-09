@@ -35,24 +35,6 @@ export const RECAP_PATCH_A = {
     ],
   },
 
-  "context": {
-    keyPoints: [
-      "**Retrieval into context ≠ extraction from context.** A 32K window that contains the relevant section still fails if the model doesn't attend to it — more context is not better answers.",
-      "**'Lost in the middle' is a documented empirical effect.** Information in the middle 60% of a long context receives measurably lower attention weight, regardless of relevance.",
-      "**Irrelevance density compounds the effect.** 3 relevant sections among 47 noisy ones makes signal a smaller fraction of context; a curated 8K window often beats a stuffed 32K one.",
-      "**Map-reduce avoids positional bias entirely.** Summarize each section in a separate inference call, then synthesize — the model never reasons across 32K at once, so bias never applies.",
-      "**Exploit the bias when long context is unavoidable.** Rerank chunks and place highest-relevance content at the beginning or end of the window.",
-      "**Standard accuracy metrics hide this.** A model at 90% overall may score 60% on content in the middle 40–60% positions — you need position-stratified evals to see it.",
-    ],
-    recap: [
-      "**Long context ≠ good context** — position in the window affects extraction quality.",
-      "**Lost in the middle:** middle 60% of context → lower attention weight, regardless of relevance.",
-      "**Irrelevance density compounds it** — curated 8K often beats noisy 32K.",
-      "**Map-reduce removes the bias** (per-section inference → synthesize); reranking to the ends exploits it.",
-      "**Test extraction at middle positions** — aggregate accuracy hides the failure.",
-    ],
-  },
-
   "eval-loop": {
     keyPoints: [
       "**A useful eval loop needs four properties.** Fixed dataset, automated scorer, a baseline to compare against, and a pre-committed pass/fail threshold — missing any one and it only confirms the system produces output.",
@@ -70,39 +52,6 @@ export const RECAP_PATCH_A = {
     ],
   },
 
-  "eval-design": {
-    keyPoints: [
-      "**Start with two lists, not data collection.** What the system must do and what it must never do define the test structure before a single annotation hour is spent.",
-      "**The must-never list carries more weight for high-stakes tools.** For contract analysis, omitting a high-risk clause or misattributing a party is worse than any must-do miss.",
-      "**Annotate real customer documents, not synthetic ones.** Real contracts have formatting irregularities and non-standard clause ordering — exactly where systems fail and where coverage matters.",
-      "**Allocate the annotation budget by failure cost.** Must-never cases deserve 60–70% of the budget; the goal is worst-case coverage, not balance across all clause types.",
-      "**Precision and recall, not accuracy, for extraction.** For must-never items recall is load-bearing — accept lower precision (false alarms) to keep recall high on the clauses that matter.",
-      "**Pre-commit the threshold before building the eval.** 'Ship if high-risk recall ≥95%' is defensible; 'ship if overall accuracy is 85%' can hide 50% recall where it counts.",
-    ],
-    recap: [
-      "**Design for worst-case failure, not average** — must-do and must-never lists come first.",
-      "**Must-never recall is the load-bearing metric** — overall accuracy hides per-category failure.",
-      "**Annotate 50–100 real documents**, 60–70% of budget on must-never cases.",
-      "**Pre-commit the threshold** — a specific pass/fail question, not a number interpreted after.",
-    ],
-  },
-
-  "debug": {
-    keyPoints: [
-      "**Stage isolation, not parameter tuning.** Two weeks of undifferentiated prompt changes fails because every variable moves at once — you can't attribute quality movement to any intervention.",
-      "**The oracle test separates retrieval from generation in one experiment.** Feed a manually confirmed perfect chunk and ask the question — success means the failure is in what chunks reach the model; failure means generation.",
-      "**These two failure modes need entirely different repairs.** Fixing retrieval does nothing for a generation failure, and vice versa.",
-      "**Fix retrieval first if recall@k is low.** Everything downstream depends on the right chunk arriving; improving generation is useless if the chunk never reaches the model.",
-      "**Verify the actual prompt sent to the LLM.** Log all retrieved content to confirm the relevant chunk is present and not silently truncated before blaming generation.",
-      "**Ground-before-abstraction prompts fix loose paraphrasing.** 'Reproduce numbers and measurements exactly as they appear' forces literal extraction of clinical values.",
-    ],
-    recap: [
-      "**Debug by stage isolation** — one variable at a time, against a fixed test set.",
-      "**Oracle test (inject a perfect chunk)** splits retrieval from generation in one experiment.",
-      "**Recall@k first** — chunk rarely arrives → no generation fix can succeed.",
-      "**Generation failure confirmed → grounding prompts** ('reproduce numbers exactly as they appear') stop loose paraphrasing.",
-    ],
-  },
 
   "flashattn": {
     keyPoints: [
