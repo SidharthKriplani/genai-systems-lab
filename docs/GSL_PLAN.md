@@ -2983,3 +2983,105 @@ PrepLab buckets — rag/evaluation/llmops/serving were only length-rebalanced ea
 audited).
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+## 2026-07-09 (cont. 4) — Backlog item 3a closed: cold-audit + fix the 5 previously-unaudited "one-shot triage" modules (zero-shot, few-shot, chain-of-thought, prompt-security, finetuning-vs-rag)
+
+Context: a full-library inventory (requested by the user — "are the foundations now approaching the really
+good solid level that the 3b1b spec had desired?") found 5 modules that had only ever been read once by a
+condensed triage agent and judged "reasonably clean," with no writer pass and no independent Pass-2 audit
+ever run. User confirmed scope ("content only, scenes separate") and execution mode ("sequentially, batch
+by batch") before work began. This batch closes all 5.
+
+### Method
+Ground truth for each module's real interactive component was extracted directly from `src/Concepts.jsx`
+(`ZeroShotModule`, `FewShotModule` + `FEW_SHOT_INCONSISTENT`/`FEW_SHOT_CONSISTENT`/`SELECTION_PRINCIPLES`,
+`ChainOfThoughtModule` + `COT_TASK_TYPES`/`COT_COMPARISONS`, `PromptSecurityModule`,
+`FinetuningVsRAGModule`), then 5 independent cold Pass-2 audit agents were dispatched in parallel — each
+given only the finished draft plus the real interactive's data plus the full text of `3B1B-STANDARD.md`'s
+enforcement section and `CONTENT-AUDIT-RUBRIC.md`'s 10 smells, with zero visibility into writer intent.
+
+### Findings and fixes
+
+**`zero-shot`** — targeted fix, not a rewrite (draft was already close). Fixed: MCQ2 tested a claim
+("long verbose descriptions often hurt performance") never stated in the narrative — added it. "Few-shot"
+was named with zero concrete demonstration and no gloss for "SFT/RLHF" — added a gloss and a concrete
+demonstrated instance (the API-auth-plus-invoice email, shown as a few-shot example) before naming the
+term, plus a second lightweight boundary-case instance (refund-plus-defect review) to satisfy the two-
+instance rule. Fixed "the interactive just below" (violates the prerender no-above/below rule; scenario
+actually renders between explanation and the interactive). Added an explicit handoff to the next module.
+
+**`few-shot`** — full rewrite, most severe finding of the batch. The draft's entire framework (category
+imbalance / unrepresentative examples / recency bias / dynamic-retrieval fix) does not exist anywhere in
+the real `FewShotModule` component, which is actually built around **format consistency** (a translate-to-
+French example set, phrased three inconsistent ways vs. one consistent way) and **four selection
+principles** (Representativeness, Difficulty Distribution, Edge Case Coverage, Format Diversity) — a
+complete text–scene lock break (Rule 5), plus 2 of the draft's own 3 claimed failure modes were asserted
+but never demonstrated (smell #3). Rewrote `groundUp`/`scenario`/`explanation[]` entirely around the real
+format-consistency demo and the real four principles; replaced all 3 MCQs (the old ones tested the
+fabricated framework) with new ones covering format consistency, Difficulty Distribution, and the
+Edge-Case-Coverage-vs-Format-Diversity distinction; rewrote `few-shot`'s `keyPoints`/`recap` in
+`recap-patch-b.js` to match (they previously described the fabricated framework verbatim).
+
+**`chain-of-thought`** — full rewrite, same class of finding. The draft invented an unrelated financial-
+Q&A scenario (compound interest/amortization/tax, "62%→87% on a 50-question test set") that shares no
+example or number with the real `ChainOfThoughtModule`, and — caught by the numeric self-check — 87% of 50
+questions is 43.5, an impossible figure on the stated test set (the same class of arithmetic miss the
+enforcement doc calls out by name). The real interactive is built around a 6-way task-type benefit grid
+(multi-step math/complex reasoning: strong; code gen/debugging: moderate; simple factual/creative writing:
+none) and two real worked comparisons ("capital of France": 1 vs. 31 tokens, both correct, a 30× cost for
+zero gain; "Roger has 5 balls...": direct answer wrong at 8, CoT answer correct at 11). Rewrote
+`groundUp`/`scenario`/`explanation[]` entirely around these real comparisons and the real task-type grid;
+replaced all 3 MCQs; rewrote `keyPoints`/`recap` in `recap-patch-b.js` to match.
+
+**`prompt-security`** — reframed, not fully replaced (the underlying architecture teaching, privilege
+separation, is real and valuable — it just wasn't correctly scoped relative to ground truth). Two
+confirmed defects: (1) the draft's central claim — that telling the model to resist injection is
+architecturally doomed because it "rides the same channel as the attack" — is directly contradicted by the
+real `PromptSecurityModule`'s own data: system-prompt hardening catches **all 4** of the real attack
+categories (direct injection, indirect injection, jailbreak, prompt leaking), tied with output filtering as
+the most effective layer; input classifiers are actually the weak layer, catching only jailbreak framing
+and missing the other 3. The draft also mischaracterized input classifiers as "catching injection patterns"
+— backwards, since injection is exactly what they miss. (2) "Prompt leaking" — a full attack category in
+the real interactive — was never taught anywhere in the narrative; the continuity anchor pointed to
+`jailbreak-taxonomy`, which isn't even in this module's actual sequence (the real preceding module is
+`structured-outputs`). Rewrote the narrative to correctly present the real 3-layer content defense
+(system-prompt hardening + output filtering, both strong; input classifiers, weak) across all 4 real attack
+categories including prompt leaking, fixed the continuity anchor, and correctly re-scoped privilege
+separation as a 4th, complementary defense specifically for privileged *actions* (the email-send scenario)
+rather than a replacement for the content-level defenses. Replaced MCQ3 (tested the now-corrected false
+claim) with a new question on which layer is actually weakest. Rewrote `keyPoints`/`recap` in
+`recap-patch-b.js` to match.
+
+**`finetuning-vs-rag`** — targeted fix. The draft's central claim ("fine-tuning...only ever touches
+behavior") is contradicted by the real `FinetuningVsRAGModule`'s own symptom 3 ("Model lacks domain
+vocabulary/jargon" → axis "Knowledge gap" → fix "Domain fine-tuning **or** RAG"). Softened the claim to
+name the narrow static-vocabulary exception explicitly. The real interactive's 4th axis, "Cost problem"
+(fix: a smaller fine-tuned model), was entirely missing from the narrative's framing, which presented the
+decision as strictly 2-axis — added it as a 4th case, explicitly distinguished from knowledge/behavior
+gaps. Fixed 3 different, mutually-inconsistent statements of RAG/fine-tune update-cost timing (the
+narrative said "hours" for RAG re-indexing in one place and "minutes to hours" in another; fine-tuning said
+"days" only) to match the ground-truth table exactly ("minutes to hours" / "hours to days") everywhere.
+Added recall-signal language to the scenario's restatement of the knowledge/behavior split. Updated the
+module's own inline `keyPoints`/`recap` (not patch-file-sourced for this module) to reflect both fixes.
+MCQs were independently confirmed unaffected by the fix (none of the 3 tested the corrected claim) and left
+unchanged.
+
+### Verification
+All 7 replacement fragments (5 module content blocks + 2 `recap-patch-b.js` keyPoints/recap groups)
+syntax-checked standalone via Node `eval()` against a wrapper object literal before splicing. Splice done
+via index-based Python replace with a `content.count(old_segment) == 1` uniqueness guard on every one of
+the 5 module segments and both patch-file segments. Full-file `@babel/parser` (`sourceType: module`, `jsx`
+plugin) re-verified after each file's edits → parse OK on both `foundationsRunnerData.js` and
+`recap-patch-b.js`. Post-patch spot checks confirmed: the fabricated content is gone (`category imbalance`,
+`compound-interest`, `62%`, the `Jailbreak-taxonomy showed` anchor — all absent); the real content is
+present (`Format Consistency`, `Roger has 5 balls`/`2 cans`, `structured-outputs left off`, `prompt
+leaking`, `Cost problem`, `hours to days`); MCQ counts unchanged at 3 per module except `few-shot`
+(3 real MCQs — a 4th false-positive grep hit was a "question:" inside ordinary prose, verified by hand);
+every module block still has exactly one `takeaway` field and appears exactly once in the file.
+
+**Backlog batch 3a is now complete** (5 of the 11 remaining fully-unaudited modules). Next up: batch 3b —
+the 6 modules that only ever got mechanical recap/keyPoints backfill and zero content review at all
+(`system-prompts`, `ocr-pipeline-design`, `vector-db-index-mechanics`, `hybrid-search-design`,
+`vision-language-arch`, `multimodal-rag`).
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
