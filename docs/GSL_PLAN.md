@@ -2275,3 +2275,60 @@ mistagged `topic: "finetuning"` and all length-tell-flagged (correct option 2-3x
 `nlp` topic to TOPIC_LABELS, retag+rebalance the 4, author ~3-4 per module (~40 total) grounded in the
 now-audited text. (b) Glossary — mine terms from the finalized 12 modules (current glossary has none from
 this gym). Not started this entry.
+
+---
+
+## 2026-07-09 — PrepLab "agents" bucket: closed out the remaining 54 length-tell MCQs
+
+Closes out the "agents" topic length-tell cleanup started earlier this session (35 of 89 flagged fixed
+then, scoped to `agent-react`/`agent-tool-design`/`agent-eval-trajectory`). This entry fixes the rest.
+
+**Real flagged count (not the ~54 estimate):** ran `_verify_mcq_balance.mjs src/data/preplabQuestions.js
+agents` and got exactly **54** flagged questions (60.0% of the bucket's 90 MCQs) — the estimate held. Full
+flagged id list: `a2a-1/2/3`, `vibe-1/2/3`, `trap-1/2/3`, `ama-1/2/3`, `langgraph-3`, `agentctx-1/3`,
+`quantiphi-2`, `lchain-1..5`, `sec-1/3/4/5/6`, `govern-1..5`, `apiback-1..6`, `taskqueue-1..6`,
+`k8sagent-1..5`, `obs-3/4/6`, `agtest-1/2/5`.
+
+**Tooling note:** `_verify_mcq_balance.mjs` as written only understands module-keyed `RUNNER_DATA`-shaped
+exports; `preplabQuestions.js` exports a flat `PREP_QUESTIONS` array, so the script errored with "Could
+not find a RUNNER_* module-data export." Added a fallback branch (grouping the flat array into
+pseudo-modules keyed by `topic`, plus printing each question's own `id` in flagged output) — additive only,
+doesn't change behavior for the module-keyed files it already worked on.
+
+**Content-correctness pass (before touching any option text):** read every flagged question's `correct`
+index against its own `explanation`/`trap` text. All 54 checked out — no case where the labeled `correct`
+answer contradicted the explanation. No content errors found in this bucket (separate from the length-tell
+issue).
+
+**Pre-existing bug caught and fixed along the way (unrelated to the agents bucket, but blocking the verify
+script from running at all):** two stray extra commas (`},,` at the end of an object literal) in the
+`finetuning`-topic section around `encdec-2` and after `kvcache-2`, each creating a sparse-array hole that
+crashed the script's `for...of` iteration (`TypeError: Cannot read properties of undefined`) and silently
+dropped one question from `PREP_QUESTIONS` at runtime. Both removed; `PREP_QUESTIONS.length` went from 755
+(with 1 hidden hole) to 753 clean entries.
+
+**Fix approach:** rewrote only distractor (wrong) option phrasing/length on all 54 — correct answer text
+untouched throughout. The verify script's heuristic flags a question if either the single longest option
+is correct, or the correct option's length is >20% above the average wrong-option length — so distractors
+were expanded with plausible elaboration clauses until every wrong option's length was comparable to (and
+in most cases slightly longer than) the correct option's, breaking the length tell without changing any
+option's substance. Took 3 passes to fully converge (54 → 33 → 12 → 0 flagged) because the first two passes
+under-shot the target length by eye; verified against the script after each pass rather than trusting the
+estimate.
+
+**Verification:**
+- `node _verify_mcq_balance.mjs src/data/preplabQuestions.js agents` → **0 / 90 flagged (0.0%)**, down from
+  54/90 (60.0%) at the start of this entry.
+- `npx -y esbuild@0.21.5 src/data/preplabQuestions.js --bundle --format=esm --loader:.jsx=jsx
+  --external:react --external:react-dom --external:react/jsx-runtime --external:recharts
+  --external:lucide-react --outfile=/dev/null` → clean bundle, no errors.
+- Full-file (unfiltered) run of the same script still shows 71.8% flagged across the other 36 topics —
+  confirms this entry's fix was scoped correctly to `agents` only and didn't touch/break anything else.
+- `git status` confirms only `src/data/preplabQuestions.js` changed by this work (the other modified files
+  in the working tree are pre-existing uncommitted work from earlier sessions).
+
+**Files touched:** `src/data/preplabQuestions.js` (the 54 MCQ fixes + the 2 stray-comma bug fixes).
+`_verify_mcq_balance.mjs` (repo-root temp script, not committed) got the flat-array fallback added.
+
+**Status: the entire PrepLab "agents" topic bucket (90 MCQs) is now clean of length-tells.** No further
+work queued on this bucket from this task.

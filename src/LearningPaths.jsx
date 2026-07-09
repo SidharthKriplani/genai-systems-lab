@@ -55,7 +55,7 @@ const PATHS = [
       { type: "gt", id: "llm-evaluation-guide",         label: "LLM Evaluation Guide",                     desc: "How to measure whether your system works. Human evals, automated evals, LLM-as-judge." },
       { type: "gt", id: "your-prompt-is-code",          label: "Your Prompt is Code",                      desc: "Prompts are production artifacts. Version them, test them, own them — and understand when they break." },
       { type: "gt", id: "react-pattern",                label: "The ReAct Pattern",                        desc: "Reasoning + acting: the pattern behind every tool-using agent you'll build." },
-      { type: "preplab", id: null, topic: "foundations", label: "PrepLab: Foundations Questions",          desc: "Test your understanding with beginner through intermediate questions." },
+      { type: "preplab", id: null, topic: "llm-fundamentals", label: "PrepLab: LLM Fundamentals Questions",          desc: "Test your understanding with beginner through intermediate questions." },
     ],
   },
   {

@@ -135,7 +135,7 @@ const TOPIC_COLORS = {
   multimodal: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
   reasoning: "bg-teal-500/20 text-teal-300 border-teal-500/30",
   serving: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-  foundations: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+  "llm-fundamentals": "bg-sky-500/20 text-sky-300 border-sky-500/30",
   // Concept-level topics (L0/L1/L2 authoring push, 2026-07-03) — colors were
   // missing entirely (TopicChip rendered no color class for these; 2026-07-08 fix).
   tokenizer: "bg-sky-500/20 text-sky-300 border-sky-500/30",
@@ -174,12 +174,13 @@ const TOPIC_COLORS = {
 };
 
 const TOPIC_LABELS = {
+  nlp: "NLP Foundations",
   rag: "RAG", agents: "Agents", finetuning: "Fine-Tuning",
   evaluation: "Evaluation", llmops: "LLMOps",
   safety: "Safety", product: "Product", behavioral: "Behavioral",
   multimodal: "Multimodal", reasoning: "Reasoning Models",
   serving: "Serving & Inference",
-  foundations: "Foundations",
+  "llm-fundamentals": "LLM Fundamentals",
   // Concept-level topics (L0/L1/L2 authoring push, 2026-07-03)
   tokenizer: "Tokenization", embeddings: "Embeddings",
   lora: "LoRA / PEFT", rlhf: "RLHF", dpo: "DPO",
@@ -234,7 +235,7 @@ const TOPIC_GROUPS = [
     id: "llm",
     label: "Foundations",
     desc: "Transformers, attention, tokenization, embeddings, fine-tuning, LoRA, RLHF, DPO, MoE, distillation, prompt engineering, reasoning, multimodal",
-    topics: ["finetuning", "reasoning", "multimodal", "foundations", "transformers", "attention", "quantization",
+    topics: ["nlp", "finetuning", "reasoning", "multimodal", "llm-fundamentals", "transformers", "attention", "quantization",
              "tokenizer", "embeddings", "lora", "rlhf", "dpo", "moe", "distillation", "prompt-engineering"],
   },
   {
@@ -439,7 +440,7 @@ function drawQuestions(count, focus, difficulty) {
   let pool = [...PREP_QUESTIONS];
   if (focus !== "all") {
     const topicMap = {
-      engineering: ["rag", "agents", "llmops", "finetuning", "evaluation", "safety", "foundations"],
+      engineering: ["rag", "agents", "llmops", "finetuning", "evaluation", "safety", "llm-fundamentals"],
       pm: ["product", "behavioral", "evaluation"],
       interview: ["behavioral", "product", "rag", "agents"]
     };
