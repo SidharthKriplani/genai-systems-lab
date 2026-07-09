@@ -11,13 +11,8 @@ export const Q_DPO_DISTILL = [
     gated: false,
     type: "mcq",
     question: "What does DPO (Direct Preference Optimization) train a language model on?",
-    options: [
-      "Pairs of preferred vs. rejected responses to the same prompt",
-      "A single gold reference completion per prompt via cross-entropy",
-      "Scalar reward labels emitted by a separately trained reward model",
-      "Unlabeled web text using next-token prediction",
-    ],
-    correct: 0,
+    options: ["A single gold reference completion per prompt via cross-entropy","Scalar reward labels emitted by a separately trained reward model","Pairs of preferred vs. rejected responses to the same prompt","Unlabeled web text using next-token prediction"],
+    correct: 2,
     keywords: [],
     explanation:
       "DPO optimizes directly on preference pairs (a chosen and a rejected response for the same prompt). It reparameterizes the RLHF objective so the policy itself encodes the reward, eliminating the need to train a reward model or run RL.",
@@ -31,13 +26,8 @@ export const Q_DPO_DISTILL = [
     gated: false,
     type: "mcq",
     question: "What key component of the classic RLHF pipeline does DPO remove?",
-    options: [
-      "The explicit reward model and the online RL (PPO) loop",
-      "The supervised fine-tuning (SFT) stage",
-      "The reference/frozen policy model",
-      "The human preference annotations",
-    ],
-    correct: 0,
+    options: ["The supervised fine-tuning (SFT) stage","The reference/frozen policy model","The human preference annotations","The explicit reward model and the online RL (PPO) loop"],
+    correct: 3,
     keywords: [],
     explanation:
       "DPO's central claim is that you can skip training a separate reward model and skip the online PPO rollout loop entirely, replacing both with a single supervised-style classification loss over preference pairs. It still uses SFT (as the starting/reference model) and still needs human preference data.",
@@ -72,13 +62,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "The DPO loss is derived from the KL-constrained RLHF objective. What is the closed-form optimal policy that makes DPO possible?",
-    options: [
-      "pi*(y|x) = (1/Z(x)) · pi_ref(y|x) · exp(r(x,y)/beta)",
-      "pi*(y|x) = softmax(r(x,y)) independent of pi_ref",
-      "pi*(y|x) = pi_ref(y|x) · sigmoid(r(x,y))",
-      "pi*(y|x) = argmax_y r(x,y) (greedy under the reward)",
-    ],
-    correct: 0,
+    options: ["pi*(y|x) = softmax(r(x,y)) independent of pi_ref","pi*(y|x) = pi_ref(y|x) · sigmoid(r(x,y))","pi*(y|x) = argmax_y r(x,y) (greedy under the reward)","pi*(y|x) = (1/Z(x)) · pi_ref(y|x) · exp(r(x,y)/beta)"],
+    correct: 3,
     keywords: [],
     explanation:
       "Maximizing E[r] − beta·KL(pi || pi_ref) has the closed-form optimum pi*(y|x) = (1/Z(x))·pi_ref(y|x)·exp(r(x,y)/beta). Inverting this gives r(x,y) = beta·log(pi*/pi_ref) + beta·log Z(x). The intractable Z(x) cancels in the Bradley-Terry preference difference, which is the trick that yields a tractable loss.",
@@ -114,13 +99,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "Written out, the DPO loss for a pair (y_w preferred, y_l rejected) is L = −log sigmoid( beta·[ log(pi_theta(y_w)/pi_ref(y_w)) − log(pi_theta(y_l)/pi_ref(y_l)) ] ). What does this objective push the model to do?",
-    options: [
-      "Increase the implicit-reward margin: raise the log-ratio of y_w relative to y_l",
-      "Maximize the absolute probability of y_w regardless of y_l",
-      "Minimize the entropy of the policy over all tokens",
-      "Match the token distribution of y_w exactly via cross-entropy",
-    ],
-    correct: 0,
+    options: ["Maximize the absolute probability of y_w regardless of y_l","Minimize the entropy of the policy over all tokens","Increase the implicit-reward margin: raise the log-ratio of y_w relative to y_l","Match the token distribution of y_w exactly via cross-entropy"],
+    correct: 2,
     keywords: [],
     explanation:
       "DPO is a Bradley-Terry logistic loss on the *difference* of implicit rewards. It increases the margin beta·(r_hat(y_w) − r_hat(y_l)), i.e., it makes the winner's log-ratio-to-reference exceed the loser's. It's relative, not absolute — a known side effect is that pi_theta(y_w) can actually decrease as long as pi_theta(y_l) decreases faster.",
@@ -134,13 +114,8 @@ export const Q_DPO_DISTILL = [
     gated: false,
     type: "mcq",
     question: "What role does the hyperparameter beta play in DPO?",
-    options: [
-      "It controls the strength of the KL constraint to pi_ref — smaller beta allows larger deviation from the reference",
-      "It is the learning rate for the policy optimizer",
-      "It is the temperature applied to the reference model's logits",
-      "It sets the fraction of rejected samples used per batch",
-    ],
-    correct: 0,
+    options: ["It is the learning rate for the policy optimizer","It controls the strength of the KL constraint to pi_ref — smaller beta allows larger deviation from the reference","It is the temperature applied to the reference model's logits","It sets the fraction of rejected samples used per batch"],
+    correct: 1,
     keywords: [],
     explanation:
       "beta is the KL-regularization coefficient inherited from the RLHF objective E[r] − beta·KL(pi||pi_ref). Large beta keeps the policy tightly bound to pi_ref (conservative, small updates); small beta lets it deviate more to chase preferences (more expressive but higher risk of drift/degeneration). Typical values are ~0.1–0.5.",
@@ -155,13 +130,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "A practitioner notices that during DPO training both the chosen and rejected completions' log-probabilities are steadily dropping. What is the most accurate read?",
-    options: [
-      "Expected behavior: DPO optimizes a margin, so absolute likelihoods can fall as long as the chosen/rejected gap grows — but a large drop risks degenerate/short outputs and is why variants add an SFT/likelihood term",
-      "A clear bug: chosen log-prob must always increase under DPO",
-      "The reference model is being updated during training",
-      "beta has been set to zero, disabling the loss",
-    ],
-    correct: 0,
+    options: ["A clear bug: chosen log-prob must always increase under DPO","Expected behavior: DPO optimizes a margin, so absolute likelihoods can fall as long as the chosen/rejected gap grows — but a large drop risks degenerate/short outputs and is why variants add an SFT/likelihood term","The reference model is being updated during training","beta has been set to zero, disabling the loss"],
+    correct: 1,
     keywords: [],
     explanation:
       "Because DPO only constrains the *difference* of implicit rewards, gradient descent can satisfy the loss by pushing both log-probs down while widening the gap. Mild cases are normal; severe cases correlate with degenerate outputs, which is exactly why variants like DPO-with-NLL, RPO, or CPO add an explicit likelihood/SFT term to anchor the chosen response's absolute probability.",
@@ -180,13 +150,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "Compared with RLHF-via-PPO, what is DPO's core structural difference — and the tradeoff that comes with it?",
-    options: [
-      "DPO is offline/off-policy on a fixed preference set (stable, simple, cheap) but cannot explore new samples or use a reward model to score fresh on-policy generations the way PPO can",
-      "DPO uses online rollouts while PPO is fully offline, so DPO is slower but more exploratory",
-      "DPO requires a separately trained reward model whereas PPO does not",
-      "DPO and PPO are mathematically identical and differ only in code",
-    ],
-    correct: 0,
+    options: ["DPO uses online rollouts while PPO is fully offline, so DPO is slower but more exploratory","DPO requires a separately trained reward model whereas PPO does not","DPO is offline/off-policy on a fixed preference set (stable, simple, cheap) but cannot explore new samples or use a reward model to score fresh on-policy generations the way PPO can","DPO and PPO are mathematically identical and differ only in code"],
+    correct: 2,
     keywords: [],
     explanation:
       "PPO is online/on-policy: it samples from the current policy and scores with a reward model, enabling exploration but adding instability, tuning burden, and compute. DPO is offline: it fits a logistic loss to a fixed preference dataset — far simpler and more stable, but it can only learn from the distribution already in the data and can drift on prompts unlike those pairs. This motivates online/iterative DPO variants.",
@@ -222,13 +187,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "IPO and KTO are DPO-family alternatives. What problem are they primarily addressing relative to vanilla DPO?",
-    options: [
-      "IPO adds a squared-loss regularizer to curb DPO's tendency to overfit deterministic preferences (drive the margin to infinity); KTO drops the need for paired data, learning from unpaired 'good/bad' labels via a prospect-theory utility",
-      "Both simply change beta to a larger value",
-      "IPO switches DPO to an online RL loop; KTO trains a separate reward model",
-      "They are alternate names for the same DPO loss",
-    ],
-    correct: 0,
+    options: ["Both simply change beta to a larger value","IPO switches DPO to an online RL loop; KTO trains a separate reward model","IPO adds a squared-loss regularizer to curb DPO's tendency to overfit deterministic preferences (drive the margin to infinity); KTO drops the need for paired data, learning from unpaired 'good/bad' labels via a prospect-theory utility","They are alternate names for the same DPO loss"],
+    correct: 2,
     keywords: [],
     explanation:
       "IPO (Identity Preference Optimization) notes that when preferences are near-deterministic, the DPO sigmoid loss keeps pushing the margin toward infinity and overfits; it replaces the log-sigmoid with a bounded squared objective. KTO (Kahneman-Tversky Optimization) removes the paired-data requirement, using unpaired binary desirable/undesirable signals with a human-utility (prospect-theory) formulation — cheaper labeling.",
@@ -269,21 +229,16 @@ export const Q_DPO_DISTILL = [
     topic: "foundation-models",
     tier: "L2",
     difficulty: "hard", band: "advanced",
-    gated: false,
+    gated: true,
     type: "mcq",
     question:
-      "Team has a well-tuned reward model, ample compute, and wants best-in-class alignment with online exploration. Team B wants a cheap, stable, reproducible alignment run on an existing preference dataset. Which assignment fits?",
-    options: [
-      "Team A → PPO/online RLHF (exploits reward model + exploration); Team B → DPO (offline, no RM, stable)",
-      "Team A → DPO; Team B → PPO",
-      "Both teams should use SFT only",
-      "Both teams should use PPO regardless of their constraints",
-    ],
+      "A team runs vanilla offline DPO once on a fixed, pre-collected preference dataset. A colleague proposes switching to online/iterative DPO instead. What does that actually change?",
+    options: ["Online/iterative DPO periodically samples completions from the CURRENT policy and re-labels/re-ranks them (via a judge or reward model) to generate fresh preference pairs for the next update, closing the off-policy coverage gap at the cost of extra sampling and labeling infrastructure","Online DPO is just DPO run with a larger batch size and more GPUs","Online DPO replaces the preference pairs entirely with a PPO-style reward model and rollout loop","There is no real difference; \"online DPO\" is a marketing term for the same offline algorithm"],
     correct: 0,
     keywords: [],
     explanation:
-      "PPO shines when you already have a trustworthy reward model and can afford the rollout/tuning cost to explore beyond the fixed dataset — it can squeeze out top alignment quality. DPO is the pragmatic default when you have preference pairs and want simplicity, stability, and lower cost without standing up an RL loop. The choice is driven by reward-model quality, compute budget, and need for exploration.",
-    trap: "Don't reflexively pick DPO as 'always better.' With a strong reward model + compute + exploration needs, online PPO can still win; DPO's edge is simplicity/stability/cost.",
+      "Vanilla DPO fits a single, static preference dataset once — if the policy drifts far from the distribution that dataset was collected on, the preference pairs stop being representative of what the current policy actually generates. Online/iterative DPO addresses this by periodically generating new completions from the current policy and getting them freshly labeled or ranked (by a judge model or reward model), then running another DPO update on the fresh pairs. This narrows the off-policy gap that plain DPO has relative to PPO, without requiring a full RL rollout loop or a trained reward model in the loop at training time the way PPO does.",
+    trap: "Assuming \"online\" here means the same thing as online RL (PPO-style rollouts against a reward model). Online/iterative DPO stays within the DPO framework — it just refreshes the preference data periodically rather than switching algorithms.",
   },
 
   // ============================================================
@@ -297,13 +252,8 @@ export const Q_DPO_DISTILL = [
     gated: false,
     type: "mcq",
     question: "What is the core idea of knowledge distillation?",
-    options: [
-      "Train a smaller 'student' model to mimic a larger 'teacher' model's outputs",
-      "Compress model weights by rounding them to fewer bits",
-      "Remove low-magnitude weights to make the network sparse",
-      "Increase the training-set size by paraphrasing existing examples",
-    ],
-    correct: 0,
+    options: ["Compress model weights by rounding them to fewer bits","Remove low-magnitude weights to make the network sparse","Train a smaller 'student' model to mimic a larger 'teacher' model's outputs","Increase the training-set size by paraphrasing existing examples"],
+    correct: 2,
     keywords: [],
     explanation:
       "Distillation transfers knowledge from a large, capable teacher into a smaller/cheaper student by training the student to reproduce the teacher's behavior — classically its soft output distribution rather than only hard labels.",
@@ -318,13 +268,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "In classic Hinton-style distillation, what does the student learn from that plain hard-label training does not provide?",
-    options: [
-      "The teacher's soft target distribution — the full probabilities over all classes ('dark knowledge')",
-      "The teacher's exact weight matrices copied layer by layer",
-      "A larger learning rate schedule",
-      "Only the single top-1 predicted label of the teacher",
-    ],
-    correct: 0,
+    options: ["The teacher's exact weight matrices copied layer by layer","A larger learning rate schedule","The teacher's soft target distribution — the full probabilities over all classes ('dark knowledge')","Only the single top-1 predicted label of the teacher"],
+    correct: 2,
     keywords: [],
     explanation:
       "The value is in the teacher's *soft targets*: the relative probabilities assigned to wrong classes (e.g., a '7' looks a bit like a '1') encode similarity structure — 'dark knowledge' — that one-hot labels throw away. The student learns this richer signal.",
@@ -341,7 +286,7 @@ export const Q_DPO_DISTILL = [
       "In one sentence: what is the 'temperature' T used for in distillation?",
     options: [],
     correct: 0,
-    keywords: ["soften", "logits", "softmax", "T", "temperature", "smooth", "dark knowledge", "sharpen"],
+    keywords: ["soften", "logits", "softmax", "T", "temperature", "smooth", "dark knowledge"],
     explanation:
       "Temperature T divides the logits before the softmax (softmax(z/T)), softening the distribution so small probabilities on non-target classes become visible. A higher T reveals more of the teacher's dark knowledge; T=1 recovers the normal softmax.",
     trap: "T>1 SOFTENS (spreads out) the distribution; it doesn't sharpen it. And it's applied to both teacher and student during the soft-loss term, then removed at inference.",
@@ -368,7 +313,7 @@ export const Q_DPO_DISTILL = [
     correct: 0,
     keywords: [],
     explanation:
-      "The classic objective is L = alpha·T²·KL(student_T || teacher_T) + (1−alpha)·CE(student, y_true). The first term (at temperature T) transfers the teacher's soft knowledge; the second grounds the student on ground-truth labels. alpha weights the two.",
+      "The classic objective is L = alpha·T²·KL(teacher_T || student_T) + (1−alpha)·CE(student, y_true). The first term (at temperature T) transfers the teacher's soft knowledge; the second grounds the student on ground-truth labels. alpha weights the two.",
     trap: "Hard labels usually still matter — dropping the CE term entirely often hurts. And the soft term is KL on temperature-softened distributions, not plain logit MSE.",
   },
   {
@@ -380,13 +325,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "Why is the soft-target (KL) loss multiplied by T² in Hinton's formulation?",
-    options: [
-      "Softening logits by 1/T shrinks the soft-loss gradients by ~1/T²; multiplying by T² restores their magnitude so the soft and hard terms stay comparably weighted",
-      "T² converts KL divergence into cross-entropy",
-      "It cancels the temperature applied to the student at inference time",
-      "It is an arbitrary constant with no gradient justification",
-    ],
-    correct: 0,
+    options: ["T² converts KL divergence into cross-entropy","It cancels the temperature applied to the student at inference time","It is an arbitrary constant with no gradient justification","Softening logits by 1/T shrinks the soft-loss gradients by ~1/T²; multiplying by T² restores their magnitude so the soft and hard terms stay comparably weighted"],
+    correct: 3,
     keywords: [],
     explanation:
       "Dividing logits by T scales the gradient of the soft-target term by roughly 1/T². Without correction, raising T would silently down-weight the distillation signal relative to the hard-label term. Multiplying the soft loss by T² rescales the gradients back so the balance between soft and hard objectives is preserved across temperatures.",
@@ -443,13 +383,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "Why can a student distilled on teacher soft targets sometimes generalize better than the same student trained on hard labels alone?",
-    options: [
-      "Soft targets carry inter-class similarity ('dark knowledge') and act as a label-smoothing-like regularizer, giving a richer, lower-variance gradient signal per example",
-      "Soft targets increase the number of training examples",
-      "Soft targets always make the student larger than the teacher",
-      "Soft targets remove the need for any ground-truth data at all",
-    ],
-    correct: 0,
+    options: ["Soft targets increase the number of training examples","Soft targets carry inter-class similarity ('dark knowledge') and act as a label-smoothing-like regularizer, giving a richer, lower-variance gradient signal per example","Soft targets always make the student larger than the teacher","Soft targets remove the need for any ground-truth data at all"],
+    correct: 1,
     keywords: [],
     explanation:
       "A teacher's softened distribution encodes how classes relate (which wrong answers are 'close'), providing more information per sample than a one-hot label. This behaves like an informed label smoothing / regularizer, reducing overfitting and often improving generalization of the compact student — sometimes near or matching teacher accuracy at a fraction of the cost.",
@@ -468,13 +403,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "Distillation, quantization, and pruning all shrink deployment cost. What most sharply distinguishes them?",
-    options: [
-      "Distillation trains a new smaller model to imitate a teacher (changes architecture/params); quantization reduces numerical precision of existing weights/activations; pruning removes weights/structures from the existing model",
-      "All three reduce numerical precision; only the bit-width differs",
-      "Distillation and pruning are identical; quantization is unrelated",
-      "Quantization trains a new model while distillation only rounds weights",
-    ],
-    correct: 0,
+    options: ["All three reduce numerical precision; only the bit-width differs","Distillation and pruning are identical; quantization is unrelated","Quantization trains a new model while distillation only rounds weights","Distillation trains a new smaller model to imitate a teacher (changes architecture/params); quantization reduces numerical precision of existing weights/activations; pruning removes weights/structures from the existing model"],
+    correct: 3,
     keywords: [],
     explanation:
       "They operate at different levels. Distillation creates a distinct, typically smaller student trained to match a teacher's behavior. Quantization keeps the same architecture but lowers precision (e.g., FP16→INT8/INT4). Pruning keeps the same base but zeroes/removes weights or structures (heads, channels). They're complementary and often stacked (e.g., distill then quantize).",
@@ -510,13 +440,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "Black-box (synthetic-data) distillation vs. white-box (logit/soft-label) distillation — what's the key tradeoff?",
-    options: [
-      "Black-box needs only the teacher's text outputs (works on API-only teachers, simpler) but loses the fine-grained soft-probability signal; white-box uses teacher logits/hidden states for a richer signal but requires full model access",
-      "Black-box requires the teacher's weights; white-box only needs text outputs",
-      "White-box is always cheaper and strictly better",
-      "They produce identical students given the same data",
-    ],
-    correct: 0,
+    options: ["Black-box requires the teacher's weights; white-box only needs text outputs","White-box is always cheaper and strictly better","They produce identical students given the same data","Black-box needs only the teacher's text outputs (works on API-only teachers, simpler) but loses the fine-grained soft-probability signal; white-box uses teacher logits/hidden states for a richer signal but requires full model access"],
+    correct: 3,
     keywords: [],
     explanation:
       "White-box distillation matches the teacher's full output distribution (and optionally hidden states/attention), a dense signal — but you must be able to read the teacher's logits/internals. Black-box distillation only sees the teacher's generated text (top outputs), so it's the only option for API-gated teachers and is simpler, but it discards the per-token probability structure that carries dark knowledge.",
@@ -531,13 +456,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "There is a tension in choosing teacher/student sizes. What is the well-documented pitfall of using an extremely large teacher for a very small student?",
-    options: [
-      "A capacity gap: too-large a teacher can produce targets the tiny student cannot match, sometimes hurting transfer — intermediate 'teacher assistant' models or smaller teachers can distill better",
-      "Larger teachers always distill better with no downside",
-      "The student's parameter count must exactly equal the teacher's",
-      "Distillation quality is independent of the teacher's accuracy",
-    ],
-    correct: 0,
+    options: ["Larger teachers always distill better with no downside","The student's parameter count must exactly equal the teacher's","Distillation quality is independent of the teacher's accuracy","A capacity gap: too-large a teacher can produce targets the tiny student cannot match, sometimes hurting transfer — intermediate 'teacher assistant' models or smaller teachers can distill better"],
+    correct: 3,
     keywords: [],
     explanation:
       "The capacity/knowledge gap problem: a hugely more capable teacher may output distributions the small student lacks the capacity to represent, degrading transfer. Techniques like Teacher-Assistant Knowledge Distillation (TAKD) insert intermediate-sized models to bridge the gap. So teacher quality helps only up to the point where the student can absorb it.",
@@ -552,13 +472,8 @@ export const Q_DPO_DISTILL = [
     type: "mcq",
     question:
       "You must ship a 1B-param model to edge devices with a fixed latency budget and have access to a strong 70B teacher (weights available) plus a labeled task set. What compression strategy is most defensible?",
-    options: [
-      "Distill the 70B teacher into the 1B student (soft targets + task labels, possibly feature-level), THEN quantize the distilled student to hit the latency/memory budget — combine complementary techniques",
-      "Only quantize the 70B model to 1-bit and hope it fits",
-      "Only prune the 70B model until it has 1B params, ignoring the teacher signal",
-      "Fine-tune the 1B model on labels alone and ignore the teacher entirely",
-    ],
-    correct: 0,
+    options: ["Only quantize the 70B model to 1-bit and hope it fits","Only prune the 70B model until it has 1B params, ignoring the teacher signal","Distill the 70B teacher into the 1B student (soft targets + task labels, possibly feature-level), THEN quantize the distilled student to hit the latency/memory budget — combine complementary techniques","Fine-tune the 1B model on labels alone and ignore the teacher entirely"],
+    correct: 2,
     keywords: [],
     explanation:
       "Distillation and quantization are complementary: distill first to move capability into the small architecture (using the teacher's soft signal plus your task labels, optionally intermediate-feature matching), then quantize the compact student for the last mile of latency/memory. Aggressively quantizing or pruning a 70B model to edge size in one shot typically loses far more quality than a distill-then-quantize pipeline; ignoring the teacher wastes a strong signal.",

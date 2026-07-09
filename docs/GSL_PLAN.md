@@ -3395,3 +3395,104 @@ ladder files (quantization-l*, dpo-l*/distillation-l*, moe-l*, lora-l*/rlhf-l*, 
 more batches at this granularity.
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+## 2026-07-09 (cont. 9) — PrepLab rebuild Phase 3, batch 2: rest of foundation-models (139 questions audited, ~40 fixed) + a bank-wide grading-validity bug found and fixed
+
+Per the user's instruction to move faster through the backlog, this batch covered all of `foundation-models`'
+remaining 139 questions (151 minus batch 1's 12) in one pass: 8 parallel blind adversarial-audit agents (no
+authorial context, each independently re-deriving every answer before comparing to `correct`), each auditing
+~18 questions against the full `PREPLAB-AUDIT-RUBRIC.md` 10-smell checklist, followed by a fix pass on every
+confirmed finding.
+
+### Critical finding: bank-wide MCQ answer-position bias (91 MCQs, 4 files)
+One audit agent flagged that 14 of 15 MCQs in its batch had `correct` at the same option index. Verified
+independently with a direct distribution count across the 4 imported ladder files — the result was far worse
+than the sampled batch suggested:
+- `q-dpo-distill.js`: **23 of 23** MCQs had `correct: 0` (literally every single one)
+- `q-peft-rlhf.js`: 21 of 22 had `correct: 1`
+- `q-moe-prompt.js`: 19 of 22 had `correct: 1`
+- `q-core-deepen.js`: 23 of 24 had `correct: 1`
+
+A test-taker who always picked the same letter would score ~90%+ across 91 questions without reading any of
+them — this invalidated those 4 files as an assessment instrument, a defect the per-question rubric wasn't
+designed to catch (it's a distributional property, not a single-question smell). Fixed by deterministically
+repositioning each MCQ's correct answer using a SHA-256 hash of the question `id` mod option count (a first
+attempt using FNV-1a hashing failed — its low-bit avalanche was too weak on these near-identical short id
+strings like `dpo-l1-1`/`dpo-l1-2`, collapsing back to ~90% at position 0; SHA-256 fixed the distribution
+cleanly). Option *text* was preserved exactly — only position and the `correct` index moved. Post-fix
+distribution across all 4 files is roughly even across all 4 positions. Backups of all 4 pre-fix files kept
+in `_to_delete/backup_phase2/`.
+
+### Per-question findings and fixes (~40 questions)
+Grouped by defect type, id → fix:
+- **Wrong marked-correct answer (rule 1/10, most severe):** `redeep-4` marked 1.4T tokens correct for "using
+  Chinchilla scaling laws" on a 7B model, but Chinchilla's own ~20-tokens/param ratio gives 140B — the
+  explanation admitted this itself ("1.4T is the middle-ground answer"). Rewrote the question to ask for the
+  Chinchilla-optimal count specifically and moved `correct` to 140B, removing the confusing/inconsistent
+  10^23-FLOP framing that didn't match a 7B/140B run's actual compute cost.
+- **Fabricated/unverifiable statistics (rule 4):** `merge-3` ("often retains 80-90% of both capabilities"),
+  `found-int-6` ("push extraction to 82-88%+") — both reworded to qualitative claims, no invented precision.
+- **Stale/wrong technical claims (rule 10):** `found-beg-6` (GPT-4 128K — only Turbo/4o have 128K, original
+  GPT-4 was 8K-32K); `found-staff-2` (named GPT-3.5→GPT-4 with a fixed "10-30x" multiplier — genericized to
+  "current production model → newest flagship" with no invented multiplier); `found-int-8` (claimed Gemma v1
+  uses GQA — only Gemma 2 does); `moe-l0-2` (defined MoE "total parameters" as expert weights only, omitting
+  shared attention/embedding/norm layers — contradicted the correct treatment in `moe-l1-1` in the same
+  ladder); `distillation-l1-1` (KL divergence argument order was reversed — should be KL(teacher‖student),
+  not KL(student‖teacher)); `moe-l2-4` (cited "all-to-all communication" overhead for a single-GPU
+  deployment — that's a multi-GPU expert-parallel cost, doesn't apply when all experts are co-resident on
+  one device).
+- **Internal self-contradictions:** `quant-3`-style pattern also found in `distillation-l0-3` (grading
+  `keywords` included "sharpen" while the `trap` field explicitly says temperature softens, not sharpens —
+  removed the keyword) and `lora-l2-5` (option text said adapters are "full precision" while the explanation
+  correctly says bf16 — fixed the option to match).
+- **Near-duplicates (rule 9):** `merge-8` retested `merge-2`'s sign-conflict/TIES fact — rewrote to test a
+  distinct concept (averaged eval scores masking merge-introduced cross-talk failures). `dpo-l2-5` retested
+  `dpo-l2-1`'s PPO-vs-DPO fact — rewrote to test offline-vs-online/iterative DPO instead.
+- **Trivial-elimination distractors (rule 2, by far the largest category — ~20 questions):** a systemic
+  pattern across the `found-llm-*` and `moe-l2-*`/`lora-l2-*` clusters where 2-3 of 4 options used absolutist
+  language ("always," "never," "strictly," "regardless," "purely," "fundamentally," "outright") that lets a
+  test-taker eliminate them from phrasing alone with zero subject knowledge. Fixed in: `bert-1`, `encdec-1`,
+  `found-bi-4`, `found-bi-8`, `found-int-2`, `found-llm-3`, `found-llm-7`, `found-llm-8`, `found-llm-9`,
+  `found-llm-10`, `found-llm-11`, `found-llm-12`, `found-llm-13`, `moe-l2-1`, `moe-l2-2`, `moe-l2-4`,
+  `lora-l2-2` (2 options), `lora-l2-3`, `lora-l2-4` (2 options) — each rewritten to a plausible-but-wrong
+  claim requiring real understanding to reject, following the pattern the quantization ladder already used
+  correctly.
+- **readMore cross-reference mismatches (Definition-of-Done schema consistency, not a rubric smell but
+  recurring from batch 1):** `found-bi-3`, `found-int-1`, `found-beg-4`, `found-beg-8` all pointed at
+  unrelated modules (BERT-specific, MHA/MQA/GQA, or Fine-tuning Playbook labels on questions that weren't
+  about those topics). Repointed to verified real, on-topic targets already used elsewhere in the file;
+  `found-beg-8` set to `null` since no dedicated foundation-model-overview post was found to exist.
+- **Softened overclaims:** `found-bi-6` ("root cause is always the model's parametric knowledge" → "usually
+  ... (or, in RAG systems, poor retrieved context)"); `fmlab-1` (rank-4 "can only represent 4 linearly
+  independent patterns" overclaim, and an absolute "would produce uniformly low performance" claim about
+  small datasets that made option A defensibly correct too — both softened to accurate, non-absolute
+  framing).
+- **Arithmetic/derivation fixes:** `fmlab-2` (stated 5-10% warmup as "~300-500 steps" for a config that
+  actually works out to 125-375 — corrected); `found-llm-2` (786M-parameter estimate assumed untied
+  embedding/output-projection matrices while the same sentence said they're "often tied" — fixed to state
+  both cases: ~393M if tied, ~786M if untied).
+- **`scenario-5`** contradicted `fmlab-2`'s own "lr=1e-5 to 5e-5 is correct" guidance by blaming lr=5e-5 for
+  catastrophic forgetting — bumped the scenario's culprit rate to lr=5e-4 (unambiguously excessive) across
+  all 4 places it appears (incident text, step-2 choice, step-2 reveal, rootCause) so the two questions no
+  longer give contradictory guidance for the same learning rate.
+
+`syn-q2`, `quant-1`, `quant-4`, `finetune-2`, `finetune-3` (batch 1) and roughly 100 of batch 2's 139
+questions passed clean — full per-id PASS/FAIL detail is in the 8 audit-agent transcripts, not reproduced
+here for length.
+
+### Verification
+All edits applied via exact-anchor string replacement (each anchor count-checked for exactly one match
+before writing) or brace-matched full-block replacement for the 3 questions rewritten wholesale (`merge-8`,
+`dpo-l2-5`, `redeep-4`). `npx esbuild` clean on all 5 touched files
+(`preplabQuestions.js`, `q-dpo-distill.js`, `q-moe-prompt.js`, `q-peft-rlhf.js`, `q-core-deepen.js`). Total
+bank size unchanged at 770 (audit-and-fix only, no additions/removals). Post-fix MCQ answer-position
+distribution re-verified even across all 4 previously-biased files. Backups of every touched file kept in
+`_to_delete/backup_phase2/`.
+
+**`foundation-models` (151 questions) is now fully audited** — both batches of Phase 3 complete for this
+topic. Next: the 3 other oversized topics from Phase 2 (`retrieval` 123, `ai-agents` 113, `production` 78,
+`ai-safety-alignment` 40), then the remaining un-oversized topics. Given the position-bias bug found here,
+the very first step on `retrieval`/`ai-agents`/`production`/`ai-safety-alignment` will be an answer-position
+distribution check across their source files before doing the content-level audit.
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.

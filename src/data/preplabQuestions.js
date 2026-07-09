@@ -2181,7 +2181,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1,
     keywords: ["model merging", "fine-tuned", "zero training", "ensemble", "architecture"],
-    explanation: "Model merging's sweet spot is combining same-architecture models fine-tuned for different tasks (e.g., a coding model + an instruction-following model) without additional training. The result often retains 80-90% of both capabilities. It requires the models to share the same base architecture and tokenizer. It doesn't compress models (same size as inputs) and doesn't work across architectures — for that you'd need distillation.",
+    explanation: "Model merging's sweet spot is combining same-architecture models fine-tuned for different tasks (e.g., a coding model + an instruction-following model) without additional training. Capability retention varies widely by task similarity and merge method — well-aligned tasks (e.g. two code-adjacent specializations) retain most of both capabilities, while conflicting tasks can lose significant performance in both. It requires the models to share the same base architecture and tokenizer. It doesn't compress models (same size as inputs) and doesn't work across architectures — for that you'd need distillation.",
     readMore: { label: "Model Merging →", tab: "systems" }
   },
   {
@@ -2246,17 +2246,17 @@ export const PREP_QUESTIONS = [
   },
   {
     id: "merge-8", topic: "foundation-models", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
-    question: "A team merges a coding-specialized model with a customer-support-specialized model and finds the result is noticeably worse at both tasks than either source model alone. What's the most likely cause, distinct from simple catastrophic forgetting?",
+    question: "A team merges a coding-specialized model with a customer-support-specialized model, confirms the merged model's average score across both original eval sets looks reasonable, and ships it. Two weeks later, users report the model occasionally drops into raw code output when asked simple conversational questions. What did the evaluation process miss?",
     options: [
-      "Catastrophic forgetting that occurred during the original fine-tuning of each source model, well before the merge itself happened",
-      "Destructive parameter interference — the two models' weight deltas disagree in sign at many parameters, canceling both specializations",
-      "The base model itself was undertrained, so neither fine-tuned model had a strong foundation for the merge to build on",
-      "The merge script had a bug that accidentally averaged in a third, unrelated model's weights by mistake"
+      "Nothing — an averaged eval score across both original benchmarks is a sufficient signal that a merge preserved both capabilities",
+      "A held-out, cross-context behavioral eval — averaged benchmark scores test each capability in isolation and can look fine while masking new failure modes the merge itself introduced, like confusing which behavior the current input calls for",
+      "The merge should have used a larger base model instead",
+      "The team needed to retrain the tokenizer after merging"
     ],
     correct: 1,
-    keywords: ["parameter interference", "sign conflict", "model merging", "TIES", "destructive averaging"],
-    explanation: "When two specializations push the same parameters in opposite directions — coding fine-tuning increases a weight while support fine-tuning decreases the same weight — naive averaging partially cancels both signals, degrading each capability rather than combining them. This is the specific failure TIES-Merging and DARE were designed to address: identify and resolve sign disagreements before averaging, rather than averaging blindly and hoping the specializations are compatible.",
-    trap: "Defaulting to 'catastrophic forgetting' as the explanation for any merge quality drop. Forgetting describes losing capability during training; the merge-specific failure mode is interference between two already-good models at merge time, which needs a different fix (TIES/DARE-style resolution, not more training).",
+    keywords: ["merge evaluation", "task-boundary confusion", "held-out eval", "cross-context", "model merging"],
+    explanation: "Each original benchmark tests one capability against inputs from that capability's own distribution — the coding eval never asks a conversational question, and the support eval never asks for code. Averaging those two scores can look healthy even when the merge introduced a new failure mode neither benchmark can see: the model no longer reliably recognizes which behavior the current input calls for. Catching this requires a merge-specific eval built from held-out, mixed-context test cases that deliberately probe the boundary between the two source models' domains — not just a re-run of their original, capability-isolated benchmarks.",
+    trap: "Assuming that scoring well on the union of both original eval sets proves the merge is safe. It only proves neither capability collapsed on its own tests — it says nothing about new cross-talk failure modes the merge itself can introduce.",
     readMore: { label: "Model Merging →", tab: "systems" }
   },
 
@@ -3831,8 +3831,8 @@ export const PREP_QUESTIONS = [
       "The eval set is contaminated with training data, making in-distribution accuracy artificially high"
     ],
     correct: 1,
-    explanation: "The split between in-distribution accuracy (91%) and edge-case accuracy (38%) is the diagnostic signal. If the dataset were too small, performance would be uniformly low. If the learning rate were too high, you'd see 100% train accuracy with uniform collapse on eval. The contamination hypothesis is ruled out because in-distribution accuracy is different from edge-case accuracy — contamination would inflate both equally. LoRA rank 4 means the adapter can only represent 4 linearly independent patterns. Legal clause extraction involves dozens of clause types with subtle structural variations — the adapter's capacity is insufficient for this diversity, so it learns the top-4 patterns well and fails on the long tail.",
-    trap: "Saying the training dataset is too small. A small dataset would produce uniformly low eval accuracy — not the specific pattern of high in-distribution accuracy alongside low edge-case accuracy. That pattern is a capacity problem, not a data problem. More data would not fix rank 4.",
+    explanation: "The split between in-distribution accuracy (91%) and edge-case accuracy (38%) is the diagnostic signal. A dataset that's simply too small usually shows a different signature — uniformly weaker performance across both in-distribution and edge cases. Here, in-distribution accuracy stays strong (91%) while only edge cases collapse (38%), pointing to a capacity ceiling rather than raw data volume. If the learning rate were too high, you'd see 100% train accuracy with uniform collapse on eval. The contamination hypothesis is ruled out because in-distribution accuracy is different from edge-case accuracy — contamination would inflate both equally. LoRA rank 4 constrains each adapted layer's weight update to a narrow rank-4 subspace — a small set of directions the model can adjust its behavior along. Legal clause extraction involves dozens of clause types with subtle structural variations — the adapter's capacity is insufficient for this diversity, so it learns the top-4 patterns well and fails on the long tail.",
+    trap: "Saying the training dataset is too small. A too-small dataset typically produces uniformly weaker accuracy across the board, not this specific split (strong in-distribution, collapsing edge-case). The split points to the adapter's rank as the bottleneck rather than data volume — though in practice it's worth testing both fixes, since they aren't mutually exclusive.",
     readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
   },
 
@@ -3842,7 +3842,7 @@ export const PREP_QUESTIONS = [
     options: [],
     correct: 0,
     keywords: ["catastrophic forgetting", "learning rate", "warmup", "overwrite", "pretrained", "2e-5", "1e-5", "schedule", "cosine"],
-    explanation: "This is catastrophic forgetting. lr=5e-4 produces large weight updates that overwrite the pretrained representations the model built during pretraining — billions of tokens worth of general knowledge. No warmup means these large updates happen at full speed from step 1. Medical accuracy improves because the model fits the domain distribution, but the general reasoning capabilities that medical inference depends on are destroyed. Correct configuration: lr=1e-5 to 5e-5 with a cosine schedule, 5-10% of total steps as warmup (for a 13B model fine-tuned on 10K examples with batch 8, ~300-500 warmup steps), 2-3 epochs maximum. LoRA at rank 16+ is significantly more forgiving because only adapter weights update — lr=1e-4 is acceptable for LoRA but still needs warmup. Always include a general capability holdout (not just domain eval) to detect forgetting before deployment.",
+    explanation: "This is catastrophic forgetting. lr=5e-4 produces large weight updates that overwrite the pretrained representations the model built during pretraining — billions of tokens worth of general knowledge. No warmup means these large updates happen at full speed from step 1. Medical accuracy improves because the model fits the domain distribution, but the general reasoning capabilities that medical inference depends on are destroyed. Correct configuration: lr=1e-5 to 5e-5 with a cosine schedule, 5-10% of total steps as warmup — for 2-3 epochs at batch 8 on 10K examples (2,500-3,750 total steps), that works out to roughly 125-375 warmup steps. LoRA at rank 16+ is significantly more forgiving because only adapter weights update — lr=1e-4 is acceptable for LoRA but still needs warmup. Always include a general capability holdout (not just domain eval) to detect forgetting before deployment.",
     trap: "Reducing epochs to 2-3 while keeping lr=5e-4. Fewer epochs reduce the total number of large updates but each update is still destructive. The learning rate is the primary problem — reducing epochs is a partial mitigation, not a fix. The correct fix is reducing the learning rate by 1-2 orders of magnitude.",
     readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
   },
@@ -3857,9 +3857,9 @@ export const PREP_QUESTIONS = [
       "Stratified split ensuring equal representation of all label classes in both sets"
     ],
     correct: 1,
-    explanation: "A random split from the same time period means training and eval examples are drawn from identical distributions. The model does not need to generalise — it needs to recognise the shared distribution of topics, phrasings, and resolution patterns. Eval metrics become inflated estimates of memorisation ability rather than generalisation ability. Temporal splits are the most production-realistic because they reflect the actual challenge: the model will be deployed on future data it has never seen. Domain splits and stratified splits are better than random same-period splits but still risk shared distributional patterns.",
+    explanation: "A random split from the same time period means training and eval examples are drawn from identical distributions. The model does not need to generalise — it needs to recognise the shared distribution of topics, phrasings, and resolution patterns. Eval metrics become inflated estimates of memorisation ability rather than generalisation ability — and without deduplication, near-identical examples can appear in both train and eval, directly leaking answers into the eval set, an even more direct cause of inflated metrics than distributional similarity alone. Temporal splits are the most production-realistic because they reflect the actual challenge: the model will be deployed on future data it has never seen. Domain splits and stratified splits are better than random same-period splits but still risk shared distributional patterns.",
     trap: "Saying stratified splits are problematic. Stratification ensures class balance — it is a best practice for classification tasks. It does not prevent distributional similarity between train and eval. The risk of a stratified random split from the same period is the same as an unstratified random split: shared distribution. Stratification addresses class imbalance, not temporal or distributional leakage.",
-    readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
+    readMore: { label: "Eval Set Design", tab: "groundtruth", postId: "eval-pipeline-design" }
   },
 
   {
@@ -3870,7 +3870,7 @@ export const PREP_QUESTIONS = [
     keywords: ["Goodhart's law", "proxy metric", "reward hacking", "factual accuracy", "golden source", "rater rubric", "automated", "claim verification"],
     explanation: "This is Goodhart's Law in RLHF: when the measure becomes the target, it ceases to be a good measure. General contractors rate responses based on perceived quality — fluency, confidence, completeness, appropriate hedging. These correlate weakly with factual accuracy. The model learns to optimise for 'sounds like a correct answer' rather than 'is a correct answer.' Fluent, confident, authoritative-sounding responses get thumbs-up regardless of whether the underlying claims are true. Factual accuracy worsens because the model learned to suppress uncertainty markers ('I'm not sure') that would earn thumbs-down while inventing plausible-sounding facts. Correct reward signal design: (1) Automated fact-checking against a verified golden source — claim extraction from the response, then verification of each claim against the source. More consistent and scalable than human raters. (2) If human raters are required, train them with explicit rubrics that require claim verification before rating — not holistic impression scoring. Add inter-rater agreement thresholds. (3) Include a factual accuracy holdout that is completely independent of the reward signal — this detects reward hacking before deployment.",
     trap: "Saying the fix is to hire domain experts instead of general contractors. Expert raters improve signal quality but do not solve the fundamental problem — if raters are still scoring holistic quality rather than per-claim factual accuracy, the model will still learn to sound authoritative rather than be accurate. The fix is the reward signal design, not the rater qualification.",
-    readMore: { label: "LoRA in Practice →", tab: "groundtruth", postId: "lora-in-practice" }
+    readMore: { postId: "rlhf-from-scratch", label: "RLHF from scratch" }
   },
 
   {
@@ -4109,7 +4109,7 @@ export const PREP_QUESTIONS = [
   {
     id: "scenario-5", topic: "foundation-models", difficulty: "hard", band: "advanced", gated: true, type: "scenario",
     title: "The Fine-Tune That Forgot",
-    incident: "You fine-tuned a 7B base model on 50K customer support tickets. ROUGE-L improved from 0.41 to 0.73. Domain exact-match went from 18% to 67%. You deploy. Within 48 hours, support escalations increase 40%. Human reviewers report the model ignores system prompt instructions, rambles instead of giving structured answers, and refuses to stay concise.",
+    incident: "You fine-tuned a 7B base model on 50K customer support tickets at lr=5e-4 with no warmup. ROUGE-L improved from 0.41 to 0.73. Domain exact-match went from 18% to 67%. You deploy. Within 48 hours, support escalations increase 40%. Human reviewers report the model ignores system prompt instructions, rambles instead of giving structured answers, and refuses to stay concise.",
     steps: [
       {
         prompt: "What is your first diagnostic step?",
@@ -4132,14 +4132,14 @@ export const PREP_QUESTIONS = [
         choices: [
           "50K samples was insufficient — the model needed more data to retain general capability alongside domain knowledge",
           "The fine-tuning data had no instruction-following examples — only raw Q&A pairs without system prompts",
-          "Full fine-tuning at lr=5e-5 overwrote alignment-critical weights — catastrophic forgetting of RLHF behaviour",
+          "Full fine-tuning at lr=5e-4 overwrote alignment-critical weights — catastrophic forgetting of RLHF behaviour",
           "The model was too small — a 7B model cannot simultaneously hold domain knowledge and instruction following"
         ],
         correct: 2,
         reveals: [
           "50K is a reasonable dataset size for 7B fine-tuning. The problem is training approach, not data volume. 500K samples at the same learning rate would produce the same catastrophic forgetting.",
           "Missing instruction-following examples in training data is a real issue — but the deeper cause here is the learning rate. The optimizer overwrote the alignment layers regardless of what examples were present.",
-          "Exactly. Full fine-tuning at lr=5e-5 with no layer freezing gave the optimizer full access to every parameter, including the RLHF-aligned layers. It optimised them for customer support style — improving ROUGE while destroying the instruction-following behaviour the base model had. This is catastrophic forgetting: the model learned what you asked it to learn and forgot what it already knew.",
+          "Exactly. Full fine-tuning at lr=5e-4 with no layer freezing gave the optimizer full access to every parameter, including the RLHF-aligned layers. It optimised them for customer support style — improving ROUGE while destroying the instruction-following behaviour the base model had. This is catastrophic forgetting: the model learned what you asked it to learn and forgot what it already knew.",
           "7B models (Mistral, Llama-3, Qwen-2) maintain instruction following after fine-tuning when trained correctly. Size is not the constraint — the training configuration is."
         ]
       },
@@ -4160,7 +4160,7 @@ export const PREP_QUESTIONS = [
         ]
       }
     ],
-    rootCause: "Full fine-tuning at high learning rate (lr=5e-5) caused catastrophic forgetting of the base model's RLHF alignment. Domain ROUGE improved because the model learned support ticket style, but instruction-following degraded because alignment-critical weights were overwritten by the optimizer. The eval suite didn't catch it because it measured only domain accuracy — not instruction compliance.",
+    rootCause: "Full fine-tuning at high learning rate (lr=5e-4) caused catastrophic forgetting of the base model's RLHF alignment. Domain ROUGE improved because the model learned support ticket style, but instruction-following degraded because alignment-critical weights were overwritten by the optimizer. The eval suite didn't catch it because it measured only domain accuracy — not instruction compliance.",
     trap: "Auditing the training data quality. The data was clean — the problem was the training configuration, not what was in the dataset. Blaming data quality sends teams on a multi-day audit while the production degradation continues. The diagnostic is instruction-following benchmarks on the fine-tuned model, not a data review.",
   },
 
@@ -5596,7 +5596,7 @@ export const PREP_QUESTIONS = [
       "BERT's [CLS] token was not trained to produce semantically meaningful sentence embeddings",
       "Cosine similarity is the wrong metric for BERT embeddings — dot product should be used",
       "BERT's maximum 512-token input is too short for semantic search",
-      "Vanilla BERT lacks a bidirectional attention mechanism"
+      "Mean-pooling across all token embeddings is required instead of using the [CLS] token alone"
     ],
     correct: 0,
     keywords: ["CLS token", "sentence embeddings", "semantic similarity", "SBERT"],
@@ -5749,7 +5749,7 @@ export const PREP_QUESTIONS = [
     options: [
       "T5's encoder-decoder structure explicitly separates input processing from output generation; the encoder produces a full bidirectional representation of the source that cross-attention uses throughout generation",
       "T5 is smaller and faster to fine-tune; Llama-3 requires more GPU memory for fine-tuning on summarization tasks",
-      "Decoder-only models cannot perform seq2seq tasks; they only work for next-token prediction",
+      "Decoder-only models must re-process the entire input autoregressively at every generation step, since there's no separate bidirectional encoding pass to cache",
       "T5 always outperforms decoder-only models on summarization because its pretraining objective includes denoising"
     ],
     correct: 0,
@@ -5882,11 +5882,11 @@ export const PREP_QUESTIONS = [
     readMore: { postId: "rlhf-from-scratch", label: "RLHF from scratch" }
   },
   { id: "redeep-4", topic: "foundation-models", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
-    question: "You have a 10^23 FLOP compute budget and want the best possible 7B parameter model. Using Chinchilla scaling laws, approximately how many training tokens should you use?",
+    question: "You want to pretrain a 7B-parameter model to compute-optimality. Using Chinchilla scaling laws (~20 tokens per parameter), approximately how many training tokens should you use?",
     options: ["20B tokens (original GPT-3 style ratio)", "140B tokens", "1.4T tokens", "20T tokens"],
-    correct: 2,
-    explanation: "Chinchilla: optimal ratio is ~20 tokens per parameter. 7B × 20 = 140B tokens at the strict Chinchilla optimum. However, for inference efficiency, modern practice trains smaller models longer — Llama 2 7B trained on 2T tokens. 1.4T is the middle-ground answer that references Chinchilla while acknowledging practical overtraining.",
-    trap: "20B (A) is drastically under-trained. 20T (D) is aggressive overtraining that's only justified if inference cost is the primary concern and data quality holds.",
+    correct: 1,
+    explanation: "Chinchilla's headline finding was that models were historically undertrained relative to their parameter count — the compute-optimal ratio is roughly 20 tokens per parameter. For a 7B model, that's 7B × 20 ≈ 140B tokens. Real-world deployed models often deliberately overtrain well past this point (Llama 2 7B trained on 2T tokens) because inference cost, not training compute, dominates total cost of ownership at scale — but that's a deliberate departure from the Chinchilla optimum for inference-efficiency reasons, not what 'Chinchilla-optimal' itself means.",
+    trap: "Picking 1.4T or 20T because production models are often trained on far more tokens than the Chinchilla optimum. That's real, common practice (inference-cost-driven overtraining) — but it's a departure from Chinchilla's own recommendation, not an application of it. The Chinchilla-optimal count for a 7B model is the ~20-tokens-per-parameter answer: 140B.",
     readMore: { postId: "pretraining-data-decisions", label: "Pre-training data decisions" }
   },
   { id: "redeep-5", topic: "foundation-models", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
@@ -6045,7 +6045,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "The Transformer (Vaswani et al., 2017) replaced recurrence entirely with stacked self-attention + feed-forward layers. Each layer has multi-head self-attention (tokens attend to each other) and a position-wise FFN. Because there is no sequential dependency, the whole sequence can be processed in parallel — key to scaling to 100B+ parameter models.",
     trap: "Thinking transformers are just 'better RNNs'. They are architecturally different — no hidden state, no recurrence. Parallelism is structural, not just an optimization. This is what made modern LLMs feasible to train.",
-    readMore: { label: "MHA vs MQA vs GQA Explained", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
+    readMore: { label: "Transformer Architecture →", tab: "systems" }
   },
   {
     id: "found-beg-5", topic: "foundation-models", difficulty: "beginner", band: "foundational", gated: false, type: "mcq",
@@ -6071,7 +6071,7 @@ export const PREP_QUESTIONS = [
       "The number of examples shown to the model during few-shot prompting"
     ],
     correct: 1,
-    explanation: "The context window is the total token budget for one inference call — it includes system prompt, user message, retrieved chunks, and the generated response. Tokens outside the window are invisible to the model. GPT-4 has a 128K token window; Claude 3.5 has 200K. Everything the model 'knows' about a conversation must fit here.",
+    explanation: "The context window is the total token budget for one inference call — it includes system prompt, user message, retrieved chunks, and the generated response. Tokens outside the window are invisible to the model. GPT-4 Turbo and GPT-4o have a 128K token window (the original GPT-4 was limited to 8K-32K); Claude 3.5 has 200K. Everything the model 'knows' about a conversation must fit here.",
     trap: "Conflating context window with model knowledge. The context window is what the model can see right now — not what it learned during training. A 1T parameter model with a 4K context window still cannot recall what you said 5 pages ago.",
     readMore: { label: "The Context Window", tab: "groundtruth", postId: "context-window-guide" }
   },
@@ -6101,7 +6101,7 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "Foundation models (Bommasani et al., Stanford, 2021) are pretrained at scale on diverse data and can be adapted to many tasks via fine-tuning, prompting, or retrieval. GPT-4, Gemini, Claude, LLaMA are all foundation models. The defining property: trained once, adapted many times, for tasks not specified at training time.",
     trap: "Confusing foundation model with any large model. Scale matters but the key property is generalization — the model was not trained for your specific task yet transfers to it. This emerges from pretraining on sufficiently diverse, large corpora.",
-    readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
+    readMore: null
   },
 
   // ── FOUNDATIONS — Beginner-Intermediate (8) ───────────────────────────────
@@ -6145,16 +6145,16 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "Word-level tokenization fails on two counts: (1) vocabulary explosion — English alone has millions of word forms, making the embedding table huge; (2) OOV (out-of-vocabulary) — any unseen word, typo, or compound becomes unknown. BPE/WordPiece learns a vocabulary of 30K–50K subword units that covers any word through composition. 'ChatGPT' might tokenize as ['Chat', 'G', 'PT'] — never seen before, still handled.",
     trap: "Claiming subword tokenizers are just a speed trick. The OOV problem is the real issue — word-level tokenizers break on any word not seen during training. Subword tokenization is how models handle new words, code, URLs, names, and multilingual text without a special unknown token.",
-    readMore: { label: "BERT Internals Explained", tab: "groundtruth", postId: "bert-internals-explained" }
+    readMore: { label: "BPE Tokenization From Scratch", tab: "groundtruth", postId: "bpe-tokenization-from-scratch" }
   },
   {
     id: "found-bi-4", topic: "foundation-models", difficulty: "beginner-intermediate", band: "intermediate", gated: false, type: "mcq",
     question: "Why does pretraining on a large, diverse corpus generalize better to downstream tasks than training on task-specific data alone?",
     options: [
-      "Larger datasets always produce higher accuracy regardless of content",
+      "Larger datasets produce higher accuracy as long as they come from the same domain as the downstream task",
       "The model learns general language and reasoning representations that transfer across tasks",
       "Diverse data reduces GPU memory requirements during fine-tuning",
-      "Task-specific data is always lower quality than web-scraped data"
+      "Task-specific data typically requires more preprocessing effort than web-scraped data"
     ],
     correct: 1,
     explanation: "Task-specific training teaches the model what answers look like for that task — it does not teach general reasoning, language structure, or world knowledge. Pretraining on diverse text forces the model to learn representations that explain millions of different sentences: grammar, named entities, causal relationships, code logic. These learned representations transfer — a model that learned to predict text about medicine, law, and physics has richer representations for any of those domains than one trained only on 10K labeled Q&A pairs.",
@@ -6186,7 +6186,7 @@ export const PREP_QUESTIONS = [
     ],
     correct: 1,
     explanation: "Temperature scales logits before softmax. At temp=1, token probabilities reflect the model's trained distribution. At temp>1, the distribution flattens — low-probability tokens (including plausible-sounding but incorrect facts) get much higher weight. The model is more likely to pick a confident-sounding but wrong continuation. For factual tasks, temp=0 or 0.2 is standard.",
-    trap: "Blaming hallucination solely on temperature. Temperature amplifies existing tendencies — if the model has wrong beliefs from pretraining, it hallucinates at any temperature. Temperature primarily controls the variance of hallucination, not its existence. The root cause is always the model's parametric knowledge.",
+    trap: "Blaming hallucination solely on temperature. Temperature amplifies existing tendencies — if the model has wrong beliefs from pretraining, it hallucinates at any temperature. Temperature primarily controls the variance of hallucination, not its existence. The root cause is usually the model's parametric knowledge (or, in RAG systems, poor retrieved context).",
     readMore: null
   },
   {
@@ -6207,10 +6207,10 @@ export const PREP_QUESTIONS = [
     id: "found-bi-8", topic: "foundation-models", difficulty: "beginner-intermediate", band: "intermediate", gated: false, type: "mcq",
     question: "A product team asks whether to fine-tune a model or use better prompts. What does fine-tuning enable that prompting structurally cannot?",
     options: [
-      "Fine-tuning always produces higher accuracy — prompting is just a shortcut",
+      "Fine-tuning lets you use a much shorter system prompt while keeping identical output behavior",
       "Fine-tuning changes the model's weights, baking in behavior that persists at zero per-call token cost",
-      "Fine-tuning allows the model to access the internet during inference",
-      "Fine-tuning removes safety filters that prompting cannot bypass"
+      "Fine-tuning guarantees lower latency than any prompted model of the same size",
+      "Fine-tuning eliminates the need for any output validation or guardrails afterward"
     ],
     correct: 1,
     explanation: "Prompting burns context tokens to steer behavior and must be re-supplied every call. Fine-tuning modifies the model's weights directly, so the learned behavior is always active with zero inference overhead. Use cases: enforcing a specific output format reliably, adapting to domain vocabulary, style matching, reducing verbosity. Fine-tuning loses when: data is limited (<500 high-quality examples), the task is changing, or you need to iterate quickly.",
@@ -6445,13 +6445,13 @@ export const PREP_QUESTIONS = [
   },
   {
     id: "found-staff-2", topic: "foundation-models", difficulty: "staff", band: "staff-plus", gated: true, type: "text",
-    question: "A PM wants to upgrade from GPT-3.5 to GPT-4 to fix 'quality issues'. How do you evaluate whether the upgrade is worth it, and what do you push back on?",
+    question: "A PM wants to upgrade from your current production model to the newest flagship model to fix 'quality issues'. How do you evaluate whether the upgrade is worth it, and what do you push back on?",
     options: null,
     correct: null,
     keywords: ["eval set", "cost-latency tradeoff", "failure mode analysis", "root cause", "specific not general"],
-    explanation: "Push back on 'quality issues' — that is not a diagnosis. First: what specifically is failing? Hallucination, refusals, reasoning errors, tone, instruction-following? Each has different root causes and different fixes. A bigger model is only the right fix for reasoning or instruction-following failures — not for hallucination (RAG fixes that), not for tone (prompting or fine-tuning fixes that). Evaluation: run a blind A/B on 100 real failure cases. If GPT-4 fixes 80%+ of the failures at acceptable cost, upgrade is justified. If it fixes 30%, find the real root cause. Cost impact: GPT-4 is 10–30x more expensive per token than GPT-3.5 — quantify the monthly cost delta at current traffic. Decision rule: upgrade if (quality improvement × revenue impact) > (cost increase). Never upgrade a model blindly on subjective feel.",
+    explanation: "Push back on 'quality issues' — that is not a diagnosis. First: what specifically is failing? Hallucination, refusals, reasoning errors, tone, instruction-following? Each has different root causes and different fixes. A bigger model is only the right fix for reasoning or instruction-following failures — not for hallucination (RAG fixes that), not for tone (prompting or fine-tuning fixes that). Evaluation: run a blind A/B on 100 real failure cases. If GPT-4 fixes 80%+ of the failures at acceptable cost, upgrade is justified. If it fixes 30%, find the real root cause. Cost impact: flagship models are often meaningfully more expensive per token than your current production model — quantify the actual monthly cost delta at current traffic rather than assuming a fixed multiplier. Decision rule: upgrade if (quality improvement × revenue impact) > (cost increase). Never upgrade a model blindly on subjective feel.",
     trap: "Approving the upgrade because the PM says quality is bad. The staff move is to demand a specific failure taxonomy before touching the model. Most 'quality' complaints are fixable with prompt engineering or RAG at a fraction of the cost.",
-    staffLayer: "The way I frame this to a PM: 'I can get you a definitive answer in two days — I need a sample of 50 bad outputs and I will run them through both models blind. That tells us whether GPT-4 actually fixes what you are seeing, before we commit to a 20x cost increase.' This turns a vague complaint into a testable hypothesis."
+    staffLayer: "The way I frame this to a PM: 'I can get you a definitive answer in two days — I need a sample of 50 bad outputs and I will run them through both models blind. That tells us whether GPT-4 actually fixes what you are seeing, before we commit to a major cost increase.' This turns a vague complaint into a testable hypothesis."
   },
   {
     id: "found-staff-3", topic: "foundation-models", difficulty: "staff", band: "staff-plus", gated: true, type: "text",
@@ -6528,16 +6528,16 @@ export const PREP_QUESTIONS = [
     correct: 1,
     explanation: "Classification requires understanding the full text before assigning a label. Encoder-only models (BERT, RoBERTa) read bidirectionally — every token attends to all other tokens simultaneously — producing richer CLS representations. Decoder-only models (GPT) are unidirectional by design; each token only sees prior context because they are optimized for generation. For classification, NER, and semantic similarity, encoder-only is the standard starting point. Decoder-only dominates when the task involves generating text.",
     trap: "Picking the largest decoder model by default. Architecture matters more than scale for classification with limited labeled data. A fine-tuned BERT-base (110M params) routinely outperforms zero-shot GPT-4 on specific classification benchmarks — bidirectional context is structurally better for the task, not just a scale question.",
-    readMore: { label: "MHA vs MQA vs GQA", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
+    readMore: { label: "BERT Internals Explained", tab: "groundtruth", postId: "bert-internals-explained" }
   },
   {
     id: "found-int-2", topic: "foundation-models", difficulty: "intermediate", band: "intermediate", gated: true, type: "mcq",
     question: "You are fine-tuning a 7B LLM with LoRA for domain adaptation. How should you approach selecting the rank (r)?",
     options: [
-      "Always use r=4 — higher ranks cause overfitting regardless of data size",
-      "Always use r=64 — more parameters always mean better adaptation",
+      "Use r=4 whenever the domain shift is large, since a small rank forces the adapter to learn only the most essential changes",
+      "Use r=64 whenever VRAM allows it, since higher rank never hurts convergence speed",
       "Start at r=8–16 for moderate domain shift; increase if validation quality plateaus; decrease if training loss diverges from validation loss",
-      "Rank does not matter — LoRA quality depends entirely on learning rate and epochs"
+      "Rank mainly affects training speed, not adaptation quality, so pick whatever fits in memory"
     ],
     correct: 2,
     explanation: "LoRA rank r controls the capacity of the low-rank update matrices. r=4 is aggressively parameter-efficient — good for minimal task difference or very limited data. r=16 handles moderate domain shifts. r=64+ for complex tasks with large datasets. The practical protocol: start r=8–16, monitor train vs validation loss for divergence (overfitting signal), tune rank as a hyperparameter. For specialized vocabulary adaptation, r=16–32 is a common starting point. Lower rank + more data beats higher rank + less data.",
@@ -6596,7 +6596,7 @@ export const PREP_QUESTIONS = [
       "The model being used is larger than 13B parameters"
     ],
     correct: 1,
-    explanation: "Fine-tuning is worth the investment when: (1) 500+ labeled pairs minimum — fewer and you risk overfitting; (2) task format is stable — constant redesign makes the dataset stale fast; (3) concrete need for reduced prompt length, lower cost, or lower latency; (4) the accuracy ceiling from prompting is genuinely hit, not just from poor prompt design. At 72%, the first question is: did you exhaust prompt improvements? Well-constructed few-shot with chain-of-thought can push extraction to 82–88%+ before fine-tuning is warranted.",
+    explanation: "Fine-tuning is worth the investment when: (1) 500+ labeled pairs minimum — fewer and you risk overfitting; (2) task format is stable — constant redesign makes the dataset stale fast; (3) concrete need for reduced prompt length, lower cost, or lower latency; (4) the accuracy ceiling from prompting is genuinely hit, not just from poor prompt design. At 72%, the first question is: did you exhaust prompt improvements? Well-constructed few-shot with chain-of-thought and better examples can often meaningfully close the gap before fine-tuning is warranted — the exact ceiling varies by task, so it's worth exhausting prompt improvements and measuring, not assuming a fixed number.",
     trap: "Jumping to fine-tuning at 72% without first exhausting prompting. Fine-tuning takes real time and money to iterate on; you cannot quickly patch a bad training example the way you can edit a prompt. The correct order is: prompt engineering → better examples in prompt → fine-tuning if ceiling is confirmed.",
     readMore: { label: "Fine-tuning Playbook", tab: "groundtruth", postId: "finetune-playbook" }
   },
@@ -6624,7 +6624,7 @@ export const PREP_QUESTIONS = [
       "When the model will be deployed on CPU-only hardware"
     ],
     correct: 1,
-    explanation: "Standard MHA: one K/V head per Q head — full capacity, large KV cache. MQA: single K/V head shared by all Q heads — tiny KV cache, small quality drop. GQA groups Q heads sharing K/V heads (e.g., 32 Q heads → 8 K/V groups) — 4–8x KV cache reduction with minor quality loss. Used in LLaMA 2 70B, Mistral 7B, Gemma. Decision rule: MHA for max benchmark accuracy at any cost; GQA for production serving with strict memory/latency SLAs; MQA only for highly constrained edge devices. Verify quality impact empirically before committing to architecture.",
+    explanation: "Standard MHA: one K/V head per Q head — full capacity, large KV cache. MQA: single K/V head shared by all Q heads — tiny KV cache, small quality drop. GQA groups Q heads sharing K/V heads (e.g., 32 Q heads → 8 K/V groups) — 4–8x KV cache reduction with minor quality loss. Used in LLaMA 2 70B, Mistral 7B, Gemma 2. Decision rule: MHA for max benchmark accuracy at any cost; GQA for production serving with strict memory/latency SLAs; MQA only for highly constrained edge devices. Verify quality impact empirically before committing to architecture.",
     trap: "Assuming GQA is a free lunch. At small group sizes (2 K/V heads for 32 Q heads), quality degradation is measurable. The empirical finding: GQA with ≥4 groups recovers most of MHA quality. The architecture choice locks in for the model's life — benchmark before committing.",
     readMore: { label: "MHA vs MQA vs GQA", tab: "groundtruth", postId: "mha-mqa-gqa-explained" }
   },
@@ -6652,7 +6652,7 @@ export const PREP_QUESTIONS = [
       "128K vocabularies only matter for multilingual products — for English-and-code traffic the choice is close to free"
     ],
     correct: 0,
-    explanation: "Vocabulary size sets the size of the embedding table (vocab_size × hidden_dim) and the output projection (often tied to the embedding). Going from 32K to 128K at hidden_dim=4096 adds roughly (128,000−32,000)×4096×2 ≈ 786M parameters — not free, and it grows GPU memory and matmul cost on the output layer for every forward pass. The real payoff of a larger vocab is shorter sequences (less compute spent on attention and fewer forward passes for the same text), so the decision is a genuine tradeoff between sequence-length savings and the fixed parameter/compute cost of a bigger vocabulary — not a free win.",
+    explanation: "Vocabulary size sets the size of the embedding table (vocab_size × hidden_dim) and, when the output projection is untied from the embedding, a second matrix the same size. Going from 32K to 128K at hidden_dim=4096 adds roughly (128,000−32,000)×4096 ≈ 393M parameters for the embedding table alone — nearly double that (≈786M) if the output projection is untied rather than sharing the embedding weights. Either way, it is not free, and it grows GPU memory and matmul cost on the output layer for every forward pass. The real payoff of a larger vocab is shorter sequences (less compute spent on attention and fewer forward passes for the same text), so the decision is a genuine tradeoff between sequence-length savings and the fixed parameter/compute cost of a bigger vocabulary — not a free win.",
     trap: "Treating vocab size as purely a tokenization-efficiency knob with no cost. It changes the model's actual parameter count and the cost of every softmax over the vocabulary at generation time.",
     readMore: { label: "BPE Tokenization From Scratch", tab: "groundtruth", postId: "bpe-tokenization-from-scratch" }
   },
@@ -6662,7 +6662,7 @@ export const PREP_QUESTIONS = [
     options: [
       "Option A is always preferable since it needs no extra math beyond a simple rescale of the position indices",
       "Neither approach can work at all without full pretraining from scratch on documents at the new, much longer target length",
-      "Option B is strictly worse because it changes how the model attends to tokens within the original 4K range",
+      "Option B slightly perturbs short-range attention too, since NTK-aware scaling continuously reshapes every frequency dimension rather than leaving low distances untouched",
       "Linear interpolation blurs nearby distances uniformly; frequency-aware rescaling preserves short-range precision better"
     ],
     correct: 3,
@@ -6715,8 +6715,8 @@ export const PREP_QUESTIONS = [
     id: "found-llm-7", topic: "foundation-models", difficulty: "intermediate", band: "intermediate", gated: true, type: "mcq",
     question: "Under a fixed 2-second p99 latency budget, your team is deciding between (A) deploying a larger base model that answers in one pass, or (B) deploying a smaller model that spends part of the latency budget on extra reasoning steps before answering (test-time / inference-time compute). What determines which is the better call?",
     options: [
-      "Option A is always correct, since serving one larger model end-to-end is architecturally simpler than a reasoning system overall",
-      "Option B is always correct, since test-time compute has fully replaced base-model scaling for every task type",
+      "Option A is generally cheaper to serve at scale, since spending latency on reasoning steps costs less GPU memory per request than hosting a larger model's weights",
+      "Option B is generally preferable once a model family offers a reasoning variant, since extra inference-time steps are strictly additive to quality",
       "The right choice should be made purely on hosting cost, independent of what the underlying task actually needs",
       "It depends on whether the task decomposes into steps — multi-step tasks gain more from reasoning, simple ones from scale"
     ],
@@ -6728,10 +6728,10 @@ export const PREP_QUESTIONS = [
     id: "found-llm-8", topic: "foundation-models", difficulty: "intermediate", band: "intermediate", gated: true, type: "mcq",
     question: "Your product has a fixed 200-page policy manual that changes twice a year. An engineer proposes stuffing the entire manual into a long-context model's prompt on every request instead of building a RAG pipeline. When is this actually the right call?",
     options: [
-      "Never — a dedicated retrieval pipeline is strictly better than full context, regardless of corpus size or update frequency",
+      "Only when the manual is small enough that stuffing it still leaves most of the context window free for multi-turn conversation history",
       "When the corpus is small and stable, since avoiding retrieval failure modes is worth the extra token cost per request",
       "Only once the context window is at least ten times larger than the document, leaving room for the answer",
-      "Always — long-context models have made retrieval pipelines obsolete for any collection under a million tokens"
+      "Whenever the model's context window is technically large enough to fit the document at all, regardless of how often it changes"
     ],
     correct: 1,
     explanation: "Stuffing a full corpus into context trades a fixed, predictable engineering cost (no chunking, no retrieval tuning, no reranker) for a recurring, scaling cost (every request pays for the full document's input tokens, and latency grows with prompt length). For a 200-page manual that changes twice a year, this can be the pragmatic choice — no retrieval pipeline to build or debug, and the failure mode of 'retriever missed the relevant chunk' disappears entirely. It stops being the right call once the corpus grows large enough that per-request token cost and latency become the bottleneck, or once the corpus updates so often that re-sending the whole thing on every request wastes cost the user never benefits from.",
@@ -6743,7 +6743,7 @@ export const PREP_QUESTIONS = [
     options: [
       "A 32K vocab trained on mostly English text fragments non-English scripts into far more tokens per sentence",
       "A smaller vocabulary always trains faster regardless of the language mix in the corpus, so 32K is the right call",
-      "Vocabulary size only affects the embedding layer and has no bearing on tokenization efficiency across languages",
+      "Vocabulary size affects English and non-English tokenization efficiency by roughly the same factor, so a 32K vocab trained on any corpus mix tokenizes all languages about equally efficiently",
       "32K vocabularies cannot represent non-Latin scripts at all, so tokenization would fail outright rather than being inefficient"
     ],
     correct: 0,
@@ -6755,21 +6755,21 @@ export const PREP_QUESTIONS = [
     id: "found-llm-10", topic: "foundation-models", difficulty: "intermediate", band: "intermediate", gated: true, type: "mcq",
     question: "You need to deploy a 7B model on a device with 6GB of available memory. fp16 needs ~14GB, INT8 needs ~7GB, INT4 needs ~3.5GB. INT4 is the only option that fits, but a teammate is nervous about quality loss. What should guide the final call?",
     options: [
-      "Reject INT4 outright, since any quantization below INT8 is considered too lossy for production use across every task type",
+      "Reject INT4 and switch providers, since consumer devices under 8GB are not viable targets for any 7B-class model",
       "Accept INT4 automatically, since it's the only precision level that technically fits the 6GB memory budget here",
       "Run your actual eval suite at INT4 versus fp16, since degradation varies by model, task, and calibration method",
-      "Switch to a smaller 3B model at fp16 instead, since a smaller full-precision model is always the safer choice"
+      "Switch to a smaller 3B model at INT8 instead — it lands in roughly the same ~3GB memory range with less quantization risk than INT4 on the larger model"
     ],
     correct: 2,
     explanation: "Memory constraints can force a technical option (only INT4 fits), but they don't determine whether that option is acceptable for your task — that's an empirical question. INT4 quantization degradation ranges from negligible (with good calibration, e.g., GPTQ/AWQ on many chat/classification tasks) to noticeable (especially on tasks requiring precise numeric or multi-step reasoning). The only reliable answer comes from running your actual production eval suite at INT4 versus the full-precision baseline and looking at the specific failure modes, not a blanket rule about what precision is 'safe.'",
     trap: "Treating quantization safety as a fixed threshold (e.g., 'INT8 is fine, INT4 is not'). Degradation depends heavily on the model, the calibration dataset, and the task — measuring on your own eval set is the only thing that actually resolves the concern."
   },
   {
-    id: "found-llm-11", topic: "foundation-models", difficulty: "intermediate", band: "intermediate", gated: true, type: "mcq",
+    id: "found-llm-11", topic: "foundation-models", difficulty: "intermediate", band: "advanced", gated: true, type: "mcq",
     question: "A startup is evaluating a Mixture-of-Experts model advertised as having 47B total parameters but only 13B 'active' parameters per token. An engineer assumes this means it will be as cheap to serve as a dense 13B model. What's wrong with that assumption?",
     options: [
       "MoE models are inherently slower than dense models with the same active parameter count, purely from router overhead",
-      "The 'active parameters' figure is essentially a marketing number with no real bearing on compute or memory at all",
+      "The active-parameter figure mainly predicts latency, not memory footprint — a 13B-active MoE runs about as fast as a dense 13B model, and the memory savings come from expert offloading",
       "MoE models only need to load the currently-active experts into memory, so the assumption about matching cost is correct",
       "Every expert's weights must stay resident in memory, so serving cost tracks the 47B total, not the 13B active figure"
     ],
@@ -6781,10 +6781,10 @@ export const PREP_QUESTIONS = [
     id: "found-llm-12", topic: "foundation-models", difficulty: "intermediate", band: "intermediate", gated: true, type: "mcq",
     question: "Your team is designing a very deep (100+ layer) transformer and debating layer normalization placement: the original Transformer paper's post-LN (normalize after the residual add) versus pre-LN (normalize before each sublayer, inside the residual branch). Why do most large modern LLMs use pre-LN?",
     options: [
-      "Pre-LN simply performs fewer normalization operations overall, which makes it computationally cheaper regardless of network depth",
+      "Pre-LN and post-LN perform the same number of normalization operations, so the difference is purely about gradient flow, not compute cost",
       "Post-LN renormalizes the residual path every layer, compounding instability at depth; pre-LN's clean residual trains more easily",
-      "Pre-LN produces strictly better final model quality than post-LN at every depth and every model size, no tradeoff",
-      "Post-LN is fundamentally incompatible with the Adam optimizer, which is the specific reason it was phased out"
+      "Pre-LN and post-LN reach the same final loss in practice; the difference is purely about wall-clock training time, not model quality",
+      "Post-LN needs a much longer learning-rate warmup schedule than pre-LN, which becomes impractical for training runs over roughly 1B parameters"
     ],
     correct: 1,
     explanation: "Post-LN (as in the original 'Attention Is All You Need' architecture) applies LayerNorm after adding the sublayer output to the residual stream — the residual path itself gets renormalized at every layer, and gradients flowing backward must pass through that normalization each time. At shallow depths this is manageable with careful warmup; at 100+ layers it becomes a genuine training-stability problem, often requiring very long or delicate learning-rate warmup to avoid divergence early in training. Pre-LN normalizes the input to each sublayer while leaving the residual stream itself unnormalized end-to-end, giving gradients a cleaner path back to earlier layers. This is the main reason GPT-2 onward, LLaMA, and most large modern LLMs default to pre-LN — it trades a small amount of final-loss headroom for dramatically easier training at scale.",
@@ -6795,7 +6795,7 @@ export const PREP_QUESTIONS = [
     question: "A team doubles the training batch size for a pretraining run to improve GPU utilization, keeping the learning rate fixed. Loss curves become smoother, but the run converges to a worse final loss than the smaller-batch run. What's the most likely explanation?",
     options: [
       "A lower-variance gradient, hence the smoother curve, can support a larger learning rate that was left unscaled",
-      "Larger batches always produce worse final loss regardless of the learning rate, so batch size should be minimized",
+      "Larger batches reduce the number of optimizer steps per epoch, so with the same total data the model receives fewer weight updates, which alone explains the worse final loss",
       "Batch size has no real interaction with learning rate, so the regression is likely an unrelated data pipeline bug",
       "Doubling the batch size effectively doubles the epochs seen, which caused the model to overfit the training data"
     ],

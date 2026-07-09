@@ -11,13 +11,8 @@ export const Q_PEFT_RLHF = [
     gated: false,
     type: "mcq",
     question: "What does PEFT (parameter-efficient fine-tuning) refer to?",
-    options: [
-      "Retraining the entire model on a smaller learning rate",
-      "Adapting a pretrained model by training only a small number of extra or selected parameters while keeping most weights frozen",
-      "Quantizing a model to run inference on cheaper hardware",
-      "Distilling a large model into a smaller student model",
-    ],
-    correct: 1,
+    options: ["Retraining the entire model on a smaller learning rate","Quantizing a model to run inference on cheaper hardware","Adapting a pretrained model by training only a small number of extra or selected parameters while keeping most weights frozen","Distilling a large model into a smaller student model"],
+    correct: 2,
     keywords: [],
     explanation:
       "PEFT methods (LoRA, adapters, prefix/prompt tuning) freeze the bulk of the pretrained weights and train only a tiny fraction of parameters. This slashes memory, storage, and compute versus full fine-tuning while recovering most of the task performance.",
@@ -31,13 +26,8 @@ export const Q_PEFT_RLHF = [
     gated: false,
     type: "mcq",
     question: "In LoRA, the weight update to a frozen matrix W is represented as which of the following?",
-    options: [
-      "A full-rank matrix ΔW learned directly",
-      "A low-rank product ΔW = BA, where B and A are much smaller matrices",
-      "A diagonal scaling matrix applied to W",
-      "A sparse mask that zeros out some entries of W",
-    ],
-    correct: 1,
+    options: ["A full-rank matrix ΔW learned directly","A diagonal scaling matrix applied to W","A low-rank product ΔW = BA, where B and A are much smaller matrices","A sparse mask that zeros out some entries of W"],
+    correct: 2,
     keywords: [],
     explanation:
       "LoRA freezes W and learns the update as a low-rank factorization ΔW = BA. If W is d×k, then B is d×r and A is r×k with rank r ≪ min(d,k), so you train only r(d+k) parameters instead of d·k.",
@@ -101,13 +91,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "In transformer LoRA fine-tuning, which weight matrices are most commonly targeted, and how are the two LoRA matrices initialized?",
-    options: [
-      "Only the embedding tables; both B and A initialized randomly",
-      "The attention projection matrices (often q_proj and v_proj); A is random Gaussian and B is initialized to zero so the initial update is zero",
-      "The layernorm parameters; both initialized to one",
-      "Only the final classification head; both initialized to zero",
-    ],
-    correct: 1,
+    options: ["Only the embedding tables; both B and A initialized randomly","The layernorm parameters; both initialized to one","The attention projection matrices (often q_proj and v_proj); A is random Gaussian and B is initialized to zero so the initial update is zero","Only the final classification head; both initialized to zero"],
+    correct: 2,
     keywords: [],
     explanation:
       "LoRA is typically applied to attention projections (classically q and v, often all of q/k/v/o and MLP layers in practice). B is initialized to zero and A to a random Gaussian, so BA = 0 at step 0 — training starts exactly at the pretrained model and the adapter learns from there.",
@@ -122,13 +107,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "QLoRA fine-tunes on top of a base model quantized to 4-bit NF4. Which statement correctly describes how the gradients and adapters work?",
-    options: [
-      "The 4-bit base weights are updated directly during backprop",
-      "The base stays frozen in 4-bit; gradients flow through the dequantized weights only to update the LoRA adapters, which are kept in higher precision (e.g. bf16)",
-      "Both the base weights and adapters are stored and trained in 4-bit",
-      "NF4 quantization is applied only to the LoRA adapters, not the base model",
-    ],
-    correct: 1,
+    options: ["The 4-bit base weights are updated directly during backprop","Both the base weights and adapters are stored and trained in 4-bit","NF4 quantization is applied only to the LoRA adapters, not the base model","The base stays frozen in 4-bit; gradients flow through the dequantized weights only to update the LoRA adapters, which are kept in higher precision (e.g. bf16)"],
+    correct: 3,
     keywords: [],
     explanation:
       "QLoRA keeps the base model frozen in 4-bit NF4 (a normal-float format matched to normally-distributed weights), dequantizes on the fly for the forward/backward pass, and only the small LoRA adapters (in bf16) receive gradient updates. This lets you fine-tune very large models on a single GPU.",
@@ -143,13 +123,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "After training a LoRA adapter, you can 'merge' it into the base weights. What does merging do and what is the main tradeoff?",
-    options: [
-      "It compresses the adapter further; the tradeoff is lower accuracy",
-      "It computes W' = W + (alpha/r)·BA and folds the update into the base weights, giving zero added inference latency but losing the ability to hot-swap adapters",
-      "It re-quantizes the base model; the tradeoff is longer training",
-      "It averages multiple adapters; the tradeoff is higher memory at inference",
-    ],
-    correct: 1,
+    options: ["It compresses the adapter further; the tradeoff is lower accuracy","It re-quantizes the base model; the tradeoff is longer training","It computes W' = W + (alpha/r)·BA and folds the update into the base weights, giving zero added inference latency but losing the ability to hot-swap adapters","It averages multiple adapters; the tradeoff is higher memory at inference"],
+    correct: 2,
     keywords: [],
     explanation:
       "Because ΔW = (alpha/r)·BA is just an additive low-rank update, you can precompute W' = W + ΔW once. The merged model has identical architecture to the base and zero extra inference cost — but you lose the swappable-adapter flexibility and can't cleanly serve many tasks from one base.",
@@ -215,9 +190,9 @@ export const Q_PEFT_RLHF = [
       "How does LoRA differ fundamentally from prefix-tuning / prompt-tuning as PEFT methods?",
     options: [
       "LoRA modifies the frozen weight matrices with a low-rank additive update, while prefix/prompt tuning leaves weights untouched and instead learns virtual tokens/activations prepended to the input or attention",
-      "They are identical; prefix-tuning is just LoRA applied to the embedding layer",
+      "LoRA and prefix-tuning both inject trainable low-rank matrices directly into the weight matrices, differing only in the rank used",
       "Prefix-tuning updates all weights while LoRA freezes them",
-      "LoRA only works for classification while prefix-tuning only works for generation",
+      "Prefix-tuning is strictly more parameter-efficient than LoRA in every setting, since it adds no matrices to the weights at all",
     ],
     correct: 0,
     keywords: [],
@@ -234,13 +209,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "You must fine-tune a 70B model but only have a single 48GB GPU. Rank the options by feasibility and correctness.",
-    options: [
-      "Full fine-tuning is easily feasible; QLoRA is unnecessary overhead",
-      "Full FT is infeasible (optimizer states + gradients for 70B won't fit); standard LoRA reduces trainable params but still loads the base in 16-bit; QLoRA quantizes the frozen base to 4-bit so the whole job fits",
-      "Only prompt-tuning can work; both LoRA and QLoRA require multi-GPU",
-      "QLoRA is worse than LoRA here because 4-bit always destroys quality",
-    ],
-    correct: 1,
+    options: ["Full FT is infeasible (optimizer states + gradients for 70B won't fit); standard LoRA reduces trainable params but still loads the base in 16-bit; QLoRA quantizes the frozen base to 4-bit so the whole job fits","Full fine-tuning is easily feasible; QLoRA is unnecessary overhead","Only prompt-tuning can work; both LoRA and QLoRA require multi-GPU","QLoRA is worse than LoRA here because dequantizing 4-bit weights on every forward pass roughly doubles training-step latency versus bf16 LoRA"],
+    correct: 0,
     keywords: [],
     explanation:
       "Full FT of 70B needs hundreds of GB (weights + gradients + Adam states), impossible on 48GB. Plain LoRA cuts trainable params but still holds the base in bf16 (~140GB), still too big. QLoRA's 4-bit NF4 base (~35GB) plus small bf16 adapters is what makes single-GPU fine-tuning of 70B feasible — with minimal quality loss.",
@@ -255,13 +225,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "Compared with classic bottleneck adapters (inserted MLP layers), what is LoRA's key inference-time advantage?",
-    options: [
-      "LoRA always has more trainable parameters and thus higher accuracy",
-      "LoRA's update is a linear low-rank term that can be merged into existing weight matrices, adding zero inference latency, whereas serial adapters insert extra layers that add sequential compute at inference",
-      "Adapters cannot be trained with backprop but LoRA can",
-      "LoRA requires storing the full base per task while adapters do not",
-    ],
-    correct: 1,
+    options: ["LoRA's update is a linear low-rank term that can be merged into existing weight matrices, adding zero inference latency, whereas serial adapters insert extra layers that add sequential compute at inference","LoRA and bottleneck adapters both add zero inference latency once inserted","Bottleneck adapters can also be merged losslessly into the base weights, just like LoRA","LoRA requires storing the full base per task while adapters do not"],
+    correct: 0,
     keywords: [],
     explanation:
       "Bottleneck adapters add new nonlinear layers in the forward path, so they impose extra sequential compute/latency even after training. LoRA's ΔW = BA is linear and additive, so it folds into W (W' = W + ΔW) with no architectural change and no added latency at inference.",
@@ -276,13 +241,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "A team reports QLoRA fine-tuning matched their 16-bit LoRA baseline on quality despite the base being 4-bit. Which explanation is most accurate?",
-    options: [
-      "4-bit quantization has no effect on the forward pass at all",
-      "The base is only frozen storage; NF4 preserves the weight distribution well, and because trainable adapters are still full precision, the model can compensate for quantization error during fine-tuning",
-      "The adapters are also 4-bit so precision matches end to end",
-      "Quality is preserved only because they used a tiny rank r=1",
-    ],
-    correct: 1,
+    options: ["The base is only frozen storage; NF4 preserves the weight distribution well, and because trainable adapters are still kept in higher precision (bf16), the model can compensate for quantization error during fine-tuning","4-bit quantization has no effect on the forward pass at all","The adapters are also 4-bit so precision matches end to end","Quality is preserved only because they used a tiny rank r=1"],
+    correct: 0,
     keywords: [],
     explanation:
       "NF4 is information-theoretically matched to normally-distributed weights, so quantizing the frozen base loses little. Crucially the trainable LoRA adapters remain in bf16 and are learned ON TOP of the quantized base, so training can absorb residual quantization error — which is why QLoRA closely tracks 16-bit LoRA.",
@@ -320,13 +280,8 @@ export const Q_PEFT_RLHF = [
     gated: false,
     type: "mcq",
     question: "What are the three canonical stages of the classic RLHF pipeline, in order?",
-    options: [
-      "Pretraining, quantization, distillation",
-      "Supervised fine-tuning (SFT), reward model training, RL optimization (e.g. PPO)",
-      "Reward modeling, pretraining, prompt engineering",
-      "PPO, SFT, evaluation",
-    ],
-    correct: 1,
+    options: ["Pretraining, quantization, distillation","Reward modeling, pretraining, prompt engineering","Supervised fine-tuning (SFT), reward model training, RL optimization (e.g. PPO)","PPO, SFT, evaluation"],
+    correct: 2,
     keywords: [],
     explanation:
       "The standard recipe: (1) SFT on demonstrations to get a competent starting policy, (2) collect human preference comparisons and train a reward model, (3) optimize the SFT policy against that reward model with RL (PPO), typically with a KL penalty back to the SFT reference.",
@@ -340,13 +295,8 @@ export const Q_PEFT_RLHF = [
     gated: false,
     type: "mcq",
     question: "What is the reward model in RLHF trained to do?",
-    options: [
-      "Generate the next token given a prompt",
-      "Output a scalar score predicting how much a human would prefer a given response, learned from human preference comparisons",
-      "Classify prompts into safe vs. unsafe categories only",
-      "Measure the perplexity of the base model",
-    ],
-    correct: 1,
+    options: ["Generate the next token given a prompt","Classify prompts into safe vs. unsafe categories only","Measure the perplexity of the base model","Output a scalar score predicting how much a human would prefer a given response, learned from human preference comparisons"],
+    correct: 3,
     keywords: [],
     explanation:
       "The reward model takes a (prompt, response) pair and outputs a scalar preference score. It's trained on human comparisons (typically a Bradley-Terry pairwise loss where the chosen response should score higher than the rejected one), providing the reward signal the RL stage maximizes.",
@@ -363,13 +313,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "In PPO-based RLHF, the objective adds a KL-divergence penalty between the current policy and the frozen SFT reference. Why?",
-    options: [
-      "To speed up gradient computation",
-      "To keep the policy from drifting too far from the reference and exploiting/over-optimizing the imperfect reward model (reward hacking), preserving fluency and diversity",
-      "To increase the reward model's accuracy during training",
-      "To force the policy to exactly reproduce the SFT outputs",
-    ],
-    correct: 1,
+    options: ["To speed up gradient computation","To increase the reward model's accuracy during training","To force the policy to exactly reproduce the SFT outputs","To keep the policy from drifting too far from the reference and exploiting/over-optimizing the imperfect reward model (reward hacking), preserving fluency and diversity"],
+    correct: 3,
     keywords: [],
     explanation:
       "The reward model is an imperfect proxy for human preference. Without regularization, RL will find degenerate, out-of-distribution outputs that score high on the RM but are bad to humans. A per-token KL penalty to the SFT reference keeps the policy in a trustworthy region, trading some reward for staying sane.",
@@ -383,13 +328,8 @@ export const Q_PEFT_RLHF = [
     gated: false,
     type: "mcq",
     question: "What is 'reward hacking' in RLHF?",
-    options: [
-      "An attacker stealing the reward model weights",
-      "The policy discovering outputs that score highly under the reward model but do NOT actually reflect human preferences, exploiting the RM's blind spots",
-      "The reward model overfitting to the training set of prompts",
-      "Using too small a learning rate so reward never increases",
-    ],
-    correct: 1,
+    options: ["The policy discovering outputs that score highly under the reward model but do NOT actually reflect human preferences, exploiting the RM's blind spots","An attacker stealing the reward model weights","The reward model overfitting to the training set of prompts","Using too small a learning rate so reward never increases"],
+    correct: 0,
     keywords: [],
     explanation:
       "Because the RM is a learned proxy, the RL optimizer can find adversarial-to-the-proxy behaviors — verbosity, sycophancy, particular formatting, hedging — that inflate the RM score without genuinely being better. This is Goodhart's law: optimizing a proxy hard enough breaks it.",
@@ -404,13 +344,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "PPO uses a clipped surrogate objective. What does the clipping accomplish in the RLHF setting?",
-    options: [
-      "It clips the reward model's output to a fixed range",
-      "It limits how much the policy probability ratio can change per update, preventing destructively large policy updates and stabilizing training",
-      "It removes the KL penalty when reward is high",
-      "It truncates generated sequences to a maximum length",
-    ],
-    correct: 1,
+    options: ["It clips the reward model's output to a fixed range","It removes the KL penalty when reward is high","It limits how much the policy probability ratio can change per update, preventing destructively large policy updates and stabilizing training","It truncates generated sequences to a maximum length"],
+    correct: 2,
     keywords: [],
     explanation:
       "PPO's clipped objective caps the ratio π_new/π_old within [1−ε, 1+ε] when advantages are involved, so a single update can't push the policy too far and collapse it. Combined with the value/critic estimate of advantages, this gives the stable, sample-reusing updates PPO is known for.",
@@ -425,13 +360,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "Why are human preferences usually collected as pairwise comparisons (A vs. B) rather than absolute numeric ratings for training the reward model?",
-    options: [
-      "Because pairwise comparisons require no human labelers",
-      "Because humans give more consistent, lower-variance judgments when comparing two responses than when assigning absolute scores, and the Bradley-Terry model turns comparisons into a scalar reward",
-      "Because absolute ratings cannot be used to train any neural network",
-      "Because pairwise data is always cheaper to collect than any rating",
-    ],
-    correct: 1,
+    options: ["Because humans give more consistent, lower-variance judgments when comparing two responses than when assigning absolute scores, and the Bradley-Terry model turns comparisons into a scalar reward","Because pairwise comparisons require no human labelers","Because absolute ratings cannot be used to train any neural network","Because pairwise data is always cheaper to collect than any rating"],
+    correct: 0,
     keywords: [],
     explanation:
       "Absolute 1–10 ratings drift between annotators and over time (calibration noise). Relative comparisons are more reliable, and the Bradley-Terry / logistic preference model converts a dataset of 'chosen > rejected' pairs into a consistent scalar reward function.",
@@ -475,13 +405,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "Why can't you replace RLHF with SFT alone if you only have human-written 'good' responses?",
-    options: [
-      "SFT is computationally impossible for large models",
-      "SFT only imitates provided demonstrations and can't learn from negative examples or push beyond the best demonstration; RLHF's preference signal teaches relative quality and lets the policy exceed the demonstrated behavior",
-      "SFT cannot be applied to instruction data",
-      "SFT always produces higher KL divergence from the base model",
-    ],
-    correct: 1,
+    options: ["SFT is computationally impossible for large models","SFT cannot be applied to instruction data","SFT always produces higher KL divergence from the base model","SFT only imitates provided demonstrations and can't learn from negative examples or push beyond the best demonstration; RLHF's preference signal teaches relative quality and lets the policy exceed the demonstrated behavior"],
+    correct: 3,
     keywords: [],
     explanation:
       "SFT maximizes likelihood of demonstrations — it has no signal about what makes one response BETTER than another, and no way to learn from rejected outputs. RLHF/preference optimization provides relative feedback (A > B), enabling the model to exceed the average demonstration and to down-weight subtly bad behaviors SFT would happily imitate.",
@@ -496,13 +421,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "RLAIF (RL from AI feedback) versus RLHF: what is the core substitution and its main risk?",
-    options: [
-      "RLAIF replaces PPO with DPO; the risk is instability",
-      "RLAIF replaces human preference labels with labels generated by an AI model (often guided by a constitution/principles); the main risk is inheriting and amplifying the labeler model's biases and blind spots",
-      "RLAIF removes the reward model entirely; the risk is slower training",
-      "RLAIF uses only rule-based rewards; the risk is reward hacking",
-    ],
-    correct: 1,
+    options: ["RLAIF replaces PPO with DPO; the risk is instability","RLAIF removes the reward model entirely; the risk is slower training","RLAIF uses only rule-based rewards; the risk is reward hacking","RLAIF replaces human preference labels with labels generated by an AI model (often guided by a constitution/principles); the main risk is inheriting and amplifying the labeler model's biases and blind spots"],
+    correct: 3,
     keywords: [],
     explanation:
       "RLAIF swaps expensive human preference annotation for an AI model producing the preference labels (e.g. Constitutional AI, where a model critiques/ranks responses against written principles). It scales cheaply, but quality is capped by the labeler model — its biases, errors, and blind spots get baked into the reward signal.",
@@ -538,13 +458,8 @@ export const Q_PEFT_RLHF = [
     type: "mcq",
     question:
       "For a math/coding task where correctness is checkable, why might a rule-based / verifiable reward (RLVR) be preferred over a learned reward model?",
-    options: [
-      "Because learned reward models are always faster to run",
-      "Because a verifiable reward (unit tests pass, answer matches ground truth) is an exact, non-gameable signal, avoiding the reward-hacking failure mode that plagues learned RM proxies",
-      "Because rule-based rewards require human comparisons at every step",
-      "Because RLVR eliminates the need for any policy optimization",
-    ],
-    correct: 1,
+    options: ["Because a verifiable reward (unit tests pass, answer matches ground truth) is an exact, non-gameable signal, avoiding the reward-hacking failure mode that plagues learned RM proxies","Because learned reward models are always faster to run","Because rule-based rewards require human comparisons at every step","Because RLVR eliminates the need for any policy optimization"],
+    correct: 0,
     keywords: [],
     explanation:
       "When correctness is programmatically verifiable, the reward is ground truth, not a proxy — the policy can't inflate it by exploiting RM blind spots. RLVR (reinforcement learning with verifiable rewards) sidesteps reward hacking on exactly the tasks where a learned RM is weakest and most gameable.",
