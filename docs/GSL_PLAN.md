@@ -1948,70 +1948,82 @@ scene-only pass, one module at a time, each independently esbuild-verified befor
 per module on whether geometry genuinely carries the argument (per the user's explicit rule) — not
 mechanically applying a scene to every module regardless of fit.
 
----
+## 2026-07-09 (later) — Pass-2 audits (5 A-tier + hallucination) + targeted fix pass, all in one batch
 
-## Log 2026-07-09 — My Tracks "Study →" bug: real root cause found (a hashchange/popstate race), fixed
+Dispatched 5 parallel, genuinely-cold Pass-2 adversarial audits (no writer reasoning given, text-only) against
+`hallucination` (S-tier) and the 5 A-tier modules `positional-encoding`, `rope`, `speculative-decoding`,
+`tempgame` — each against the full 22-item checklist (12 3B1B-STANDARD voice rules + 10 CONTENT-AUDIT-RUBRIC
+smells), with module-specific numeric-recomputation instructions baked into each prompt. User chose "all 5 in
+one batch" for the fix pass rather than math-bugs-only.
 
-**Symptom (user-confirmed via screenshots, reproduced live):** clicking "Study →" on a Concepts module item
-in My Tracks (e.g. a Language-Models-tier item like Tokenization) did not open that module — it landed on
-the Foundations gym-selector (`ConceptsApp`'s own View 1, `GymSelectorView`, headed "Foundations") instead.
+**2 confirmed math/factual errors, now fixed and verified:**
+- `tempgame` — the beam-search illustration's closing line asserted `"(−1.2 < −2.0)"` to prove beam recovers
+  a better sequence, but under the module's own higher-logP-is-better convention (used one line earlier to
+  label −1.2 "now BEST") the correct relation is −1.2 > −2.0; as written it was a false statement directly
+  contradicting its own preceding label. Fixed to `"(−1.2 is higher than −2.0 — less negative wins)"`,
+  sidestepping the `<`/`>` sign-confusion risk entirely.
+- `rope` — the rotation-identity numeric proof-check claimed the left-side dot product as `-0.9321` against
+  a right-side of `-0.9320`, framing the mismatch as "the 0.0001 gap is rounding." Independently
+  recomputed: both sides equal sin(1.2) ≈ −0.93204 by construction (this is literally what the identity
+  proves), so there is no legitimate gap — `-0.9321` was a plain arithmetic error. Fixed to `-0.9320` on
+  both sides and removed the false "rounding gap" framing (the point is now that they're *exactly* equal, not
+  approximately).
 
-**Why the earlier static trace missed it:** every individual piece (`MyTracks.jsx`'s `GYMID_BY_MODULE` map,
-`navigateTo()`'s state-setting order, `Concepts.jsx`'s `navKey`-keyed effect, the render conditionals) is
-individually correct — confirmed again this session by re-reading all of it fresh, plus a script-driven data
-audit (extracted `GYMS`/`MODULES`/`moduleSearchIndex.js` and cross-checked all 131 gym-module ids: **0
-mismatches**). The bug only exists in the *interaction* between two independent event listeners, which is
-invisible to a single-pass read of any one file.
+**Precision/depth fixes (no hard errors, but real gaps):**
+- `speculative-decoding` — the "α≈0.4 → well under one token per round" claim didn't reconcile with the
+  module's own formula (plugging in α=0.4 gives 1.65 emitted tokens, not <1); the module was silently
+  conflating *emitted* vs. *accepted-draft* counts. Rewrote to show both numbers explicitly and disambiguate
+  which one is "well under one." Also: labeled pos1/pos2's implicit accept probabilities in the illustration
+  (previously only pos3 showed the min(1,p/q) arithmetic), added inline glosses for HBM/KV-cache, and fixed
+  one literal "given everything above" → "given everything just covered" (prerender-awareness).
+- `positional-encoding` — fixed the "the naive approach above" prerender violation; added a dangling-thread
+  sentence pointing to the `rope` module (previously zero handoff language existed anywhere in the module,
+  despite `rope` existing specifically as its deeper algebra companion); expanded the YaRN/LongRoPE clause
+  (previously one trailing phrase vs. full paragraphs for RoPE/ALiBi — still lighter than its siblings but
+  now says *what* the per-frequency schedule buys you, not just that one exists) and expanded the NTK-aware
+  acronym.
+- `hallucination` — the "each one is a variant of the reader we just met" claim was false: only two readers
+  (torn-page, never-opened-book) were ever introduced in groundUp, but three types (closed-domain,
+  confabulation, open-domain) were claimed as variants of them. Added a genuine third reader vignette (real
+  page in hand, glanced past, answered from memory anyway) so closed-domain has an actual metaphor
+  grounding instead of a false callback. Also gave closed-domain and open-domain each a "so what"/detection
+  angle (previously bare "fixable with X" labels with no reasoning), and added one light recall-signal fix
+  for the groundUp/explanation[0] near-verbatim duplication of the quarterly-audits example.
+- Deliberately NOT done this pass (judgment call, flagged not silently dropped): `positional-encoding`'s
+  B8 gap (Position Interpolation still has no worked formula, unlike NTK/YaRN) and `rope`'s B8 gap (same —
+  Position Interpolation under-developed relative to its siblings) would need new worked-numeric content,
+  not a targeted sentence fix — left for a future pass if wanted. `tempgame`'s A1 jargon-second undercount
+  (only 1 of 2 required instances for "greedy"/"beam search") and A5 metaphor break in explanation[4] were
+  flagged but not touched this pass — real rewrite work, lower urgency than the confirmed math bug.
 
-**Root cause, concretely:** `navigate(view)` in `App.jsx` (~line 1245) sets `window.location.hash = view`,
-which for a Concepts nav is always the **bare** string `"concepts"` — it never carried the gym/module the
-caller (`navigateTo()`) already knows. Two listeners independently re-derive `conceptsGym`/`conceptsModule`
-from `window.location.hash` whenever it changes:
-1. The `hashchange` listener (~line 1551) — harmless here, since for a plain `"concepts"` hash it only calls
-   `setTopView`, never touches `conceptsGym`/`conceptsModule`.
-2. The `popstate` listener (~line 1578) — **not harmless**: `onPopState()` unconditionally does
-   `setConceptsGym(gymId); setConceptsModule(moduleId)` from whatever `parseConceptsHash(window.location.hash)`
-   returns, with no guard against a same-tick `navigateTo()` call. Its own comment states this listener was
-   deliberately scoped to `popstate` because "popstate fires ONLY for genuine session-history traversal…
-   never for navigate()'s plain `window.location.hash = view` assignment." **That assumption is the bug.**
+**Verification:** all 3 touched files (`foundationsRunnerData.js`, `src/data/foundations/market-gap.js`,
+`src/data/foundations/speculative-decoding.js`) syntax-checked in-sandbox first
+(`npx -y esbuild@0.21.5`), then written to the real repo via the device bridge (mtime-guarded, no
+conflicts), then a TRUE full-resolution native bundle check run directly on the Mac's own esbuild against
+the full `Concepts.jsx` import graph (5.0mb, clean) — confirms the edits compile in the real transitive
+graph, not just in isolation. Grepped the real on-disk files post-write to confirm each numeric fix landed
+verbatim (not just in the pre-write draft).
 
-Built a real, minimal React 18 + jsdom harness (not a re-implementation guess — the exact extracted logic of
-`navigate`/`navigateTo`/the two listeners/`ConceptsApp`'s `navKey` effect, driven through actual
-`act()`-wrapped renders with real async event flushing) to test this empirically rather than trust
-spec-reading alone. Result: **`window.location.hash = "concepts"` does trigger a `popstate` event** (fired
-before `hashchange`, confirmed twice, and specifically NOT triggered by `history.pushState()` in the same
-harness — ruling out "jsdom just fires popstate on everything"). Sequence observed: mount → `navKey` effect
-correctly sets `activeGym`/`active` → module renders → **popstate fires, sees the bare `"concepts"` hash,
-nulls `conceptsGym`/`conceptsModule`, bumps `navKey` again** → `ConceptsApp`'s effect re-runs with
-`origin="hash"` and null gym/module → lands back on `GymSelectorView`. This exactly reproduces the reported
-symptom end-to-end in the harness (`renderLog`: `VIEW1 → VIEW3:tokenizer → VIEW3:tokenizer → VIEW1`).
+**Not yet re-audited (cold Pass-2 re-run):** per 3B1B-STANDARD's loop process, a full re-audit round is the
+next step before calling any of these 5 modules re-verified-clean — not run yet this session, flagged as the
+immediate next step, not skipped.
 
-**Fix (in `src/App.jsx` only):**
-- `navigate(view, conceptsCtx)` — new optional second parameter. When navigating to `"concepts"` and the
-  caller supplies a `gymId`, the hash is now written as `concepts/<gymId>` or `concepts/<gymId>/<moduleId>`
-  (the same segment format `Concepts.jsx`'s own `syncConceptsHash` already uses) instead of the bare
-  `"concepts"`. Falls back to the old bare-hash behavior whenever no gym context is available (e.g. every
-  other `navigate(tab)` call site in the app, unchanged — this is fully backward compatible).
-- `navigateTo({...})` — now calls `navigate(tab, tab === "concepts" ? { gymId, moduleId } : undefined)`
-  instead of `navigate(tab)`.
-- Net effect: **any** later re-derivation from the hash — `hashchange`, a genuine `popstate`, or this
-  spurious one — now reaches the *same correct* `gymId`/`moduleId`, not `null`/`null`. Re-ran the exact same
-  harness with the fix applied: final state is `VIEW3_MODULE:tokenizer` throughout, hash ends as
-  `#concepts/language-models/tokenizer`. (Minor, acceptable side effect: if the spurious popstate fires, the
-  "opened from Tracks" origin flag flips to `origin="hash"`, so the in-page back button falls back to
-  "← Language Models" instead of "← My Tracks" — the module itself still opens correctly, which is the part
-  that was actually broken.)
-
-**Verification:** `npx -y esbuild@0.21.5 src/App.jsx --bundle --format=esm --loader:.jsx=jsx --external:react
---external:react-dom --external:react/jsx-runtime --external:recharts --external:lucide-react
---outfile=/dev/null` → clean (0 errors; only pre-existing unrelated `groundTruthIndex.js` duplicate-key
-warnings). Only `src/App.jsx` was touched — `Concepts.jsx`/`MyTracks.jsx` needed no changes.
-
-**NOT pushed** — same approve-first discipline as everything else in this doc.
+**Files touched:** `src/data/foundationsRunnerData.js` (hallucination, positional-encoding, tempgame),
+`src/data/foundations/market-gap.js` (rope), `src/data/foundations/speculative-decoding.js`. All written
+directly to the real repo on Sidharth's Mac via the device bridge — **not committed to git**, working-tree
+only. Push command (once reviewed, bundles with the pending `attention/relevance` scene commit above since
+both touch `foundationsRunnerData.js`):
 ```bash
 cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
 rm -f .git/index.lock .git/HEAD.lock && \
-git add src/App.jsx docs/GSL_PLAN.md && \
-git commit -m "Fix My Tracks Study-> landing on Foundations hub (hashchange/popstate race)" && \
+git add src/components/nicheViz/AttentionScenes.jsx src/components/nicheViz/foundationScenes.jsx src/data/foundationsRunnerData.js src/data/foundations/market-gap.js src/data/foundations/speculative-decoding.js docs/GSL_PLAN.md && \
+git commit -m "Add attention/relevance scene + Pass-2 fix pass (tempgame/rope math errors, 3 more modules' precision/depth gaps)" && \
 git push origin main
 ```
+
+**Still open:** the `kv-cache` and `tokenizer` scene-building agents dispatched earlier this session had not
+reported completion as of this entry — status unconfirmed, check before assuming done. The `sampling` scene
+agent DID complete earlier (design captured: `SceneMarbleJar`, T=0.5/1.0/2.0 jar distributions, top-p/top-k/
+min-p selection logic, a genuine top-p-vs-min-p divergence finding at T=1.0) but was never merged into the
+real `foundationScenes.jsx`/`foundationsRunnerData.js` — still pending, not lost, needs a merge pass same as
+`attention/relevance` got.
