@@ -2598,3 +2598,53 @@ git add src/data/preplabQuestions.js src/data/foundationsRunnerData.js \
 git commit -m "Question-bucket rebalance (156 fixes) + positional fixes + LM gym completion: groundUps for the 5 missed modules (seq-parallel, gqa-mqa, sparse-attention, training-signal, nextoken)" && \
 git push origin main
 ```
+
+## 2026-07-09 (continued) — Cold Pass-2 audits: Retrieval gym (8 modules) + Evaluation gym (4 modules), findings fixed
+
+First audit wave of the four-gym program. Three cold auditors (module source extracted device-side to
+fresh JSONs to dodge the stale-mirror issue) + one follow-up auditor. Every worked number hand-recomputed.
+
+**Verdicts:** chunking, query-rewriting, multi-hop-retrieval (0.9^n decay table verified), llm-as-judge,
+eval-contamination, calibration (full ECE table recomputed: 0.001+0.045+0.144=0.190 ✓) — CLEAN.
+embeddings (the gold-standard module) — CLEAN on a dedicated re-audit after an extractor bug in this
+session's tooling initially fed the auditor the recap-patch stub instead of the real module (dict-key
+collision between foundationsRunnerData and recap-patch-a; caught because the auditor reported the module
+had no body).
+
+**Findings fixed (3 critical, 6 minor):**
+- `dense-vs-sparse-retrieval` CRITICAL: RRF illustration's punchline "Neither retriever alone got it right;
+  the FUSION did" contradicted its own table (BM25 ranked the runbook #1). Rewritten to the true lesson
+  (fusion preserved BM25's exact-match win without giving up dense's picks). RRF arithmetic itself verified
+  correct (1/61+1/63 > 1/63+1/62). Plus ANN/HNSW acronyms glossed mechanism-first.
+- `rag-eval` CRITICAL: worked nDCG@5 said ~0.77; hand recomputation gives DCG=1.0616, IDCG=1.6309,
+  nDCG=0.651 — fixed to ~0.65. Plus the "RAG triad" was misattributed to RAGAS (it's TruLens's framing;
+  RAGAS's core metrics are four) — reattributed.
+- `embeddings` recap-patch CRITICAL: keyPoints/recap flattened the body's hedged claim into a false
+  absolute ("ada-002 never learned clinical synonyms co-occur... land far apart" — false for the
+  MI/heart-attack pair specifically). Softened to match the body's defensible hedged form.
+- `reranking` minor x2: BGE-reranker wrongly listed among hosted APIs (it's open-source/self-hosted) —
+  both occurrences fixed; ANN glossed.
+- `rag-ingestion-pipeline` minor: unexplained "~350,000 chunks" figure (didn't follow from 12k docs) —
+  replaced with a non-quantified phrasing.
+
+All 6 touched files @babel/parser-clean. **Files:** recap-patch-a.js, deepen-thin.js, retrieval-breadth.js,
+gap-agenteval-ragingest.js (all already in the pending commit's file list except recap-patch-a and
+deepen-thin — updated command below).
+
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/preplabQuestions.js src/data/foundationsRunnerData.js \
+  src/data/foundations/retrieval-breadth.js src/data/foundations/gap-agenteval-ragingest.js \
+  src/data/foundations/gap-routing-security.js src/data/foundations/breadth-2.js src/data/foundations/market-gap.js \
+  src/data/foundations/recap-patch-a.js src/data/foundations/deepen-thin.js \
+  src/data/agents/agent-core.js src/data/agents/agent-eco.js src/data/agents/agent-sim.js \
+  docs/GSL_PLAN.md && \
+git commit -m "Bucket rebalance (156) + LM gym 5 missed groundUps + Pass-2 audits: retrieval+evaluation gyms (3 critical math/consistency fixes)" && \
+git push origin main
+```
+
+**Audit status:** Retrieval 8/8 audited (rag-pipeline just migrated by parallel session — needs its own
+pass later), Evaluation 4/4 of the auditable set (eval-loop migrated, eval-design/debug still stubs,
+hallucination-lab is a pure lab). **Next:** Production gym audit (9 modules), agents-gym B-tier groundUps,
+glossary harvests, migrations.

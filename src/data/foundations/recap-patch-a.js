@@ -7,11 +7,11 @@ export const RECAP_PATCH_A = {
       "**The distributional hypothesis is the training objective.** Phrases in similar contexts (co-occurring with the same neighbors) are forced into similar regions of vector space.",
       "**Cosine similarity measures the angle, not magnitude.** It scores meaning overlap between two vectors — near 1 for semantically similar text regardless of norm.",
       "**Contextual encoders handle polysemy.** ada-002 gives 'bank' different vectors in 'river bank' vs 'bank account'; static models assign one fixed vector.",
-      "**Geometry reflects the training distribution.** ada-002 trained on general web text never learned clinical synonyms co-occur, so 'myocardial infarction' and 'heart attack' land far apart.",
+      "**Geometry reflects the training distribution.** ada-002 learned from general web text, where clinical phrasing and everyday phrasing rarely keep the same company — so domain synonym pairs can land farther apart than retrieval needs.",
     ],
     recap: [
       "**Embeddings** = semantic similarity → geometric proximity; cosine similarity scores the angle, not token-ID distance.",
-      "**Geometry is bounded by training distribution** — general-web ada-002 never co-occurred with clinical synonyms, so no neighbor relationship forms.",
+      "**Geometry is bounded by training distribution** — a general-web model may never have seen a domain's synonyms sharing contexts, so the neighbor relationship never forms.",
       "**Exact-heading hits + natural-language misses** → info is indexed, model just lacks the synonym link.",
       "**Fix:** domain embedding model (BiomedBERT, MedCPT), fine-tune on query-doc pairs, or reranker — re-embed the whole index on model switch.",
     ],

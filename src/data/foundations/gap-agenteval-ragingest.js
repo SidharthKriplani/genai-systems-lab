@@ -131,7 +131,7 @@ FULL REBUILD (naive nightly job)
 
 INCREMENTAL UPSERT (by doc id)
   look up doc id ─► re-parse + re-chunk + re-embed THIS doc's ~30 chunks
-  upsert those 30 chunk vectors, leave the other ~350,000 chunks untouched
+  upsert those 30 chunk vectors, leave every other chunk in the index untouched
   cost ∝ SIZE OF THE CHANGE   (30 chunks, seconds, cents)
 
   DELETE handling: on doc delete, remove its chunks by doc-id mapping
