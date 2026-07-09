@@ -2648,3 +2648,47 @@ git push origin main
 pass later), Evaluation 4/4 of the auditable set (eval-loop migrated, eval-design/debug still stubs,
 hallucination-lab is a pure lab). **Next:** Production gym audit (9 modules), agents-gym B-tier groundUps,
 glossary harvests, migrations.
+
+## 2026-07-09 (continued) — Cold Pass-2 audits: Production gym (9 modules), findings fixed
+
+Two cold auditors over the 9 auditable Production modules (fresh device-side extraction). Every worked
+number hand-recomputed. **Verdicts: observability-concepts and model-routing-cascades CLEAN** (routing
+economics fully verified: 670 vs 2,000 -> 66.5% / 3.0x, cascade 700 -> 65% / 2.86x). Findings fixed
+(3 critical, 14 minor applied; 1 auditor finding REJECTED — flashattn's "closing recap"-style scenario is
+the house convention, scenarios render after the explanation):
+
+- `cost-latency-concepts` CRITICAL: the module's own arithmetic (2.714x per-request x 1.2 volume = 3.26x)
+  produced a ~$26K bill, but scenario/illustration/body/recap all said $34K / ~4x / 4.25x — fixed to
+  $26K / ~3.3x in all four spots. (All other numbers verified: $0.0035 -> $0.0095 per request, MCQ1's 8%.)
+- `latency-planner` CRITICAL: "3.3s gap between p95 (5.4s) and p99 (8.2s)" — 8.2−5.4=2.8; fixed in body +
+  MCQ stem (the module's own illustration already said 2.8). Minor: 300->80 words is a ~73% cut, not
+  "roughly halves" (3 spots); 400ms TTFT figure now framed as typical rather than for the queued p95 request.
+- `flashattn` minors: "bit-identical" overclaims softened to exact-up-to-floating-point-rounding (4 spots,
+  incl. a false "requires full-precision arithmetic" line in an MCQ explanation); 512MB score matrix
+  correctly labeled per-head-per-layer (+ illustration totals); unexplained d in the ~16MB O-write now
+  states d=512; 4-10x/5-10x range drift unified; "on-chip HBM" corrected (HBM is off-chip DRAM).
+- `managed-vs-selfhosted` CRITICAL: the 2.1-2.3B tokens/month crossover exceeds the priced 2xA100 setup's
+  own ~1.9B/month capacity — at full capacity the managed bill (~$15.6K) is still below the $16.8-18.3K
+  TCO, so the fixed-TCO division never breaks even on that hardware. Added the scaling caveat (crossover
+  assumes adding hardware; the division is a floor). Minors: MCQ overclaim scoped to raw-compute-only;
+  1B/1.7B thresholds now derived (~50%/~80% of crossover); fabricated MCQ quote fixed.
+- `prompt-regression-signals` minor: self-contradictory golden-set claim reworded. `quality-drift` minors:
+  two fabricated verbatim quotes in MCQ explanations replaced with the actual claims. `cost-attribution`
+  minor: same quote-fabrication fix ($180K total verified).
+
+All files @babel/parser-clean. **Production gym: 9/9 auditable modules audited, all findings resolved.**
+
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/foundations/deepen-thin.js src/data/foundations/gap-agenteval-ragingest.js \
+  src/data/foundations/recap-patch-a.js src/data/foundations/retrieval-breadth.js \
+  src/data/foundations/production-tone.js src/data/foundationsRunnerData.js \
+  docs/GSL_PLAN.md && \
+git commit -m "Pass-2 audits: retrieval+evaluation+production gyms — 6 critical fixes (rag-eval nDCG, RRF punchline, embeddings recap, cost-latency 34K->26K, latency 3.3->2.8s, TCO crossover caveat) + minors" && \
+git push origin main
+```
+
+**Remaining in program:** agents-gym B-tier groundUps (9) + enterprise-ai-cost-model groundUp; glossary
+harvests (retrieval/production/evaluation); context/eval-design/debug migrations; answer-key audit of
+older bucket questions; Pass-2 for the just-migrated eval-loop/rag-pipeline RUNNER_DATA content.
