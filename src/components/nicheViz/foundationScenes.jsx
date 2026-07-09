@@ -13,6 +13,7 @@ import {
   TokenJourney,
 } from "./TransformerScenes.jsx";
 import { runTransformer, TRANSFORMER_SENTENCES } from "../../utils/tinyTransformer.js";
+import { SceneRelevanceMatch } from "./AttentionScenes.jsx";
 
 // Standalone journey for the reading flow: fixed example (sentence 0, 2 heads, T=1.0) so it
 // needs no wiring; the full journey with live controls renders again in Hands-On below.
@@ -27,4 +28,5 @@ export const FOUNDATION_SCENES = {
   "transformer/stamp": SceneStampTest,
   "transformer/highway": SceneHighway,
   "transformer/mask": SceneMask,
+  "attention/relevance": SceneRelevanceMatch,
 };

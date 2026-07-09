@@ -1878,3 +1878,72 @@ to be committed).
 
 ### Not pushed
 No git commands run this session; human reviews and pushes separately, per root CLAUDE.md.
+
+## 2026-07-09 — LM-0 recon (corrects a stale handoff) + first S-tier sibling scene: `attention/relevance`
+
+**LM-0 recon, verified against the real files (not re-derived from a stale handoff doc that assumed
+attention/kv-cache/sampling/tokenizer were still pre-Pass-2):** confirmed via `Concepts.jsx` line ~12031
+the Language Models gym is exactly 15 modules — S-tier (5): tokenizer, attention, transformer, sampling,
+hallucination; A-tier (5): positional-encoding, rope, speculative-decoding, tempgame, kv-cache; B-tier (5):
+seq-parallel, gqa-mqa, sparse-attention, training-signal, nextoken. Grepped `groundUp` presence directly:
+confirms the "Rollout status" entry above (attention/kv-cache/sampling/tokenizer/transformer content-clean,
+Pass1+Pass2 both done) and the later Phase-1 entry (hallucination/positional-encoding/rope/
+speculative-decoding/tempgame — Pass 1 only, Pass 2 not run) are both still accurate; B-tier confirmed
+`groundUp`-free on all 5 (gqa-mqa/sparse-attention live in `foundations/market-gap.js` and
+`foundations/breadth-2.js` respectively, not `foundationsRunnerData.js` — not previously checked directly).
+Scene registry confirmed still 5 keys, all `transformer/*`, before this session's addition.
+**User decision (asked directly, given the corrected picture): scenes-first for the already-Pass-2-clean
+S-tier siblings (attention → kv-cache → sampling → tokenizer), then Pass-2 audits on the 5 A-tier modules,
+then B-tier writer passes.**
+
+**Shipped: `attention/relevance` — the first scene for an S-tier sibling of `transformer`.** New file
+`src/components/nicheViz/AttentionScenes.jsx`, exporting `SceneRelevanceMatch`. One persistent object (the
+query token *agreed* + its 5 real candidate keys — surgeon/patient/who/treated/the) with a 3-mode selector
+that walks the module's own already-narrated arc: **Equal weighting** (the module's own stated 20%-each
+dilution problem) → **Learned Q·K → softmax** (the module's own already-computed real numbers: raw score
+1.82 for surgeon, final weights 51/18/11/10/9%, reused verbatim, not recomputed) → **No √d_k scaling**
+(illustrative, explicitly labeled as such in the caption — same 5 raw scores × 22, standing in for a
+128-term sum instead of the toy 4-term one, softmaxed with no scaling; independently computed via a Python
+one-liner per the numeric self-check rule: `[40.04, 17.60, 6.60, 4.40, 2.64]` → softmax gives surgeon
+100.000000% and every other candidate 0.000000% to 6 decimal places — matches the module's own "one winner,
+everyone else silenced" claim exactly). Pause-and-predict gate wired before Mode C reveals ("does softmax
+become more decisive, less decisive, or unchanged without √d_k?" — wrong answers get a targeted nudge, not
+just marked wrong). Color/style matches the existing violet accent already used for attention everywhere
+else in the gym (`AttentionModule`'s own Hands-On tab, `SceneBlendTrap`).
+
+Registered `"attention/relevance": SceneRelevanceMatch` in `foundationScenes.jsx`. Inserted exactly one
+`{ type: "scene", sceneId: "relevance" }` marker into `attention`'s `explanation[]` in
+`foundationsRunnerData.js`, placed right after "Put all four steps in one line..." (the module's own
+four-step consolidation paragraph) and before the O(n²) cost paragraph — the natural spot where the reader
+has just finished all three narrative beats (dilution, real Q·K·softmax, why scaling matters) the scene
+recaps visually. No prose was rewritten — content was already Pass-2 clean; this is scene-only, per the
+user's chosen sequencing.
+
+**Verification (Definition of Done, all 6 points):** (1) narrative unchanged, N/A here — scene-only pass;
+(2) scene built matching existing prose exactly (reuses the module's own numbers, no new claims); (3)
+pause-and-predict gate present; (4) technical-claims grep on the full `attention` block post-edit — √d_k,
+Q_agreed, K_surgeon, 1.82, 51%, 9%, O(n²), multi-head, "attention weight", "raw relevance score", "scaled
+relevance score" all still present; (5) esbuild — first a syntax-only pass in-sandbox
+(`npx -y esbuild@0.21.5`), then, after writing the 3 files to the real repo via the device bridge, a TRUE
+full-resolution bundle check run directly on the Mac's own `node_modules/.bin/esbuild` (not the sandbox's,
+avoiding the known ARM64 .bin-shim issue entirely since this ran natively) against
+`foundationsRunnerData.js` (1.9mb bundle, clean), `foundationScenes.jsx` (45.1kb, clean), and the full
+`Concepts.jsx` (5.0mb, clean — the real transitive import graph, not a subset); (6) prerender-awareness —
+no "above/below" language anywhere in the scene's captions or the module's surrounding prose (unchanged).
+
+**Files touched:** `src/components/nicheViz/AttentionScenes.jsx` (new), `src/components/nicheViz/
+foundationScenes.jsx`, `src/data/foundationsRunnerData.js`. All 3 written directly to the real repo on
+Sidharth's Mac via the device bridge (not the sandbox) — **not committed to git**, working-tree only, per
+standing approve-first-push discipline. Push command (once reviewed):
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/components/nicheViz/AttentionScenes.jsx src/components/nicheViz/foundationScenes.jsx src/data/foundationsRunnerData.js docs/GSL_PLAN.md && \
+git commit -m "Add attention/relevance scene (first S-tier sibling of transformer)" && \
+git push origin main
+```
+
+**Next (per the user's chosen order):** `kv-cache` scene, then `sampling`, then `tokenizer` — same
+scene-only pass, one module at a time, each independently esbuild-verified before moving on. Judgment call
+per module on whether geometry genuinely carries the argument (per the user's explicit rule) — not
+mechanically applying a scene to every module regardless of fit.
