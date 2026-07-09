@@ -49,6 +49,9 @@ import { RUNNER_NLP_4 } from "./foundations/nlp-foundations-4";
 import { RUNNER_GAP_A } from "./foundations/gap-agenteval-ragingest";
 import { RUNNER_GAP_B } from "./foundations/gap-routing-security";
 
+// ── Hardcoded-component migration (2026-07-09): context/eval-design/debug ──────
+import { RUNNER_HARDCODED_MIGRATION } from "./foundations/hardcoded-migration";
+
 export const RUNNER_DATA = {
 
   // ── New foundations modules (authored in ./foundations/*.js) ─────────────────
@@ -1268,6 +1271,7 @@ ALiBi (no rotation):   score −= m·(i−j)   linear distance penalty, no train
   "enterprise-ai-cost-model": {
     depthTier: "standard",
     interviewWeight: "medium",
+    groundUp: "You know what a token costs on the way in and on the way out. Then a pilot goes well, and the question arrives that sinks more AI budgets than any model bill: what will this cost at real scale? The tempting math is a straight multiplication — pilot cost times the growth in headcount. It looks rigorous, and it fails, because user populations are not uniform. In a realistic enterprise rollout, roughly 15% of active users consume three to four times the average token volume, about 65% sit near the average, and around 20% barely touch the tool, at a fifth of average. That small hungry slice — the **heavy-user tail** — is the most common source of enterprise AI budget overruns, and a small pilot may never have surfaced it: a hundred people isn't enough for the extremes of a usage distribution to stabilize.\n\nSo this module builds the model the defensible way, from measurements you already have. From pilot data you take average input and output tokens per session, sessions per active user per day, and one number that changes everything: the fraction of registered users who actually use the tool on a given day, the **daily active user (DAU) rate**. Ten thousand registered users at a 30% DAU rate is three thousand active users on any given day — and it's those three thousand you split across the heavy, average, and light tiers to get total daily tokens. Run that math honestly and you don't get a number; you get a spread, reported as scenarios: a typical month (the **p50**) and a near-worst-case ceiling (the **p95**) — the month when the heavy tier skews toward its four-times ceiling instead of its three-times floor.\n\nEven then, a forecast alone isn't something a finance team can rely on, because a ceiling is only real if something enforces it. That means control levers built into the application: per-user daily token budgets, an automatic switch to a cheaper model once a user crosses a threshold, and serving repeated near-identical prompts from a saved answer — **query caching** — which matters because, as an illustrative estimate, something like 15-20% of a writing assistant's queries are near-duplicates of each other.\n\nBy the end of this module you'll be able to turn a few months of pilot token data into a per-user cost model with an explicit usage distribution, present it as a p50 scenario plus a p95 ceiling rather than a point estimate, and pair that ceiling with the enforcement mechanisms that make it credible.",
     scenario: "You're presenting the business case for expanding an AI writing assistant from 100 pilot users to 10,000 enterprise users. Finance wants a cost-per-user model. The naive approach — multiply pilot cost by 100× — is being challenged. You have 3 months of pilot token usage data and need to build a defensible model.",
     explanation: [
       "Managed-vs-selfhosted established infrastructure cost at a given token volume. What it left: how many tokens will 10,000 users actually consume, and how does that distribution interact with pricing? The naive path — multiply 100-person pilot cost by 100× — fails because enterprise user populations are heterogeneous. A realistic enterprise distribution: 15% heavy users (3–4× average token volume), 65% average users, 20% light users (sporadic use, 0.2× average). The heavy-user tail is the most common source of enterprise AI budget overruns — and the 100-person pilot may not have surfaced it.",
@@ -3073,6 +3077,9 @@ Vector store: 1,240 chunks indexed. Top-3 by cosine similarity retrieved:
   // ── Gap modules (2026-07-04) ──────────────────────────────────────────────────
   ...RUNNER_GAP_A,
   ...RUNNER_GAP_B,
+
+  // ── Hardcoded-component migration: context done, eval-design/debug pending ──
+  ...RUNNER_HARDCODED_MIGRATION,
 
 };
 

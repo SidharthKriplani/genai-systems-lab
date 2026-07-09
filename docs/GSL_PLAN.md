@@ -2692,3 +2692,99 @@ git push origin main
 **Remaining in program:** agents-gym B-tier groundUps (9) + enterprise-ai-cost-model groundUp; glossary
 harvests (retrieval/production/evaluation); context/eval-design/debug migrations; answer-key audit of
 older bucket questions; Pass-2 for the just-migrated eval-loop/rag-pipeline RUNNER_DATA content.
+
+---
+
+## 2026-07-09 — Batch: agents-gym groundUps (10) + glossary batch 4 (102 terms) + cold audit — AND SESSION HANDOFF (fable → sonnet 5)
+
+### Done this batch
+- **10 groundUps written + applied** (writer pass → cold adversarial audit → fix loop, per 3B1B-STANDARD pipeline):
+  - agents B-tier ×9: agent-memory-libraries, agent-frameworks, agent-mcp, agent-a2a, agent-config-lab, agent-design-challenge, agent-loop-simulator, agent-computer-use, agent-long-running
+  - production ×1: enterprise-ai-cost-model
+- **Glossary batch 4**: 124 → 226 terms (34 retrieval / 43 production / 25 evaluation, deduped vs existing keys; dropped bare "router" — MoE sense collision).
+- **Cold audit of the 10 openers** (separate agent, zero writer visibility): 3 HIGH + 7 LOW findings → **14 exact-match count-verified fixes**:
+  - HIGH: loop-simulator opener duplicated its scenario sentence verbatim; long-running near-quoted its scenario task; cost-model opener pre-narrated its closing case ("seat at the table" sentence cut).
+  - LOW: scenario-shadowing softened in frameworks/config-lab/memory-libraries/design-challenge; design-challenge no longer promises an "exercise" the body lacks; A2A **Task** bold moved after its description; **A2A date corrected to April 2025** (was "~May 2025") in opener + 3 body spots (keyPoints, comparison, recap) — Google announced A2A at Cloud Next, April 9 2025.
+  - agent-mcp + agent-computer-use audited CLEAN; all numbers/library roles/dates verified against bodies.
+- **Verification**: all 5 touched files @babel/parser PARSE OK; "May 2025" count now 0 in agent-eco.js; fix-landing greps all pass; glossary 226 unique keys.
+
+### Push command (files from this batch ONLY — CLAUDE.md / MASTERY_ROOM.md / PENDING_APPROVALS.md are the parallel session's; never git add .)
+```
+cd /Users/ASUS/Documents/Professional/BreakLabs/labs/genai-systems-lab
+git add src/data/agents/agent-core.js src/data/agents/agent-eco.js src/data/agents/agent-sim.js src/data/foundationsRunnerData.js src/data/glossary.js docs/GSL_PLAN.md
+git commit -m "Agents-gym groundUps (10, cold-audited: 14 fixes incl A2A date April 2025) + glossary batch 4 (226 terms)"
+git push
+```
+
+### HANDOFF — state of the world for the next session (model switching fable → sonnet 5)
+
+**Standing rules (non-negotiable):** never push git (prepare commands, Sidharth runs them — often mid-session, so ALWAYS re-derive from live `git status`); never commit EXTERNAL-ASSESSMENT.md; never `git add .`; update this file after every batch; verify independently (hand-recomputed math, @babel/parser parse, count-verified replacements) before claiming done.
+
+**Pipeline (3B1B-STANDARD.md):** (1) writer pass → (2) cold adversarial Pass-2 audit by a separate agent with zero writer visibility, fix-loop ≤3 → (3) glossary + interview-question harvest from finalized text. House convention: module `scenario` renders AFTER the explanation (closing case) — recap-style scenarios are correct; openers must not pre-narrate or quote them. deeperMath exempt from voice rules.
+
+**Device-bridge mechanics (critical):** device mount /sessions/<id>/mnt/BreakLabs ↔ /Users/ASUS/Documents/Professional/BreakLabs. STALE-MIRROR BUG: re-staging an already-staged path serves old bytes — always extract device-side to FRESH-named JSONs before staging, hash-verify when in doubt. Authoritative reads/writes = device_bash python. device_bash cannot rm — move scraps to BreakLabs/_to_delete/. Verify every write with @babel/parser (sourceType module, jsx plugin).
+
+**COMPLETE (full pipeline):** Language Models gym 15/15; NLP Foundations 12/12 (+40-question bucket, 66 glossary terms). Retrieval / Evaluation / Production gyms: Pass-2 audits done, all findings fixed, glossary harvested. Agents gym: 9 B-tier groundUps done (this batch); A-tier modules had groundUps already. All 6 preplab buckets at 0% length-tell (285 questions). Glossary at 226 terms. AttentionScenes.jsx rebuilt.
+
+**REMAINING BACKLOG (next session picks up here):**
+1. 3 hardcoded-module migrations to RUNNER_DATA: `context`, `eval-design`, `debug`.
+2. Pass-2 audits for parallel-session-migrated `eval-loop` / `rag-pipeline` RUNNER_DATA content.
+3. Answer-key CORRECTNESS audit of older bucket questions (rag/evaluation/llmops/serving were only length-rebalanced, never correctness-audited; nlp + agents buckets ARE correctness-audited).
+4. Agents gym: interview-question harvest + any A-tier opener re-audit not yet done under the current spec; check whether an agents preplab bucket needs the same pipeline treatment.
+5. `attention-3d` is a hardcoded visual — no groundUp expected.
+6. Untracked repo-root scratch (_orphaned_qbank_for_msl.json, _verify_mcq_balance.mjs, _verify_prep_balance.mjs): _verify_prep_balance.mjs is the length-tell checker the pipeline uses — decide whether to commit it; the other two are Sidharth's call.
+
+**Scratch state:** _gu10_check.json + _gu10_bodies.json in BreakLabs/ root are this batch's audit inputs — safe to move to _to_delete/.
+
+
+---
+
+## 2026-07-09 — Backlog item 1 (partial): `context` writer pass — hardcoded-module migration
+
+Picked up backlog item 1 ("3 hardcoded-module migrations to RUNNER_DATA: `context`, `eval-design`,
+`debug`"). First step was actually scoping it: these 3 aren't data files sitting somewhere waiting to be
+moved — they're bespoke, hand-coded React components (`ContextWindowModule`, `EvalDesignModule`,
+`DebugModule`, all in `src/Concepts.jsx`) with no `groundUp`/`explanation`/`scenario` narrative at all.
+
+**Architecture finding (important, changes the shape of this task):** migrating to RUNNER_DATA does NOT
+require touching the component or the Concepts.jsx registry. `Concepts.jsx`'s module view already does
+`const runnerData = RUNNER_DATA[active]` and, when it exists, renders `<FoundationsRunner Component={...}
+runnerData={...} />` — the narrative teaching layer ON TOP of the existing bespoke interactive, exactly the
+pattern `transformer` already uses (`component: TransformerModule` unchanged, narrative sourced from
+`RUNNER_DATA["transformer"]`). So "migrating a hardcoded module" == writing its RUNNER_DATA entry; the
+interactive component stays exactly as-is and gets rendered as the "Hands-On" section automatically.
+
+**`context` — writer pass complete this batch:** new file `src/data/foundations/hardcoded-migration.js`,
+exporting `RUNNER_HARDCODED_MIGRATION`, imported and spread into `RUNNER_DATA` in
+`foundationsRunnerData.js` (added last, after `RUNNER_GAP_B`, to avoid any collision — confirmed no
+pre-existing `"context"` key). Content: `groundUp` picks up specifically where `transformer`'s own
+scenario left off (depth-costs-compute → length-costs-compute-quadratically); `explanation[]` builds the
+O(n²) attention-cost crisis (4→8 tokens = 16→64 comparisons demonstrated before naming "quadratic"/O(n²);
+production-scale 1k→128k ≈16,000× cross-checked against the interactive's own claim), the token-budget
+formula (max_input = context_limit − max_output − safety_margin, worked on a concrete 7,125-token/87%-full
+example built from the interactive's own CTX_SECTIONS base/perUnit constants), then the "lost in the
+middle" crisis (Liu et al. 2023 U-curve, using the interactive's own LITM_RECALL array — 92% pos.1, 48%
+pos.6, 88% pos.10), the three production fixes (sandwich placement, rerank-before-place, fewer-better-
+chunks), and the three failure-mode cards (soft overflow, stale context drift, output budget collision) —
+all pulled from and cross-checked against the actual numbers already hard-coded in `ContextWindowModule`
+(`CTX_MODELS`, `CTX_SECTIONS`, `LITM_RECALL`), not invented. Forward-hooks to the next module (`flashattn`)
+at the close, per the no-dangling-thread rubric smell. 6 keyPoints, 10 recap bullets, 7 checkQuestions
+(mcqs), 1 takeaway.
+
+**Verification:** `npx esbuild@0.21.5` on both the new file standalone and the edited
+`foundationsRunnerData.js` (syntax-only, not full bundle — the file has ~30 sibling imports not worth
+staging just to confirm 2 one-line edits) — both compile clean. Every numeric claim in the new content
+(4²=16, 8²=64, 1000²/2000²=1M/4M, 128²≈16,384≈"16,000×" matching the interactive's own text, the
+7,125-token worked budget from CTX_SECTIONS' own base/perUnit constants, all 3 cited LITM_RECALL values)
+independently recomputed against the actual component source, not read-and-nodded.
+
+**Explicitly NOT done this batch (writer pass only, per scope):**
+- No Pass-2 adversarial audit on `context` yet (separate agent, cold read — next step).
+- No glossary or interview-question harvest for `context` yet.
+- `eval-design` and `debug` are still fully pending — same architecture applies (write their RUNNER_DATA
+  entries into the same `hardcoded-migration.js` file; no component/registry changes needed), just not
+  written yet. `EvalDesignModule` (Concepts.jsx ~10959-11123) and `DebugModule` (~4166-4434, uses
+  `DEBUG_SCENARIOS` array with rootCause/prevention/vocabulary fields already close to worked-example
+  shape) are the two components to read next.
+
+Not pushed — no git commands run, per standing rule (hand to Sidharth's Mac for build + push).
