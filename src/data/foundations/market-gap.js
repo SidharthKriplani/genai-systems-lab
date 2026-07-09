@@ -74,6 +74,33 @@ Intermediate d values interpolate smoothly between "untouched"
 "local pairs nearly untouched, long-range pairs interpolated"
 behavior the main explanation described qualitatively; here it's
 the actual exponent, not just the direction.` },
+      "**Why Position Interpolation compresses local resolution — and NTK-aware doesn't.** NTK-aware scaling rescales the *base*, which per CHECK 1 leaves `θ_0 = base^0 = 1` untouched at every base — the fastest pair, the one carrying the finest position-to-position distinctions, never moves. Position Interpolation makes a different move entirely: it never touches `θ_d` for any `d`. It rescales the *input position* itself, replacing every real position `m` with `m' = m · (L_train / L_new) = m / s`, before that position ever reaches the rotation. Because the substitution happens upstream of `θ_d`, it is frequency-blind — every pair `d`, including `d = 0`, receives the identical compression factor `1/s`. That uniformity is exactly the distortion NTK-aware's derivation was built to avoid.",
+      { type: "illustration", label: "PI vs. NTK-aware at a real local position, checked with real numbers", content: `Same setup as CHECK 1/2: D=128, base=10000, s=8 (4K -> 32K, this
+module's own scenario). Take a genuinely local position, m=100.
+
+NTK-AWARE (rescale the base, keep the position):
+  theta_0 = base^0 = 1        (any base, per CHECK 1)
+  theta_0' = base'^0 = 1      (identical)
+  angle at m=100: m * theta_0 = 100 * 1 = 100 radians
+  -- exactly the value the model saw in training. d=0 does not move.
+
+POSITION INTERPOLATION (rescale the position, keep theta_d):
+  m' = m / s = 100 / 8 = 12.5
+  angle at m=100: m' * theta_0 = 12.5 * 1 = 12.5 radians
+  -- the angle the model learned near position 12.5, not position 100.
+
+THE SHARPER VERSION -- the gap between real neighbors, which is what
+attention actually reads (RoPE is relative: <R(m)q,R(n)k> = <q,R(n-m)k>).
+True neighbors m=100, m=101 are distance 1 apart.
+  Original / NTK-aware gap:  theta_0*(101-100) = 1 radian
+                              -- the exact trained per-token step
+  PI gap:                    theta_0*(101/8 - 100/8) = theta_0/8 = 0.125 radian
+                              -- one eighth of the trained step, at
+                                 EVERY frequency, including d=0
+
+NTK-aware stretches only the slowest pair's wavelength (CHECK 2) and
+leaves theta_0 -- and every adjacent-token gap -- exactly as trained.
+PI buys context length by uniformly shrinking all of them.` },
       "**Where YaRN goes one step further than a single exponent.** The derivation above picks one global `base'` from a boundary condition at the single slowest pair — a real, working rule (this is what 'NTK-aware scaling' means in practice), but it treats every intermediate pair as an automatic side effect of one exponent rather than something explicitly controlled. YaRN's refinement (Peng et al., 2023, building on the earlier 'NTK-by-parts' interpolation) instead defines an explicit ramp across the frequency index: pairs above a chosen cutoff (short-range, already reliable) are left essentially untouched, pairs below the cutoff (long-range) are interpolated the way Position Interpolation would, and a smooth ramp interpolates between the two regimes rather than one formula applying uniformly to every pair. That per-frequency control, plus a small attention-temperature correction, is why YaRN needs less fine-tuning data than plain NTK-aware scaling to hit the same target length — it's the same idea this derivation just made exact, taken one degree of freedom further.",
     ],
     keyPoints: [

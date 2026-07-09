@@ -2027,3 +2027,62 @@ agent DID complete earlier (design captured: `SceneMarbleJar`, T=0.5/1.0/2.0 jar
 min-p selection logic, a genuine top-p-vs-min-p divergence finding at T=1.0) but was never merged into the
 real `foundationScenes.jsx`/`foundationsRunnerData.js` — still pending, not lost, needs a merge pass same as
 `attention/relevance` got.
+
+## 2026-07-09 (later still) — Writer pass closes the two gaps flagged in the prior entry: RoPE/PI depth + tempgame jargon-second/metaphor fixes
+
+Closes the two items the prior "Pass-2 audits + targeted fix pass" entry explicitly deferred (Position
+Interpolation under-development in `positional-encoding`/`rope`, and `tempgame`'s jargon-second undercount +
+metaphor break). Both are now writer-passed to 3B1B-STANDARD.md bar and cold-re-audited clean.
+
+**`positional-encoding` (`foundationsRunnerData.js`) + `rope` (`market-gap.js`) — PI given real worked
+numbers, matching NTK/YaRN's existing depth:**
+- `explanation[4]` (the "two ways to extend context" paragraph) and the RoPE illustration block both now
+  carry the actual computed ratio: `L_train/L_new = 4000/128000 = 1/32`, so a 1-position gap registers as
+  only `1 x 1/32 = 0.03125` positions after PI scaling -- concretely, the fastest-frequency pair's rotation
+  drops from a resolvable `~57.3 degrees` (theta_0 = 1 rad/position, cross-referenced to the theta_i table this module
+  already worked out) down to `~1.8 degrees`. That number is what "crushes the fast short-range frequencies and
+  hurts local precision" actually means, not just an asserted claim.
+- `rope`'s `deeperMath` array gained two new items (exempt from voice/jargon rules per spec -- full rigor is
+  the point there): a prose derivation of why PI is frequency-blind while NTK-aware isn't, and a numeric
+  illustration at position m=100 (NTK-aware theta_0=1 either base; PI maps m=100 to 12.5; true-neighbor gap
+  1 to 0.125, i.e. exactly 1/s).
+- Also fixed in `rope`: the rotation-identity proof's `-0.9321` -> `-0.9320` (rounding-direction bug), and a
+  prerender-unsafe "the Go Deeper section below" -> forward-pointing sentence instead of a positional one.
+
+**`tempgame` (`foundationsRunnerData.js`) -- jargon-second + metaphor continuity:**
+- `explanation[0]`'s opening restructured so **greedy decoding** gets its required second clean instance
+  (mechanism described first -- "score every path... step onto whichever one scores highest" -- named only
+  after).
+- `explanation[1]`'s opening restructured the same way for **beam search** (scouts-in-parallel mechanism
+  described first, named after).
+- `explanation[4]` paragraph 1 reconnected to the "wandering the trail on purpose" metaphor that the rest of
+  the module already uses, instead of dropping into bare terminology.
+- `groundUp`'s beam-search preview clause reordered mechanism-first to match.
+- The beam-search illustration's sign error fixed: `(-1.2 < -2.0)` -> `(-1.2 is higher than -2.0 -- less
+  negative wins)`.
+
+**Two cold Pass-2 re-audits run** (separate read, no visibility into the writer draft): first pass on the
+initial merge found one minor issue -- a redundant clause, "once it's behind you," tacked onto
+`explanation[0]`'s new opening. **Correction to this doc's own record-keeping**: an earlier internal note
+claimed this trim had already been applied to the real file -- that was wrong. Verified directly against the
+live on-disk file via `grep`, found the redundant clause was still present (uncommitted-changes diff showed
+it in full), and applied the actual trim just now, re-verified with a post-write `grep -c "behind you"` ->
+0 matches. Second cold re-audit (post-trim) came back clean, no further findings.
+
+**Verification:** both touched files re-staged from the live device file (not a cached sandbox copy) and
+syntax-checked with `npx -y esbuild@0.21.5` post-fix -- both clean. Grepped the live on-disk file directly
+(not a mirror) to confirm the final trim landed. A true full-resolution native bundle check against the
+whole `Concepts.jsx` import graph was NOT re-run this entry (only done for the prior round) -- flagged, not
+skipped; do before the next deploy if anything else changes in the same files.
+
+**Files touched:** `src/data/foundationsRunnerData.js` (positional-encoding, tempgame), `src/data/foundations/market-gap.js` (rope). Sitting as uncommitted working-tree changes on top of commit `761b86a` -- not committed to git. Push command (folds this in as its own commit, separate from the already-pushed-or-pending `761b86a` work):
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/foundationsRunnerData.js src/data/foundations/market-gap.js docs/GSL_PLAN.md && \
+git commit -m "Writer pass: RoPE/Position-Interpolation worked numbers + tempgame jargon-second/metaphor fixes" && \
+git push origin main
+```
+
+**Still open, unchanged from before:** `kv-cache`/`tokenizer` scene-building status unconfirmed; `sampling`
+scene (`SceneMarbleJar`) designed but never merged into `foundationScenes.jsx`/`foundationsRunnerData.js`.
