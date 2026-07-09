@@ -2161,3 +2161,117 @@ git push origin main
 **Still open:** `sampling`'s `SceneMarbleJar` scene, designed but never merged (optional, not required to
 match the gym's own bar). A real browser/render check of the rebuilt attention scene before calling it fully
 verified.
+
+---
+
+## Session 2026-07-09 — PrepLab topic mislabel fixed: `"foundations"` → `"llm-fundamentals"`
+
+**The collision:** an interview-question topic bucket in `src/data/preplabQuestions.js` used
+`topic: "foundations"`, which is the exact same string as the unrelated "Foundations" gym-content/Concepts
+area (`Home.jsx`, `App.jsx` routing/`VALID_VIEWS`, `Systems.jsx`, `OnboardingModal.jsx`, `CaseChains.jsx`,
+`readiness.js`, `FoundationsHub.jsx`, `GroundTruth.jsx`'s `challengeArea`, etc.) — a completely different
+feature (the module/gym system), not interview prep. Confirmed by reading a sample of the actual questions
+(`found-beg-*`, `found-bi-*`, `found-int-*`, `found-llm-*`, `found-staff-*`, `daunt-arch-1`, and
+`scaling-1..4`): every one is core LLM-fundamentals content — tokenization, embeddings, attention,
+transformers, pretraining, context windows, sampling/temperature, Chinchilla scaling laws. **New name:
+`llm-fundamentals`** — matches the existing naming convention already used elsewhere in this same codebase
+(`groundTruthIndex.js` already uses `series: "llm-fundamentals"` for its GT-post equivalent of this same
+content area) and accurately describes the bucket's actual scope, not just its beginner tier.
+
+**Scope discipline:** the word "foundations" appears in ~20 other files in `src/` (Home.jsx, App.jsx,
+Systems.jsx, OnboardingModal.jsx, CaseChains.jsx, readiness.js, About.jsx, Progress.jsx, StartHere.jsx,
+ReadinessDiagnostic.jsx, config/nav.js, groundTruthIndex.js, FoundationsHub.jsx,
+data/caseChains/foundations.js, GroundTruth.jsx) — all of those are the gym-content "Foundations" hub/tab
+system and were deliberately left untouched. Also left untouched: `src/data/questions/q-foundations.js` —
+its filename says "foundations" but its actual `topic` values are `"tokenizer"`/`"embeddings"`, not
+`"foundations"`, so it was never part of this collision.
+
+**Every place the exact topic value was referenced, all renamed:**
+- `src/data/preplabQuestions.js` — 45 question entries with `topic: "foundations"` → `topic:
+  "llm-fundamentals"` (covers `scaling-1..4`, `found-beg-1..8`, `found-bi-1..8`, `found-staff-1..3`,
+  `daunt-arch-1`, `found-int-1..8`, `found-llm-1..13`). Question `id` values were left unchanged (arbitrary
+  slugs, no collision risk).
+- `src/PrepLab.jsx` — `TOPIC_COLORS.foundations` → `TOPIC_COLORS["llm-fundamentals"]` (same sky color);
+  `TOPIC_LABELS.foundations: "Foundations"` → `TOPIC_LABELS["llm-fundamentals"]: "LLM Fundamentals"`; the
+  `TOPIC_GROUPS` "llm" group's `topics` array entry `"foundations"` → `"llm-fundamentals"` (the group's own
+  display label stays `"Foundations"` — that's a broader UI category name covering 15 topics, not the
+  colliding value itself, so it was left as-is); `drawQuestions()`'s `topicMap.engineering` array entry
+  `"foundations"` → `"llm-fundamentals"`.
+- `src/LearningPaths.jsx` — the "GenAI Foundations" path's PrepLab step: `topic: "foundations"` →
+  `topic: "llm-fundamentals"`, label text updated to "PrepLab: LLM Fundamentals Questions".
+
+**Progress-key risk — checked, no orphaning risk found.** PrepLab's history/spaced-repetition are keyed by
+**question id** (`HISTORY_KEY = "gsl-preplab-history"`, `SPACED_KEY = "gsl-preplab-spaced"`, both
+`{ [questionId]: {...} }`), never by topic string — topic labels/colors/grouping are looked up live from
+`PREP_QUESTIONS` at render time by joining on `q.id`. So a user's existing per-question history survives this
+rename untouched and will simply display under the new "LLM Fundamentals" label going forward. Also checked
+`weakTopics` (in-memory `useState`, not persisted) and the JD-analysis skill-gap flow (`SKILL_KEYWORDS` /
+`extractSkills()` has no `foundations` key at all, so it was never reachable through that path) — neither
+carries an orphaning risk either. The one dead code path found: `LearningPaths.jsx`'s `topic` prop on a
+`preplab` step is only checked for truthiness in `App.jsx`'s `navigateTo()` (`else if (topic)
+setPreplabInitialMode("trainer")`) — it doesn't actually get threaded into PrepLab as an initial topic
+filter today (no `initialTopic` prop exists on `PrepLabApp`), so this rename has zero behavioral impact on
+that flow either way; noting it since it's adjacent, not because it's part of this fix.
+
+**Verification:** `npx esbuild@0.21.5` (bundle, jsx loader, react/recharts/lucide-react external) on all
+three touched files — `src/data/preplabQuestions.js`, `src/PrepLab.jsx`, `src/LearningPaths.jsx` — all three
+bundle clean (only size warnings, zero errors). Grep-confirmed zero remaining `topic: "foundations"` anywhere
+in `src/`, and 45+4 = 49 total occurrences of the new `"llm-fundamentals"` value across the three files.
+
+**Files touched:** `src/data/preplabQuestions.js`, `src/PrepLab.jsx`, `src/LearningPaths.jsx`. Uncommitted
+working-tree changes — git commands relayed separately in chat, not recorded here per standing instruction.
+
+## 2026-07-09 (later still) — NLP Foundations gym: full audit + groundUp rollout (12/12) + bug fixes, writer-adversarial pipeline
+
+User directed the wave plan at the NLP Foundations gym next. Full fresh read of all 12 modules
+(nlp-foundations-{1..4}.js) against 3B1B-STANDARD.md + CONTENT-AUDIT-RUBRIC.md, twice (a first
+structural+content pass, then a second full-text pass with every worked number recomputed by hand).
+
+**Audit verdict on the existing content: strong.** All 12 modules already had causal-chain prose,
+jargon-second term introductions, worked numeric examples (verified by hand: V^n sparsity table, RNN
+gradient-decay powers, Naive Bayes log-tally, BLEU clip+BP arithmetic, TF-IDF idf logs, hierarchical-softmax
+log2(V)), balanced MCQs (36/36 length-tell clean), and real dedicated interactives (12 components,
+194-271 lines each, wired in Concepts.jsx). The gym reads as one coherent arc with each module bridging
+to the next.
+
+**Real bugs found and fixed:**
+- `nlp-preprocessing`: BPE illustration used "widest" as its NOVEL-word demo while `widest:3` sits in the
+  training corpus three lines up (and "wid" was never a learned merge). Fixed to "lowest" -> low + est —
+  genuinely unseen, both pieces learned (verified by replaying the merges).
+- `nlp-encoder-decoder-objectives`: three double-escaped newlines (source had literal backslash-n rendering
+  as visible "\n\n" text to users) — fixed to real newlines. Plus 2 positional-language refs ("the
+  lower-triangular mask above", "the three above") — reworded.
+
+**groundUp rollout — the one systemic gap: 0/12 modules had the Start Here layer.** All 12 written this
+session, in 4 waves matching the file split, each wave through the full writer -> cold-adversarial-audit ->
+fix-loop pipeline (auditors were separate agent dispatches with zero visibility into drafting; short
+dispatches per the timeout mitigation). Audit yield across the 4 waves: 15 real findings, all fixed and
+independently re-verified — including one factual error (n-gram "n = words of context" off-by-one), one
+false history claim (distributional hypothesis "predates computers"), a wrong family claim (EM/token-F1
+placed "outside the reference-comparison family"), a missing given-the-class conditioning on Naive Bayes,
+and five instances of the opener retelling the module's own scenario/explanation near-verbatim (the
+recurring defect class of this batch — openers now reference facts but never duplicate phrasing).
+
+**Verification:** every touched file `@babel/parser` AST-parsed clean on the live device file after every
+write; every fix applied as an exact-match count-verified replacement; a final cold verification agent
+confirmed all wave-2/3/4 fixes resolved. NOTE the sandbox stale-mirror issue recurred (re-staging an
+already-staged path serves old bytes) — worked around by extracting device-side text to fresh-named JSON
+files for auditors; all authoritative reads/writes were device-direct.
+
+**Files touched:** `src/data/foundations/nlp-foundations-{1,2,3,4}.js`. Scratch files `_wave*.json` at the
+BreakLabs root (outside all repos) moved to `BreakLabs/_to_delete/` — delete that folder at leisure.
+
+**Push command:**
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/foundations/nlp-foundations-1.js src/data/foundations/nlp-foundations-2.js src/data/foundations/nlp-foundations-3.js src/data/foundations/nlp-foundations-4.js docs/GSL_PLAN.md && \
+git commit -m "NLP Foundations: groundUp openers for all 12 modules + BPE/newline/positional bug fixes (writer+adversarial pipeline)" && \
+git push origin main
+```
+
+**Next (phase 3 harvest, per pipeline):** (a) interview questions — PrepLab has only 4 NLP questions, all
+mistagged `topic: "finetuning"` and all length-tell-flagged (correct option 2-3x longer); plan: add an
+`nlp` topic to TOPIC_LABELS, retag+rebalance the 4, author ~3-4 per module (~40 total) grounded in the
+now-audited text. (b) Glossary — mine terms from the finalized 12 modules (current glossary has none from
+this gym). Not started this entry.
