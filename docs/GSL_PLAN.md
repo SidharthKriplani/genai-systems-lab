@@ -3546,3 +3546,68 @@ blocking foundations work, this is just closing the loop on already-finished wor
   tooling/generation-pipeline defect, not something specific to GSL's data.
 
 Not pushed yet — git commands below.
+
+## 2026-07-09 (cont. 11) — Foundations recon + writer-pass batch 1: Voice AI track (5 modules) get groundUp openers
+
+Per the user's "writer pass first" call: recon confirmed 142 GYMS modules total in `Concepts.jsx`'s live
+registry (not the 218 the log last stated — that count included spread-in duplicates/overrides never
+actually registered). Of the 142: 107 already have a `groundUp` (3B1B first-principles opener); 35 don't.
+Of those 35, 3 are pure illustrative visual tools with no RUNNER_DATA content by design (`cosine-sim`,
+`diffusion-3d`, `embeddings-3d` — groundUp doesn't apply), 10 are still fully hardcoded React components
+never migrated to RUNNER_DATA at all (`agent`, `agent-memory`, `agent-planning`, `agent-tools`,
+`agent-tracing`, `multiagent`, `guardrails`, `red-teaming`, `jailbreak-taxonomy`, `resolution-token-cost` —
+these need the same "hardcoded-component migration" treatment as `context`/`eval-design`/`debug` got
+earlier, not a direct writer pass), and 22 are genuine RUNNER_DATA-backed modules on old pre-3B1B prose:
+Voice AI (5), Codegen (5), `infra-edge-ondevice`, `grpo-rlvr`, 7 migrated Playground-lab modules, and
+`eval-loop`/`rag-pipeline` (structurally migrated earlier, content never rewritten).
+
+Also reconfirmed the scene-interleaving gap is far bigger than the log previously suggested: only 2 of 142
+modules (`transformer` — 5 scenes, `attention` — 1 scene) have any inline 3B1B scenes at all; 140 have zero.
+Not scoped this batch (user chose writer pass first) — logged here so it isn't lost again.
+
+### This batch: Voice AI track (`src/data/tracks/voice-ai.js`, 5 modules)
+`voice-asr-architectures`, `voice-streaming-latency`, `voice-tts-cloning`, `voice-realtime-agents`,
+`voice-eval-wer-mos` all already had strong scenario/explanation/mcqs/takeaway content (author clearly
+followed CONTENT-STANDARD.md's principles already) — the actual gap was the missing `groundUp` field, the
+dedicated first-principles bridge paragraph(s) that run before the scenario. Wrote one groundUp per module
+(2-3 paragraphs each, naive-path-tried-and-closed pattern, concept named only after the constraint that
+requires it), matching the pattern established by `tokenizer`'s groundUp.
+
+### Pass-2 adversarial audit (5 parallel blind agents, one per module, cold — given only the standard's 7
+principles + the new groundUp text + the existing scenario/first-explanation-paragraph for cross-check)
+All 5 came back with real findings, not rubber-stamp passes:
+- `voice-asr-architectures`: "phoneme" used undefined — glossed inline; a 3-clause run-on sentence crammed
+  together (violates the 3x-patience rule for a HIGH module) — split into separate sentences.
+- `voice-streaming-latency`: **the serious one.** The original groundUp fully resolved "individually-fast
+  stages ≠ fast pipeline" using the word "average" and asserting stages never run in parallel — which
+  directly spoiled the module's actual twist (mean vs p95/p99 tail latency, not just additive-stage
+  latency) and contradicted the module's own streaming-ASR/streaming-TTS content later in the same
+  explanation. Full rewrite: reframes the naive instinct as "check each stage in isolation" and closes it
+  on "what number would the caller report," without touching "average" or resolving the additive mechanism
+  — leaves the real twist for the explanation to reveal.
+- `voice-tts-cloning`: groundUp pre-named "concatenative synthesis" and pre-stated its exact tradeoff
+  phrase ("locally clear but globally choppy") — the same label and phrase the explanation paragraph uses
+  to introduce that era, robbing it of payoff. Rewrote to describe the failure without naming the technique
+  or reusing that specific phrasing, leaving the name+characterization for the explanation to reveal.
+- `voice-realtime-agents`: closing itemized list ("deciding when to speak, tolerating being spoken over,
+  recovering gracefully") nearly duplicated the explanation paragraph's own list in the same order. Trimmed
+  to the "layer sits on top of ASR/TTS" framing only, dropping the redundant itemization.
+- `voice-eval-wer-mos`: **the other serious one.** Groundup fully gave away the module's central twist —
+  the "missed 'the' vs missed appointment date" example is the exact insight + exact example the
+  explanation reveals as "the classic WER trap... the number-one interview point." Removed the example
+  entirely, left it as an open question instead of a resolved one. Also fixed an asymmetry (WER was named,
+  MOS never was — now both are) and backed an asserted-not-shown claim ("a sentence can be spoken correctly
+  in a thousand different valid ways") with concrete examples (pacing/emphasis/pauses).
+
+All 6 fixes applied via exact-string replacement (each anchor uniqueness-checked before writing).
+
+### Verification
+`npx esbuild src/data/tracks/voice-ai.js --bundle` clean before and after the fix pass. Confirmed exactly 5
+`groundUp:` fields present, correctly scoped to each module (verified via id-adjacency check), no stale
+spoiler text remaining. Backup of the pre-writer-pass file in `_to_delete/backup_writerpass/voice-ai.js.bak`.
+
+**Remaining writer-pass backlog:** Codegen track (5), `infra-edge-ondevice`, `grpo-rlvr`, 7 Playground-lab
+modules, `eval-loop`/`rag-pipeline` — 17 modules. Plus the separately-scoped hardcoded-migration-then-writer-
+pass work for the 10 `agent-lab`/safety modules, not started.
+
+Not pushed yet — git commands below.
