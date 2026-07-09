@@ -1,7 +1,7 @@
 // src/data/questions/q-gap-b.js
 // L0/L1/L2 question ladders — model-routing/cascades/fallbacks + LLM security beyond injection.
 // Spread into PREP_QUESTIONS. Schema mirrors q-foundations.js:
-//   id: "<topic>-l<0|1|2>-<n>"   topic: "model-routing" | "llm-security"
+//   id: "<topic>-l<0|1|2>-<n>"   topic: "production" | "llm-security"
 //   tier: "L0" | "L1" | "L2"     difficulty: easy(L0) | medium(L1) | hard(L2)
 //   gated: boolean               type: "mcq" | "text"
 //   options/correct for mcq; keywords[] for text; explanation + trap always.
@@ -13,7 +13,7 @@ export const Q_GAP_B = [
 
   // ── L0: Define (3) ─────────────────────────────────────────────────────────
   {
-    id: "model-routing-l0-1", topic: "model-routing", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "model-routing-l0-1", topic: "production", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What is the core motivation for model routing in an LLM product?",
     options: [
       "To make the frontier model answer faster by giving it more GPUs",
@@ -26,7 +26,7 @@ export const Q_GAP_B = [
     trap: "Thinking routing is about speeding up the big model. It's about *not using* the big model when a cheaper one suffices — the win is in the query-to-model match, not in accelerating any single model.",
   },
   {
-    id: "model-routing-l0-2", topic: "model-routing", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "model-routing-l0-2", topic: "production", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "In a model cascade, what is the basic flow?",
     options: [
       "Send every query to all models in parallel and pick the best answer",
@@ -39,7 +39,7 @@ export const Q_GAP_B = [
     trap: "Confusing a cascade with parallel best-of-N ensembling. A cascade is *serial* and *conditional* — the large model runs only when the small model's answer fails the check, not always.",
   },
   {
-    id: "model-routing-l0-3", topic: "model-routing", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "model-routing-l0-3", topic: "production", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What is provider failover (a fallback chain) in an LLM system?",
     options: [
       "Choosing the cheapest model when everything is healthy",
@@ -54,7 +54,7 @@ export const Q_GAP_B = [
 
   // ── L1: Deep single-concept (5) ────────────────────────────────────────────
   {
-    id: "model-routing-l1-1", topic: "model-routing", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "model-routing-l1-1", topic: "production", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "A router and a cascade both cut cost. What is the fundamental difference in *when* they make the routing decision, and one consequence?",
     options: [
       "There is no difference; the terms are interchangeable",
@@ -67,7 +67,7 @@ export const Q_GAP_B = [
     trap: "Saying the cascade is always cheaper. On easy queries it matches the router (one cheap call), but on escalated queries it pays small+large — sometimes more than a router that would have sent the query straight to large.",
   },
   {
-    id: "model-routing-l1-2", topic: "model-routing", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "model-routing-l1-2", topic: "production", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "A cascade escalates when the small model is 'unsure.' Your teammate proposes using the small model's token logprobs (sequence probability) as the sole escalation signal. What is the key failure mode?",
     options: [
       "Logprobs cannot be read from any model, so the cascade won't run",
@@ -80,7 +80,7 @@ export const Q_GAP_B = [
     trap: "Trusting a single logprob threshold as calibrated 'confidence.' Confident-wrong is the exact case it misses; a verifier or self-consistency is needed to catch answers the model is sure about but got wrong.",
   },
   {
-    id: "model-routing-l1-3", topic: "model-routing", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "model-routing-l1-3", topic: "production", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "You must build the classifier for a front-door router. What is a hard requirement on the router itself?",
     options: [
       "The router should be a copy of the large model for maximum accuracy",
@@ -93,7 +93,7 @@ export const Q_GAP_B = [
     trap: "Building an accurate-but-expensive router. Accuracy without a cost gap is pointless — the router's spend is pure overhead added to every query, so it must be a fraction of the models it dispatches to.",
   },
   {
-    id: "model-routing-l1-4", topic: "model-routing", tier: "L1", difficulty: "medium", gated: false, type: "text",
+    id: "model-routing-l1-4", topic: "production", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "text",
     question: "Explain what a 'silent misroute' is in a routing system, why it is more dangerous than a loud failure, and what makes it hard to detect.",
     options: null, correct: null,
     keywords: ["misroute", "small model", "confidently wrong", "no recovery", "silent", "wrong answer", "calibration", "quality", "cheap", "undetected"],
@@ -101,7 +101,7 @@ export const Q_GAP_B = [
     trap: "Assuming a wrong route just costs a bit of quality. The real danger is that it's *silent and confident* — no error to alert on, so bad answers ship undetected until a user complains.",
   },
   {
-    id: "model-routing-l1-5", topic: "model-routing", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "model-routing-l1-5", topic: "production", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "Your primary provider had a 40-minute outage and your product went fully down, even though you had a cost router in place. Why didn't routing help, and what would have?",
     options: [
       "The router was misconfigured; a correct router prevents outages",
@@ -116,7 +116,7 @@ export const Q_GAP_B = [
 
   // ── L2: Cross-concept / tradeoffs (5) ──────────────────────────────────────
   {
-    id: "model-routing-l2-1", topic: "model-routing", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "model-routing-l2-1", topic: "production", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "With small=1x and large=20x cost and traffic that is 70% easy / 25% moderate / 5% hard, why do a router and a cascade end up with *similar* cost savings but *different* latency profiles?",
     options: [
       "They have identical cost and identical latency; there is no difference",
@@ -129,7 +129,7 @@ export const Q_GAP_B = [
     trap: "Assuming similar cost means similar behaviour. The cost curves converge, but the latency and accuracy profiles differ: cascade = better routing accuracy, worse tail latency; router = lower latency, higher misroute risk.",
   },
   {
-    id: "model-routing-l2-2", topic: "model-routing", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "model-routing-l2-2", topic: "production", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "For a cascade's escalation decision, compare token-logprobs, self-consistency, and a verifier/judge. What is the correct tradeoff framing?",
     options: [
       "They are interchangeable; pick any one",
@@ -142,7 +142,7 @@ export const Q_GAP_B = [
     trap: "Treating the signals as equivalent. Their whole value is *what they catch and what they cost* — logprobs miss confident-wrong, self-consistency pays N× the small model, a judge adds a fallible extra call; the choice is a tradeoff, not a default.",
   },
   {
-    id: "model-routing-l2-3", topic: "model-routing", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "model-routing-l2-3", topic: "production", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "You ship a router trained on last quarter's traffic. Three months later, quality on a new user segment quietly degrades. What is the mechanism, and how do you defend against it?",
     options: [
       "The models got worse; retrain the large model",
@@ -155,7 +155,7 @@ export const Q_GAP_B = [
     trap: "Assuming a trained router is 'done.' The traffic distribution drifts, and silent misroutes hide the degradation — routing quality is a metric you must monitor and re-tune, not set once.",
   },
   {
-    id: "model-routing-l2-4", topic: "model-routing", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "model-routing-l2-4", topic: "production", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "When you fail over from your primary model to a different provider's model, why isn't 'just retry the same prompt on provider B' automatically safe?",
     options: [
       "It is always safe; any model accepts any prompt identically",
@@ -168,7 +168,7 @@ export const Q_GAP_B = [
     trap: "Treating failover as a transparent retry. Cross-provider swaps change tokenization, context limits, and output formats; the prompt must be portable and the degradation graceful, or the fallback itself fails.",
   },
   {
-    id: "model-routing-l2-5", topic: "model-routing", tier: "L2", difficulty: "hard", gated: true, type: "text",
+    id: "model-routing-l2-5", topic: "production", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "text",
     question: "You're designing the model layer for a high-volume assistant. Discuss how you'd combine routing, cascading, and failover — and the failure modes each introduces — into one coherent strategy.",
     options: null, correct: null,
     keywords: ["router", "cascade", "confidence", "failover", "fallback", "cost", "latency", "misroute", "calibration", "blast radius", "quality", "tail"],
@@ -182,7 +182,7 @@ export const Q_GAP_B = [
 
   // ── L0: Define (3) ─────────────────────────────────────────────────────────
   {
-    id: "llm-security-l0-1", topic: "llm-security", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "llm-security-l0-1", topic: "ai-safety-alignment", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "Why is PII detection and redaction a *two-sided* problem in an LLM app?",
     options: [
       "You only need to filter PII on the output, since input PII belongs to the user anyway",
@@ -195,7 +195,7 @@ export const Q_GAP_B = [
     trap: "Filtering only the output. Input PII silently spreads into your logs and stores the moment it's written — a compliance breach even if the model never repeats it.",
   },
   {
-    id: "llm-security-l0-2", topic: "llm-security", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "llm-security-l0-2", topic: "ai-safety-alignment", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What is a guardrail in the LLM-security sense?",
     options: [
       "A rate limiter that caps how many queries a user can send",
@@ -208,7 +208,7 @@ export const Q_GAP_B = [
     trap: "Confusing guardrails with rate limiting or infra redundancy. Guardrails are content-inspection filters on the input/output boundaries, not throughput or availability controls.",
   },
   {
-    id: "llm-security-l0-3", topic: "llm-security", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "llm-security-l0-3", topic: "ai-safety-alignment", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What does the principle of least privilege mean for an LLM agent with tools?",
     options: [
       "Give the agent admin access so it never gets blocked mid-task",
@@ -223,7 +223,7 @@ export const Q_GAP_B = [
 
   // ── L1: Deep single-concept (5) ────────────────────────────────────────────
   {
-    id: "llm-security-l1-1", topic: "llm-security", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "llm-security-l1-1", topic: "ai-safety-alignment", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "Data exfiltration from an LLM app comes in several flavours. Which set correctly names three distinct ones?",
     options: [
       "Higher latency, higher cost, and more tokens",
@@ -236,7 +236,7 @@ export const Q_GAP_B = [
     trap: "Listing prompt-injection variants as exfiltration. Injection is bad data getting *in* to influence the model (a separate topic); exfiltration is sensitive data getting *out* through the model or its tools.",
   },
   {
-    id: "llm-security-l1-2", topic: "llm-security", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "llm-security-l1-2", topic: "ai-safety-alignment", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "You add an output guardrail that scans replies for PII and secrets before showing them to the user, but your agent still exfiltrated data. What did the placement miss?",
     options: [
       "Output guardrails are useless; only input guardrails matter",
@@ -249,7 +249,7 @@ export const Q_GAP_B = [
     trap: "Guarding only the user-facing reply. An agent's most dangerous output is executed, not shown — the guardrail has to sit between the model and its tools, or tool-mediated exfiltration is invisible to it.",
   },
   {
-    id: "llm-security-l1-3", topic: "llm-security", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "llm-security-l1-3", topic: "ai-safety-alignment", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "A 'read-a-file' agent is found holding a cloud credential that can also delete production storage. Why is this the textbook least-privilege violation, and what's the fix?",
     options: [
       "It's fine as long as you add a system-prompt instruction telling the model not to delete anything",
@@ -262,7 +262,7 @@ export const Q_GAP_B = [
     trap: "Relying on a system-prompt 'please don't delete' instruction. Model-level safety can't be guaranteed; the durable fix is to scope the *credential* so the capability simply isn't there to abuse.",
   },
   {
-    id: "llm-security-l1-4", topic: "llm-security", tier: "L1", difficulty: "medium", gated: false, type: "text",
+    id: "llm-security-l1-4", topic: "ai-safety-alignment", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "text",
     question: "Explain why logging raw prompts and responses for audit purposes can itself become a security/compliance liability, and how to log responsibly.",
     options: null, correct: null,
     keywords: ["logs", "PII", "redaction", "access control", "retention", "sensitive", "audit", "compliance", "encrypt", "minimise"],
@@ -270,7 +270,7 @@ export const Q_GAP_B = [
     trap: "Treating logs as a safe internal dumping ground. Raw logs replicate all the sensitive data into a store that's easy to under-protect — they need the same redaction, access control, and retention rules as the live path.",
   },
   {
-    id: "llm-security-l1-5", topic: "llm-security", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "llm-security-l1-5", topic: "ai-safety-alignment", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "Your EU users' data must stay in the EU. Why does this data-residency requirement constrain your LLM architecture specifically, and not just your database?",
     options: [
       "It doesn't; residency only applies to databases at rest",
@@ -285,7 +285,7 @@ export const Q_GAP_B = [
 
   // ── L2: Cross-concept / tradeoffs (5) ──────────────────────────────────────
   {
-    id: "llm-security-l2-1", topic: "llm-security", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "llm-security-l2-1", topic: "ai-safety-alignment", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "How does data exfiltration relate to prompt injection, and why is it a mistake to assume that hardening against injection covers exfiltration?",
     options: [
       "They are the same threat; injection defenses fully cover exfiltration",
@@ -298,7 +298,7 @@ export const Q_GAP_B = [
     trap: "Assuming injection defense is a superset of security. It only covers the input-influence direction; the exfiltration (output/action) direction needs its own output filters, tool-call gating, and privilege scoping.",
   },
   {
-    id: "llm-security-l2-2", topic: "llm-security", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "llm-security-l2-2", topic: "ai-safety-alignment", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "For an output guardrail you can use rule/regex filters, a classifier model, or an LLM judge. What's the correct tradeoff framing for choosing (or combining) them?",
     options: [
       "Always use only regex, since it never has false positives",
@@ -311,7 +311,7 @@ export const Q_GAP_B = [
     trap: "Picking one mechanism as universally best. Each catches different things at different cost; the strong answer layers cheap deterministic filters with model-based ones rather than relying on any single mechanism.",
   },
   {
-    id: "llm-security-l2-3", topic: "llm-security", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "llm-security-l2-3", topic: "ai-safety-alignment", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "In a multi-tenant LLM app, tenant A's user receives an answer containing tenant B's data. Name two distinct mechanisms that can cause this and the corresponding controls.",
     options: [
       "Only prompt injection causes it; the fix is input filtering",
@@ -324,7 +324,7 @@ export const Q_GAP_B = [
     trap: "Blaming everything on injection or model size. Cross-tenant leakage is usually an isolation/scoping failure or a memorisation issue — architectural controls (per-tenant scoping, training hygiene, output filtering), not a bigger model.",
   },
   {
-    id: "llm-security-l2-4", topic: "llm-security", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "llm-security-l2-4", topic: "ai-safety-alignment", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Why is least privilege on tools often described as the highest-leverage control for agents, framed against the impossibility of perfect model safety?",
     options: [
       "Because it makes the model itself immune to manipulation",
@@ -337,7 +337,7 @@ export const Q_GAP_B = [
     trap: "Thinking least privilege makes the model safe. It doesn't touch the model — it bounds the *consequences* of a compromise, which is precisely why it matters when model safety can't be guaranteed.",
   },
   {
-    id: "llm-security-l2-5", topic: "llm-security", tier: "L2", difficulty: "hard", gated: true, type: "text",
+    id: "llm-security-l2-5", topic: "ai-safety-alignment", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "text",
     question: "A security lead says 'the model answers correctly, so we're fine to ship.' Argue why correctness is not the bar for a production LLM system, referencing PII, exfiltration, least privilege, and compliance.",
     options: null, correct: null,
     keywords: ["PII", "exfiltration", "guardrail", "least privilege", "tool", "compliance", "residency", "audit", "retention", "blast radius", "boundary", "correctness"],

@@ -1,7 +1,7 @@
 // src/data/questions/q-gap-a.js
 // L0/L1/L2 question ladders — agent-eval (trajectory vs outcome) + rag-ingestion.
 // Schema mirrors src/data/questions/q-foundations.js:
-//   id: "<topic>-l<0|1|2>-<n>"   topic: "agent-eval" | "rag-ingestion"
+//   id: "<topic>-l<0|1|2>-<n>"   topic: "ai-agents" | "rag-ingestion"
 //   tier: "L0" | "L1" | "L2"     difficulty: easy(L0) | medium(L1) | hard(L2)
 //   gated: boolean               type: "mcq" | "text"
 //   options/correct for mcq; keywords[] for text; explanation + trap always.
@@ -13,7 +13,7 @@ export const Q_GAP_A = [
 
   // ── L0: Define (3) ─────────────────────────────────────────────────────────
   {
-    id: "agent-eval-l0-1", topic: "agent-eval", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "agent-eval-l0-1", topic: "ai-agents", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What is the difference between outcome evaluation and trajectory evaluation of an agent?",
     options: [
       "Outcome eval runs on the training set and trajectory eval runs on the test set",
@@ -26,7 +26,7 @@ export const Q_GAP_A = [
     trap: "Thinking outcome and trajectory eval are the same because 'a correct answer implies a correct path.' They diverge constantly — an agent can reach the right answer through a broken path, or the right path can produce a wrong answer due to the environment.",
   },
   {
-    id: "agent-eval-l0-2", topic: "agent-eval", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "agent-eval-l0-2", topic: "ai-agents", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "In an agent trajectory, what does 'tool-call accuracy' measure?",
     options: [
       "How fast each tool returns a response",
@@ -39,7 +39,7 @@ export const Q_GAP_A = [
     trap: "Reducing tool-call accuracy to 'did it call any tool.' The metric checks the RIGHT tool with the RIGHT arguments — an agent can call a valid tool with wrong arguments and still fail.",
   },
   {
-    id: "agent-eval-l0-3", topic: "agent-eval", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "agent-eval-l0-3", topic: "ai-agents", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What is a 'golden trajectory' in an agent eval harness?",
     options: [
       "The fastest run the agent has ever produced",
@@ -54,7 +54,7 @@ export const Q_GAP_A = [
 
   // ── L1: Deep single-concept (5) ────────────────────────────────────────────
   {
-    id: "agent-eval-l1-1", topic: "agent-eval", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "agent-eval-l1-1", topic: "ai-agents", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "An agent reaches the correct final answer but did so by calling a destructive tool nobody requested and ignoring a silent tool failure. Outcome eval scores it PASS. What is this failure mode called and why does it matter?",
     options: [
       "A false fail — the eval is too strict",
@@ -67,7 +67,7 @@ export const Q_GAP_A = [
     trap: "Assuming a correct final answer means the agent worked. Outcome eval conflates 'the agent did the right things' with 'the world produced the right result' — a false pass is exactly where those come apart.",
   },
   {
-    id: "agent-eval-l1-2", topic: "agent-eval", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "agent-eval-l1-2", topic: "ai-agents", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "An agent plans correctly and calls the right tools with the right arguments, but a downstream API returned stale data, so the final answer is wrong. Outcome eval scores it FAIL. Why is trajectory eval valuable here?",
     options: [
       "It isn't — a wrong answer is a wrong answer, so the agent should be blamed",
@@ -80,7 +80,7 @@ export const Q_GAP_A = [
     trap: "Blaming the agent for every wrong answer. The trajectory can be flawless while the environment is at fault; per-step eval is how you tell those apart.",
   },
   {
-    id: "agent-eval-l1-3", topic: "agent-eval", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "agent-eval-l1-3", topic: "ai-agents", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "Why is 'error-recovery rate' treated as a first-class trajectory metric rather than penalizing any error as a plain failure?",
     options: [
       "Because errors never happen in well-built agents, so recovery is irrelevant",
@@ -93,7 +93,7 @@ export const Q_GAP_A = [
     trap: "Treating every error as an automatic failure. The interesting signal is what the agent does AFTER a tool fails; ignoring the failure is the real defect, and recovery is a metric in its own right.",
   },
   {
-    id: "agent-eval-l1-4", topic: "agent-eval", tier: "L1", difficulty: "medium", gated: false, type: "text",
+    id: "agent-eval-l1-4", topic: "ai-agents", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "text",
     question: "Explain why an agent eval harness runs the agent against MOCKED or RECORDED tools in a controlled environment, rather than hitting live tools/APIs during evaluation.",
     options: null, correct: null,
     keywords: ["reproducible", "deterministic", "mock", "recorded", "flaky", "controlled", "isolate", "regression", "environment", "non-deterministic"],
@@ -101,7 +101,7 @@ export const Q_GAP_A = [
     trap: "Running eval against live tools 'for realism.' Non-deterministic tools make results unreproducible and confound agent bugs with environment flakiness; you can't localize a regression or gate CI on a moving target.",
   },
   {
-    id: "agent-eval-l1-5", topic: "agent-eval", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "agent-eval-l1-5", topic: "ai-agents", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "You use an LLM-as-judge to score whether each tool call in a trajectory was justified. What are the judge's characteristic pitfalls, and how do you mitigate them?",
     options: [
       "The judge is deterministic and unbiased, so no mitigation is needed",
@@ -116,7 +116,7 @@ export const Q_GAP_A = [
 
   // ── L2: Cross-concept / tradeoffs (5) ──────────────────────────────────────
   {
-    id: "agent-eval-l2-1", topic: "agent-eval", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "agent-eval-l2-1", topic: "ai-agents", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "When should you rely on outcome eval versus trajectory eval? Give the correct division of labor a staff engineer would state.",
     options: [
       "Use only trajectory eval; outcome eval is obsolete once you score steps",
@@ -129,7 +129,7 @@ export const Q_GAP_A = [
     trap: "Picking one and dropping the other. Outcome-only misses false passes/fails; trajectory-only loses the simple 'did it ultimately work' signal. Mature harnesses report both side by side.",
   },
   {
-    id: "agent-eval-l2-2", topic: "agent-eval", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "agent-eval-l2-2", topic: "ai-agents", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "You must design the scoring layer of an agent eval harness for BOTH deterministic requirements (must call lookup_order with the exact ID; must never call issue_refund) and open-ended ones (was each call justified by the prior observation). What is the right design?",
     options: [
       "Use LLM-as-judge for everything, since it is the most flexible",
@@ -142,7 +142,7 @@ export const Q_GAP_A = [
     trap: "Collapsing to one mechanism. All-judge loses the exactness assertions give (and inherits judge bias); all-assertion can't score open-ended quality. Match the mechanism to the requirement type.",
   },
   {
-    id: "agent-eval-l2-3", topic: "agent-eval", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "agent-eval-l2-3", topic: "ai-agents", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "How does capturing full trajectories change your ability to diagnose a regression, compared to logging only final outcomes?",
     options: [
       "It doesn't — a pass/fail on the final answer is enough to find any regression",
@@ -155,7 +155,7 @@ export const Q_GAP_A = [
     trap: "Thinking outcome logs suffice for debugging. Without the trajectory you know THAT it broke but not WHERE; you lose the step-level diff that makes regressions fixable.",
   },
   {
-    id: "agent-eval-l2-4", topic: "agent-eval", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "agent-eval-l2-4", topic: "ai-agents", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Beyond correctness, why do agent evals track efficiency metrics like steps-to-goal, tool-call count, and token/cost per task alongside outcome and trajectory correctness?",
     options: [
       "Efficiency is irrelevant as long as the answer is correct",
@@ -168,7 +168,7 @@ export const Q_GAP_A = [
     trap: "Optimizing only for task success. A correct-but-wasteful agent is a real operational problem (cost, latency, fragility), and its redundant calls hint at a shakier process — efficiency is a first-class eval axis.",
   },
   {
-    id: "agent-eval-l2-5", topic: "agent-eval", tier: "L2", difficulty: "hard", gated: true, type: "text",
+    id: "agent-eval-l2-5", topic: "ai-agents", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "text",
     question: "Your agent's task-success (outcome) score is high and stable, but users report occasional unsafe actions (unrequested refunds, wrong-record edits). Explain why the metric looks fine while the behavior is unsafe, and what you would add to the eval to catch it.",
     options: null, correct: null,
     keywords: ["trajectory", "per-step", "false pass", "forbidden tool", "assertion", "tool-call accuracy", "golden", "safety", "process metric", "regression"],
@@ -182,7 +182,7 @@ export const Q_GAP_A = [
 
   // ── L0: Define (3) ─────────────────────────────────────────────────────────
   {
-    id: "rag-ingestion-l0-1", topic: "rag-ingestion", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "rag-ingestion-l0-1", topic: "retrieval", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "In a RAG system, what is the offline ingestion (indexing) pipeline, and how does it differ from the online query path?",
     options: [
       "They are the same thing run twice for redundancy",
@@ -195,7 +195,7 @@ export const Q_GAP_A = [
     trap: "Picturing only the query path and forgetting ingestion exists. Most RAG quality problems (garbled parses, stale/deleted docs, missing permissions) are ingestion failures, invisible until someone queries.",
   },
   {
-    id: "rag-ingestion-l0-2", topic: "rag-ingestion", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "rag-ingestion-l0-2", topic: "retrieval", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What is the correct order of stages in a typical RAG ingestion pipeline?",
     options: [
       "embed → parse → chunk → index → clean",
@@ -208,7 +208,7 @@ export const Q_GAP_A = [
     trap: "Embedding before parsing/cleaning. You can't meaningfully embed a document you haven't turned into clean text and split into chunks — the stages are dependent, not interchangeable.",
   },
   {
-    id: "rag-ingestion-l0-3", topic: "rag-ingestion", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "rag-ingestion-l0-3", topic: "retrieval", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "During ingestion, what kind of metadata is typically extracted and attached to each document/chunk?",
     options: [
       "Only the embedding vector",
@@ -223,7 +223,7 @@ export const Q_GAP_A = [
 
   // ── L1: Deep single-concept (5) ────────────────────────────────────────────
   {
-    id: "rag-ingestion-l1-1", topic: "rag-ingestion", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "rag-ingestion-l1-1", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "A PDF with a two-column layout is returned by your RAG bot as garbled, interleaved nonsense. Which ingestion stage is at fault, and why can't better retrieval fix it?",
     options: [
       "The embedding stage; a bigger embedding model would fix it",
@@ -236,7 +236,7 @@ export const Q_GAP_A = [
     trap: "Trying to fix a parse problem in the retriever. Garbage-out at parse poisons everything downstream; retrieval cleverness can't recover text that was destroyed before it was ever indexed.",
   },
   {
-    id: "rag-ingestion-l1-2", topic: "rag-ingestion", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "rag-ingestion-l1-2", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "Your team skips extracting per-document ACL/permission metadata at ingestion, planning to 'apply permissions later at query time.' Why is this a serious problem?",
     options: [
       "It's fine; permissions are purely a query-time concern",
@@ -249,7 +249,7 @@ export const Q_GAP_A = [
     trap: "Believing you can bolt permissions on at query time. If the index lacks per-doc ACLs, there's nothing to enforce against — the leak is baked in at ingestion.",
   },
   {
-    id: "rag-ingestion-l1-3", topic: "rag-ingestion", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "rag-ingestion-l1-3", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "An engineer edits one paragraph in a single 40-page runbook and your nightly job re-embeds all 12,000 documents. What is the correct design and its core mechanism?",
     options: [
       "Increase batch size so the full rebuild is faster; full rebuilds are unavoidable on any edit",
@@ -262,7 +262,7 @@ export const Q_GAP_A = [
     trap: "Accepting that any edit requires a full rebuild. Options that just make the wasteful path faster (bigger batch, faster model) keep cost proportional to corpus size; the real fix changes the unit of work to the document.",
   },
   {
-    id: "rag-ingestion-l1-4", topic: "rag-ingestion", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "rag-ingestion-l1-4", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "A document is deleted from your wiki, but the RAG bot keeps citing it. What went wrong in the ingestion design, and how is it fixed?",
     options: [
       "The embedding model memorized the doc; retraining is required",
@@ -275,7 +275,7 @@ export const Q_GAP_A = [
     trap: "Handling edits but not deletes/supersession. Freshness isn't only about adding new content — actively removing deleted or superseded chunks is what stops stale citations.",
   },
   {
-    id: "rag-ingestion-l1-5", topic: "rag-ingestion", tier: "L1", difficulty: "medium", gated: false, type: "text",
+    id: "rag-ingestion-l1-5", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "text",
     question: "Explain what a 'freshness SLA' is for a RAG ingestion pipeline, and how it drives the ingestion architecture (give a fast-corpus and a slow-corpus example).",
     options: null, correct: null,
     keywords: ["how quickly", "reflected", "event-driven", "batch", "nightly", "requirement", "latency", "per corpus", "streaming", "minutes"],
@@ -285,7 +285,7 @@ export const Q_GAP_A = [
 
   // ── L2: Cross-concept / tradeoffs (5) ──────────────────────────────────────
   {
-    id: "rag-ingestion-l2-1", topic: "rag-ingestion", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "rag-ingestion-l2-1", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Ingestion and retrieval have a cost/latency asymmetry. What is it, and how should it shape where you do expensive work?",
     options: [
       "Both are equally latency-critical, so expensive work should be split evenly",
@@ -298,7 +298,7 @@ export const Q_GAP_A = [
     trap: "Putting expensive work on the query path 'to keep the index small.' Moving work from query time to ingestion time is almost always right — you pay it once and every query benefits, instead of paying per request.",
   },
   {
-    id: "rag-ingestion-l2-2", topic: "rag-ingestion", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "rag-ingestion-l2-2", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "When is a FULL rebuild of the index the right choice, versus incremental upsert/delete?",
     options: [
       "Full rebuild for every document edit; incremental only for reads",
@@ -311,7 +311,7 @@ export const Q_GAP_A = [
     trap: "Treating full rebuild as either always-needed or never-needed. Routine edits are incremental; an embedding-model or schema migration genuinely requires re-embedding the whole corpus.",
   },
   {
-    id: "rag-ingestion-l2-3", topic: "rag-ingestion", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "rag-ingestion-l2-3", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "You upgrade to a better embedding model but your index holds millions of chunks embedded with the OLD model. Why can't you just embed new queries with the new model against the old index, and what does the migration require?",
     options: [
       "You can — embedding models are interchangeable at query time",
@@ -324,7 +324,7 @@ export const Q_GAP_A = [
     trap: "Assuming you can point new-model queries at an old-model index. Different models = different spaces = incomparable vectors; the whole corpus must be re-embedded and reindexed.",
   },
   {
-    id: "rag-ingestion-l2-4", topic: "rag-ingestion", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "rag-ingestion-l2-4", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Two teams debate deduplication at ingestion. Team A dedups aggressively; Team B keeps everything. What is the actual tradeoff, and what's the risk on each side?",
     options: [
       "Dedup has no downside; always remove every similar document",
@@ -337,7 +337,7 @@ export const Q_GAP_A = [
     trap: "Treating dedup as free cleanup. Over-dedup can erase distinct-but-similar docs (regional variants, versions); the threshold is a quality decision, not just a storage optimization.",
   },
   {
-    id: "rag-ingestion-l2-5", topic: "rag-ingestion", tier: "L2", difficulty: "hard", gated: true, type: "text",
+    id: "rag-ingestion-l2-5", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "text",
     question: "Your RAG bot works in the demo but in production shows three problems: a two-column PDF returns garbled text, a one-paragraph edit triggers a six-hour rebuild of the whole corpus, and a deleted doc is still cited. A colleague proposes fixing all three by tuning the retriever. Explain why each is actually an ingestion-layer problem and give the correct fix for each.",
     options: null, correct: null,
     keywords: ["parse", "structure-aware", "incremental", "upsert", "doc id", "delete", "chunk", "retrieval capped", "ingestion", "reindex"],

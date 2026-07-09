@@ -5,9 +5,9 @@ export const Q_DPO_DISTILL = [
   // ============================================================
   {
     id: "dpo-l0-1",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What does DPO (Direct Preference Optimization) train a language model on?",
@@ -25,9 +25,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l0-2",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What key component of the classic RLHF pipeline does DPO remove?",
@@ -45,9 +45,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l0-3",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "text",
     question:
@@ -65,9 +65,9 @@ export const Q_DPO_DISTILL = [
   // ============================================================
   {
     id: "dpo-l1-1",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -86,9 +86,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l1-2",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "mcq",
     question:
@@ -107,9 +107,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l1-3",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -128,9 +128,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l1-4",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question: "What role does the hyperparameter beta play in DPO?",
@@ -148,9 +148,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l1-5",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "mcq",
     question:
@@ -173,9 +173,9 @@ export const Q_DPO_DISTILL = [
   // ============================================================
   {
     id: "dpo-l2-1",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -194,9 +194,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l2-2",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -215,9 +215,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l2-3",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: true,
     type: "mcq",
     question:
@@ -236,9 +236,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l2-4",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "text",
     question:
@@ -266,9 +266,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "dpo-l2-5",
-    topic: "dpo",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -291,9 +291,9 @@ export const Q_DPO_DISTILL = [
   // ============================================================
   {
     id: "distillation-l0-1",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What is the core idea of knowledge distillation?",
@@ -311,9 +311,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l0-2",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question:
@@ -332,9 +332,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l0-3",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "text",
     question:
@@ -352,9 +352,9 @@ export const Q_DPO_DISTILL = [
   // ============================================================
   {
     id: "distillation-l1-1",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -373,9 +373,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l1-2",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "mcq",
     question:
@@ -394,9 +394,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l1-3",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -415,9 +415,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l1-4",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -436,9 +436,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l1-5",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "mcq",
     question:
@@ -461,9 +461,9 @@ export const Q_DPO_DISTILL = [
   // ============================================================
   {
     id: "distillation-l2-1",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -482,9 +482,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l2-2",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -503,9 +503,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l2-3",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: true,
     type: "mcq",
     question:
@@ -524,9 +524,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l2-4",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -545,9 +545,9 @@ export const Q_DPO_DISTILL = [
   },
   {
     id: "distillation-l2-5",
-    topic: "distillation",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:

@@ -5,9 +5,9 @@ export const Q_PEFT_RLHF = [
   // ----- L0 (Define) -----
   {
     id: "lora-l0-1",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What does PEFT (parameter-efficient fine-tuning) refer to?",
@@ -25,9 +25,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l0-2",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "In LoRA, the weight update to a frozen matrix W is represented as which of the following?",
@@ -45,9 +45,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l0-3",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "text",
     question:
@@ -73,9 +73,9 @@ export const Q_PEFT_RLHF = [
   // ----- L1 (Deep) -----
   {
     id: "lora-l1-1",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -94,9 +94,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l1-2",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -115,9 +115,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l1-3",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "mcq",
     question:
@@ -136,9 +136,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l1-4",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -157,9 +157,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l1-5",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "text",
     question:
@@ -185,9 +185,9 @@ export const Q_PEFT_RLHF = [
   // ----- L2 (Cross-concept) -----
   {
     id: "lora-l2-1",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -206,9 +206,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l2-2",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -227,9 +227,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l2-3",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: true,
     type: "mcq",
     question:
@@ -248,9 +248,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l2-4",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -269,9 +269,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "lora-l2-5",
-    topic: "lora",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: true,
     type: "mcq",
     question:
@@ -294,9 +294,9 @@ export const Q_PEFT_RLHF = [
   // ----- L0 (Define) -----
   {
     id: "rlhf-l0-1",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What is RLHF (reinforcement learning from human feedback)?",
@@ -314,9 +314,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l0-2",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What are the three canonical stages of the classic RLHF pipeline, in order?",
@@ -334,9 +334,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l0-3",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What is the reward model in RLHF trained to do?",
@@ -356,9 +356,9 @@ export const Q_PEFT_RLHF = [
   // ----- L1 (Deep) -----
   {
     id: "rlhf-l1-1",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -377,9 +377,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l1-2",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question: "What is 'reward hacking' in RLHF?",
@@ -397,9 +397,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l1-3",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "mcq",
     question:
@@ -418,9 +418,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l1-4",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -439,9 +439,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l1-5",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "text",
     question:
@@ -468,9 +468,9 @@ export const Q_PEFT_RLHF = [
   // ----- L2 (Cross-concept) -----
   {
     id: "rlhf-l2-1",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -489,9 +489,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l2-2",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -510,9 +510,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l2-3",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: true,
     type: "mcq",
     question:
@@ -531,9 +531,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l2-4",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -552,9 +552,9 @@ export const Q_PEFT_RLHF = [
   },
   {
     id: "rlhf-l2-5",
-    topic: "rlhf",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: true,
     type: "mcq",
     question:

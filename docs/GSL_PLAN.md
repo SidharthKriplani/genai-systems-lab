@@ -3194,3 +3194,78 @@ Batch 4 — PrepLab answer-key correctness audit for the ~26 remaining question-
 questions) that were only length-rebalanced, never correctness-audited.
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+## 2026-07-09 (cont. 6) — PrepLab rebuild Phase 1: schema/taxonomy migration across all 798 questions
+
+Full-bank review of PrepLab's question bank (`src/data/preplabQuestions.js` + 7 `src/data/questions/*.js`
+files) found the true scope was 798 questions across 40 unaligned raw `topic` strings and an 8-value
+`difficulty` vocabulary (`easy/medium/hard/beginner/beginner-intermediate/intermediate/staff/daunting`),
+plus (spot-checked, not yet systematically audited) fabricated interview-attribution `source` fields and
+generally amateur/non-uniform construction. Per explicit user instruction, execution was paused before any
+content audit to first brainstorm and lock a rubric framework — this produced three new docs, sibling to
+`3B1B-STANDARD.md`/`CONTENT-AUDIT-RUBRIC.md` but scoped to answer-key correctness/construction rather than
+narrative voice:
+
+- **`PREPLAB-STANDARD.md`** — author rules. Locks a topic taxonomy (18 values: the platform's own 15
+  `GYMS` tracks from `Concepts.jsx`, plus `product`/`behavioral`/`leadership` as non-technical outside
+  GYMS by design), a `band` seniority scale (`foundational`/`intermediate`/`advanced`/`staff-plus`,
+  replacing the 8-value difficulty soup), a 5-value optional `role` framing tag (`aie`/`fde`/`research`/
+  `mlops`/`aipm` — `fde` confirmed via web research as a real, currently-hot distinct 2026 role, not
+  invented), a volume floor (8-12/topic, ~30/40/25/5 band split), 12 author rules, and the same
+  author+adversarial two-pass enforcement loop as `3B1B-STANDARD.md`.
+- **`PREPLAB-AUDIT-RUBRIC.md`** — 10-smell adversarial checklist (defensible-wrong-answer,
+  trivial-elimination distractor, fabricated attribution, fabricated statistic, difficulty-label mismatch,
+  topic misfile, restates-without-teaching, decorative citation, near-duplicate, stale/wrong claim), run
+  blind against only the finished question object, auditor re-derives the answer cold before comparing.
+- **`PREPLAB-REBUILD-PLAN.md`** — 6-phase execution plan (schema migration → dedup oversized topics →
+  correctness audit batch-by-topic → volume gap-fill → source-field cleanup folded into the audit pass →
+  UI/taxonomy code alignment, flagged as separate-in-kind engineering work like scene-building was for
+  RUNNER_DATA).
+
+User also raised extending this initiative to MSL/PAL; resolved as GSL-first, MSL/PAL/doc-promotion
+explicitly deferred until this plan is "further along and battle tested." production-systems-lab is out of
+scope entirely. All three docs locked as-is; Phase 1 authorized to proceed.
+
+### Phase 1 — mechanical schema/taxonomy migration (this entry)
+Purely structural, zero answer-key content changes. Scripted (`phase1_migrate.py`) across all 8 files:
+
+**Topic remap** — exact quoted-value replacement, longest-key-first, all 40 raw legacy strings → the
+taxonomy. One amendment surfaced during execution, beyond what `PREPLAB-STANDARD.md`'s text currently
+locks: the legacy `design`/`sysdesign` strings (18 questions combined) don't fit cleanly under any of the
+15 GYMS tracks or the 3 non-technical topics — `Career.jsx`'s own `CAREER_MODULES` treats Design Studio as
+a distinct first-class module, so `sysdesign` was mapped to itself as a 19th topic rather than force-fit
+elsewhere or silently dropped. Flagging this explicitly rather than folding it in quietly — `
+PREPLAB-STANDARD.md`'s taxonomy section should be updated to state 19 topics, pending confirmation.
+
+**Band injection** — new `band` field derived from a lowercase-normalized legacy `difficulty` value via a
+fixed table (`easy/beginner`→`foundational`, `medium/intermediate/beginner-intermediate`→`intermediate`,
+`hard`→`advanced`, `staff/daunting`→`staff-plus`); legacy `difficulty` kept for UI backward-compat but
+case-normalized in the same pass (fixed a pre-existing `Medium`/`Hard`/`Easy` capitalization inconsistency
+found in 2 of the 7 question files).
+
+### Verification
+- Backed up all 8 target files to `_to_delete/backup_prep_phase1/` before running.
+- Topic-count reconciliation: every one of the 15 (now 19, including `sysdesign`) target topic values'
+  post-migration count exactly equals the sum of its constituent legacy topic keys' original counts;
+  total sums to exactly 798 across all files, matching the pre-migration question count. Full post-
+  migration distribution: `retrieval` 132, `ai-agents` 117, `evaluation` 36, `production` 81,
+  `foundation-models` 161, `ai-safety-alignment` 42, `product` 15, `behavioral` 12, `multimodal` 15,
+  `prompt-engineering` 36, `language-models` 50, `inference-optimization` 31, `sysdesign` 18,
+  `nlp-foundations` 40, `leadership` 12.
+- `id`/`topic` count parity confirmed at 798 in every file (a first-pass id-regex undercounted at 795 in
+  3 files due to a character-class bug on the regex itself, not the data — traced to each of those files'
+  own header-comment schema example line, `id: "<topic>-l<0|1|2>-<n>"`, incidentally matching the
+  `id:`/`difficulty:` field-presence check; re-verified with a corrected regex and by chunk-scanning each
+  file for any real question missing `difficulty`/`band` — none found. All 798 real questions have both
+  fields).
+- `difficulty` case-normalization confirmed (`grep` shows only lowercase values remain: `easy`/`medium`/
+  `hard` — no `Easy`/`Medium`/`Hard`).
+- `band` distribution across the bank: 115 `foundational` (14%), 394 `intermediate` (49%), 279 `advanced`
+  (35%), 7 `staff-plus` (1%) — expected to be skewed since Phase 1 only relabels existing content; this is
+  materially off the standard's 30/40/25/5 target (thin on foundational, very thin on staff-plus, heavy on
+  advanced) and is flagged as a real gap for Phase 3 (per-question band-fidelity re-check, rule 5) and
+  Phase 4 (volume gap-fill) to close — not something Phase 1 can or should fix mechanically.
+- `npx esbuild <file> --bundle --format=esm --outfile=/dev/null` clean on all 8 touched files, no syntax
+  errors.
+
+Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.

@@ -5,9 +5,9 @@ export const Q_MOE_PROMPT = [
   // ============================================================
   {
     id: "moe-l0-1",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What is a Mixture-of-Experts (MoE) layer in a transformer?",
@@ -25,9 +25,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l0-2",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "In an MoE model, what do 'total parameters' and 'active parameters' refer to?",
@@ -45,9 +45,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l0-3",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: true,
     type: "text",
     question:
@@ -65,9 +65,9 @@ export const Q_MOE_PROMPT = [
   // ============================================================
   {
     id: "moe-l1-1",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -86,9 +86,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l1-2",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question: "Why do MoE models add an auxiliary load-balancing loss during training?",
@@ -106,9 +106,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l1-3",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -127,9 +127,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l1-4",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "mcq",
     question:
@@ -148,9 +148,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l1-5",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "text",
     question:
@@ -177,9 +177,9 @@ export const Q_MOE_PROMPT = [
   // ============================================================
   {
     id: "moe-l2-1",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -198,9 +198,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l2-2",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -219,9 +219,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l2-3",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -240,9 +240,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l2-4",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: true,
     type: "mcq",
     question:
@@ -261,9 +261,9 @@ export const Q_MOE_PROMPT = [
   },
   {
     id: "moe-l2-5",
-    topic: "moe",
+    topic: "foundation-models",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -288,7 +288,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l0-1",
     topic: "prompt-engineering",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What is the difference between zero-shot and few-shot prompting?",
@@ -308,7 +308,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l0-2",
     topic: "prompt-engineering",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: false,
     type: "mcq",
     question: "What does chain-of-thought (CoT) prompting do?",
@@ -328,7 +328,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l0-3",
     topic: "prompt-engineering",
     tier: "L0",
-    difficulty: "easy",
+    difficulty: "easy", band: "foundational",
     gated: true,
     type: "text",
     question:
@@ -358,7 +358,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l1-1",
     topic: "prompt-engineering",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question: "How does self-consistency improve over plain chain-of-thought?",
@@ -378,7 +378,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l1-2",
     topic: "prompt-engineering",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question: "What characterizes the ReAct prompting pattern?",
@@ -398,7 +398,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l1-3",
     topic: "prompt-engineering",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "mcq",
     question:
@@ -419,7 +419,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l1-4",
     topic: "prompt-engineering",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: true,
     type: "mcq",
     question:
@@ -440,7 +440,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l1-5",
     topic: "prompt-engineering",
     tier: "L1",
-    difficulty: "medium",
+    difficulty: "medium", band: "intermediate",
     gated: false,
     type: "text",
     question:
@@ -471,7 +471,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l2-1",
     topic: "prompt-engineering",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -492,7 +492,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l2-2",
     topic: "prompt-engineering",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -513,7 +513,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l2-3",
     topic: "prompt-engineering",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:
@@ -534,7 +534,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l2-4",
     topic: "prompt-engineering",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: true,
     type: "mcq",
     question:
@@ -555,7 +555,7 @@ export const Q_MOE_PROMPT = [
     id: "prompt-engineering-l2-5",
     topic: "prompt-engineering",
     tier: "L2",
-    difficulty: "hard",
+    difficulty: "hard", band: "advanced",
     gated: false,
     type: "mcq",
     question:

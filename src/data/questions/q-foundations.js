@@ -1,7 +1,7 @@
 // src/data/questions/q-foundations.js
 // L0/L1/L2 question ladders — tokenizer + embeddings. Spread into PREP_QUESTIONS.
 // Schema mirrors src/data/preplabQuestions.js:
-//   id: "<topic>-l<0|1|2>-<n>"   topic: "tokenizer" | "embeddings"
+//   id: "<topic>-l<0|1|2>-<n>"   topic: "language-models" | "embeddings"
 //   tier: "L0" | "L1" | "L2"     difficulty: easy(L0) | medium(L1) | hard(L2)
 //   gated: boolean               type: "mcq" | "text"
 //   options/correct for mcq; keywords[] for text; explanation + trap always.
@@ -13,7 +13,7 @@ export const Q_FOUNDATIONS = [
 
   // ── L0: Define (3) ─────────────────────────────────────────────────────────
   {
-    id: "tokenizer-l0-1", topic: "tokenizer", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "tokenizer-l0-1", topic: "language-models", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What does a tokenizer do in an LLM pipeline?",
     options: [
       "It compresses the model weights so they fit on a single GPU",
@@ -26,7 +26,7 @@ export const Q_FOUNDATIONS = [
     trap: "Calling tokenization 'splitting text into words.' Modern subword tokenizers split on statistically learned units, not whitespace words — 'tokenization' itself becomes multiple tokens. Conflating a token with a word underestimates context cost by 20-30%.",
   },
   {
-    id: "tokenizer-l0-2", topic: "tokenizer", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "tokenizer-l0-2", topic: "language-models", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "Roughly how many English tokens does 1,000 words of typical prose become with a modern subword tokenizer (e.g. GPT-4 / cl100k)?",
     options: [
       "About 250 tokens — tokens are larger than words",
@@ -39,7 +39,7 @@ export const Q_FOUNDATIONS = [
     trap: "Assuming one-token-per-word. That undercounts by ~30% and blows through context budgets on long inputs. Code, JSON, and non-English text are far worse — often 2-3x more tokens per character.",
   },
   {
-    id: "tokenizer-l0-3", topic: "tokenizer", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "tokenizer-l0-3", topic: "language-models", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What is a 'subword' token, and why do modern LLMs use subword tokenization instead of word-level?",
     options: [
       "A subword is a single character; character-level avoids ever seeing an unknown token",
@@ -54,7 +54,7 @@ export const Q_FOUNDATIONS = [
 
   // ── L1: Deep single-concept (5) ────────────────────────────────────────────
   {
-    id: "tokenizer-l1-1", topic: "tokenizer", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "tokenizer-l1-1", topic: "language-models", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "How does Byte-Pair Encoding (BPE) build its vocabulary during training?",
     options: [
       "It clusters word embeddings and keeps one token per cluster centroid",
@@ -67,7 +67,7 @@ export const Q_FOUNDATIONS = [
     trap: "Confusing BPE with Unigram. BPE builds bottom-up by merging; Unigram starts with a large vocab and prunes tokens to maximise corpus likelihood. Interviewers probe this exact distinction.",
   },
   {
-    id: "tokenizer-l1-2", topic: "tokenizer", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "tokenizer-l1-2", topic: "language-models", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "A model tokenizes numbers digit-by-digit (each digit its own token) rather than grouping them. What downstream capability does this most directly affect, and why?",
     options: [
       "Retrieval, because digit tokens embed poorly",
@@ -80,7 +80,7 @@ export const Q_FOUNDATIONS = [
     trap: "Dismissing tokenization as 'just preprocessing' with no effect on reasoning. Inconsistent number splitting is a documented cause of arithmetic errors — the failure is in the tokenizer, not the reasoning layer.",
   },
   {
-    id: "tokenizer-l1-3", topic: "tokenizer", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "tokenizer-l1-3", topic: "language-models", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "Why is vocabulary size a tradeoff rather than 'bigger is always better'?",
     options: [
       "Larger vocab always improves quality, so the only limit is disk space",
@@ -93,7 +93,7 @@ export const Q_FOUNDATIONS = [
     trap: "Claiming a bigger vocabulary is strictly better because it 'shortens sequences.' It also inflates the embedding and softmax parameters and starves rare tokens of gradient signal — a real quality risk.",
   },
   {
-    id: "tokenizer-l1-4", topic: "tokenizer", tier: "L1", difficulty: "medium", gated: false, type: "text",
+    id: "tokenizer-l1-4", topic: "language-models", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "text",
     question: "Explain what a 'glitch token' (e.g. the notorious ' SolidGoldMagikarp') is, why it causes bizarre model behaviour, and what root cause in the training pipeline produces it.",
     options: null, correct: null,
     keywords: ["undertrained", "vocab", "tokenizer corpus", "training corpus", "embedding", "rarely seen", "under-trained", "mismatch"],
@@ -101,7 +101,7 @@ export const Q_FOUNDATIONS = [
     trap: "Explaining it as 'a bug in the model weights' or 'a prompt-injection.' The mechanism is an under-trained embedding caused by tokenizer/model corpus mismatch — a data-pipeline issue, not a runtime exploit.",
   },
   {
-    id: "tokenizer-l1-5", topic: "tokenizer", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "tokenizer-l1-5", topic: "language-models", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "You deploy an LLM for a Hindi-language product and notice inputs cost 3-4x more tokens per sentence than the equivalent English. What is the mechanism, and what is the correct fix?",
     options: [
       "The model is slower on Hindi; upgrade the GPU",
@@ -116,7 +116,7 @@ export const Q_FOUNDATIONS = [
 
   // ── L2: Cross-concept / tradeoffs (5) ──────────────────────────────────────
   {
-    id: "tokenizer-l2-1", topic: "tokenizer", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "tokenizer-l2-1", topic: "language-models", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "BPE vs WordPiece: both are subword algorithms, but they choose which pair to merge differently. What is that core difference?",
     options: [
       "BPE merges the most frequent adjacent pair; WordPiece merges the pair that most increases the corpus likelihood (highest score = freq(pair) / (freq(a)·freq(b)))",
@@ -129,7 +129,7 @@ export const Q_FOUNDATIONS = [
     trap: "Saying 'BPE and WordPiece are basically the same.' The likelihood-vs-frequency merge criterion is the discriminating detail interviewers listen for; conflating them signals surface knowledge.",
   },
   {
-    id: "tokenizer-l2-2", topic: "tokenizer", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "tokenizer-l2-2", topic: "language-models", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Unigram LM tokenization (SentencePiece) differs from BPE most fundamentally in that it:",
     options: [
       "Is faster because it only stores merge rules",
@@ -142,7 +142,7 @@ export const Q_FOUNDATIONS = [
     trap: "Assuming all subword tokenizers are deterministic. Unigram is explicitly probabilistic and supports sampling multiple segmentations — the opposite of BPE's single greedy output.",
   },
   {
-    id: "tokenizer-l2-3", topic: "tokenizer", tier: "L2", difficulty: "hard", gated: false, type: "mcq",
+    id: "tokenizer-l2-3", topic: "language-models", tier: "L2", difficulty: "hard", band: "advanced", gated: false, type: "mcq",
     question: "SentencePiece is often described as solving a problem the BPE/WordPiece implementations had. What problem?",
     options: [
       "It made vocabularies larger",
@@ -155,7 +155,7 @@ export const Q_FOUNDATIONS = [
     trap: "Treating SentencePiece as 'a competitor to BPE.' It's an implementation that hosts BPE or Unigram; the innovation is raw-text, whitespace-agnostic, lossless tokenization — not the merge algorithm itself.",
   },
   {
-    id: "tokenizer-l2-4", topic: "tokenizer", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "tokenizer-l2-4", topic: "language-models", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Byte-level BPE (used by GPT-2/GPT-4) vs character-level vs word-level tokenization. Why did byte-level BPE become the default for large models?",
     options: [
       "Byte-level uses the smallest vocabulary of the three",
@@ -168,7 +168,7 @@ export const Q_FOUNDATIONS = [
     trap: "Picking 'smallest vocabulary' as the reason. Byte-level BPE vocabularies are large (50k-100k); the win is universal coverage with no OOV plus subword-level sequence compression — not vocab size.",
   },
   {
-    id: "tokenizer-l2-5", topic: "tokenizer", tier: "L2", difficulty: "hard", gated: true, type: "text",
+    id: "tokenizer-l2-5", topic: "language-models", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "text",
     question: "Two teams fine-tune the same base model. Team A reuses the base tokenizer; Team B trains a new domain-specific tokenizer (e.g. for chemistry SMILES strings). Discuss the tradeoff — when does a custom tokenizer help, and what breaks if you swap the tokenizer under a pretrained model?",
     options: null, correct: null,
     keywords: ["embedding", "pretrained", "sequence length", "domain", "vocab mismatch", "retrain", "efficiency", "token ids", "cost", "coverage"],
@@ -182,7 +182,7 @@ export const Q_FOUNDATIONS = [
 
   // ── L0: Define (3) ─────────────────────────────────────────────────────────
   {
-    id: "embeddings-l0-1", topic: "embeddings", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "embeddings-l0-1", topic: "retrieval", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What is an embedding?",
     options: [
       "A compressed copy of the training dataset stored inside the model",
@@ -195,7 +195,7 @@ export const Q_FOUNDATIONS = [
     trap: "Describing an embedding as 'a lookup table of words.' The vector itself — and the fact that its geometry encodes meaning — is the point; the table is just where token embeddings are stored.",
   },
   {
-    id: "embeddings-l0-2", topic: "embeddings", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "embeddings-l0-2", topic: "retrieval", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "Why are embeddings preferred over one-hot encodings for representing words?",
     options: [
       "One-hot vectors are too small to store the vocabulary",
@@ -208,7 +208,7 @@ export const Q_FOUNDATIONS = [
     trap: "Saying one-hot 'doesn't work' as input. It does work — it's just uninformative (no similarity structure) and inefficient. The advantage of embeddings is semantic geometry plus dimensionality reduction.",
   },
   {
-    id: "embeddings-l0-3", topic: "embeddings", tier: "L0", difficulty: "easy", gated: false, type: "mcq",
+    id: "embeddings-l0-3", topic: "retrieval", tier: "L0", difficulty: "easy", band: "foundational", gated: false, type: "mcq",
     question: "What does cosine similarity between two embedding vectors measure?",
     options: [
       "The straight-line (Euclidean) distance between the vectors",
@@ -223,7 +223,7 @@ export const Q_FOUNDATIONS = [
 
   // ── L1: Deep single-concept (5) ────────────────────────────────────────────
   {
-    id: "embeddings-l1-1", topic: "embeddings", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "embeddings-l1-1", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "word2vec's skip-gram objective learns embeddings by training the model to:",
     options: [
       "Reconstruct the exact input sentence from a compressed vector",
@@ -236,7 +236,7 @@ export const Q_FOUNDATIONS = [
     trap: "Describing word2vec as 'a deep neural network.' It's a shallow (single hidden layer) model; its power comes from the prediction objective over huge corpora plus negative sampling, not depth.",
   },
   {
-    id: "embeddings-l1-2", topic: "embeddings", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "embeddings-l1-2", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "A classic property of word2vec/GloVe embeddings is that vector('king') - vector('man') + vector('woman') ≈ vector('queen'). What does this reveal about the space?",
     options: [
       "The embeddings memorised a hardcoded analogy table",
@@ -249,7 +249,7 @@ export const Q_FOUNDATIONS = [
     trap: "Claiming this proves the model 'understands' or 'reasons.' It's a geometric regularity from co-occurrence statistics; the analogies are fuzzy, break down on rarer relations, and involve nearest-neighbour tricks (excluding the input words).",
   },
   {
-    id: "embeddings-l1-3", topic: "embeddings", tier: "L1", difficulty: "medium", gated: false, type: "mcq",
+    id: "embeddings-l1-3", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "mcq",
     question: "What is the fundamental limitation of static embeddings (word2vec, GloVe) that contextual embeddings (BERT) were designed to fix?",
     options: [
       "Static embeddings are too slow to compute at inference",
@@ -262,7 +262,7 @@ export const Q_FOUNDATIONS = [
     trap: "Saying BERT embeddings are 'just better-trained word2vec.' The difference is architectural: static = one vector per type; contextual = one vector per token occurrence, computed from the full sentence.",
   },
   {
-    id: "embeddings-l1-4", topic: "embeddings", tier: "L1", difficulty: "medium", gated: false, type: "text",
+    id: "embeddings-l1-4", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: false, type: "text",
     question: "You want to build semantic search over documents. Explain why you cannot just average BERT's raw token embeddings to get a sentence vector, and what a model like Sentence-BERT does differently.",
     options: null, correct: null,
     keywords: ["mean pooling", "siamese", "fine-tune", "cosine", "sentence", "similarity objective", "contrastive", "not comparable", "pooling", "training objective"],
@@ -270,7 +270,7 @@ export const Q_FOUNDATIONS = [
     trap: "Assuming 'mean-pool BERT tokens' yields good sentence embeddings. Off-the-shelf BERT was never trained so its pooled vector is cosine-comparable; you need a model fine-tuned with a sentence-similarity objective (SBERT) or a purpose-built embedding model.",
   },
   {
-    id: "embeddings-l1-5", topic: "embeddings", tier: "L1", difficulty: "medium", gated: true, type: "mcq",
+    id: "embeddings-l1-5", topic: "retrieval", tier: "L1", difficulty: "medium", band: "intermediate", gated: true, type: "mcq",
     question: "You must pick the embedding dimension d for a new retrieval system. What is the core tradeoff, and what commonly goes wrong at very high d?",
     options: [
       "Higher d is always better; the only cost is disk space",
@@ -285,7 +285,7 @@ export const Q_FOUNDATIONS = [
 
   // ── L2: Cross-concept / tradeoffs (5) ──────────────────────────────────────
   {
-    id: "embeddings-l2-1", topic: "embeddings", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "embeddings-l2-1", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Cosine similarity vs dot product vs Euclidean distance for comparing embeddings. When does the choice actually change the ranking?",
     options: [
       "They always produce the same ranking, so it never matters",
@@ -298,7 +298,7 @@ export const Q_FOUNDATIONS = [
     trap: "Treating cosine/dot/Euclidean as interchangeable. They coincide only under normalization; unnormalized, dot product and Euclidean fold in magnitude, which can flip rankings and must match how the model was trained.",
   },
   {
-    id: "embeddings-l2-2", topic: "embeddings", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "embeddings-l2-2", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Static (word2vec/GloVe) vs contextual (BERT) vs sentence embeddings (SBERT): which should you reach for to build a document semantic-search index, and why NOT the others?",
     options: [
       "word2vec — because it is fastest",
@@ -311,7 +311,7 @@ export const Q_FOUNDATIONS = [
     trap: "Reaching for raw BERT because it's 'the most powerful.' As a bi-encoder its pooled output isn't similarity-calibrated, and as a cross-encoder it can't be pre-indexed — wrong tool for scalable retrieval.",
   },
   {
-    id: "embeddings-l2-3", topic: "embeddings", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "embeddings-l2-3", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "Why does Retrieval-Augmented Generation (RAG) use embeddings for retrieval instead of keyword (lexical, e.g. BM25) search?",
     options: [
       "Embeddings are always strictly better than keyword search on every query",
@@ -324,7 +324,7 @@ export const Q_FOUNDATIONS = [
     trap: "Claiming embeddings strictly dominate keyword search. Lexical search still wins on exact matches, codes, and rare tokens; the strong answer is hybrid retrieval, and knowing when dense recall fails is the senior signal.",
   },
   {
-    id: "embeddings-l2-4", topic: "embeddings", tier: "L2", difficulty: "hard", gated: true, type: "mcq",
+    id: "embeddings-l2-4", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "mcq",
     question: "At 50M vectors, brute-force cosine search over embeddings is too slow. Approximate Nearest Neighbour (ANN, e.g. HNSW/IVF) fixes latency. What is the fundamental tradeoff you accept, and how does it interact with RAG quality?",
     options: [
       "ANN is exact and free — there is no tradeoff",
@@ -337,7 +337,7 @@ export const Q_FOUNDATIONS = [
     trap: "Treating ANN as a free speedup. It's an approximation — lower recall means the generator sometimes never sees the right passage. The tradeoff must be tuned and measured against answer quality, not set blindly for latency.",
   },
   {
-    id: "embeddings-l2-5", topic: "embeddings", tier: "L2", difficulty: "hard", gated: true, type: "text",
+    id: "embeddings-l2-5", topic: "retrieval", tier: "L2", difficulty: "hard", band: "advanced", gated: true, type: "text",
     question: "Embedding drift: you upgrade your embedding model to a newer, better one, but your vector DB has millions of documents embedded with the OLD model. Explain why you cannot simply embed new queries with the new model against the old index, and what the migration actually requires.",
     options: null, correct: null,
     keywords: ["same space", "re-embed", "reindex", "incompatible", "vector space", "query", "corpus", "backfill", "not comparable", "mismatch"],
