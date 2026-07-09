@@ -70,3 +70,11 @@ batches.
    — same treatment as scenes got for RUNNER_DATA?
 3. Phase 2's dedup decisions (what counts as "close enough to cut") — spot-check a sample with you
    before running it across all 5 oversized topics, or trust the rubric's smell-9 tell and proceed?
+
+## Cross-lab flag: MSL/PAL (added 2026-07-09, on PrepLab pause)
+GSL's Phase 3 audit found a bank-wide MCQ answer-position bias defect (see GSL_PLAN.md 2026-07-09
+entries) — `correct` clustered at one option index across ~640 of ~770 questions, invalidating the
+bank as an assessment instrument. This looks like a shared generation-pipeline defect, not
+GSL-specific. When MSL's or PAL's own interview-question banks are eventually rebuilt, run an
+answer-position distribution count first, before content-level audit work. Full writeup and fix
+method: `BreakLabs/PREPLAB-CROSS-LAB-NOTES.md`.

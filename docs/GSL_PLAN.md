@@ -3496,3 +3496,53 @@ the very first step on `retrieval`/`ai-agents`/`production`/`ai-safety-alignment
 distribution check across their source files before doing the content-level audit.
 
 Not pushed yet — git commands below, hand to Sidharth's Mac for build + push.
+
+## 2026-07-09 (cont. 10) — PrepLab rebuild PAUSED by explicit user instruction; priority shifts to foundations (RUNNER_DATA/GYMS) work
+
+User interrupted mid-Phase-3 to redirect priority: foundations (RUNNER_DATA + Concepts.jsx GYMS interactive
+content, governed by `3B1B-STANDARD.md`/`CONTENT-AUDIT-RUBRIC.md`) becomes the sole priority. PrepLab rebuild
+is paused here, mid-batch, with one already-completed-and-verified fix not yet committed — logging its exact
+state so nothing is lost and the next PrepLab session can resume cleanly without re-deriving anything.
+
+### Uncommitted work at pause point (verified, ready to commit whenever PrepLab resumes)
+While starting the position-bias check on `retrieval`'s source files (the planned first step of the next
+batch, per batch 2's own closing note), the same bank-wide MCQ answer-position defect already found and
+fixed in `q-dpo-distill.js`/`q-peft-rlhf.js`/`q-moe-prompt.js`/`q-core-deepen.js` (Phase 3 batch 2) turned
+out to be present at even larger scale in the 4 files that hadn't been checked yet:
+- `preplabQuestions.js`: 486 MCQs, 367 (75.5%) had `correct: 1`
+- `q-foundations.js`: 22 MCQs, 20 (91%) had `correct: 1`
+- `q-gap-a.js`: 22 MCQs, all 22 (100%) had `correct: 1`
+- `q-gap-b.js`: 22 MCQs, all 22 (100%) had `correct: 1`
+
+Combined with the 4 files already fixed, this means the position-bias defect affected roughly 640 of the
+bank's ~640 total MCQs (nearly the entire bank) before this fix — not a `foundation-models`-specific issue,
+a bank-wide one. Fixed with the same method: SHA-256(id) mod option-count deterministic repositioning,
+preserving option text exactly, only moving position + the `correct` index. Result: 404 of 552 MCQs across
+these 4 files repositioned; post-fix distribution is roughly even across all 4 positions in every file
+(spot-verified: `rag-beg-1`'s correct answer, now at index 1 post-shuffle, still correctly identifies real
+RAG mechanics — text integrity confirmed, not just index math). `npx esbuild` clean on all 4 files. Total
+bank size unchanged at 770. Backups of all 4 pre-fix files in `_to_delete/backup_phase2/`.
+
+**This fix is verified and ready — git commands below, hand to Sidharth's Mac whenever convenient (not
+blocking foundations work, this is just closing the loop on already-finished work so it isn't lost).**
+
+### PrepLab rebuild resume point (for whenever this initiative picks back up)
+- **Phases 0-2: complete and pushed.** Standards locked (`PREPLAB-STANDARD.md`/`PREPLAB-AUDIT-RUBRIC.md`/
+  `PREPLAB-REBUILD-PLAN.md` in `docs/`), schema/taxonomy migration done (798 questions, 19-topic taxonomy,
+  `band` field), dedup pass done (798 → 770).
+- **Phase 3: `foundation-models` (151 qs) fully audited and fixed** (batches 1+2, ~50 fixes including the
+  first instance of the position-bias bug). The 4-file bank-wide extension of that same fix is the
+  uncommitted work described above.
+- **Phase 3 not started:** `retrieval` (123 qs), `ai-agents` (113), `production` (78), `ai-safety-alignment`
+  (40), plus all the un-oversized topics (`evaluation` 36, `prompt-engineering` 36, `language-models` 50,
+  `inference-optimization` 31, `sysdesign` 18, `nlp-foundations` 40, `multimodal` 15, `product` 15,
+  `behavioral` 12, `leadership` 12).
+- **Phases 4-6 not started:** volume gap-fill against the floor, `source`-field cleanup (folded into Phase 3
+  per-batch passes), UI/taxonomy code alignment (`PrepLab.jsx`/`MockInterviewV2.jsx`/`MyTracks.jsx`/
+  `OnboardingModal.jsx`).
+- **Cross-lab flag logged separately** (see `PREPLAB-REBUILD-PLAN.md`'s amended note, and the new
+  `BreakLabs/PREPLAB-CROSS-LAB-NOTES.md`): when MSL's/PAL's own interview-question banks are eventually
+  addressed, check for this same answer-position bias pattern first — it reads as a shared
+  tooling/generation-pipeline defect, not something specific to GSL's data.
+
+Not pushed yet — git commands below.
