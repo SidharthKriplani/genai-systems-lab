@@ -1560,11 +1560,6 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
     catch { return {}; }
   });
   const [weakOnly, setWeakOnly] = useState(false);
-  const [viewMode, setViewMode] = useState("drill"); // "drill" | "browse"
-  const [expandedId, setExpandedId] = useState(null);
-  // Browse mode: per-question attempt state so the correct answer is NOT pre-revealed on open.
-  const [browsePick, setBrowsePick] = useState({});   // id -> chosen option index
-  const [browseReveal, setBrowseReveal] = useState({}); // id -> true (text questions: show key concepts)
 
   function recordAnswer(questionId, correct) {
     recordHistory(questionId, correct);
@@ -1595,7 +1590,6 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
     setAnswer("");
     setSubmitted(false);
     setIsCorrect(false);
-    setExpandedId(null);
   }, [groupFilters, diffFilter, tierFilter, weakOnly]);
 
   // Fix 3(a): reset just the current filtered set's recorded history (not the whole bank).
@@ -1710,19 +1704,11 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="flex items-center justify-between">
           <button onClick={onExit} className="text-zinc-500 hover:text-zinc-300 text-sm">← Exit</button>
-          <div className="flex items-center gap-0.5 p-0.5 rounded-lg" style={{ background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.7)" }}>
-            {["drill", "browse"].map(vm => (
-              <button key={vm} onClick={() => setViewMode(vm)}
-                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${viewMode === vm ? "bg-zinc-100 text-zinc-900" : "text-zinc-400 hover:text-white"}`}>
-                {vm === "drill" ? "Drill" : "Browse"}
-              </button>
-            ))}
-          </div>
           <span className="text-sm text-zinc-500">
-            {viewMode === "drill" ? `${current + 1} / ${questions.length}` : `${questions.length}q`}
+            {current + 1} / {questions.length}
           </span>
         </div>
-        {viewMode === "drill" && <PBar value={current} max={questions.length} />}
+        <PBar value={current} max={questions.length} />
         {/* Filters */}
         <div className="space-y-3">
           {/* Topic group tiles — multi-select (2026-07-08 fix): tap "All Topics" to clear
@@ -1845,109 +1831,6 @@ function TrainerMode({ onExit, onNavigate, onNavigateTo, initialGroup }) {
         {questions.length === 0 ? (
           <div className="bg-zinc-900 rounded-xl p-8 border border-zinc-800 text-center text-zinc-500 text-sm">
             No questions match these filters. Try a different topic or difficulty.
-          </div>
-        ) : viewMode === "browse" ? (
-          // ── BROWSE MODE ──────────────────────────────────────────────────
-          // Browse is a scannable flat list — order it easy → medium → hard.
-          <div className="space-y-1.5">
-            {sortByDifficulty(questions).map(bq => {
-              const isExp = expandedId === bq.id;
-              const bqDiffCanon = normalizeDifficulty(bq.difficulty);
-              const diffColor = bqDiffCanon === "advanced" ? "#ef4444" : bqDiffCanon === "intermediate" ? "#f59e0b" : "#3b82f6";
-              const bqGroup = TOPIC_GROUPS.find(g => g.topics.includes(bq.topic))?.id || "all";
-              return (
-                <div key={bq.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderLeft: `3px solid ${diffColor}40` }}
-                  className="rounded-xl overflow-hidden">
-                  {/* Row header — always visible */}
-                  <button className="w-full text-left px-4 py-3 flex items-start gap-3"
-                    onClick={() => setExpandedId(isExp ? null : bq.id)}>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm text-zinc-200 leading-snug ${!isExp ? "line-clamp-2" : ""}`}>{bq.question}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                      <TopicChip topic={bq.topic} />
-                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${TIER_META[questionTier(bq)].chip}`}
-                        title={TIER_META[questionTier(bq)].blurb}>{TIER_META[questionTier(bq)].label}</span>
-                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                        bqDiffCanon === "advanced" ? "bg-red-950/50 text-red-400 border border-red-800/40"
-                        : bqDiffCanon === "intermediate" ? "bg-amber-950/50 text-amber-400 border border-amber-800/40"
-                        : "bg-blue-950/50 text-blue-400 border border-blue-800/40"
-                      }`} title={bqDiffCanon}>{bqDiffCanon[0].toUpperCase()}</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                        className={`text-zinc-600 transition-transform duration-150 ${isExp ? "rotate-180" : ""}`}>
-                        <polyline points="6 9 12 15 18 9"/>
-                      </svg>
-                    </div>
-                  </button>
-                  {/* Expanded — attempt first, reveal after (answer is NOT pre-selected) */}
-                  {isExp && (() => {
-                    const picked = browsePick[bq.id];           // undefined until the user chooses
-                    const answered = picked !== undefined;
-                    const textRevealed = !!browseReveal[bq.id];
-                    return (
-                    <div className="px-4 pb-4 space-y-3 border-t border-zinc-800/50">
-                      {bq.type === "mcq" ? (
-                        <div className="space-y-1.5 pt-3">
-                          {bq.options.map((opt, i) => {
-                            const isCorrect = i === bq.correct;
-                            const isPicked = i === picked;
-                            let style;
-                            if (!answered) style = { background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)" };
-                            else if (isCorrect) style = { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.35)" };
-                            else if (isPicked) style = { background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.35)" };
-                            else style = { background: "rgba(39,39,42,0.5)", border: "1px solid rgba(63,63,70,0.5)" };
-                            return (
-                              <button key={i} disabled={answered}
-                                onClick={() => setBrowsePick(p => ({ ...p, [bq.id]: i }))}
-                                style={style}
-                                className={`w-full text-left flex items-start gap-2.5 px-3 py-2 rounded-lg transition-all ${!answered ? "hover:border-zinc-500 cursor-pointer" : "cursor-default"}`}>
-                                <span className={`text-[10px] font-mono font-bold shrink-0 mt-0.5 ${answered && isCorrect ? "text-emerald-400" : answered && isPicked ? "text-red-400" : "text-zinc-500"}`}>{String.fromCharCode(65 + i)}</span>
-                                <span className={`text-sm flex-1 ${answered && isCorrect ? "text-emerald-300 font-medium" : answered && isPicked ? "text-red-300" : "text-zinc-300"}`}>{opt}</span>
-                                {answered && isCorrect && <Icon name="check" size={12} />}
-                              </button>
-                            );
-                          })}
-                          {!answered && <p className="text-[11px] text-zinc-500 pt-0.5">Pick an answer to check yourself — the explanation reveals after you choose.</p>}
-                        </div>
-                      ) : bq.keywords && bq.keywords.length > 0 ? (
-                        !textRevealed ? (
-                          <div className="pt-3">
-                            <button onClick={() => setBrowseReveal(r => ({ ...r, [bq.id]: true }))}
-                              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:brightness-125"
-                              style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
-                              Think it through, then reveal key concepts →
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5 items-center pt-3">
-                            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mr-1">Key concepts:</span>
-                            {bq.keywords.map(k => (
-                              <span key={k} style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}
-                                className="text-xs text-indigo-300 px-2 py-0.5 rounded-full">{k}</span>
-                            ))}
-                          </div>
-                        )
-                      ) : null}
-                      {/* Explanation only after an attempt (mcq) or reveal (text) */}
-                      {(bq.type === "mcq" ? answered : textRevealed) && (
-                        <>
-                          <p className="text-sm text-zinc-400 leading-relaxed">{bq.explanation}</p>
-                          {bq.trap && <CommonTrapCallout trap={bq.trap} />}
-                          {bq.source && <p className="text-[10px] text-zinc-500 font-mono">Source: {bq.source}</p>}
-                        </>
-                      )}
-                      <button
-                        onClick={() => { setGroupFilters(bqGroup === "all" ? [] : [bqGroup]); setViewMode("drill"); setExpandedId(null); setCurrent(0); }}
-                        className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:brightness-125"
-                        style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
-                        Drill this topic →
-                      </button>
-                    </div>
-                    );
-                  })()}
-                </div>
-              );
-            })}
           </div>
         ) : (
           // ── DRILL MODE ───────────────────────────────────────────────────

@@ -1015,7 +1015,7 @@ ALiBi (no rotation):   score −= m·(i−j)   linear distance penalty, no train
       "Here's the first attempt, and it's a very natural one. Give every token its own slot, and write it as a one-hot vector: a long row of zeros with a single 1 in that token's position. This does fix one thing — it throws away the fake ordering, so token 4,732 is no longer \"just after\" 4,731. But sit with what it costs us. In one-hot space, every token is *exactly the same distance* from every other token. \"heart attack\" is no nearer to \"myocardial infarction\" than it is to \"quarterly earnings.\" There's simply no notion of similar-versus-different anywhere in the picture — nothing to measure, no structure to lean on.",
       "So let's ask the question that actually gets us somewhere: what would it take for two phrases to end up close together? They'd have to keep similar company. Think about it — \"myocardial infarction\" and \"heart attack\" both tend to show up near words like \"treatment,\" \"ICU,\" \"troponin,\" \"ECG.\" Now here's the trick: if we train a model to predict the words that surround a phrase, it has no choice but to give phrases that share neighbors similar coordinates — because similar coordinates are what produce similar predictions. That one idea — a word's meaning is shaped by the company it keeps — is called the distributional hypothesis, and turning it into a training goal is what gives us embeddings. The payoff is a **dense vector** (anywhere from a few hundred to about 1,500 numbers) whose position quietly encodes meaning. And to ask \"are these two close?\" we use **cosine similarity** — the angle between the vectors — rather than comparing token IDs.",
       "Modern contextual encoders like ada-002 take this one step further, and it's worth appreciating why. In a static model, a word gets one fixed vector forever; in a contextual one, the same word can get different vectors depending on what's around it. So \"bank\" in \"river bank\" and \"bank\" in \"bank account\" land in different places — polysemy, handled gracefully. But here's the part to hold onto: static and contextual models still share one deep limitation. The geometry they learn is a mirror of the data they were trained on. ada-002 learned from general web text. For \"myocardial infarction\" and \"heart attack\" to sit close together, they'd need to have appeared in similar contexts in that training data — and in general web writing, they often don't. A cardiology paper reads nothing like a patient forum, and the bridge the model would need may simply never have been there.",
-      "Let's name the consequence gently, because this is the thing that quietly bites in production. An embedding model is only ever as good as the neighborhoods its training data taught it. Two phrases become neighbors *only if the corpus showed them keeping similar company*. Change the domain — general web text, versus clinical notes, versus legal filings — and the whole geometry shifts underneath you: two phrases a human would instantly call synonyms can sit far apart, for no reason other than that the model never happened to see them together. That's why you can't really judge an embedding model in the abstract — you judge it against the real queries and documents of your own domain. The interactive just below lets you feel this for yourself, and the production case right after it is this exact effect, playing out for real.",
+      "Let's name the consequence gently, because this is the thing that quietly bites in production. An embedding model is only ever as good as the neighborhoods its training data taught it. Two phrases become neighbors *only if the corpus showed them keeping similar company*. Change the domain — general web text, versus clinical notes, versus legal filings — and the whole geometry shifts underneath you: two phrases a human would instantly call synonyms can sit far apart, for no reason other than that the model never happened to see them together. That's why you can't really judge an embedding model in the abstract — you judge it against the real queries and documents of your own domain. This module's interactive lets you feel this for yourself, and the production case right after it is this exact effect, playing out for real.",
     ],
     mcqs: [
       {
@@ -1064,7 +1064,7 @@ ALiBi (no rotation):   score −= m·(i−j)   linear distance penalty, no train
     scenario: "Now let's put all of that to work on a real one. Your team updated a production prompt template — added 3 few-shot examples, tightened the output-format instructions — tested it on 10 queries by hand, saw good results, and deployed. Over the next three days, support tickets rose 30%. Take a moment before reading on: did the prompt cause it, and how could you have known on day one instead of day three? Here's the reasoning, step by step. The 30% jump starting *at deploy* is strong circumstantial evidence but not proof, so cluster the tickets by failure type — if they concentrate around the exact things you changed (the new format, the new length constraint, the new examples), that's causal. But the deeper lesson is that you shouldn't have needed three days: a golden-set diff run against the new template *before* deploy would have shown the format drift against the ten hand-checked examples immediately, and even if that step had been skipped, output-format compliance — one of the fast production signals — would have fired on the *first* non-conforming response. And the fastest causal test of all is the rollback itself — reverting takes seconds, costs nothing, and if the regression vanishes, the prompt was the cause.",
     explanation: [
       "Start from a property of any detection signal: **it either fires on a single bad event, or only after enough events accumulate into a visible trend.** Passive quality monitoring — retrieval-score distributions, answer-length trends, sampled judge scoring — is the second kind, **which means** it carries a 24–48 hour lag before a shift is statistically detectable. **So** a bad prompt can rack up three days of support tickets before any monitoring alert fires. **Therefore** what you want for prompt changes specifically is the *first* kind: signals that trip on the first bad response, not after a trend forms.",
-      "**But** before any production signal even gets the chance to fire, there's a cheaper line of defense that should run first: **offline evaluation against a golden set.** Before a new prompt version ever reaches a real user, run it against a fixed, representative set of inputs — the same set every time — and diff its outputs and scores against the previous version's results on that identical set. This is what catches a format regression or a length shift *before deploy*, at zero production risk, because you're comparing two versions on identical inputs instead of waiting for live traffic to expose the break. It isn't complete — a golden set is finite, so it can't see failure modes on inputs nobody thought to include, and it can't reproduce how a silent model update or real traffic patterns will behave — but it's the first, cheapest gate, and it should run on every prompt change before the fast production signals below ever get a chance to fire.",
+      "**But** before any production signal even gets the chance to fire, there's a cheaper line of defense that should run first: **offline evaluation against a golden set.** Before a new prompt version ever reaches a real user, run it against a fixed, representative set of inputs — the same set every time — and diff its outputs and scores against the previous version's results on that identical set. This is what catches a format regression or a length shift *before deploy*, at zero production risk, because you're comparing two versions on identical inputs instead of waiting for live traffic to expose the break. It isn't complete — a golden set is finite, so it can't see failure modes on inputs nobody thought to include, and it can't reproduce how a silent model update or real traffic patterns will behave — but it's the first, cheapest gate, and it should run on every prompt change before the fast production signals (covered next) ever get a chance to fire.",
       "**And** those fast production signals exist for exactly what the golden set misses, because a prompt change — or a silent dependency change behind it — often breaks something *structurally*, not just subtly, so it doesn't need a trend to become visible. (1) **Output-format compliance** — if the prompt demands JSON, what fraction parses as valid JSON? A format-confusing change shows up as a parse failure on request #1. (2) **Toxicity spike** — a persona or safety-framing change, or a silent model version bump behind the same endpoint, can raise the harmful-content rate immediately, visible in the very next batch of guardrail scores. (3) **Factuality drop** — if the prompt's retrieval instructions changed, or the underlying index went stale, factuality scores move as soon as the next batch of grounded answers gets checked, with no trend needed. (4) **Latency spike** — a prompt change that grows the effective context (more few-shot examples, a longer system prompt, accumulating conversation history) shows up instantly in response time, before it ever surfaces as a quality complaint. Each of these moves *fast*, catching exactly what a golden set — run once, pre-deploy — was never going to see.",
       "**But** fast signals only tell you *that* something broke; to know *which change* broke it you need to control the deployment. **That's why** A/B testing is the principled approach: route a slice of traffic to the new prompt and compare its signals in real time against the old one — most serving frameworks (LiteLLM, PromptLayer, LangSmith) support prompt versioning and traffic splitting. **Without it**, you're deploying blind: when a regression appears you know *when* but not *which* variable caused it if several changed at once. Even a 5% split for one hour before full rollout gives statistical signal on format compliance and downstream errors.",
       "**And when a regression does slip through**, the cheapest causal test is already in your hands. A 30% ticket rise starting at deploy is strong circumstantial evidence but not proof — so cluster tickets by failure type, and if they concentrate around the specific output changes you made, that's causal evidence. **Then** roll the prompt back immediately: prompt rollbacks take seconds and cost nothing, so reverting and watching the regression vanish is the fastest causal confirmation available. The interactive lets you flip a prompt change and watch which signals fire first — and the closing scenario is exactly this three-day ticket climb, waiting for you to catch it on day one.",
@@ -2886,6 +2886,159 @@ itself).` },
       },
     ],
     takeaway: "OCR is the silent failure point of document AI — bad parses produce confident LLM hallucinations with no error signal. The diagnostic first step: is this a scan (needs OCR) or a programmatic PDF (extract text directly, 100% accurate, free)? For scanned documents, use hybrid: traditional OCR for simple pages (cheap, fast), vision LLM only for pages below the confidence threshold (complex layouts, handwriting, degraded scans). Budget for vision LLM fallback at roughly 5-15x traditional cost depending on document complexity mix.",
+  },
+
+  // ── Structure migration (2026-07-09): eval-loop + rag-pipeline off the legacy
+  //    hardcoded Concepts.jsx "Standard path" (no runnerData → bare Component render,
+  //    no scenario/explanation/keyPoints/mcq/recap/takeaway) onto this generic RUNNER_DATA
+  //    shape, so FoundationsRunner renders them like every other module and a normal
+  //    writer pass can edit their content fields directly going forward. Their existing
+  //    interactive component (RAGPipelineModule / EvalLoopModule, still defined in
+  //    Concepts.jsx) is UNCHANGED and keeps rendering in the "Hands-On" section exactly
+  //    as before — FoundationsRunner receives it via the `Component` prop regardless of
+  //    which path a module takes. scenario/explanation/mcqs/takeaway below are extracted
+  //    verbatim from that component's existing static content (RAG_CHUNKS,
+  //    RAG_FAILURE_SCENARIOS, RAG_FINAL_ANSWER, EVAL_LOOP_PROPERTIES,
+  //    JUDGE_INDEPENDENCE_CARDS, EVAL_LOOP_DIAGNOSE_SCENARIOS in Concepts.jsx) — pure
+  //    structure migration, no content rewrite. keyPoints/recap intentionally NOT set
+  //    here: both were already authored for these two ids in
+  //    ./foundations/recap-patch-a.js (RECAP_PATCH_A) but the merge loop at the bottom
+  //    of this file only patches ids that already exist in the base RUNNER_DATA object —
+  //    so that authored content has been a silent no-op until now. Adding these base
+  //    entries makes the existing patch merge in for the first time.
+  "eval-loop": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "An eval that runs and prints a score can still be worthless. If the judge isn't independent, if the test set is small and everyone on the team can see it, or if there's no baseline to compare against, the number is theater with a decimal point — it confirms the system produces output, not that quality moved in the right direction. A trustworthy eval loop needs four properties working together: a fixed, uncontaminated dataset; an independent scorer; a real baseline; and a threshold set before the score arrives.",
+    explanation: [
+      "**Property 1 — is the evaluation set fixed, and not secretly small?** The eval set has to be stable: it shouldn't shift every time the system shifts, or you're comparing two systems on two different tests. But 'fixed' has a trap of its own. A small, static set that everyone on the team can see stops being an eval — the moment people can read the questions, they start optimizing toward those specific inputs instead of general quality, whether they mean to or not. A trustworthy eval set is version-controlled separately from the system, sized well beyond what any one person could memorize, and continually augmented with adversarial cases and real failure queries pulled from production. Missing this property looks like twelve questions, written once by the founding engineer, sitting in the repo where every contributor can read them — every release clears the bar because the team is unconsciously tuning to those twelve inputs, not to quality in general. That's not an eval anymore. It's a regression test for exactly those twelve questions.",
+      "**Property 2 — is the scorer actually independent of what it's grading?** An automated scorer turns outputs into a number — but only if it has no reason to be generous. When the same model family grades its own output (GPT-4 scoring GPT-4), it isn't neutral: it shares training distributions and stylistic habits with the thing it's grading, and it systematically rewards text that resembles its own generation style. The honest hierarchy: human annotation is the gold standard. LLM judges are acceptable for scale only when calibrated against human labels and drawn from a different model family than the system under test. Missing this property looks like a team letting GPT-4 both generate and grade its own answers — the score climbs release over release, not because the answers are getting better, but because the judge has a thumb on the scale for anything that sounds like itself.",
+      { type: "illustration", label: "Same question, same generated answer — only the judge changes", content:
+`GENERATED ANSWER (from GPT-4):
+  "The new retrieval model handles multi-hop queries more reliably and
+   the response reads cleanly."
+
+Same-family judge
+  Setup:   GPT-4 generates the answer. GPT-4 also grades the answer.
+  Verdict: 9.2 / 10 — scores climbing every release
+  Tell:    shares training distribution + stylistic habits with the
+           generator; grades familiarity, not quality.
+
+Cross-family, calibrated judge
+  Setup:   GPT-4 generates the answer. A different model family —
+           calibrated against human labels — grades it.
+  Verdict: 7.1 / 10 — flat across releases until a real fix ships
+  Tell:    no shared stylistic prior to inflate the score, checked
+           against human judgment before being trusted — the score
+           you can actually act on.` },
+      "**Property 3 — is there a baseline to compare the score against?** A score in isolation — even a clean, uncontaminated, independently-judged score — can't tell you whether quality moved. 85% could be an improvement or a regression; without something to compare it to, the number is uninterpretable. The baseline is what turns a bare score into a comparison: usually the immediately preceding release, scored on the exact same eval set, so the delta is attributable to the change you actually made. Missing this property looks like a new retrieval model scoring 91% on a clean, independent, uncontaminated eval — sounds great, except no prior version was ever scored on this exact eval set. There is nothing to compare 91% against. You cannot say whether this is better or worse than what shipped last month.",
+      "**Property 4 — was the pass/fail bar set before you saw the score?** A pre-committed threshold is a bar you agree on in advance, so that when the number arrives, it decides something instead of starting a debate. Without it, a borderline score gets rationalized after the fact by whoever is most invested in shipping. Decide the bar before the run — 'ship if recall ≥ 95%,' 'block if score drops more than 2 points from baseline' — the threshold is what triggers review when it's crossed, not a post-hoc argument about what the number 'really means.' Missing this property looks like a new version scoring 76%, down from last release's 81%, on a fixed set with an independent judge and a real baseline — nobody decided in advance whether a drop like that was acceptable, so the team spends two days debating whether 76% is 'good enough,' and ships anyway. The score didn't decide anything, because nothing was pre-committed.",
+      "Four real-looking eval setups make this concrete, each failing on exactly one of the four properties while the other three look rigorous — the normal production pattern, not the exception. **The Self-Graded Launch**: 200 fresh production queries refreshed monthly, threshold pre-committed at 90%, baseline is last month's release — the new version scores 94%, up from an 89% baseline. Three properties are solid; the break is judge independence, because GPT-4 both generates and grades the answers, so the apparent 5-point lift is inflated by same-family familiarity, not necessarily quality. **The Twelve Questions**: the judge is human-calibrated and cross-family, the baseline is last release, the threshold is pre-committed at 85% — but the eval set is 12 questions written a year ago by the founding engineer, visible to the whole team, and every release has cleared 85%+ for six months straight. The break is eval-set contamination. **Passing But Blind**: 150 real production queries refreshed quarterly, a human-calibrated cross-family judge with an explicit rubric, a threshold pre-committed at 88% — the new version scores 91% and clears the bar. The break is a missing baseline: no prior release was ever scored on this exact set, so 91% cleared an arbitrary line but can't be compared to what's currently in production. **The Post-Hoc Bar**: 100 fresh queries, an independent calibrated judge, and a real baseline — the new version scores 76%, down from last release's 81%. The break is no pre-committed threshold: nobody decided in advance whether a 5-point drop was acceptable, so the team debated for two days and shipped anyway — the number opened an argument instead of deciding one.",
+      "Across all three exercises the same shape repeats: an eval can have three of the four properties solid and still be worthless, because each property fails independently. Same-family bias doesn't announce itself — the score just quietly climbs even though nothing about the underlying system changed. And in the diagnose exercise, each setup is built so it looks rigorous right up until the one property that's missing.",
+    ],
+    mcqs: [
+      {
+        question: "A new retrieval model is evaluated on 200 fresh production queries (refreshed monthly), with a pass/fail threshold pre-committed at 90% and last month's release used as the baseline. GPT-4 generates the answers and GPT-4 also grades them. The new version scores 94%, up from last month's 89% baseline — comfortably clearing the threshold. Which property of a trustworthy eval loop is missing here?",
+        options: [
+          "The evaluation set is too small and visible to the whole team",
+          "The scorer is not independent of what it's grading",
+          "There is no baseline to compare the score against",
+          "The pass/fail threshold was not set in advance",
+        ],
+        correct: 1,
+        explanation: "Three of the four properties are solid: a large, refreshed dataset; a real baseline; a pre-committed threshold. The break is judge independence — GPT-4 grading GPT-4-generated answers means the judge shares training distribution and stylistic habits with the generator, systematically favoring text that matches its own style. The apparent 5-point lift over baseline is inflated by same-family familiarity, not necessarily by quality. Option B is correct; the other three properties are all present in this setup.",
+      },
+      {
+        question: "An eval judge is human-calibrated and from a different model family than the generator, the baseline is the previous release, and the threshold is pre-committed at 85%. The eval set is 12 questions written a year ago by the founding engineer, stored in the repo where the whole team can read them. Every release has cleared 85%+ for six months straight. What is actually wrong with this eval loop?",
+        options: [
+          "The judge shares training distribution with the generator",
+          "The eval set is contaminated — small, static, and visible to the team",
+          "There's no baseline to compare the score against",
+          "The threshold wasn't set before the score arrived",
+        ],
+        correct: 1,
+        explanation: "Judge independence, baseline, and threshold are all fine here. The break is the eval set itself: twelve static, team-visible questions stop functioning as an eval and start functioning as a regression test for those exact twelve inputs — people optimize toward what they can see, intentionally or not. Option B is correct.",
+      },
+      {
+        question: "150 real production queries refreshed quarterly, a human-calibrated cross-family judge with an explicit rubric, and a threshold pre-committed at 88%. This is the first time this exact eval set has ever been run, and the new version scores 91% — clearing the threshold. What can you NOT conclude from this result?",
+        options: [
+          "That the eval set is large enough and refreshed regularly",
+          "Whether this release is better or worse than the version currently in production",
+          "That the judge is independent of the system being graded",
+          "That the threshold was set before the score was known",
+        ],
+        correct: 1,
+        explanation: "Dataset, judge, and threshold are all in place — three of the four properties. The missing piece is the baseline. 91% clears the pre-committed bar, so it 'passes,' but with nothing to compare it to, you cannot say whether this release is better or worse than what's currently in production, only that it cleared an arbitrary line. Option B is correct.",
+      },
+    ],
+    takeaway: "An eval loop is not a quality signal — it is a guarantee about how a number was produced. A fixed, uncontaminated dataset. An independent scorer. A real baseline. A threshold set before the score arrives. Drop any one of these and the eval still runs, still prints a number, and still confirms nothing about whether the system actually got better. Building the eval loop correctly is not optional instrumentation — it's the prerequisite for trusting any claim that a change helped.",
+  },
+
+  "rag-pipeline": {
+    depthTier: "deep",
+    interviewWeight: "high",
+    scenario: "LLMs are frozen at their training cutoff — they have no access to your documents, your database, or anything that happened since they were trained. A support bot needs to answer 'What is the refund policy for SaaS subscriptions?' using your company's actual refund policy, not whatever the model memorised about refund policies in general. RAG fixes this: at query time, relevant chunks are retrieved from your data and injected into the model's context so the answer is grounded in what you actually have, not what the model memorised. The model's job becomes synthesis, not recall.",
+    explanation: [
+      "**Step 1 — Query → Retrieval.** The query 'What is the refund policy for SaaS subscriptions?' is converted to an embedding vector and compared against every indexed chunk using cosine similarity. Out of a vector store of 1,240 indexed chunks, the top-3 chunks by similarity score are retrieved.",
+      { type: "illustration", label: "Retrieved chunks (top-3 by cosine similarity)", content:
+`Query: "What is the refund policy for SaaS subscriptions?"
+Vector store: 1,240 chunks indexed. Top-3 by cosine similarity retrieved:
+
+  Chunk 1 (score 0.91) · refund-policy.md § 2
+    "SaaS subscriptions cancelled within 14 days of billing are
+     eligible for a full refund, no questions asked."
+
+  Chunk 2 (score 0.84) · refund-policy.md § 4
+    "Annual plan refunds are prorated to the remaining unused months,
+     minus a 10% processing fee."
+
+  Chunk 3 (score 0.72) · enterprise-sla.md § 1  [borderline]
+    "Enterprise contracts are governed by separate SLAs negotiated at
+     time of signing and may override standard refund terms."` },
+      "**Step 2 — Augmentation.** The retrieved chunks are assembled into the prompt alongside a system instruction and the user's question — system message, Chunk 1, Chunk 2, Chunk 3, then the user question — roughly 840 tokens total. Chunk 3, at a similarity score of 0.72, is borderline: close enough to a typical 0.70 threshold to be included, but it's enterprise-contract language that may not apply to this user.",
+      "**Step 3 — Generation.** The model's response: 'Based on your subscription type: if you're on a standard SaaS plan, you can get a full refund within 14 days of billing (Chunk 1). For annual plans, refunds are prorated minus a 10% fee (Chunk 2). If you're on an enterprise contract, your specific SLA applies — please check your agreement or contact your account manager.' Every claim maps to a retrieved chunk — Chunk 1 and Chunk 2 are directly cited, Chunk 3 is acknowledged but not asserted as fact. No hallucination is possible beyond the context window: the model cannot invent a policy that wasn't in the top-3 results.",
+      "**Failure mode: stale context.** What if Chunk 1 was from a policy updated 18 months ago? The model answers confidently with wrong info — '14 days' — even if the real policy is now 7 days. The LLM has no way to know a chunk is stale. This is why freshness metadata and a re-indexing cadence are production requirements, not nice-to-haves.",
+      "At Step 1, the similarity scores (0.91, 0.84, 0.72) are the detail worth pausing on. Chunk 3 at 0.72 is borderline — close enough to the threshold to be included, but it contains enterprise contract language that may not apply to this user. In production, a poorly-calibrated similarity threshold is one of the most common sources of confident-but-wrong answers, because the model treats all retrieved chunks as equally authoritative.",
+      "RAG has three distinct failure layers, and each needs a different fix. **Stale Retrieval (retrieval layer):** a document re-indexed 18 months ago still reads 'All SaaS subscriptions are eligible for a full refund within 14 days of purchase,' but the policy changed to a 7-day window in March 2024. The model answers correctly relative to its context — it has no access to document timestamps and no way to know a chunk is stale, so every confident answer is only as fresh as your index. Fix: add freshness metadata to every chunk, set a re-indexing cadence per document type (policies: weekly, docs: on-publish), filter or down-weight chunks older than a threshold, and treat index freshness as an SLA, not a background job.",
+      "**Noise Injection (retrieval config):** top_k set to 15 instead of 3 pulls in 12 marginally-relevant chunks alongside the 3 correct ones — billing dispute procedures, enterprise renewal terms, EU VAT reclaim notes, payment method FAQ, general cancellation flow — pushing the context to roughly 3,800 tokens. Too many chunks forces the model to reconcile noise with signal: the answer becomes a hallucinated amalgamation of adjacent topics, technically sourced but not grounded in the relevant chunk. The retriever did its job; the config broke it. Fix: start with top_k=3–5 for most use cases, measure Precision@k on a golden question set before going higher, and use a reranker to filter before passing to the LLM instead of raw top_k expansion.",
+      "**Context Grounding Failure (generation layer):** the system prompt instructs 'Answer only from the provided context,' and the retrieved chunk clearly states a 14-day window — but the model has a strong parametric prior about 30-day refund norms from training data, and generates 'Typically, most SaaS products offer a 30-day refund window...', ignoring the retrieved context entirely. Strong parametric priors can override retrieval context, especially when the retrieved content contradicts common knowledge from training data — 'answer only from context' instructions reduce this but do not eliminate it, particularly with smaller models or ambiguous retrieved content. Fix: use explicit grounding prompts ('If the context does not contain the answer, say so — do not use your training knowledge'), test with LLM-as-judge grounding evals, prefer models with lower parametric override rates on your domain, and log cases where the answer doesn't cite a chunk.",
+    ],
+    mcqs: [
+      {
+        question: "A RAG chunk was indexed 18 months ago and scores 0.91 similarity for a refund-policy query. The actual policy changed from a 14-day to a 7-day refund window three months ago, but the chunk was never re-indexed. The model confidently answers '14 days.' What is the root cause?",
+        options: [
+          "The similarity threshold is set too low, letting irrelevant chunks through",
+          "The retrieved chunk is stale — the LLM has no way to know a chunk's content is out of date",
+          "The model ignored the retrieved context and used its training-data prior instead",
+          "top_k was set too high, diluting the context with noise",
+        ],
+        correct: 1,
+        explanation: "The model answered correctly relative to its context — the retrieved chunk was authoritative (score 0.91) but outdated. The LLM has no access to document timestamps and no way to know a chunk is stale; every confident answer is only as fresh as your index. Option B is correct. Option A describes a different failure (noise injection); option C describes parametric override, which isn't what happened here since the model followed the (stale) chunk; option D isn't indicated by anything in the scenario.",
+      },
+      {
+        question: "top_k is set to 15 instead of 3 for a refund-policy query. The system retrieves 12 marginally-relevant chunks (billing disputes, enterprise renewal terms, EU VAT notes...) alongside the 3 correct ones, and the model's answer becomes a vague, hedged mix of adjacent topics instead of a direct answer. What went wrong?",
+        options: [
+          "The retriever failed to find the correct chunks",
+          "Too many chunks forced the model to reconcile noise with signal, producing an answer that's technically sourced but not grounded in the relevant chunk",
+          "The embedding model is outdated and needs retraining",
+          "The retrieved chunks were stale and needed re-indexing",
+        ],
+        correct: 1,
+        explanation: "The retriever did its job — the 3 correct chunks were retrieved, alongside 12 noisy ones because top_k was set too high. Too many chunks forces the model to reconcile noise with signal, so the answer becomes a hallucinated amalgamation of adjacent topics. Option B is correct. The fix is lowering top_k to 3–5 and using a reranker instead of raw top_k expansion, not fixing the embedding model or re-indexing.",
+      },
+      {
+        question: "The system prompt instructs 'Answer only from the provided context,' and the retrieved chunk clearly states a 14-day refund window. The model instead responds 'Typically, most SaaS products offer a 30-day refund window...' Select the two accurate explanations.",
+        options: [
+          "The model's strong parametric prior from training data overrode the retrieved context",
+          "'Answer only from context' instructions reduce but do not eliminate this override, especially with ambiguous retrieved content or smaller models",
+          "The retriever failed to retrieve any relevant chunk at all",
+          "The chunk was stale, and the model correctly substituted a different figure",
+        ],
+        correct: [0, 1],
+        explanation: "Strong parametric priors can override retrieval context, especially when the retrieved content contradicts common knowledge from training data (option A) — and grounding instructions reduce but don't eliminate this, particularly with smaller models or ambiguous retrieved content (option B). Options C and D are wrong: the correct chunk was retrieved and clearly stated 14 days; the model simply ignored it in favor of its training-data prior.",
+      },
+    ],
+    takeaway: "RAG converts an LLM's job from recall to synthesis — and that is a more tractable problem for a language model. But the quality ceiling is set by retrieval, not generation: the best LLM in the world cannot answer correctly from a wrong or stale chunk. Treat the retrieval pipeline as a first-class engineering surface with its own evaluation metrics, freshness monitoring, and tuning cadence.",
   },
 
   // ── D3: market-gap modules (RoPE, GQA/MQA, GRPO/RLVR) ─────────────────────────

@@ -2390,3 +2390,106 @@ git add src/data/glossary.js src/MockInterviewV2.jsx src/MyTracks.jsx src/Readin
 git commit -m "NLP glossary (66 terms) + nlp topic label in remaining 4 TOPIC_LABELS files" && \
 git push origin main
 ```
+
+## 2026-07-09 (later) — PrepLab TrainerMode: cut redundant embedded "Browse" view, real drill flow untouched
+
+`TrainerMode` (in `src/PrepLab.jsx`) had a `viewMode` toggle ("drill" | "browse") that switched the whole
+mode between two different renderings of "here's a question, pick an answer, see if you're right":
+
+- **Kept (the real drill flow, `viewMode==="drill"`'s render branch):** one question at a time —
+  `QuestionCard` → `MCQOptions`/`MCQMultiOptions`/`SpeechTextArea` → `Submit Answer` button → `submit()` sets
+  `answer`/`submitted`/`isCorrect` → `RevealCard` shows correct/incorrect + explanation + `Next Question`/`See
+  Results`. State (`answer`, `submitted`, `isCorrect`, `current`) resets correctly between questions via
+  `next()` and the filter-change `useEffect`. This is the component's actual intended drill mechanic and was
+  not touched beyond removing the now-dead `viewMode==="drill"` conditionals wrapping it (it's simply the
+  default render path now).
+- **Cut (the redundant duplicate, `viewMode==="browse"`'s render branch, was lines ~1835-1938):** a
+  scannable flat list of ALL filtered questions (`sortByDifficulty`), each row expandable via `expandedId`,
+  and — critically — each expanded row had its OWN inline pick-an-option-then-reveal-explanation mechanic
+  (`browsePick`/`browseReveal` state: MCQ options rendered per-row with the same "pick, then see
+  correct/incorrect coloring + explanation" behavior as the real drill, and text questions had their own
+  "reveal key concepts" button). This was a second, independent implementation of the exact same "attempt a
+  question, then see if you're right" interaction as the real drill flow — just rendered as a list instead of
+  one-at-a-time — and was confirmed NOT the same thing as the standalone `BrowseMode` component (which is an
+  intentional, separate, correct-as-is "tap any question to instantly see the answer" cram screen with no
+  pick-then-check step at all). Removed along with it: the `viewMode`/`setViewMode`, `expandedId`/
+  `setExpandedId`, `browsePick`/`setBrowsePick`, `browseReveal`/`setBrowseReveal` state hooks (all
+  exclusively consumed by the deleted branch — confirmed via a whole-file grep before deleting), the
+  Drill/Browse toggle buttons in the header, the `setExpandedId(null)` call in the filter-change
+  `useEffect`, and the browse-only "X / Nq" count-display ternary (now always shows `current+1 / length`)
+  and the `viewMode==="drill"` guard around `PBar` (now unconditional, since drill is the only mode left).
+
+**Confirmed untouched:** `git diff` on `src/PrepLab.jsx` shows exactly 4 hunks, all with line ranges inside
+`function TrainerMode` (starts line 1542); `BrowseMode` (starts ~2955 pre-edit, function itself unmodified)
+and `ExamMode` (lines 1028-1541, before TrainerMode) have zero diff lines. Net: 121 lines removed, 2 lines
+changed, 0 lines added elsewhere in the file.
+
+**Verification:** `npx -y esbuild@0.21.5 src/PrepLab.jsx --bundle --format=esm --loader:.jsx=jsx
+--external:react --external:react-dom --external:react/jsx-runtime --external:recharts
+--external:lucide-react --outfile=/dev/null` → clean build, 0 errors (only the expected "empty output"
+warning from targeting `/dev/null`).
+
+**Not touched:** `sortByDifficulty` (helper fn, `src/PrepLab.jsx:387`) is now unused within this file since
+its only call site was inside the deleted browse block — left in place, not in scope for this task (it's a
+generic helper, not part of TrainerMode's state/render, and removing it wasn't requested).
+
+## Log 2026-07-09 — eval-loop + rag-pipeline migrated to RUNNER_DATA (structure only, no content rewrite)
+
+**What was found:** Both modules were confirmed NOT in `src/data/foundationsRunnerData.js` — they existed
+only as entries in `Concepts.jsx`'s `MODULES` array with a `component:` pointer (`RAGPipelineModule` at
+`Concepts.jsx:2305`, `EvalLoopModule` at `Concepts.jsx:3897`), each a large multi-tab interactive widget with
+its own hardcoded static data (`RAG_CHUNKS`, `RAG_FINAL_ANSWER`, `RAG_FAILURE_SCENARIOS` above
+`RAGPipelineModule`; `EVAL_LOOP_PROPERTIES`, `JUDGE_INDEPENDENCE_CARDS`, `EVAL_LOOP_DIAGNOSE_SCENARIOS` above
+`EvalLoopModule`). `Concepts.jsx`'s module-view render (~line 12636) branches on `RUNNER_DATA[active]`: if
+present → the generic `FoundationsRunner` ("Runner path", writer-pass-editable: scenario/groundUp/
+explanation/keyPoints/mcqs/recap/takeaway, with the interactive `Component` embedded in its own "Hands-On"
+section); if absent → a bare "Standard path" that renders only a title/subtitle header + the raw `<Component>`
++ `GradientPanel`/`ModuleNotes`, none of which a writer pass can touch. Since `RUNNER_DATA` had no entries for
+these two ids, both were stuck on the Standard path — confirming the task's premise. Also found:
+`src/data/foundations/recap-patch-a.js` (`RECAP_PATCH_A`) already had fully-authored `keyPoints`/`recap`
+arrays for both ids (lines 20-71), but `foundationsRunnerData.js`'s patch-merge loop only applies a patch
+`if (RUNNER_DATA[id])` already exists — so that authored content had been a silent no-op for both modules
+until this migration.
+
+**What migrated:** Added `"eval-loop"` and `"rag-pipeline"` as new inline entries in `RUNNER_DATA` (in
+`src/data/foundationsRunnerData.js`, placed right after the existing `ocr-pipeline-design` entry, before the
+`...RUNNER_MARKET_GAP` spread). Each entry has `depthTier`, `interviewWeight`, `scenario`, `explanation`
+(array of paragraph strings + 1-2 `{type:"illustration"}` ASCII blocks), `mcqs` (3 each, single- and
+multi-select), and `takeaway` — all extracted **verbatim from the existing interactive components' own
+static content** (the "Why this matters" box, the 4 `EVAL_LOOP_PROPERTIES`, `JUDGE_INDEPENDENCE_CARDS`, all
+4 `EVAL_LOOP_DIAGNOSE_SCENARIOS`, and the "Beat 2/Beat 3" closing callouts for eval-loop; the pipeline
+walkthrough steps, `RAG_CHUNKS`, `RAG_FINAL_ANSWER`, and all 3 `RAG_FAILURE_SCENARIOS` for rag-pipeline) —
+reformatted into the RUNNER_DATA field shapes, not rewritten. `keyPoints`/`recap` were deliberately left OUT
+of the new base entries (comment added explaining why) so `RECAP_PATCH_A`'s existing authored content merges
+in automatically now that the base entries exist.
+
+**What was NOT touched / NOT removed:** `RAGPipelineModule` and `EvalLoopModule` in `Concepts.jsx` are
+unchanged and still render exactly as before — they're now the `Component` prop `FoundationsRunner` renders
+inside its "Hands-On" section, same as `tokenizer`'s/`attention`'s/`chunking`'s interactive components
+already do. No routing/lookup code needed updating: the `if (RUNNER_DATA[active])` branch in `Concepts.jsx`
+is generic and picks up both ids automatically now that they have RUNNER_DATA entries — `moduleTiers.js`,
+`moduleSearchIndex.js`, `EvaluationHub.jsx`, `Retrieval.jsx` all reference these ids unchanged (ids/titles
+never changed, only the render path). Confirmed via grep: no other file defines a conflicting `"eval-loop":`
+or `"rag-pipeline":` object key that would silently override the new entries via a later spread. One
+pre-existing, unrelated inconsistency noted but deliberately NOT touched (out of scope, and not a regression
+caused by this change): `src/data/gradientContent.js` has `soon:true` placeholder "Go Deeper" outlines for
+both ids, but `GradientPanel`/`ModuleNotes` only render on the Standard path — so those placeholders (like
+several other already-migrated modules' now-orphaned `GRADIENT_CONTENT` entries, e.g. `tokenizer`/
+`attention`) become unreachable dead data. Pre-existing pattern across the whole file, not something this
+migration introduced.
+
+**Verification:** `npx -y esbuild@0.21.5 src/data/foundationsRunnerData.js --bundle --format=esm
+--loader:.jsx=jsx --external:react --external:react-dom --external:react/jsx-runtime --external:recharts
+--external:lucide-react --outfile=/dev/null` → clean build, 0 errors. Structurally verified by bundling to a
+temp ESM file and importing it directly in Node: both `RUNNER_DATA["eval-loop"]` and
+`RUNNER_DATA["rag-pipeline"]` resolve with non-empty `scenario`, `explanation` (7 and 9 items), `mcqs` (3
+each, all options/correct-index/explanation validated programmatically), `takeaway`, and — confirming the
+patch now actually applies — `keyPoints` (6 each) and `recap` (4 and 5 items) merged in from `RECAP_PATCH_A`.
+`depthTier`/`interviewWeight` set to `"deep"`/`"high"` on both (consistent with their existing `MODULE_META`
+`mins: 12`/`mins: 10`, which already exists independently in `Concepts.jsx` and was not touched).
+
+**Explicitly NOT done this pass:** no content rewrite. The scenario/explanation/mcq wording is a structural
+reformatting of the existing interactive components' own hardcoded text and data, not new authored content —
+a future writer pass (writer → adversarial audit → glossary/interview harvest, per the standing pipeline) is
+the next step for these two modules, same as any other Foundations module.
+generic helper, not part of TrainerMode's state/render, and removing it wasn't requested).
