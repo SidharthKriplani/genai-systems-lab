@@ -2332,3 +2332,61 @@ estimate.
 
 **Status: the entire PrepLab "agents" topic bucket (90 MCQs) is now clean of length-tells.** No further
 work queued on this bucket from this task.
+
+## 2026-07-09 (final) — NLP Foundations phase-3 harvest: glossary (66 terms) + full interview-question bucket (40)
+
+Completes the pipeline for the NLP gym (content -> questions -> glossary, per the priority order).
+
+**Glossary:** +66 terms in `src/data/glossary.js` (58 -> 124), mined from the finalized/audited 12 modules,
+one-sentence defs trimmed from module prose, collision-checked against all existing keys (bpe, wordpiece,
+sentencepiece, out-of-vocabulary, subword, softmax, perplexity etc. deliberately skipped/owned elsewhere).
+Sense-collision risks avoided (no bare "precision"/"recall" keys — would mis-fire on numeric-precision
+prose in quantization modules).
+
+**Interview questions:** PrepLab previously had FOUR NLP questions total, all mistagged `topic:
+"finetuning"`, all length-tell-flagged (correct option 2-3x longer, correct index 1 on all four).
+Now: new `nlp` topic ("NLP Foundations") added to TOPIC_LABELS in all 5 carrier files (PrepLab,
+ReadinessDiagnostic, SpeakMode, MyTracks, MockInterviewV2) + PrepLab's browse-topics list; the 4 old
+questions retagged to `nlp`, length-rebalanced, and their correct indices redistributed (2/0/3/1); 36 new
+questions authored (3 per module: easy/medium/hard, 4 writer agents grounded in the audited module text),
+merged before the LLM INTERNALS section. Mechanical verification on the merged file: 40 topic-nlp
+questions, 0 length-tell flags at a 20% spread threshold, correct-index distribution 12/9/10/9. Cold
+adversarial answer-key audit (separate agent, read all 40 + all 4 module files): **40/40 clean, zero
+defects** — answer keys, factual grounding, single-correct-answer property, and explanation coherence all
+verified.
+
+**Files touched this entry:** `src/data/glossary.js`, `src/data/preplabQuestions.js`, `src/PrepLab.jsx`,
+`src/ReadinessDiagnostic.jsx`, `src/SpeakMode.jsx`, `src/MyTracks.jsx`, `src/MockInterviewV2.jsx`.
+Scratch input `_nlpq_merge_input.js` placed in `BreakLabs/_to_delete/` (outside all repos).
+
+**IMPORTANT push note:** `src/PrepLab.jsx`, `src/data/preplabQuestions.js`, and `src/LearningPaths.jsx`
+also carry a DIFFERENT session's uncommitted work (the `foundations` -> `llm-fundamentals` topic rename,
+open item #3). File-level overlap means the commands cannot cleanly separate the two batches — the command
+here includes `src/LearningPaths.jsx` so the rename ships complete and consistent in the same commit.
+
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/foundations/nlp-foundations-1.js src/data/foundations/nlp-foundations-2.js src/data/foundations/nlp-foundations-3.js src/data/foundations/nlp-foundations-4.js docs/GSL_PLAN.md && \
+git commit -m "NLP Foundations: groundUp openers for all 12 modules + BPE/newline/positional bug fixes (writer+adversarial pipeline)" && \
+git add src/data/glossary.js src/data/preplabQuestions.js src/PrepLab.jsx src/ReadinessDiagnostic.jsx src/SpeakMode.jsx src/MyTracks.jsx src/MockInterviewV2.jsx src/LearningPaths.jsx && \
+git commit -m "NLP topic bucket: 40 audited PrepLab questions + 66 glossary terms + llm-fundamentals rename (carried from parallel session)" && \
+git push origin main
+```
+
+**NLP Foundations gym status: pipeline COMPLETE.** Content (12/12 audited + groundUp), interview questions
+(40, audited), glossary (66 terms). Next gym per the wave plan when the user directs.
+
+**CORRECTION (minutes later):** the push command in the entry above is STALE — the user pushed mid-session.
+Commits `b5919c4` (groundUp openers + module bug fixes) and `0bfbd8a` (llm-fundamentals rename + the 40
+nlp questions + PrepLab label/browse-list, verified present in HEAD) are already on main. Remaining
+uncommitted from this session's work: `src/data/glossary.js` (the 66 terms), the TOPIC_LABELS additions in
+`src/MockInterviewV2.jsx` / `src/MyTracks.jsx` / `src/ReadinessDiagnostic.jsx` / `src/SpeakMode.jsx`, and
+this doc. Corrected command:
+```bash
+cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
+rm -f .git/index.lock .git/HEAD.lock && \
+git add src/data/glossary.js src/MockInterviewV2.jsx src/MyTracks.jsx src/ReadinessDiagnostic.jsx src/SpeakMode.jsx docs/GSL_PLAN.md && \
+git commit -m "NLP glossary (66 terms) + nlp topic label in remaining 4 TOPIC_LABELS files" && \
+git push origin main
+```

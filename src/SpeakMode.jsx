@@ -9,6 +9,7 @@ import { PREP_QUESTIONS } from "./data/preplabQuestions.js";
 // Persists drilled-question ids to localStorage key `gsl-speak-history`.
 
 const TOPIC_LABELS = {
+  nlp: "NLP Foundations",
   rag: "RAG", agents: "Agents", finetuning: "Fine-Tuning", evaluation: "Evaluation",
   evals: "Evals", llmops: "LLMOps", safety: "Safety", product: "Product",
   behavioral: "Behavioral", multimodal: "Multimodal", reasoning: "Reasoning",

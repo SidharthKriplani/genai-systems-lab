@@ -15,6 +15,7 @@ function conceptGym(item) {
 }
 
 const TOPIC_LABELS = {
+  nlp: "NLP Foundations",
   rag: "RAG", agents: "Agents", finetuning: "Fine-Tuning",
   evaluation: "Evaluation", llmops: "LLMOps",
   safety: "Safety", product: "Product", behavioral: "Behavioral",

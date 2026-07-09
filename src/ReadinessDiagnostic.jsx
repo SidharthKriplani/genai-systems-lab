@@ -21,6 +21,7 @@ const STORE_KEY = "gsl-are-you-ready";
 
 // Friendly topic labels (local copy — component stays self-contained).
 const TOPIC_LABELS = {
+  nlp: "NLP Foundations",
   rag: "RAG", agents: "Agents", finetuning: "Fine-tuning",
   evaluation: "Evaluation", llmops: "LLMOps", safety: "Safety",
   product: "Product", behavioral: "Behavioral", multimodal: "Multimodal",

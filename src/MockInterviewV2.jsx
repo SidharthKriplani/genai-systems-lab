@@ -16,6 +16,7 @@ import { PREP_QUESTIONS, questionTier, TIER_META } from "./data/preplabQuestions
 // Topic labels (kept local so the component has no extra data dependency).
 // ─────────────────────────────────────────────────────────────────────────────
 const TOPIC_LABELS = {
+  nlp: "NLP Foundations",
   rag: "Retrieval (RAG)",
   agents: "Agents & tool use",
   finetuning: "Fine-tuning & PEFT",
