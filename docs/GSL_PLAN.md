@@ -3689,3 +3689,82 @@ hardcoded-migration-then-writer-pass work for the 10 `agent-lab`/safety modules 
 `attention` have inline 3B1B scenes) remains logged, still deferred.
 
 Not pushed yet — git commands below.
+
+## 2026-07-10 — 3B1B compliance re-audit + Batch 1 (NLP-A) fix-loop
+
+### Compliance map from log-mining is retired as a scoping tool
+The earlier 53/18/5/15 compliance map (derived by mining GSL_PLAN.md's session history for
+compliance statements) was spot-checked against a real Pass-2 adversarial audit: 7 modules sampled
+across "confirmed-compliant" (`rlhf`, `embeddings`, `context`, `vector-db-index-mechanics`) and
+"likely-partial" (`distillation`, `infra-prefill-decode`, `lora`) buckets, plus a 4-module fresh
+trial batch (`moe`, `scaling-laws`, `few-shot`, `hybrid-search-design`). **11/11 came back
+NEEDS-FIXES.** The log only recorded that writer-pass work happened, not that it survives a real
+3B1B-STANDARD.md audit — so the map is demoted to "what's been touched," not "what's compliant."
+Net effect: treat all 91 HIGH-interviewWeight modules minus the 5 reference-standard ones
+(`tokenizer`, `attention`, `transformer`, `kv-cache`, `sampling` — confirmed compliant by the user
+directly, not touched) as needing real audit + fix, not just the previously-scoped 38.
+
+### Two real tooling/methodology bugs caught and fixed before scaling
+1. **Extraction script blind spot**: the script used to pull `groundUp`/`explanation`/`scenario`
+   text for audit was silently discarding illustration/scene `content` fields (backtick template
+   literals weren't handled, only double-quoted strings), reducing real worked illustrations to
+   `[ILLUSTRATION: label]`. This caused 2 false "empty placeholder" findings (`rlhf`, `distillation`)
+   in the spot-check — both illustrations are actually full worked numeric traces. Fixed and
+   re-verified against both flagged cases before trusting the extractor for the 86-module rollout.
+2. **Wrong assumed render order**: audit prompts assumed `groundUp → scenario → explanation`; the
+   real order per `FoundationsRunner.jsx` (lines 218-329) is `groundUp → explanation → scenario`
+   (scenario, "In Production — Apply It", renders LAST). This had caused false "scenario resolves
+   the crisis before explanation formalizes it" findings in 2 modules (`moe`, `infra-prefill-decode`)
+   — retracted. All subsequent audit prompts carry the corrected order explicitly.
+
+### 86-module batch plan
+91 HIGH modules minus the 5 untouched reference modules = 86, split into 17 thematic batches of
+3-6 modules (NLP-A/B, LM Mechanics A/B, Alignment & Training, Prompting & Reasoning, Retrieval A/B,
+Evaluation & Judgment, Serving Infra, Latency & Decoding, Agents A/B, Playground Labs, Codegen,
+Custom/PEFT Production, Voice AI), in curriculum order within each cluster. Per-batch mechanics:
+audit first (Pass-2 cold against 3B1B-STANDARD.md's 12 rules) → zero violations = skip/log
+confirmed → violations = targeted fix only (not full rewrite) → re-audit → repeat up to 3 loops →
+escalate to real rewrite only for structural (not local-text) violations → esbuild verify → log →
+git commit per batch. Writing directly against plain 3B1B-STANDARD.md (not a merged
+CONTENT-STANDARD+3B1B draft) — that merge decision was deferred as exactly the kind of
+strategy-work that was consuming too much time; CONTENT-STANDARD's MCQ/Takeaway/patience-tier
+rules stay in force for those fields in parallel without blocking the narrative-field rewrite.
+
+### Batch 1 (NLP-A) — audited, fix-loop 1 applied, esbuild-verified
+Modules: `nlp-preprocessing`, `nlp-bow-tfidf`, `nlp-ngram-lm` (`src/data/foundations/nlp-foundations-1.js`),
+`nlp-word2vec-glove`, `nlp-rnn-lstm-gru`, `nlp-seq2seq-attention` (`src/data/foundations/nlp-foundations-2.js`).
+
+All 6 came back NEEDS-FIXES on first audit. **New systemic finding, not previously documented**:
+every module's `scenario` field (rendered last, labeled "In Production — Apply It") was restating
+`groundUp`'s original unresolved crisis almost verbatim instead of applying the specific mechanism
+`explanation` had just built — a real content defect (the section literally fails to do what its
+own label promises), not a style nitpick. This is now a required fix criterion for every remaining
+batch, since it's baked into how scenario fields were originally drafted across the whole dataset.
+
+Fix-loop 1 (applied, not re-audited a 2nd time — see below): rewrote all 6 `scenario` endings to
+apply the module's actual named mechanism (subword/BPE/SentencePiece for `nlp-preprocessing`;
+TF-IDF/idf/cosine-similarity for `nlp-bow-tfidf`; sparsity-explosion/Kneser-Ney/two-fatal-limits for
+`nlp-ngram-lm`; Skip-gram-vs-CBOW/negative-sampling as a real production decision for
+`nlp-word2vec-glove`; the vanishing-gradient arithmetic + LSTM/GRU gate mechanics for
+`nlp-rnn-lstm-gru`; Bahdanau/Luong alignment weights + context vector for `nlp-seq2seq-attention`).
+Also fixed 3 generic cross-module-continuity openings that had a real, nameable predecessor
+(`nlp-ngram-lm`, `nlp-rnn-lstm-gru`, `nlp-seq2seq-attention` now each name the specific prior
+module's endpoint instead of a generic gesture). Left `nlp-preprocessing`'s opening as-is — it's
+the NLP Foundations track's entry point with no real predecessor to name.
+
+Verified: `node_modules/.bin/esbuild --bundle` clean on both files post-edit (npm registry blocked
+npx download this session — used the already-installed local esbuild binary instead). All named
+technical terms (TF-IDF, BPE, SentencePiece, Kneser-Ney, Skip-gram, negative sampling, LSTM, GRU,
+Bahdanau, Luong) confirmed still present post-edit via grep. Recomputed the new numbers introduced
+in the fixes (0.9²⁰≈0.12, 0.5²⁰≈0.000001, 50000⁵≈3×10²³) — all check out.
+
+**Explicit deferral, not silently dropped**: the remaining rule-1 (jargon-before-metaphor ordering)
+and rule-9 (missing bracket-reminders) findings from the first audit pass — roughly 30+ individual
+instances across the 6 modules — were judged lower-severity than the scenario-apply defect and were
+NOT fixed in this pass. Decision: don't loop 2-3 more times per batch chasing style-only findings
+(same failure mode as the earlier over-long strategy debate, just moved to per-batch
+perfectionism); instead carry the lesson into how batches 2-17 get written, and do one consolidated
+style-polish pass across everything once the structural pass is done on all 86. Batch 1's residual
+jargon-order/bracket-reminder debt stays open and tracked here, not closed.
+
+Not pushed yet — git commands in the handoff.
