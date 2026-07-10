@@ -225,6 +225,7 @@ print(r.stdout); print(r.stderr)
 | File | Purpose | Read when |
 |---|---|---|
 | `NEXT.md` | Current sprint tasks, gate, do-not-touch | **Every session start** (after this file) |
+| `docs/GSL_PLAN.md` | 3B1B content-compliance source of truth — batch-by-batch log, per-module findings/fixes, module status | Before any 3B1B / content-quality work |
 | `IDEAS.md` | Build backlog — Tier 1/2/3 + Retired | Before picking what to build |
 | `UPGRADES.md` | Pending enhancements to existing components | Before improving anything existing |
 | `DECISIONS.md` | Architectural + product rulebook | Before any structural or product decision |
@@ -323,8 +324,6 @@ For full audit findings see AUDITS.md.
 - Sprint 92g–92m: Foundations skeleton restructure (10 tracks, 57 modules), cross-frame leakage fix, nav four-pillar restructure, all 9 remaining tracks runner data (35 modules), initial rubric pass fixes (17 D2 inline defs, 1 D5 equation, 15 D8 MCQ augmentations). All in PENDING_APPROVALS awaiting push.
 - Sprint 93 (this session): Full audit (FOUNDATIONS-AUDIT-REPORT.md, 52 modules, 13 dimensions). Pre-fix: 39 FAILs, 133 FLAGs, 0 shippable. Post-fix: 0 FAILs, 7 FLAGs, 52/52 shippable. Changes: D8 MCQ all-4-options for 37 modules (93a), D2/D12 30+ inline defs across 15 modules (93b), D5 equation blocks for 12 modules — scaling-laws/lora/attention/transformer/rlhf/flashattn/seq-parallel/managed-vs-selfhosted/cost-latency-concepts/vector-db-index-mechanics/hybrid-search-design/resolution-token-cost (93c), D11/D13 depth variance + 8 distractor upgrades (93d), depthTier+interviewWeight schema fields all 52 modules (93e), MCQ correct-always-A bug fixed → 13/13/13/13 distribution (93f). All stacked in one pending commit.
 - **NEXT SESSION:** Walk 1 Critical bug fixes were started but agent was interrupted. Three open: (1) Hero copy rewrite in Home.jsx — generic, doesn't land in 5 sec; (2) "Test your understanding" CTA crash in RAG Lab done card — dead end; (3) Done card buried in corner — needs to be prominent, full-width. Read ROLLOUT.md Walk 1 findings before starting. Also: 7 remaining FLAGs in audit report are minor and non-blocking.
-
-
 
 **Sprint 49 (June 2026) — Full structural redesign (in progress):**
 - Build fix: orphan `</div>` in ExamConfig removed — Vercel build broken since sprint 48. Commit `c64f929`.
@@ -663,13 +662,6 @@ File: `src/Concepts.jsx`
 Modules rebuilt to 3x patience standard: AgentPlanning, InstructionTuning, FinetuningVsRAG, SystemPrompts, StructuredOutputs.
 
 Push command (run on Mac):
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/Concepts.jsx && \
-git commit -m "Rebuild 5 thin interactive modules: AgentPlanning, InstructionTuning, FinetuningVsRAG, SystemPrompts, StructuredOutputs — 3x patience standard" && \
-git push origin main
-```
 
 ---
 

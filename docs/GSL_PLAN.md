@@ -3898,3 +3898,21 @@ All 5 genuinely Agent-audited this pass (dispatched cold, in parallel, before an
 **Verification:** all edits applied as exact-match string replacements (each confirmed to match exactly once before being written) against `foundationsRunnerData.js` and `breadth-2.js`; both esbuild-verified clean afterward. Swept for stray leftover references post-fix (old "30×", duplicate "March 2023", "from a moment ago", "YOUR incident", old spoiler-naming phrasing) — all clean, no dangling inconsistencies introduced.
 
 **Batches remaining: 12 of 17.** Batch 6 next, pending user go-ahead.
+
+
+## Session 2026-07-10 — Calibration check + doc-landscape sweep (no content batch)
+
+**Trigger:** user flagged possible "messiness" (contradictions/staleness) across GSL planning docs after a fresh module-status ledger disagreed with a separate handoff doc's claims.
+
+**Calibration check:** `HANDOFF-2026-07-09.md` (BreakLabs root) claimed a separate "Wave 1" writer+adversarial-audit pass was already complete on `agent-react`, `agent-tool-design`, and `agent-eval-trajectory` (files: `src/data/agents/agent-core.js`, `src/data/foundations/gap-agenteval-ragingest.js`). This directly contradicted this session's own mechanically-built ledger, which classified all three as untouched. Resolved by direct content read of all three modules (not trusting either source): all three have genuine crisis-framed `groundUp`, worked pause-and-predict `scenario`, causal-chain `explanation` prose — real 3B1B-consistent writer+audit content, not stubs. **Verdict: HANDOFF's claim was accurate; the ledger's classification logic had the false negative** (it only encoded knowledge of this doc's batches, not the separate wave-based initiative). These 3 modules should be treated as already 3B1B-compliant going forward and excluded from future batch candidate lists.
+
+**Doc-landscape sweep (GSL-scoped only; MSL/PAL/growth/HQ explicitly out of scope):** confirmed via mtimes + content that this file (`docs/GSL_PLAN.md`) is correctly the 3B1B source of truth — GSL's own `CLAUDE.md` banner already says so. `CLAUDE.md` → `NEXT.md` is a separate, deliberate spine system for product/build work (deploys, IA rebuild, sprints), not content quality — not broken, just a different concern. `STATUS.md` (repo root) appears to be a drifted/duplicate tracker of CLAUDE.md's "LATEST" banner concept — different dates, different sprint content, and not listed in CLAUDE.md's own MD file guide. `HANDOFF-2026-07-09.md` sits at the wrong repo scope (BreakLabs root) for GSL-specific work and was not referenced anywhere in GSL's CLAUDE.md guide, so a fresh session following the documented opening checklist would never have found it.
+
+**Fixes applied (docs only, no content/code changes):**
+- `CLAUDE.md` — added `docs/GSL_PLAN.md` as a row in the "Active" MD file guide table ("3B1B content-compliance source of truth... Before any 3B1B / content-quality work"), so future sessions following the opening checklist discover it.
+- `HANDOFF-2026-07-09.md` — added a superseded-notice header pointing to this file as the live GSL 3B1B source of truth; left the rest of the doc intact (still valid for MSL-scoped and historical context).
+- No files deleted.
+
+**Not done / deferred:** full read of `STATUS.md`/`NEXT.md`/`DECISIONS.md`/other root docs beyond headline-level currency checks; no changes made to those files (out of scope of this proposal — user approved only the CLAUDE.md/HANDOFF/GSL_PLAN.md fix).
+
+**Batches remaining: 12 of 17.** Batch 6 next, pending user go-ahead.
