@@ -32,7 +32,7 @@ Read it plainly:
 Worked micro-example (β = 0.1):
   Suppose the policy already prefers the chosen answer:
     s_chosen − s_rejected = +5.0  →  σ(0.1 · 5.0) = σ(0.5) ≈ 0.62
-    loss ≈ −log(0.62) ≈ 0.48   (small — little gradient, good)
+    loss ≈ −log(0.62) ≈ 0.47   (small — little gradient, good)
   A pair the policy gets backwards:
     s_chosen − s_rejected = −5.0  →  σ(−0.5) ≈ 0.38
     loss ≈ −log(0.38) ≈ 0.97   (large — strong corrective gradient)

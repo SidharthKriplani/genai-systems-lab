@@ -3852,3 +3852,29 @@ Fourth batch of the 86-module/17-batch plan. Files touched: `src/data/foundation
 **Verification:** all three touched files esbuild-verified clean (`foundationsRunnerData.js` 2.2mb pre-existing warning, `dpo.js` 20.9kb, `market-gap.js` 64.3kb). Applied the self-consistency check added after the Batch 2/3 post-hoc audit: searched all six modules for any remaining stray "scenario"/"production case" cross-references after editing, to confirm no fix left a dangling or now-inconsistent description elsewhere in the module. All clean — no new inconsistencies introduced this batch.
 
 **Batches remaining:** 13 of 17 (NLP-B, Prompting & Reasoning, Retrieval A/B, Evaluation & Judgment, Serving Infra, Latency & Decoding, Agents A/B, Playground Labs, Codegen, Custom/PEFT Production, Voice AI). Batch 5 (Prompting & Reasoning: few-shot, chain-of-thought, hallucination, finetuning-vs-rag, calibration) is next, pending user go-ahead.
+
+
+---
+
+## Session 2026-07-10 — Batch 3/4 re-audit (9 modules), continued in new session after safety-classifier pause
+
+Prior session was paused mid-work by Anthropic's automated safety classifier (not a content violation — flagged as "sometimes happens with safe, normal conversations") right after dispatching genuine adversarial audits for the 9 modules that had skipped one (Batch 3: scaling-laws, moe, quantization, distillation, lora; Batch 4: alignment-techniques, pretraining, instruction-tuning, dpo) and before logging results or committing. Continued in a fresh session with the same repo/device access; verified the uncommitted working-tree state matched the described fixes before logging.
+
+**Per-module results (all 9 genuinely Agent-audited this pass):**
+- **scaling-laws** — illustration's worked example used the exact 1.5T/70B/7B figures the closing scenario later "predicts" — a spoiler via shared numbers, not just shared language. Fixed by giving the illustration its own example (300B tokens → 15B optimal, 3B under-trained) so the mechanism is taught once, then genuinely re-applied at fresh numbers in the scenario.
+- **lora** — minor: clarified "4096×4096" as "a representative hidden dimension" (was asserted with no basis), trimmed a residual spoiler-naming clause in the closing explanation beat.
+- **alignment-techniques** — previously logged "compliant, no changes" under self-review; adversarial pass found and fixed an unexplained-acronym gap (RLHF introduced without expansion) and added the missing "layered on top of SFT" context — a genuine miss by the earlier non-adversarial check.
+- **pretraining** — the 10⁶–10⁸× compute-gap correction from Batch 4 hadn't propagated to keyPoints/recap, which still read the old (wrong) 10⁵–10⁷×; fixed both. Also trimmed a remaining spoiler-naming clause the Batch 4 self-review missed.
+- **instruction-tuning** — trimmed a second spoiler-naming clause the Batch 4 self-review missed (closing explanation beat still named "start from the instruction-tuned model" as the takeaway before the scenario).
+- **dpo** — corrected σ(0.5)≈0.62 loss arithmetic: −log(0.62) is ≈0.47, not 0.48 (rounding error in the worked example).
+- **distillation** — the dark-knowledge probability example (billing/account/spam) was internally inconsistent across 4 occurrences; unified to 0.73/0.27/0.0007 throughout.
+- **moe** — the Dense-13B-vs-Mixtral illustration's "same latency" framing overstated precision (compute ≈ same, not identical); reworded to "same compute, very different memory footprint."
+- **quantization** — removed an unsupported claim tying int4 rounding error to "multi-step reasoning chains" specifically — never demonstrated, a jargon-tell the adversarial pass caught.
+
+**Process fix (why 9 modules skipped adversarial audit in the first place):** in Batch 3 (zero dispatched audits) and 4 of Batch 4's 6 modules, I read each module's text myself to locate/orient, then — already holding a working theory of what was wrong from pattern-matching against modules that HAD gotten real audits — skipped dispatching an Agent and just fixed directly. Mechanism fix going forward: locate file/line only, extract raw text mechanically, dispatch the Agent audit before reading any substance myself, all modules in a batch dispatched in parallel. Each batch's log entry now states "Agent-audited: yes" per module so a skip is visible in the record itself.
+
+**Verification:** all 5 touched files (`distillation.js`, `dpo.js`, `moe.js`, `quantization.js`, `foundationsRunnerData.js`) esbuild-verified clean. Diffs reviewed line-by-line against the findings above before logging — no unexplained changes.
+
+**Status:** fixes are in the working tree, uncommitted. Commit/push commands prepared per standing approve-first policy — not run automatically.
+
+**Batches remaining: 13 of 17.** Batch 5 (Prompting & Reasoning: few-shot, chain-of-thought, hallucination, finetuning-vs-rag, calibration) next, pending go-ahead.
