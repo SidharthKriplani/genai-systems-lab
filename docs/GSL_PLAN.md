@@ -4230,3 +4230,54 @@ Loop result: 2 modules (reranking, dense-vs-sparse-retrieval) passed blind audit
 esbuild-verified in cloud sandbox and on-device (node_modules/.bin/esbuild) for all 5 touched files: foundationsRunnerData.js, hardcoded-migration.js, deepen-thin.js, retrieval-breadth.js, gap-agenteval-ragingest.js.
 
 Retrieval A/B (6 of 6 HIGH modules) now fully closed against 3B1B-STANDARD.md. Batches remaining: 9 of 17. Next: Batch 9 (Evaluation & Judgment).
+
+## Batch 9 (Evaluation & Judgment) — eval-loop, rag-eval, llm-as-judge — full rewrite & verification loop closed
+
+Three modules (eval-loop in foundationsRunnerData.js; rag-eval + llm-as-judge in deepen-thin.js) taken through the
+writer→blind-adversarial-audit→fix loop, capped at 3 rounds per 3B1B-STANDARD.md's Enforcement process. All 3 hit
+the round-3 cap with only single small residual items each (not clean-on-first-audit, unlike generalization in MSL
+this same session) — those final items were fixed directly rather than spinning a 4th full audit round, since each
+was a precise, well-specified, low-risk edit with no remaining ambiguity.
+
+**eval-loop**: Round 1 fixed a spoiler (scenario was reusing explanation's 94%/89% figures) and an MCQ/explanation
+overlap — both replaced with genuinely distinct fact patterns (scenario: 500-ticket contractor-grading story;
+explanation: four named illustrative cases; MCQs: three more distinct systems). Round 1 also introduced an
+arithmetic bug ("three points over threshold" for an 80%→82% move, actually two) — caught and fixed directly.
+Round 2 found explanation had no persistent worked example (four disconnected one-off illustrations across the
+four properties) and no in-narrative pause-and-predict gate — fixed by threading one running example (a
+document-search reranker) through all four Property paragraphs with numbers that build on each other, and adding
+a genuine setup→stop→predict→reveal beat before the same-family-vs-cross-family judge comparison. Round 3 found
+one remaining internal contradiction (Property 1's fix said the eval set lives in "a repo the reranker team can
+only read," which contradicts Property 1's own point that team-readability causes contamination) — fixed by
+clarifying the eval set is owned by a separate team that shares pass/fail results, not raw query text.
+
+**rag-eval**: Round 1 fixed scenario being pre-spoiled by explanation's "8.2/10" reuse and an explicit "the
+scenario's two diseases" callback, an MCQ using scenario's identical fact pattern, and a groundUp metaphor
+("three smaller machines") contradicting explanation's real two-stage-plus-triad structure. Round 2 found one
+remaining scenario back-reference in the triad paragraph ("the exact bug in the scenario") — fixed by
+generalizing the sentence. Round 3 found mcq[0] still walked through scenario's exact diagnostic method
+(gold-set-confirmed-good-retrieval + unsupported claim ⇒ faithfulness failure) under swapped nouns — fixed by
+changing the mechanism entirely (a numeric contradiction between context and answer, not an absent-fact
+citation). Round 3 also found nDCG's "~0.65" asserted without shown work (unlike its three worked-metric
+siblings) — fixed by adding the actual DCG/IDCG arithmetic (0.63+0.43=1.06 over 1.00+0.63=1.63); and found
+"context relevance" (triad) and "precision@k" (retrieval metric) defined almost identically with no stated
+distinction — fixed with one clarifying sentence (judged single-score-for-the-set vs. labeled + rank-aware).
+
+**llm-as-judge**: Round 1 fixed scenario duplicating mcq[0]/mcq[1]'s verbosity/position-bias fact patterns (now a
+distinct self-preference-bias case: 61%→47% win rate when judge model family changes) and added a worked
+same-family-vs-cross-family scoring illustration (7.1 vs 7.7, ±0.6) so the verbosity-inflation claim is shown, not
+asserted. Round 2 found a word-count error in that illustration ("9 words" for an 8-word sentence) — fixed. Round
+3 found scenario's new closing question had no way for the reader to check their own answer, unlike sibling
+modules' declarative closes — fixed by resolving the question in-line (the drop means the 61% was judge bias, not
+real quality; the 47% is the number that belongs in the report).
+
+Independent verification note: two round-2 audit findings on rag-eval (a claim that groundUp's "three machines"
+fix hadn't landed, and a claim that the "two diseases" spoiler was still present) were both confirmed FALSE
+POSITIVES via direct re-grep of the live file before any fix was attempted — the round-2 audit agent appears to
+have read a stale cached copy. Flagging this as a known device-bridge caching risk for future audit rounds:
+always re-grep the exact quoted text immediately before trusting a FAIL finding, not just before applying a fix.
+
+esbuild-verified on-device (node_modules/.bin/esbuild --bundle=false --format=esm) for both touched files:
+foundationsRunnerData.js, deepen-thin.js.
+
+Batch 9 (Evaluation & Judgment, 3 of 3 modules) now fully closed against 3B1B-STANDARD.md. Batches remaining: 8 of 17.
