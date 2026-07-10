@@ -3983,3 +3983,75 @@ User asked, before proceeding to Batch 7: "make sure that you haven't done any e
 **Fixes applied:** 3 exact-match replacements, all count==1 verified, across the same 2 files from Batch 6. Dry-run applied and esbuild-verified in the cloud sandbox first, then written to device and re-verified esbuild-clean on-device (57.7kb / 58.9kb, matching sandbox).
 
 **Batches remaining: 11 of 17** (unchanged — this was a correction pass on already-counted Batch 6 work, not new batch content).
+
+### Session 2026-07-10 — Batch 7 (Retrieval gym continuation, 3 of 6 remaining HIGH modules)
+Modules: `rag-pipeline` (`src/data/foundationsRunnerData.js`), `context` (`src/data/foundations/hardcoded-migration.js`),
+`reranking` (`src/data/foundations/deepen-thin.js`). These are the first 3 of the 6 HIGH-weight
+Retrieval-gym modules not yet 3B1B-audited (the other 3 — `dense-vs-sparse-retrieval`,
+`multi-hop-retrieval`, `rag-ingestion-pipeline` — are next). `embeddings` was already done in Batch 2;
+`chunking`/`query-rewriting` are `interviewWeight: "medium"`, out of the 86-module pool. Note: these 3
+modules had separately undergone a "Pass-2" cold factual/arithmetic audit on 2026-07-09 (documented
+under Retrieval gym 8/8 in that initiative's own log) — that audit never checked the 12 3B1B voice
+rules or the explanation-spoils-scenario pattern, so Pass-2-clean status did not imply voice-rule
+compliance here, and none of the 3 modules had been through a 3B1B pass before this batch.
+
+**Audit:** 3 independent, genuinely blind cold-audit agents (one per module, no visibility into each
+other or into any writer claims), briefed only on 3B1B-STANDARD.md's 12 voice rules plus the specific
+"explanation spoils scenario" defect. All 3 came back NEEDS-FIXES, every one with a severe, confirmed
+explanation-spoils-scenario defect — the module's own worked numbers/resolution stated in `explanation`
+before `scenario` (which renders last) posed the same case as if fresh.
+
+**Fixes applied (15 exact-match replacements + 1 follow-up consistency fix, all count==1 verified):**
+- `rag-pipeline`: `scenario` fully rewritten — it previously restated `explanation`'s exact refund-policy
+  query/answer and never used the module's own vocabulary (embedding, cosine similarity, top_k, chunk,
+  reranker, Precision@k) or ended on a question. New scenario is a fresh top_k/Noise-Injection case
+  applying the taught mechanism, ending on a genuine unresolved question. Also found and fixed a real
+  numeric contradiction (not previously flagged, found independently while reading the file): the
+  "Stale Retrieval" failure-mode paragraph used the same "14 days" figure the module's own persistent
+  worked illustration (Chunk 1) treats as the *current, correct* policy — reworked to a distinct
+  free-trial-refund example so the two no longer contradict each other; the matching MCQ and its
+  explanation text were updated in lockstep to remove a now-dangling "(score 0.91)" reference.
+- `context`: `scenario` no longer self-answers its own "pause before reading on" question (it previously
+  posed the pause, then immediately resolved it in the same field, leaving zero genuine work for the
+  reader) and no longer cites a directionally-wrong "worked out below" for a formula that was actually
+  worked out earlier, in `explanation`. `explanation[7]` no longer wrongly calls scenario "the opening
+  scenario" (scenario is the closing "Apply It" section — it renders *last*, not first) or says "the
+  fix, worked out there" (a spoiler pointer straight at scenario's resolution). Removed 4 banned
+  "below" scene-references (Definition of Done rule 6 — narrative is also static SEO copy, scenes don't
+  prerender): "the token-budget builder below" (×3) and "the Lost-in-the-Middle explorer below" (×1),
+  all renamed to bare component names. Fixed an internally-contradictory number: `explanation`'s "Output
+  budget collision" paragraph claimed input filled "95% ... 7,782 tokens" of the Llama 3 8B ceiling, but
+  the module's own worked example two paragraphs earlier computed 7,125 tokens / 87% — corrected to the
+  real figures and reworked the collision reasoning to stay true to them (1,067 tokens remaining is
+  thin but doesn't immediately collide with the 500-token reserve, so the paragraph now explains the
+  fragility rather than asserting a contradiction).
+- `reranking`: `scenario` replaced with a different, fresh instance (product-search ranking, recall@100 /
+  ranks 6–40) since the original recall@50=0.94/rank-18 numbers were already fully resolved by name in
+  `explanation[1]` and `explanation[4]` ("fix exactly your bug — pull the rank-18 chunk up to rank 2");
+  ends on a genuine unresolved question instead of asking the reader to explain something the module had
+  already explained. Added a genuine pause-and-predict question in `explanation` before the recall/
+  precision reveal (Rule 3 was flagged). Added recall-signal framing ("the recall/precision split you
+  just saw") to the second mention of the recall-vs-precision distinction (Rule 6/10 — was restated as
+  new). Removed a dangling `(exactly this scenario)` self-reference in `explanation[5]`, which would
+  otherwise have gone factually stale the moment `scenario` was changed to a different case.
+
+**Deferred per established policy:** Rules 1 (jargon-order), 9 (bracket-reminders), 11 (cross-module
+continuity) — not touched, per the standing policy from Batches 1–6 (these recur too pervasively to fix
+piecemeal; deferred to a future consolidated style pass). Rule 4 (precision) passed in all 3 per the
+original audits; the numeric contradictions fixed above were found independently during the fix pass,
+not flagged by Rule 4 originally, and are logged transparently rather than folded silently into "Rule 4
+passed."
+
+**Verification:** exact-match count==1 asserted for all 16 replacements before any write (one failed
+match would have aborted the whole batch — none did). esbuild-verified in the cloud sandbox
+(`foundationsRunnerData.js` 634.0kb, `hardcoded-migration.js` 67.9kb, `deepen-thin.js` 79.5kb — all
+`⚡ Done`, zero errors) before being written to the actual device file via SendUserFile + commit, then
+re-verified esbuild-clean on-device with the identical byte sizes. No independent post-hoc verification
+pass has been run on Batch 7 yet (unlike Batch 6, which got a dedicated fresh-agent verification pass on
+user request) — flagging this explicitly rather than implying parity.
+
+**Batches remaining: 10 of 17** (Retrieval A/B, still 3 of 6 HIGH modules left — `dense-vs-sparse-retrieval`,
+`multi-hop-retrieval`, `rag-ingestion-pipeline` — then Evaluation & Judgment, Serving Infra, Latency &
+Decoding, Agents A/B [agent-react/agent-tool-design/agent-eval-trajectory already done via the separate
+Wave1 initiative], Playground Labs, Codegen, Custom/PEFT Production, Voice AI). Batch 8 (remaining
+Retrieval HIGH modules) is next, pending user go-ahead.
