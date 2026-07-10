@@ -4133,3 +4133,100 @@ agent-eval-trajectory already done via the separate Wave1 initiative], Playgroun
 Custom/PEFT Production, Voice AI — also checking for any other parallel/overlapping initiative before
 assuming a cluster is untouched, per the Pass-2/Wave1 lesson from earlier this session). Batch 9
 (Evaluation & Judgment) is next, pending user go-ahead.
+
+### Session 2026-07-10 — Mandatory adversarial re-audit on Batches 7+8, per user correction
+User flagged that the blind adversarial pass is not optional and must run on every batch, not just when
+explicitly requested — Batches 7 and 8 had shipped with only self-checks (grep, esbuild, manual re-read),
+not genuine independent re-audits, despite 3B1B-STANDARD.md's own enforcement section stating "Only a
+draft that passed Pass 2 clean should ship." That was a real process miss, called out plainly, not
+downplayed.
+
+**What ran:** 6 fresh, genuinely blind, independent audit agents — one per module from Batches 7-8
+(`rag-pipeline`, `context`, `reranking`, `dense-vs-sparse-retrieval`, `multi-hop-retrieval`,
+`rag-ingestion-pipeline`) — each given only the CURRENT post-fix file state, no knowledge of what fixes
+were claimed, briefed on the full 12-rule standard and told to find violations, not summarize.
+
+**Result: 3 of 6 modules still FAILED the explanation-spoils-scenario check even after Batch 7/8's fixes.**
+The Batch 7/8 fix strategy (rewrite scenario to a fresh case) worked when the new case used genuinely
+different specifics AND explanation didn't independently restate the same general lesson as settled fact.
+It failed when the new scenario still mapped 1:1 onto a failure mode explanation resolves with an explicit
+"Fix:" statement — changing scenario's *identifiers* isn't enough if explanation still teaches the same
+*general answer* to the same *general question* scenario poses, before the reader gets there.
+
+**Fixes applied (8 exact-match replacements, all count==1 verified):**
+- `rag-pipeline` (still failing): my Batch 7 scenario rewrite (top_k=20/Noise Injection) still mapped
+  directly onto explanation's Noise Injection "Fix:" bullet (top_k=3-5, Precision@k, reranker — all three
+  answers scenario's three-part question verbatim). Replaced with a genuinely different task: diagnose
+  which of the three failure layers (Stale Retrieval / Noise Injection / Context Grounding Failure) a new,
+  ambiguous symptom (same question, different answers, minutes apart, with top_k and index freshness both
+  ruled out) actually indicates — a synthesis question the "Fix:" bullets don't individually answer, since
+  none of them teach how to *distinguish* the three from log evidence.
+- `context` (still failing): removing the "opening scenario"/"worked out there" fourth-wall phrasing in
+  the earlier fix wasn't sufficient — explanation's stale-context-drift paragraph still taught the same
+  general mechanism and the same "turn 15-20" threshold scenario's question asked about. Replaced scenario
+  with a computed-threshold question (given specific system-prompt/pinned-chunk/per-turn token costs,
+  compute the actual overflow turn and compare it to the generic 15-20 figure) — arithmetic explanation
+  never performs, testing whether "15-20" is a universal rule or a symptom of one specific budget.
+- `reranking` (still failing + 2 additional bugs): explanation's "Widening top-k to 20 tried to solve a
+  precision problem with a recall tool, which is why quality got worse" sentence still answered scenario's
+  diagnostic question directly, and had become a dangling reference (scenario no longer mentions "top-k to
+  20") — removed. Also fixed a genuine logical contradiction the re-audit caught in Batch 8's scenario
+  rewrite: "retrieves the top 8 products... the product a user actually clicks is sitting anywhere from
+  rank 6 to rank 40" is self-contradictory (rank 40 can't be clicked if only 8 are shown) — rewrote the
+  scenario so 100 candidates are retrieved but only 8 shown, clicks land in the unshown 6-40 range via
+  "load more," which is internally consistent. Also removed a banned "above" reference ("the same pattern
+  you just walked through above") that I introduced myself in the Batch 7 fix — should have been "the same
+  pattern you just saw," full stop, per Definition of Done's no-above/below rule.
+- `dense-vs-sparse-retrieval` (spoiler check passed, but a bug found): Batch 8's scenario rewrite opened
+  with "Six months after that fix ships" — "that fix" has no antecedent anywhere in groundUp or
+  explanation, since neither field narrates a first team's fix. Removed the dangling opener.
+- `multi-hop-retrieval` (spoiler check passed; pre-existing notation nitpick, not introduced this session):
+  explanation prose ("~0.9 × 0.9 ≈ 81%") and keyPoints ("0.9²≈0.81") used "≈" for an exact value
+  (0.9×0.9=0.81 precisely, no rounding involved) while the illustration and recap correctly used "=" for
+  the same value — fixed both to "=" for internal consistency.
+- `rag-ingestion-pipeline` (spoiler check passed; one pre-existing trivial fix, not introduced this
+  session): "This is where the PDF broke" implied a specific already-narrated incident that was never
+  established — reworded to a generic framing ("This is where a naive pipeline most often breaks").
+
+**Findings surfaced but NOT fixed this round, flagged transparently:**
+- `rag-pipeline`: `takeaway` claims "the quality ceiling is set by retrieval, not generation," but
+  `explanation`'s own Context Grounding Failure case constructs a scenario where retrieval is flawless and
+  generation alone fails — a real internal tension in the takeaway's framing, pre-existing, not touched.
+- `context`: `explanation[5]` references a "92/85/75/62/52/48/51/62/75/88 sequence above," but only 5 of
+  those 10 values (92, 85, 52, 48, 88) are actually established anywhere earlier in the text — 75, 62, 51
+  never appear before that point. Pre-existing, not introduced this session, not yet fixed.
+- `rag-ingestion-pipeline`: MCQ3 (which renders between `explanation` and `scenario`) resolves an
+  almost-isomorphic pair of failures (garbled PDF + still-cited deleted page) immediately before `scenario`
+  asks the reader to diagnose a fresh, structurally similar pair — a softer pre-training effect distinct
+  from the `explanation`→`scenario` spoiler this initiative targets (MCQs are outside 3B1B-STANDARD.md's
+  stated scope per "Where it applies"), flagged for awareness, not fixed. Also: `groundUp` promises to
+  "watch each stage's specific failure" for a stage-by-stage walkthrough, but Embed and Index get no
+  failure-mode treatment — a scope gap, not yet fixed (would need new content, not a targeted edit).
+- Rules 1, 9, 11 deferred across all 6 modules per established policy (unchanged this round). Several
+  Rule 2/5/6/8 findings (missing metaphor steps, unverifiable text-scene lock since no scene code was in
+  scope, unverifiable length ratio with no baseline available, multiple/scattered illustration blocks)
+  were surfaced in most or all 6 re-audits — consistent with every batch this session, these are judged to
+  require either new metaphor invention (risking a fresh scene-lock violation) or real restructuring
+  beyond a targeted fix, and are left flagged rather than patched.
+
+**Verification:** all 8 replacements exact-match count==1 before write. esbuild-verified in the cloud
+sandbox (all 5 touched files, zero errors) before being written to the actual device files, then
+re-verified esbuild-clean on-device with identical byte sizes to the sandbox. **A further, third-round
+blind re-audit of these same 6 modules has NOT yet been run** — the loop in 3B1B-STANDARD.md's enforcement
+section calls for Pass 2 to re-run after every fix round until clean or 3 loops are exhausted; this session
+has now run 2 rounds (initial audit + fix, then this re-audit + fix) and should run a 3rd confirmation pass
+before treating these 6 modules as closed, rather than assuming this round's fixes are clean by
+construction.
+
+**Batches remaining: 9 of 17** (unchanged — this was a correction pass on already-counted Batches 7-8, not
+new batch content). Recommend running the 3rd-round confirmation audit before starting Batch 9.
+
+## Retrieval A/B (Batches 7-8) — Full Rewrite & Verification Loop Closed
+
+After Batches 7-8 shipped, a corrected process (blind adversarial re-audit running by default, per 3B1B-STANDARD.md's own writer+adversarial enforcement loop, not on request) found that patch-only fixing across 3 rounds was not converging on rag-pipeline, context, reranking, dense-vs-sparse-retrieval, multi-hop-retrieval, and rag-ingestion-pipeline — each round's fix dodged the exact sentence the prior audit quoted, but explanation and scenario necessarily overlap in subject matter when only scenario is patched. Per user direction, switched to full rewrites: groundUp + scenario + explanation redesigned together as one cohesive unit for all 6 modules, via independent writer agents, then run through the standard's writer -> blind adversarial audit -> targeted fix -> re-audit loop.
+
+Loop result: 2 modules (reranking, dense-vs-sparse-retrieval) passed blind audit clean on the first rewrite. 4 modules (rag-pipeline, context, multi-hop-retrieval, rag-ingestion-pipeline) needed one round of targeted fixes after audit (rag-pipeline needed two rounds, on a single sentence). All 6 modules now PASS a genuinely blind adversarial audit with no outstanding must-fix items. Fixes included: removing dangling cross-scenario references, correcting RRF/precision arithmetic, fixing a metaphor ("weakest link") that contradicted the module's own multiplicative-risk math, de-narrating an explanation that had been pre-resolving its own scenario's storyline beat-for-beat, correcting a factually-backwards claim ("alphabetically late" for a document starting with "A"), and reconciling keyPoints/recap parity on failure-mode counts.
+
+esbuild-verified in cloud sandbox and on-device (node_modules/.bin/esbuild) for all 5 touched files: foundationsRunnerData.js, hardcoded-migration.js, deepen-thin.js, retrieval-breadth.js, gap-agenteval-ragingest.js.
+
+Retrieval A/B (6 of 6 HIGH modules) now fully closed against 3B1B-STANDARD.md. Batches remaining: 9 of 17. Next: Batch 9 (Evaluation & Judgment).
