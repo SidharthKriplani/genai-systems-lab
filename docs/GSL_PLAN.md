@@ -4055,3 +4055,81 @@ user request) — flagging this explicitly rather than implying parity.
 Decoding, Agents A/B [agent-react/agent-tool-design/agent-eval-trajectory already done via the separate
 Wave1 initiative], Playground Labs, Codegen, Custom/PEFT Production, Voice AI). Batch 8 (remaining
 Retrieval HIGH modules) is next, pending user go-ahead.
+
+### Session 2026-07-10 — Batch 8 (Retrieval gym, final 3 HIGH modules — Retrieval A/B complete)
+Modules: `dense-vs-sparse-retrieval`, `multi-hop-retrieval` (`src/data/foundations/retrieval-breadth.js`),
+`rag-ingestion-pipeline` (`src/data/foundations/gap-agenteval-ragingest.js` — the other module in that
+file, `agent-eval-trajectory`, was left untouched; already handled by the separate Wave1 initiative).
+This closes out all 6 HIGH-weight Retrieval-gym modules across Batches 7-8 — Retrieval A/B is done.
+
+**Audit:** 3 independent, genuinely blind cold-audit agents (one per module, no visibility into each
+other), briefed on 3B1B-STANDARD.md's 12 voice rules plus the explanation-spoils-scenario pattern. All 3
+came back NEEDS-FIXES, all 3 with the same severe pattern seen in every batch so far: `explanation` (and
+in two of the three, `groundUp` too) fully resolved `scenario`'s exact case — same identifiers, same
+numbers, sometimes literally naming "the scenario" — before the reader ever reached scenario's own
+pause-and-predict moment. All 3 also had `scenario` self-answering its own "take a moment before reading
+on" question in the same field, a standalone Rule 3 violation independent of the cross-field spoiler.
+
+**Fixes applied (14 exact-match replacements, all count==1 verified):**
+- `dense-vs-sparse-retrieval`: `scenario` fully rewritten. The original reused the exact same identifiers
+  (`ERR_2048_TLS`, `PROJ-3391`, the reset-password/recover-credentials pair) that `groundUp` and
+  `explanation` had already resolved in full, including the exact hybrid+RRF fix — `groundUp` itself
+  pre-spoiled scenario's two headline examples before the reader even reached `explanation`. New scenario
+  is a fresh case (a docs-site bot skipping hybrid, missing an exact config key `max_retry_backoff_ms`)
+  that applies the same mirror-image mechanism without restating already-resolved specifics, and ends on
+  two genuine unresolved questions instead of a self-answered one. Also fixed: a dangling `explanation`
+  sentence ("and the scenario shows both faces") that no longer describes the new scenario's content; a
+  closing-paragraph sentence that forward-spoiled scenario's old exact content ("the production case right
+  after it is this exact split... a support bot that fumbles error codes but nails paraphrases"); and a
+  genuine arithmetic error in the RRF worked illustration, found independently while reading the file —
+  `1/(60+1) + 1/(60+3) = 0.01639 + 0.01587` was printed as `= 0.03226`, recomputes to `0.03227`.
+- `multi-hop-retrieval`: `scenario` fully rewritten for the same reason — the original VP/Germany/
+  parental-leave case was resolved verbatim in `explanation` across two illustrations (retrieved chunk
+  text, extracted intermediate answer, and the full hop-2 query construction, all shown before scenario).
+  New scenario is a fresh case (biggest-customer-by-revenue → Enterprise cancellation-fee lookup) that
+  poses a genuine decision the original never required: whether the costly iterative loop is even
+  warranted here, or a cheaper fix suffices — testing the module's "cost two" discriminator, not just the
+  decompose-retrieve-reason mechanism. Also fixed: `explanation[0]` literally said "The scenario's
+  question is the canonical shape" — a direct fourth-wall pointer at scenario's exact content, reworded
+  to "the running example ahead." Also corrected three instances of `=` presented as exact where the
+  underlying value is a rounded approximation (`0.90³ = 0.73`, `0.90⁴ = 0.66` in the illustration, and the
+  matching `0.9³=0.73` in `recap`) to `≈`, per the standard's numeric-precision requirement — found
+  independently while reading the file, not part of the original audit's flagged list.
+- `rag-ingestion-pipeline`: `scenario` fully rewritten — the original three-failure case (two-column PDF
+  parse failure, six-hour full-corpus rebuild, deleted-page-still-cited) was resolved point-by-point in
+  `explanation`, down to the exact same numbers (12,000 docs, 40-page runbook, ~30 chunks). `explanation`
+  additionally contained a dangling ordinal reference ("Now the second and third failures...") that only
+  made sense if the reader had already seen scenario's numbered list, and closed with a promise the module
+  could no longer keep ("see if you can place each one in the pipeline before the reasoning does" —
+  impossible, since the reasoning had already been given). New scenario uses a fresh pair of failures (a
+  garbled spreadsheet-table parse, and a merged support ticket) chosen specifically so the second failure
+  requires distinguishing **supersession** from plain **delete** — a mechanism `explanation` names but the
+  original scenario never actually exercised — making this a genuinely new test of the taught material,
+  not a restatement. Both dangling explanation issues (ordinal reference, false closing promise) fixed to
+  match.
+
+**Deferred per established policy:** Rules 1 (jargon-order), 9 (bracket-reminders), 11 (cross-module
+continuity) — all three audits flagged these as NEEDS-FIXES, consistent with every prior batch; not
+touched here, deferred to the future consolidated style pass. Rule 2 (crisis→inevitability, missing
+metaphor step) and Rule 8 (two illustration blocks per module) were also flagged in all three audits but
+judged, on review, to require either inventing new metaphors (risking a fresh Rule 5 text-scene-lock
+violation with the actual interactive scenes, which are out of scope for a data-only fix) or restructuring
+illustration content in ways that go beyond a targeted fix — left as-is, flagged here explicitly rather
+than silently dropped, consistent with how Batch 6/7 handled similarly-scoped pre-existing structural
+findings.
+
+**Verification:** exact-match count==1 asserted for all 14 replacements before any write (plus one
+follow-up fix for a dangling reference caught during a self-review pass after the main batch, before
+delivery — "the scenario shows both faces" in `dense-vs-sparse-retrieval`, count==1 verified separately).
+esbuild-verified in the cloud sandbox (`retrieval-breadth.js` 55.6kb, `gap-agenteval-ragingest.js` 39.4kb —
+both `⚡ Done`, zero errors) before being written to the device via SendUserFile + commit, then
+re-verified esbuild-clean on-device with identical byte sizes. No independent post-hoc verification pass
+has been run on Batch 8 yet (same caveat as Batch 7 — flagging explicitly rather than implying parity with
+Batch 6's dedicated verification pass).
+
+**Batches remaining: 9 of 17** (Retrieval A/B is now fully done — all 6 HIGH modules across Batches 7-8.
+Next: Evaluation & Judgment, Serving Infra, Latency & Decoding, Agents A/B [agent-react/agent-tool-design/
+agent-eval-trajectory already done via the separate Wave1 initiative], Playground Labs, Codegen,
+Custom/PEFT Production, Voice AI — also checking for any other parallel/overlapping initiative before
+assuming a cluster is untouched, per the Pass-2/Wave1 lesson from earlier this session). Batch 9
+(Evaluation & Judgment) is next, pending user go-ahead.
