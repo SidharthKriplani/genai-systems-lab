@@ -24,11 +24,6 @@ Open Supabase → SQL Editor → paste `supabase_study_tables.sql` → Run.
 Creates: `study_cards`, `study_reviews`, `study_sessions` with RLS (`auth.uid() = user_id`).
 
 ### Step 2: Commit and push from your terminal
-```bash
-cd "/Users/ASUS/Documents/Professional/GitHub/upskill platforms (4)/genai-systems-lab"
-git commit -m "feat: private mastery room — FSRS spaced repetition study system"
-git push
-```
 (sandbox can't remove `.git/HEAD.lock` on macOS FUSE mount — must commit from host)
 
 ### Step 3: First-time seed (in-app)

@@ -13,7 +13,7 @@ export const RECAP_PATCH_A = {
       "**Embeddings** = semantic similarity → geometric proximity; cosine similarity scores the angle, not token-ID distance.",
       "**Geometry is bounded by training distribution** — a general-web model may never have seen a domain's synonyms sharing contexts, so the neighbor relationship never forms.",
       "**Exact-heading hits + natural-language misses** → info is indexed, model just lacks the synonym link.",
-      "**Fix:** domain embedding model (BiomedBERT, MedCPT), fine-tune on query-doc pairs, or reranker — re-embed the whole index on model switch.",
+      "**Fix:** swap in an encoder pretrained on the target domain, or fine-tune on domain query-doc pairs — re-embed the whole index on model switch.",
     ],
   },
 

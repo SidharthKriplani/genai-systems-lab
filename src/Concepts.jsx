@@ -2737,6 +2737,22 @@ const SAMPLE_PROMPTS = [
   },
 ];
 
+// Beam-search worked example — matches the "2-beam search trace (b=2)" illustration exactly
+// (tempgame narrative, src/data/foundationsRunnerData.js): "The weather is" ___, b=2, step-1
+// survivors −0.4 / −0.7 (−1.9 pruned), step-2 cumulative sums −2.0 / −2.5 / −1.2 / −1.6, with
+// −1.2 and −1.6 surviving (less-negative logP wins). b=1 below reduces to plain greedy decoding.
+const BEAM_STEP1 = [
+  { id: "nice",  token: "nice",  logp: -0.4 },
+  { id: "going", token: "going", logp: -0.7 },
+  { id: "very",  token: "very",  logp: -1.9 },
+];
+const BEAM_STEP2 = [
+  { id: "nice-today",  parent: "nice",  token: "today",    tokenLogp: -1.6, cum: -2.0 },
+  { id: "nice-period", parent: "nice",  token: ".",        tokenLogp: -2.1, cum: -2.5 },
+  { id: "going-rain",  parent: "going", token: "to rain",  tokenLogp: -0.5, cum: -1.2 },
+  { id: "going-clear", parent: "going", token: "to clear", tokenLogp: -0.9, cum: -1.6 },
+];
+
 function computeProbs(candidates, temp) {
   const scaled = candidates.map(c => c.logit / Math.max(temp, 0.01));
   const max = Math.max(...scaled);
@@ -2752,6 +2768,9 @@ function SamplingModule({ onNavigate }) {
   const [topK, setTopK] = useState(3);
   const [topP, setTopP] = useState(0.9);
   const [rollKey, setRollKey] = useState(0);
+  const [samplingTab, setSamplingTab] = useState("strategies");
+  const [beamWidth, setBeamWidth] = useState(2); // hero example is b=2, matching the narrative's worked trace
+  const [beamRevealed, setBeamRevealed] = useState(false);
 
   const prompt = SAMPLE_PROMPTS[promptIdx];
   const probs = useMemo(() => computeProbs(prompt.candidates, strategy === "temperature" ? temperature : 1.0), [promptIdx, strategy, temperature]);
@@ -2801,13 +2820,50 @@ function SamplingModule({ onNavigate }) {
     return "#3f3f46";
   };
 
+  const SAMPLING_TABS = [
+    { id: "strategies", label: "Sampling Strategies" },
+    { id: "beam",        label: "Beam Search" },
+  ];
+
+  // Step 1: keep the top-b beams by log-probability (b=1 degenerates to plain greedy decoding).
+  const beamStep1Survivors = useMemo(() => {
+    return [...BEAM_STEP1].sort((a, b) => b.logp - a.logp).slice(0, beamWidth);
+  }, [beamWidth]);
+  const beamStep1SurvivorIds = useMemo(() => new Set(beamStep1Survivors.map(b => b.id)), [beamStep1Survivors]);
+
+  // Step 2: expand only the surviving beams, score each child by cumulative log-probability, keep top-b again.
+  const beamStep2Candidates = useMemo(() => BEAM_STEP2.filter(c => beamStep1SurvivorIds.has(c.parent)), [beamStep1SurvivorIds]);
+  const beamStep2Survivors = useMemo(() => {
+    return [...beamStep2Candidates].sort((a, b) => b.cum - a.cum).slice(0, beamWidth);
+  }, [beamStep2Candidates, beamWidth]);
+  const beamStep2SurvivorIds = useMemo(() => new Set(beamStep2Survivors.map(c => c.id)), [beamStep2Survivors]);
+  const beamFinal = beamStep2Survivors[0]; // highest cumulative logP among surviving beams
+
+  // Reference point: what b=1 (greedy) alone would have produced — always computed so the
+  // local-max-vs-global-max comparison is visible regardless of which beamWidth is selected.
+  const greedyStep1 = [...BEAM_STEP1].sort((a, b) => b.logp - a.logp)[0];
+  const greedyFinal = BEAM_STEP2.filter(c => c.parent === greedyStep1.id).sort((a, b) => b.cum - a.cum)[0];
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
         <p className="text-sm text-zinc-300 leading-relaxed">
-          Once a transformer produces logit scores for every possible next token, you still have to decide which one to actually output. That decision — the <strong className="text-white">decoding strategy</strong> — is separate from the model and determines whether outputs are deterministic or random, conservative or creative. Greedy always picks the top token. Top-K limits the pool. Top-P cuts at a cumulative probability threshold. Temperature rescales the whole distribution before any filtering. Pick a prompt below and watch the same logits pass through each strategy differently.
+          Once a transformer produces logit scores for every possible next token, you still have to decide which one to actually output. That decision — the <strong className="text-white">decoding strategy</strong> — is separate from the model and determines whether outputs are deterministic or random, conservative or creative. Greedy always picks the top token. Top-K limits the pool. Top-P cuts at a cumulative probability threshold. Temperature rescales the whole distribution before any filtering. Pick a prompt below and watch the same logits pass through each strategy differently. Every strategy on this page still decides one token at a time — the Beam Search tab covers the different case where the model searches for the best whole <em>sequence</em> instead.
         </p>
       </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-zinc-800">
+        {SAMPLING_TABS.map(t => (
+          <button key={t.id} onClick={() => setSamplingTab(t.id)}
+            className={`px-4 py-2 text-xs font-bold rounded-t transition-all ${samplingTab === t.id ? "bg-zinc-800 text-white border-b-2 border-violet-500" : "text-zinc-500 hover:text-zinc-300"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {samplingTab === "strategies" && (
+      <>
       {/* Prompt picker */}
       <div className="flex flex-wrap gap-2">
         {SAMPLE_PROMPTS.map((p, i) => (
@@ -2948,6 +3004,116 @@ function SamplingModule({ onNavigate }) {
       <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/20 px-5 py-4 mt-2">
         <p className="text-sm text-zinc-400 leading-relaxed italic">Decoding strategy is one of the first things you tune and one of the most common sources of silent quality regressions. Use temperature=0 for any task where correctness matters — structured output, classification, factual extraction. Reserve temperature above 0.7 for creative tasks only. When something changes in production quality and you cannot find the cause, check if someone changed the sampling parameters — this happens more often than model updates do.</p>
       </div>
+      </>
+      )}
+
+      {samplingTab === "beam" && (
+      <>
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-5 py-4">
+        <p className="text-sm text-zinc-300 leading-relaxed">
+          Beam search is not sampling — it's a <strong className="text-white">search</strong> for the single highest-probability whole sequence. Instead of committing to one token per step, it carries the top <span className="font-mono">b</span> partial sequences ("beams") forward in parallel, scores each by its <strong className="text-white">cumulative log-probability</strong>, and prunes back to the best <span className="font-mono">b</span> after every expansion. A beam that looked weaker after step 1 can overtake the rest once its own continuation turns out stronger — that's exactly what happens below.
+        </p>
+      </div>
+
+      {/* Beam width toggle */}
+      <div className="flex flex-wrap gap-2">
+        {[1, 2].map(b => (
+          <button key={b} onClick={() => { setBeamWidth(b); setBeamRevealed(false); }}
+            className={`px-3 py-2 rounded-lg text-xs font-mono transition-all ${beamWidth === b ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+            b = {b} {b === 1 ? "(greedy)" : "(beam search)"}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 text-xs text-zinc-400">
+        Prompt: <span className="font-mono text-zinc-200">"The weather is ___"</span> — numbers are log-probabilities (higher, i.e. less negative, is better).
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        {/* Step 1 */}
+        <div className="col-span-12 lg:col-span-6 rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-2">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Step 1 — expand, score, keep top b</div>
+          <div className="space-y-2">
+            {BEAM_STEP1.map(c => {
+              const survives = beamStep1SurvivorIds.has(c.id);
+              return (
+                <div key={c.id} className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-mono ${survives ? "border-violet-700 bg-violet-950/20" : "border-zinc-800 bg-zinc-900/40 opacity-50"}`}>
+                  <span className={survives ? "text-violet-200" : "text-zinc-500"}>"...{c.token}"</span>
+                  <div className="flex items-center gap-3">
+                    <span className={survives ? "text-violet-300" : "text-zinc-500"}>logP {c.logp.toFixed(1)}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${survives ? "bg-violet-600/30 text-violet-200" : "bg-zinc-800 text-zinc-500"}`}>
+                      {survives ? "survives" : "pruned"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Step 2 */}
+        <div className="col-span-12 lg:col-span-6 rounded-xl border border-zinc-800 bg-zinc-950 p-4 space-y-2">
+          <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Step 2 — expand every surviving beam, keep top b again</div>
+          {!beamRevealed ? (
+            <div className="rounded-lg border border-amber-800/40 bg-amber-950/15 p-3 space-y-2">
+              <p className="text-xs text-zinc-300 leading-relaxed">Pause here: each surviving beam expands two ways, and every child's score is its parent's log-probability plus its own token's log-probability. Before revealing — which parent do you expect the winning child to come from: the one with the better step-1 score, or the other one?</p>
+              <button onClick={() => setBeamRevealed(true)}
+                className="w-full py-2 rounded-lg text-xs font-bold bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-all font-mono">
+                Expand step 2 →
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {beamStep2Candidates.map(c => {
+                const parent = BEAM_STEP1.find(p => p.id === c.parent);
+                const survives = beamStep2SurvivorIds.has(c.id);
+                const isWinner = beamFinal && c.id === beamFinal.id;
+                return (
+                  <div key={c.id} className={`rounded-lg border px-3 py-2 text-xs font-mono ${isWinner ? "border-emerald-700 bg-emerald-950/20" : survives ? "border-violet-700 bg-violet-950/20" : "border-zinc-800 bg-zinc-900/40 opacity-50"}`}>
+                    <div className="flex items-center justify-between">
+                      <span className={isWinner ? "text-emerald-300 font-bold" : survives ? "text-violet-200" : "text-zinc-500"}>
+                        {isWinner ? "→ " : "  "}"...{parent.token} {c.token}"
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${isWinner ? "bg-emerald-600/30 text-emerald-200" : survives ? "bg-violet-600/30 text-violet-200" : "bg-zinc-800 text-zinc-500"}`}>
+                        {isWinner ? "final" : survives ? "survives" : "pruned"}
+                      </span>
+                    </div>
+                    <div className={`mt-1 ${isWinner ? "text-emerald-400" : survives ? "text-violet-400" : "text-zinc-600"}`}>
+                      cumulative logP: {parent.logp.toFixed(1)} + {c.tokenLogp.toFixed(1)} = {c.cum.toFixed(1)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {beamRevealed && beamFinal && (
+        <div className="rounded-lg border border-emerald-800 bg-emerald-950/20 p-3 text-xs text-emerald-300 mt-2">
+          <span className="font-bold">Beam search's final sequence: </span>
+          <span className="font-mono">"The weather is {BEAM_STEP1.find(p => p.id === beamFinal.parent).token} {beamFinal.token}"</span>
+          <span className="text-zinc-400 ml-2">— cumulative logP {beamFinal.cum.toFixed(1)}</span>
+          {beamWidth > 1 && beamFinal.id !== greedyFinal.id && (
+            <div className="mt-2 text-zinc-400">
+              Greedy (b=1) alone would have locked onto <span className="font-mono text-zinc-300">"{greedyStep1.token}"</span> at step 1 (the single highest logP, {greedyStep1.logp.toFixed(1)}) and ended on <span className="font-mono text-zinc-300">"The weather is {greedyStep1.token} {greedyFinal.token}"</span> — cumulative logP {greedyFinal.cum.toFixed(1)}. Beam search kept a second hypothesis alive after step 1, so it recovers the higher-probability whole sequence: {beamFinal.cum.toFixed(1)} is higher (less negative) than {greedyFinal.cum.toFixed(1)}. Local max ≠ global max.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* What to notice */}
+      <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
+        <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
+        <p className="text-xs text-zinc-300 leading-relaxed">"very" (logP −1.9) is pruned at step 1 regardless of beam width, because it never ranks in the top 2. Toggle back to b=1 and watch "going" get pruned too, even though it's the beam that ultimately wins — greedy never gets the chance to find out, because it commits after a single step and never looks back.</p>
+      </div>
+
+      {/* Where beam wins vs where it fails */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 mt-2 space-y-2">
+        <div className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Search vs. sample — match the strategy to the task</div>
+        <p className="text-xs text-zinc-400 leading-relaxed">Beam search wins wherever there is genuinely one right answer and quality is the whole sequence's joint probability — machine translation, speech transcription, constrained generation. It loses badly on open-ended text: the single highest-probability continuation of a free-form chat is bland and generic ("I think that is a great question and I am happy to help"), so beam converges on exactly that safe, repetitive, loop-prone phrasing. That's the real dividing line, and it has nothing to do with temperature or top-P — <strong className="text-white">search when there's one best sequence to find, sample (Sampling Strategies tab) when there isn't.</strong></p>
+      </div>
+      </>
+      )}
 
       {onNavigate && (
         <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(15,15,17,0.97) 100%)", border: "1px solid rgba(99,102,241,0.2)", borderTop: "1px solid var(--border)" }}>
@@ -7238,7 +7404,7 @@ function ModelFamiliesModule() {
         <p className="text-xs text-zinc-300">
           <span className="font-bold text-amber-400">Key insight: </span>
           No model wins on all axes. GPT-4o leads on quality but costs most and is closed. Llama 3 70B
-          matches on quality with full data privacy but requires your own infrastructure. Choose by
+          trails GPT-4o slightly on raw quality but offers full data privacy. Choose by
           your binding constraint: budget, latency, privacy, or task complexity.
         </p>
       </div>
@@ -7919,7 +8085,7 @@ function VectorIndexModule() {
       )}
 
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
-        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>HNSW dominates on recall+latency at the cost of RAM — at 10M vectors with M=32 you need ~3GB just for the index graph. IVF saves memory but recall drops when query vectors land near cluster boundaries. Flat is your correctness baseline, not a production choice above 100K vectors. Tune M and efSearch together: M sets quality at build, efSearch sets recall at query time.</p>
+        <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">Key insight: </span>HNSW dominates on recall+latency at the cost of RAM — the memory bar above models this demo's 100K-vector corpus, not production scale. At real production scale, a graph over 10M vectors with M=32 needs roughly M edges/node ×2 (bidirectional) ×~4 bytes each ×10,000,000 vectors ≈ 2.56GB — “roughly 3GB” for the graph structure alone. IVF saves memory but recall drops when query vectors land near cluster boundaries. Flat is your correctness baseline, not a production choice above ~50K vectors. Tune M and efSearch together: M sets quality at build, efSearch sets recall at query time.</p>
       </div>
     </div>
   );
@@ -7933,7 +8099,7 @@ function HybridSearchModule() {
     "transformer attention mechanism": {
       dense:  ["Self-attention computes Q·Kᵀ scaled by √d", "Multi-head attention pools subspaces", "Attention is all you need — Vaswani 2017", "Cross-attention links encoder to decoder", "Flash attention reduces memory quadratic cost"],
       bm25:   ["Attention mechanism overview", "Transformer model architecture", "Attention weights visualization", "BERT uses attention for NLU", "Attention is all you need — Vaswani 2017"],
-      rrf:    ["Attention is all you need — Vaswani 2017", "Self-attention computes Q·Kᵀ scaled by √d", "Multi-head attention pools subspaces", "Transformer model architecture", "Cross-attention links encoder to decoder"],
+      rrf:    ["Attention is all you need — Vaswani 2017", "Self-attention computes Q·Kᵀ scaled by √d", "Attention mechanism overview", "Multi-head attention pools subspaces", "Transformer model architecture"],
     },
     "GDPR data deletion rights": {
       dense:  ["Right to erasure under privacy law", "Data subject rights: deletion and portability", "EU privacy regulation compliance", "Controller obligations under GDPR Art. 17", "Cookie consent and retention policy"],
@@ -7985,22 +8151,22 @@ function MetadataFilteringModule() {
   const [selectivity, setSelectivity] = useState(40); // % of the corpus matching the metadata filter
   const corpusSize = 20;
   const topK = 5;
-  const targetDept = "legal";
+  const targetTenant = "clientA";
 
   const corpus = useMemo(() => {
     const matchCount = Math.max(1, Math.round((selectivity / 100) * corpusSize));
     return Array.from({ length: corpusSize }, (_, i) => ({
       id: i,
-      dept: i < matchCount ? targetDept : (i % 2 === 0 ? "finance" : "eng"),
+      tenant: i < matchCount ? targetTenant : (i % 2 === 0 ? "clientB" : "clientC"),
       score: +(0.5 + Math.random() * 0.49).toFixed(2),
     }));
   }, [selectivity]);
 
-  const relevant = corpus.filter(d => d.dept === targetDept);
+  const relevant = corpus.filter(d => d.tenant === targetTenant);
   const matchingCount = relevant.length;
   const preFilter = [...relevant].sort((a, b) => b.score - a.score).slice(0, topK);
   const postFilterAll = [...corpus].sort((a, b) => b.score - a.score).slice(0, topK);
-  const postFilterMatched = postFilterAll.filter(d => d.dept === targetDept);
+  const postFilterMatched = postFilterAll.filter(d => d.tenant === targetTenant);
   const shown = mode === "pre" ? preFilter : postFilterAll;
 
   // Post-filter recall: ANN already truncated to top-K over the WHOLE corpus
@@ -8036,35 +8202,38 @@ function MetadataFilteringModule() {
       </div>
       <div className="space-y-1">
         <div className="flex justify-between text-[10px] font-mono text-zinc-500">
-          <span>Filter selectivity ("legal" dept share of corpus)</span>
+          <span>Filter selectivity (client_id="clientA" share of corpus)</span>
           <span className="text-violet-300">{selectivity}%  (~{matchingCount}/{corpusSize} vectors)</span>
         </div>
         <input type="range" min={5} max={100} step={5} value={selectivity}
           onChange={e => setSelectivity(+e.target.value)} className="w-full accent-violet-500" />
         <div className="flex justify-between text-[9px] text-zinc-600"><span>narrow filter (few matches)</span><span>broad filter (many matches)</span></div>
       </div>
-      <div className="text-[10px] text-zinc-500 font-mono">Filter: dept = "legal" | Corpus: {corpusSize} vectors | Top-{topK}</div>
+      <div className="text-[10px] text-zinc-500 font-mono">Filter: client_id = "clientA" | Corpus: {corpusSize} vectors | Top-{topK}</div>
       <div className="space-y-1.5">
         {shown.map((d, i) => (
-          <div key={d.id} className={`flex items-center gap-3 p-2 rounded-lg border text-[10px] font-mono ${d.dept === targetDept ? "border-emerald-800/50 bg-emerald-950/10 text-emerald-300" : "border-red-900/40 bg-red-950/10 text-red-400"}`}>
+          <div key={d.id} className={`flex items-center gap-3 p-2 rounded-lg border text-[10px] font-mono ${d.tenant === targetTenant ? "border-emerald-800/50 bg-emerald-950/10 text-emerald-300" : "border-red-900/40 bg-red-950/10 text-red-400"}`}>
             <span className="text-zinc-600 w-4">{i + 1}.</span>
             <span className="w-16">vec_{d.id}</span>
-            <span className={`w-14 ${d.dept === targetDept ? "text-emerald-400" : "text-red-400"}`}>{d.dept}</span>
+            <span className={`w-14 ${d.tenant === targetTenant ? "text-emerald-400" : "text-red-400"}`}>{d.tenant}</span>
             <span className="text-zinc-400">score: {d.score}</span>
-            {mode === "post" && d.dept !== targetDept && <span className="ml-auto text-red-500">✗ filtered out</span>}
+            {mode === "post" && d.tenant !== targetTenant && <span className="ml-auto text-red-500">✗ filtered out</span>}
           </div>
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
           <div className={`text-xl font-mono font-bold ${recall === 100 ? "text-emerald-400" : recall >= 70 ? "text-amber-400" : "text-red-400"}`}>{recall}%</div>
-          <div className="text-[10px] text-zinc-600 mt-1">Recall (legal docs in top-5)</div>
+          <div className="text-[10px] text-zinc-600 mt-1">Recall (Client A docs in top-5)</div>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-center">
           <div className="text-xl font-mono font-bold text-zinc-300">{mode === "pre" ? "ANN on subset" : "ANN on all"}</div>
           <div className="text-[10px] text-zinc-600 mt-1">Search scope</div>
         </div>
       </div>
+      {mode === "pre" && recall < 100 && (
+        <p className="text-[10px] text-zinc-600 -mt-1">Pre-filter recall below 100% models HNSW graph misses inside this small filtered subset — real matches the graph's reduced connectivity can't reach. The graph never touches other tenants' vectors at all, so those misses aren't rows to display; they're edges that don't exist in the graph, not results filtered out on screen.</p>
+      )}
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
         <p className="text-xs text-zinc-300"><span className="font-bold text-amber-400">The recall trap: </span>post-filter's ANN pass already truncated to top-K over the *whole* corpus before the filter ever runs — so once most of that top-K gets discarded, there's no way back to K real matches, and recall drops as selectivity narrows. Pre-filter avoids that trap by filtering first, but it isn't automatically perfect either — drag selectivity down and watch its recall dip too, because searching a very small filtered subset can still miss true nearest neighbors.</p>
       </div>

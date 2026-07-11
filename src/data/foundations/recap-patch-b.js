@@ -108,7 +108,7 @@ export const RECAP_PATCH_B = {
     keyPoints: [
       "**pgvector lives inside Postgres** — a `WHERE user_id = $1` pre-filter runs in the *same* SQL query as the ANN search, a JOIN dedicated DBs can't match natively.",
       "**Dedicated DBs (Pinecone/Qdrant/Weaviate/Milvus) are purpose-built for ANN** — in-memory, horizontally sharded, lower latency at high vector counts.",
-      "**The crossover is ~10M vectors** — beyond that, pgvector latency climbs and scaling needs complex Postgres sharding.",
+      "**The crossover is the 10M–50M range (hardware-dependent)** — beyond that, pgvector latency climbs and scaling needs complex Postgres sharding.",
       "**The JOIN advantage reverses above the ceiling** — at 100M vectors you don't want vector search bottlenecking your relational DB.",
       "**Start with pgvector when you already run Postgres** — `ALTER TABLE ADD COLUMN embedding vector(1536)` deploys in minutes; migrate on hitting the ceiling.",
       "**'Free' pgvector has a hidden cost** — a memory-resident HNSW index contends with relational workload, often forcing a bigger instance or a dedicated replica.",
@@ -116,7 +116,7 @@ export const RECAP_PATCH_B = {
     recap: [
       "**pgvector's edge: relational JOIN pre-filter**, one query.",
       "**Dedicated DBs win pure ANN at scale** — in-memory, horizontally sharded.",
-      "**~10M vectors = crossover** where pgvector latency degrades.",
+      "**The 10M–50M range (hardware-dependent) = crossover** where pgvector latency degrades.",
       "**Default to pgvector, migrate at the ceiling** — budget the instance contention 'free' hides.",
     ],
   },

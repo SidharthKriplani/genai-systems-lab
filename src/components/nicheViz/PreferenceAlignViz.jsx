@@ -142,66 +142,77 @@ export default function PreferenceAlignViz({ onNavigate, spec } = {}) {
         )}
       </div>
 
-      {/* Strength slider */}
-      <div style={{ ...card, padding: 14 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <label style={{ fontSize: 12, color: "var(--zinc-400, #a1a1aa)" }}>
-            KL-penalty strength (beta)
-          </label>
-          <span style={{ ...mono, fontSize: 14, fontWeight: 700, color: "var(--gal-build)" }}>
-            {beta}
-          </span>
-        </div>
-        <input
-          type="range"
-          min={1}
-          max={10}
-          step={1}
-          value={beta}
-          onChange={(e) => setBeta(Number(e.target.value))}
-          style={{ width: "100%", marginTop: 10, accentColor: "var(--gal-build)" }}
-        />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--zinc-400, #a1a1aa)", ...mono }}>
-          <span>low beta — aggressive (large policy shift)</span>
-          <span>high beta — gentle (stays close to reference)</span>
-        </div>
-
-        <div style={{ fontSize: 11, color: "var(--zinc-400, #a1a1aa)", marginTop: 10, lineHeight: 1.5 }}>
-          Beta sets how hard the KL penalty pulls the policy back toward the frozen reference model.
-          <strong> Alignment</strong> below is roughly how far the policy has shifted toward the
-          preferred behavior; <strong>general capability</strong> is roughly how much of the base
-          model's broader ability survives that shift. There's a transition point (a "knee") around
-          beta ≈ 5: above it the penalty is strong enough to keep capability intact, below it the
-          policy is optimizing hard enough against the reward signal that capability starts to
-          collapse — the reward-hacking risk in action.
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
-          <Meter label="alignment" value={alignment} color="var(--green, #34d399)" />
-          <Meter
-            label="general capability"
-            value={capability}
-            color={overOpt ? "var(--red, #f87171)" : "var(--border)"}
+      {method !== "sft" ? (
+        <div style={{ ...card, padding: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <label style={{ fontSize: 12, color: "var(--zinc-400, #a1a1aa)" }}>
+              KL-penalty strength (beta)
+            </label>
+            <span style={{ ...mono, fontSize: 14, fontWeight: 700, color: "var(--gal-build)" }}>
+              {beta}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            step={1}
+            value={beta}
+            onChange={(e) => setBeta(Number(e.target.value))}
+            style={{ width: "100%", marginTop: 10, accentColor: "var(--gal-build)" }}
           />
-        </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--zinc-400, #a1a1aa)", ...mono }}>
+            <span>low beta — aggressive (large policy shift)</span>
+            <span>high beta — gentle (stays close to reference)</span>
+          </div>
 
-        <div
-          style={{
-            marginTop: 12,
-            padding: "8px 10px",
-            borderRadius: 8,
-            fontSize: 12,
-            border: `1px solid ${overOpt ? "var(--red, #f87171)" : "var(--border)"}`,
-            background: overOpt ? "rgba(248,113,113,0.08)" : "var(--surface)",
-            color: overOpt ? "var(--red, #f87171)" : "var(--zinc-400, #a1a1aa)",
-            ...mono,
-          }}
-        >
-          {overOpt
-            ? `alignment tax: over-optimizing — capability down ${100 - capability} points from letting beta run too low (too aggressive, drifting far from the reference)`
-            : "no alignment tax yet — beta is high enough to keep the policy close to the reference"}
+          <div style={{ fontSize: 11, color: "var(--zinc-400, #a1a1aa)", marginTop: 10, lineHeight: 1.5 }}>
+            Beta sets how hard the KL penalty pulls the policy back toward the frozen reference model.
+            <strong> Alignment</strong> below is roughly how far the policy has shifted toward the
+            preferred behavior; <strong>general capability</strong> is roughly how much of the base
+            model's broader ability survives that shift. There's a transition point (a "knee") around
+            beta ≈ 5: above it the penalty is strong enough to keep capability intact, below it the
+            policy is optimizing hard enough against the reward signal that capability starts to
+            collapse — the reward-hacking risk in action.
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
+            <Meter label="alignment" value={alignment} color="var(--green, #34d399)" />
+            <Meter
+              label="general capability"
+              value={capability}
+              color={overOpt ? "var(--red, #f87171)" : "var(--border)"}
+            />
+          </div>
+
+          <div
+            style={{
+              marginTop: 12,
+              padding: "8px 10px",
+              borderRadius: 8,
+              fontSize: 12,
+              border: `1px solid ${overOpt ? "var(--red, #f87171)" : "var(--border)"}`,
+              background: overOpt ? "rgba(248,113,113,0.08)" : "var(--surface)",
+              color: overOpt ? "var(--red, #f87171)" : "var(--zinc-400, #a1a1aa)",
+              ...mono,
+            }}
+          >
+            {overOpt
+              ? `reward over-optimization: capability down ${100 - capability} points from letting beta run too low (too aggressive, drifting far from the reference) — a capability collapse, distinct from the over-refusal "alignment tax" in the prose`
+              : "no reward over-optimization yet — beta is high enough to keep the policy close to the reference"}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ ...card, padding: 14 }}>
+          <div style={{ fontSize: 12, color: "var(--zinc-400, #a1a1aa)", lineHeight: 1.5 }}>
+            SFT has no KL-penalty knob to show here. It's plain imitation of the preferred answer —
+            max-likelihood on a single target, no reward model, no reference model, and no{" "}
+            <strong style={{ color: "var(--zinc-200, #e4e4e7)" }}>beta</strong> term to tune. That
+            knob — and the alignment-vs-capability tradeoff it controls — only exists once training
+            is against a preference signal, in DPO or RLHF. Switch tabs above to see it.
+          </div>
+        </div>
+      )}
     </div>
   );
 }

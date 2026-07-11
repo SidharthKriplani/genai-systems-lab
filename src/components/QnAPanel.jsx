@@ -4,10 +4,26 @@
 //   - entry, module not complete  → locked card (completion gate; the gate is the design,
 //                                    QnA is a post-completion interview-prep surface)
 //   - entry + module complete     → the grid: beats → collapsed questions (tap to reveal),
-//                                    level chips, per-level expand-all, traps, follow-up
-//                                    jump links (auto-expand + scroll), L3 cases,
-//                                    "Beyond this module" handoffs.
+//                                    level + difficulty filter chips, conditional expand-all,
+//                                    traps, follow-up jump links (auto-expand + scroll), L3
+//                                    cases, "Beyond this module" handoffs.
 // Question IDs are global + permanent; element ids are `qna-<id>` for anchor/deep-link use.
+//
+// Browsing model (rework 2026-07-11):
+//   - Single-open accordion in normal browsing: opening a question closes whatever else was
+//     open. Manually closing an open question just closes that one (this is what lets a
+//     partially-collapsed state exist after "Expand all" — see below).
+//   - Level (L0-L3) and difficulty (Easy/Medium/Hard) are two independent filter chip rows,
+//     combined with AND when both have a selection. A separate "All" chip clears both.
+//   - "Expand all" / "Collapse all" is a single toggle, HIDDEN with no filter active (default
+//     state relies on the accordion alone) and shown once a level or difficulty filter is
+//     active. It operates on whatever is currently filtered-in, overriding single-open for
+//     that one bulk action. Label reflects whether every filtered-in (answered) question is
+//     currently expanded — so manually closing one question after "Expand all" flips the
+//     label back to "Expand all" rather than "Collapse all" (not-all-expanded reads as the
+//     "expand" state, since the natural next click is to finish expanding, and it also
+//     correctly represents that the set is no longer fully closed OR fully open — "expand"
+//     is the safer default because it never leaves a stray collapsed item unreachable).
 
 import { useState } from "react";
 import { qnaForModule, qnaQuestionCount } from "../data/qnaBank.js";
@@ -28,6 +44,18 @@ const LEVEL_META = {
   2: { label: "L2", desc: "tradeoff", cls: "border-amber-800/60 bg-amber-950/30 text-amber-300" },
   3: { label: "L3", desc: "case", cls: "border-rose-800/60 bg-rose-950/30 text-rose-300" },
 };
+
+// Difficulty is an axis independent of level (see qnaBank.js header) — deliberately a
+// different color family (teal/violet/orange) so a difficulty badge next to a level chip
+// never reads as "another level chip."
+const DIFFICULTY_META = {
+  easy: { label: "Easy", cls: "border-teal-800/60 bg-teal-950/30 text-teal-300" },
+  medium: { label: "Medium", cls: "border-violet-800/60 bg-violet-950/30 text-violet-300" },
+  hard: { label: "Hard", cls: "border-orange-800/60 bg-orange-950/30 text-orange-300" },
+};
+
+const LEVELS = [0, 1, 2, 3];
+const DIFFICULTIES = ["easy", "medium", "hard"];
 
 // Minimal inline markdown: **bold**, *italic*. Kept local so the panel has no
 // dependency on FoundationsRunner's internal InlineMd.
@@ -56,6 +84,32 @@ function LevelChip({ level }) {
   );
 }
 
+function DifficultyChip({ difficulty }) {
+  const m = DIFFICULTY_META[difficulty];
+  if (!m) return null;
+  return (
+    <span className={`shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border ${m.cls}`}>
+      {m.label}
+    </span>
+  );
+}
+
+// Filter chip: same base look as the old per-level buttons, but now purely a filter toggle —
+// active gets a ring + full brightness, inactive (while some filter in this row IS active)
+// dims slightly so the selection reads clearly.
+function FilterChip({ active, dimmed, cls, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border transition-all hover:brightness-125 ${cls} ${
+        active ? "ring-1 ring-white/50 brightness-110" : dimmed ? "opacity-50" : ""
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function QuestionRow({ node, expanded, onToggle, onJump }) {
   const hasAnswer = !!node.answer; // parked questions ship before their answers do
   return (
@@ -65,6 +119,7 @@ function QuestionRow({ node, expanded, onToggle, onJump }) {
         className={`w-full flex items-start gap-2.5 text-left px-4 py-3 transition-colors ${hasAnswer ? "hover:bg-zinc-900" : "cursor-default"}`}
       >
         <LevelChip level={node.level} />
+        <DifficultyChip difficulty={node.difficulty} />
         <span className="text-sm text-zinc-200 leading-snug flex-1">{node.q}</span>
         {hasAnswer ? (
           <span className="text-zinc-600 text-xs mt-0.5">{expanded ? "−" : "+"}</span>
@@ -104,6 +159,8 @@ function QuestionRow({ node, expanded, onToggle, onJump }) {
 export default function QnAPanel({ moduleId, unlocked }) {
   const entry = qnaForModule(moduleId);
   const [expanded, setExpanded] = useState(() => new Set());
+  const [levelFilter, setLevelFilter] = useState(null); // 0-3 | null
+  const [difficultyFilter, setDifficultyFilter] = useState(null); // "easy"|"medium"|"hard" | null
 
   const rule = (
     <div className="flex items-center gap-3">
@@ -154,11 +211,33 @@ export default function QnAPanel({ moduleId, unlocked }) {
     ...(entry.cases || []),
   ];
 
+  const matchesFilters = (n) =>
+    (levelFilter === null || n.level === levelFilter) &&
+    (difficultyFilter === null || n.difficulty === difficultyFilter);
+
+  const filtersActive = levelFilter !== null || difficultyFilter !== null;
+
+  const filteredBeats = entry.beats
+    .map(b => ({ ...b, questions: b.questions.filter(matchesFilters) }))
+    .filter(b => b.questions.length > 0);
+  const filteredCases = (entry.cases || []).filter(matchesFilters);
+  const filteredNodes = [...filteredBeats.flatMap(b => b.questions), ...filteredCases];
+  // Only answered nodes can expand/collapse — "answer in progress" rows don't count toward
+  // the expand-all/collapse-all label logic.
+  const expandableIds = filteredNodes.filter(n => n.answer).map(n => n.id);
+  const allExpanded = expandableIds.length > 0 && expandableIds.every(id => expanded.has(id));
+
   function toggle(id) {
     setExpanded(prev => {
-      const s = new Set(prev);
-      s.has(id) ? s.delete(id) : s.add(id);
-      return s;
+      if (prev.has(id)) {
+        // Closing an open question never touches the others — this is what makes a
+        // partial state possible after "Expand all" (see tie-break note in the file header).
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      }
+      // Opening: normal single-open accordion — close everything else, open only this one.
+      return new Set([id]);
     });
   }
   function jump(id) {
@@ -168,15 +247,19 @@ export default function QnAPanel({ moduleId, unlocked }) {
       document.getElementById(`qna-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
   }
-  function expandLevel(level) {
-    setExpanded(prev => {
-      const s = new Set(prev);
-      allNodes.filter(n => n.level === level).forEach(n => s.add(n.id));
-      return s;
-    });
+  function toggleAll() {
+    setExpanded(allExpanded ? new Set() : new Set(expandableIds));
   }
-
-  const levelsPresent = [...new Set(allNodes.map(n => n.level))].sort();
+  function selectLevel(l) {
+    setLevelFilter(prev => (prev === l ? null : l));
+  }
+  function selectDifficulty(d) {
+    setDifficultyFilter(prev => (prev === d ? null : d));
+  }
+  function clearFilters() {
+    setLevelFilter(null);
+    setDifficultyFilter(null);
+  }
 
   return (
     <section>
@@ -190,31 +273,66 @@ export default function QnAPanel({ moduleId, unlocked }) {
           </p>
         </div>
       )}
-      <div className="mt-3 flex items-center gap-2 flex-wrap">
-        <span className="text-[11px] text-zinc-500 font-mono">
-          {allNodes.length} questions · tap to reveal · expand all:
-        </span>
-        {levelsPresent.map(l => (
-          <button
+
+      <p className="mt-3 text-[11px] text-zinc-500 font-mono">
+        {allNodes.length} questions · tap to reveal
+      </p>
+
+      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+        <span className="text-[9px] font-mono text-zinc-600 uppercase mr-0.5">Level</span>
+        <FilterChip
+          active={!filtersActive}
+          dimmed={filtersActive}
+          cls="border-zinc-600 bg-zinc-800/60 text-zinc-300"
+          onClick={clearFilters}
+        >
+          All
+        </FilterChip>
+        {LEVELS.map(l => (
+          <FilterChip
             key={l}
-            onClick={() => expandLevel(l)}
-            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border transition-colors hover:brightness-125 ${LEVEL_META[l].cls}`}
+            active={levelFilter === l}
+            dimmed={levelFilter !== null && levelFilter !== l}
+            cls={LEVEL_META[l].cls}
+            onClick={() => selectLevel(l)}
           >
             {LEVEL_META[l].label} · {LEVEL_META[l].desc}
-          </button>
+          </FilterChip>
         ))}
-        {expanded.size > 0 && (
-          <button
-            onClick={() => setExpanded(new Set())}
-            className="text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
-            collapse all
-          </button>
-        )}
       </div>
 
+      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+        <span className="text-[9px] font-mono text-zinc-600 uppercase mr-0.5">Difficulty</span>
+        {DIFFICULTIES.map(d => (
+          <FilterChip
+            key={d}
+            active={difficultyFilter === d}
+            dimmed={difficultyFilter !== null && difficultyFilter !== d}
+            cls={DIFFICULTY_META[d].cls}
+            onClick={() => selectDifficulty(d)}
+          >
+            {DIFFICULTY_META[d].label}
+          </FilterChip>
+        ))}
+      </div>
+
+      {filtersActive && (
+        <div className="mt-2">
+          <button
+            onClick={toggleAll}
+            className="text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+          >
+            {allExpanded ? "Collapse all" : "Expand all"}
+          </button>
+        </div>
+      )}
+
       <div className="mt-5 space-y-7">
-        {entry.beats.map((beat, bi) => (
+        {filtersActive && filteredNodes.length === 0 && (
+          <p className="text-sm text-zinc-500">No questions match these filters.</p>
+        )}
+
+        {filteredBeats.map((beat, bi) => (
           <div key={bi}>
             <p className="text-[11px] font-mono font-bold text-zinc-500 mb-2.5">
               {beat.name}
@@ -233,13 +351,13 @@ export default function QnAPanel({ moduleId, unlocked }) {
           </div>
         ))}
 
-        {(entry.cases || []).length > 0 && (
+        {filteredCases.length > 0 && (
           <div>
             <p className="text-[11px] font-mono font-bold text-rose-400/80 mb-2.5">
               Cases — walk the diagnosis out loud
             </p>
             <div className="space-y-2">
-              {entry.cases.map(node => (
+              {filteredCases.map(node => (
                 <QuestionRow
                   key={node.id}
                   node={node}

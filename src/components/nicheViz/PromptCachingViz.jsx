@@ -8,8 +8,8 @@ export default function PromptCachingViz({ onNavigate, spec } = {}) {
   const [dynPos, setDynPos] = useState(3);
 
   // Fixed token accounting (round numbers).
-  const PREFIX_TOKENS = 8000; // system + few-shot (large, static)
-  const SUFFIX_TOKENS = 200; // user turn (small, dynamic)
+  const PREFIX_TOKENS = 6000; // system + few-shot (large, static)
+  const SUFFIX_TOKENS = 50; // user turn (small, dynamic)
 
   // Per-token timings / costs (illustrative, round).
   const PREFILL_MS_PER_1K = 40; // ms to prefill 1k input tokens

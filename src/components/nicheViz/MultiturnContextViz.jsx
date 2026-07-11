@@ -76,8 +76,8 @@ export default function MultiturnContextViz({ onNavigate, spec } = {}) {
     <div style={{ color: "#e4e4e7", fontSize: 13, maxWidth: 640 }}>
       <div style={{ ...label, marginBottom: 4 }}>Multi-turn context</div>
       <div style={{ color: "#a1a1aa", marginBottom: 14, fontSize: 12 }}>
-        As a conversation grows, the tokens you resend each turn depend on your
-        context strategy. Resend-all climbs quadratically.
+        As a conversation grows, tokens sent per turn grow linearly under resend-all
+        — but summed across every turn, that makes cumulative cost grow quadratically.
       </div>
 
       {/* Strategy */}

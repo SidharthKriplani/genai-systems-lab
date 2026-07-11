@@ -30,8 +30,13 @@ export default function WhenToFinetuneViz({ onNavigate, spec } = {}) {
   ];
 
   // Decision logic — behavior/format is what fine-tuning is FOR; knowledge is RAG.
+  const needsBoth = newKnowledge && newBehavior && haveLabels;
   let pick, reason;
-  if (newBehavior && haveLabels) {
+  if (needsBoth) {
+    pick = "finetune";
+    reason =
+      "you need new facts AND new behavior with labeled examples — that's RAG (for the facts) plus fine-tune (for the behavior). They solve orthogonal problems, so neither alone covers this.";
+  } else if (newBehavior && haveLabels) {
     pick = "finetune";
     reason =
       "you need a new behavior or output format and you have labeled examples — that's the fine-tune case.";
@@ -125,7 +130,7 @@ export default function WhenToFinetuneViz({ onNavigate, spec } = {}) {
           the customization ladder — cheapest first
         </div>
         {RUNGS.map((r, i) => {
-          const isPick = r.key === pick;
+          const isPick = needsBoth ? r.key === "rag" || r.key === "finetune" : r.key === pick;
           const reached = i <= pickIdx;
           return (
             <div
@@ -191,7 +196,7 @@ export default function WhenToFinetuneViz({ onNavigate, spec } = {}) {
       <div style={{ ...card, borderLeft: `2px solid ${GREEN}` }}>
         <span style={label}>recommendation</span>
         <div style={{ ...mono, fontSize: "1.3rem", color: GREEN, margin: "0.15rem 0" }}>
-          {RUNGS[pickIdx].name}
+          {needsBoth ? "RAG + fine-tune" : RUNGS[pickIdx].name}
         </div>
         <div style={{ fontSize: "0.82rem", color: "#d4d4d8" }}>{reason}</div>
         {latencyNote && (

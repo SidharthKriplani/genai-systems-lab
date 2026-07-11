@@ -12,14 +12,6 @@ _Controller-facing approval queue for the GenAI Systems Lab. Each entry is a com
 
 **File changed (1 edited):** `src/App.jsx`
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/App.jsx ROLLOUT.md PENDING_APPROVALS.md && \
-git commit -m "fix: RAG Lab done card moved below results grid — Walk 1 Critical findings #5/#6 closed (sprint 93g)" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 93f: foundationsRunnerData.js — MCQ correct-always-A fix (26 Jun 2026)
@@ -29,14 +21,6 @@ git push origin main
 **Validation:** 52 entries, 0 issues, exact 13/13/13/13 distribution confirmed.
 
 **File changed (1 edited):** `src/data/foundationsRunnerData.js`
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/data/foundationsRunnerData.js && \
-git commit -m "fix: MCQ correct-always-A bug — rotate answer positions 13/13/13/13 distribution (sprint 93f)" && \
-git push origin main
-```
 
 ---
 
@@ -48,14 +32,6 @@ git push origin main
 
 **File changed (1 edited):** `src/data/foundationsRunnerData.js`
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/data/foundationsRunnerData.js && \
-git commit -m "feat: add depthTier + interviewWeight schema fields to all 52 modules (sprint 93e)" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 93d: foundationsRunnerData.js — D11/D13 depth variance + distractor quality (26 Jun 2026)
@@ -65,14 +41,6 @@ git push origin main
 **Validation:** 52 entries, 0 issues.
 
 **File changed (1 edited):** `src/data/foundationsRunnerData.js`
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/data/foundationsRunnerData.js && \
-git commit -m "sprint 93d: D11/D13 — depth variance fix (4 LIGHT trimmed, 4 DEEP expanded), 8 distractor upgrades" && \
-git push origin main
-```
 
 ---
 
@@ -84,14 +52,6 @@ git push origin main
 
 **File changed (1 edited):** `src/data/foundationsRunnerData.js`
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/data/foundationsRunnerData.js && \
-git commit -m "sprint 93c: D3/D5 equation blocks — 12 modules (scaling-laws, lora, attention, transformer, rlhf + 7 others)" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 93b: foundationsRunnerData.js — D2/D12 inline definitions (26 Jun 2026)
@@ -102,14 +62,6 @@ git push origin main
 
 **File changed (1 edited):** `src/data/foundationsRunnerData.js`
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/data/foundationsRunnerData.js && \
-git commit -m "sprint 93b: D2/D12 inline definitions — 30+ terms defined across 15 modules" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 93a: foundationsRunnerData.js — D8 MCQ all-4-options fix (26 Jun 2026)
@@ -119,14 +71,6 @@ git push origin main
 **Validation:** 52 entries, 0 issues.
 
 **File changed (1 edited):** `src/data/foundationsRunnerData.js`
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/data/foundationsRunnerData.js && \
-git commit -m "sprint 93a: D8 MCQ fix — all 4 options explained for 37 remaining modules" && \
-git push origin main
-```
 
 ---
 
@@ -176,14 +120,6 @@ D8 MCQ explanation augmentation (all 4 options now addressed):
 
 **File changed (1 edited):** `src/data/foundationsRunnerData.js`
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/data/foundationsRunnerData.js && \
-git commit -m "sprint 92m: rubric pass fixes — D2 inline defs (17), D5 attention eq, D8 MCQ augment LM+Retrieval (15)" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 92k: foundationsRunnerData.js — all 9 remaining tracks (26 Jun 2026)
@@ -207,14 +143,6 @@ git push origin main
 
 **File changed (1 edited):** `src/data/foundationsRunnerData.js`
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/data/foundationsRunnerData.js && \
-git commit -m "feat: foundationsRunnerData — all 9 remaining tracks, 35 new modules (sprint 92k)" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 92j: Nav restructure — four-pillar alignment (26 Jun 2026)
@@ -224,14 +152,6 @@ git push origin main
 - `src/App.jsx` — replaced local NAV_GROUPS to match: TRACK (profile/progress/plans), KNOW (Foundations), LEARN (Ground Truth), BUILD (PrepLab + 5 challenge areas), JUDGE (Systems), EXTRAS (Leaderboard)
 
 **Files changed (2 edited):** `src/config/nav.js`, `src/App.jsx`
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/config/nav.js src/App.jsx && \
-git commit -m "feat: nav restructure — four-pillar KNOW/LEARN/BUILD/JUDGE/EXTRAS alignment (sprint 92j)" && \
-git push origin main
-```
 
 ---
 
@@ -243,14 +163,6 @@ git push origin main
 
 **Files changed (2 edited):** `src/Concepts.jsx`, `src/App.jsx`
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/Concepts.jsx src/App.jsx && \
-git commit -m "fix: remove cross-frame leakage — drop deep-ref grid from Foundations, remove Foundations from BY DOMAIN (sprint 92i)" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 92h: Remove diagnostic error trap from index.html (26 Jun 2026)
@@ -259,14 +171,6 @@ git push origin main
 
 **File changed (1 edited):**
 - `index.html` — 22 lines of diagnostic script removed from `<body>`
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add index.html && \
-git commit -m "chore: remove sprint 92e diagnostic error trap from index.html (sprint 92h)" && \
-git push origin main
-```
 
 ---
 
@@ -299,14 +203,6 @@ git push origin main
 **Files changed (1 edited):**
 - `src/Concepts.jsx`
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/Concepts.jsx && \
-git commit -m "feat: Foundations skeleton restructure — 10 tracks, 57 modules, 13 stubs (sprint 92g)" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 92f: Fix sparse PREP_QUESTIONS crash (26 Jun 2026)
@@ -317,14 +213,6 @@ git push origin main
 
 **File changed (1 edited):**
 - `src/leaderboardUtils.js` line 29: `PREP_QUESTIONS.filter(Boolean).map(...)` (was `.map(...)`)
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/leaderboardUtils.js && \
-git commit -m "fix: sparse PREP_QUESTIONS crash — filter(Boolean) before fromEntries (sprint 92f)" && \
-git push origin main
-```
 
 ---
 
@@ -339,14 +227,6 @@ git push origin main
 
 **After pushing:** visit the app. If anything is throwing, you'll see a dark screen with the exact error. Paste the error text back here and I'll fix it in one more sprint.
 
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add index.html && \
-git commit -m "fix: global error trap in index.html — diagnose blank page (sprint 92e)" && \
-git push origin main
-```
-
 ---
 
 ## OPEN — Sprint 92d: Blank-page debug fix (26 Jun 2026)
@@ -358,14 +238,6 @@ git push origin main
 - `src/main.jsx` — Added `RootErrorBoundary` class component above `<App>`. Catches any crash outside `TabErrorBoundary` (including App() function body crashes) and renders the error message + stack trace instead of a blank page. Includes a Reload button. This is the missing piece: before this, any pre-TabErrorBoundary crash produced a blank white page with zero diagnostic info.
 
 **Expected outcome:** Either the blank page is fixed (import ordering was the cause), OR the error boundary shows the actual error message so we can fix the real root cause.
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/App.jsx src/main.jsx && \
-git commit -m "fix: RootErrorBoundary + clean import order — diagnose blank page (sprint 92d)" && \
-git push origin main
-```
 
 ---
 
@@ -379,14 +251,6 @@ git push origin main
 - `src/Concepts.jsx` — Imports `FoundationsRunner` + `RUNNER_DATA`; View 3 refactored: sidebar extracted to `SidebarContent` const (shared between runner and standard paths); if `RUNNER_DATA[active]` exists, renders `<FoundationsRunner ...>` instead of the standard module view.
 
 **No breaking changes.** Modules without runner data continue to render exactly as before. Modules with runner data (all 10 LM track modules) now show the 5-step guided flow. The runner can be exited to the sidebar at any step via the back button.
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/Progress.jsx src/FoundationsRunner.jsx src/data/foundationsRunnerData.js src/App.jsx src/Concepts.jsx && \
-git commit -m "feat: Progress extraction + FoundationsRunner — PAL 5-step runner (LM track), Progress page improvements (sprint 92c)" && \
-git push origin main
-```
 
 ---
 
@@ -402,14 +266,6 @@ git push origin main
 - Systems content now appears in both KNOW (deep-reference cards in Foundations tracks) and implicitly in existing hubs — dual representation to resolve later.
 - Learning Paths' 9 goal-specific journeys dissolved — "What's your goal?" flow deferred.
 - `#systems` intentionally NOT redirected — still a live target for deep-reference navigation from Foundations tracks.
-
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/Concepts.jsx src/App.jsx src/config/nav.js && \
-git commit -m "feat: Foundations restructure — Concepts→tracks, KNOW nav cleanup, Systems deep-ref, hash redirects (sprint 92b)" && \
-git push origin main
-```
 
 ---
 
@@ -449,13 +305,6 @@ create policy "Own row update gsl_leaderboard"
 ```
 
 **No build needed before SQL step.** Run SQL first, then:
-```bash
-cd ~/Documents/Professional/BreakLabs/labs/genai-systems-lab && \
-rm -f .git/index.lock .git/HEAD.lock && \
-git add src/leaderboardUtils.js src/Leaderboard.jsx src/App.jsx src/config/nav.js && \
-git commit -m "feat: global leaderboard — weighted score, Supabase sync, nav entry (sprint 92)" && \
-git push origin main
-```
 
 ---
 

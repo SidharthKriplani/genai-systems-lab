@@ -386,7 +386,7 @@ const MEMORY_TYPES = [
     tradeoff: "Token limits force prioritization. What you include directly determines what the agent can reason about. The most expensive mistake is putting the wrong things in context.",
   },
   {
-    id: "episodic", name: "Episodic Memory", color: "#3b82f6", icon: "book-open", analogy: "Conversation history",
+    id: "history", name: "Conversation History", color: "#3b82f6", icon: "book-open", analogy: "Re-injected transcript",
     desc: "Record of past interactions. Enables the agent to maintain continuity across turns and reference what happened earlier.",
     capacity: "Unbounded storage, but only a window fits in context",
     persistence: "Across turns in a session (or longer with external storage)",
@@ -394,7 +394,7 @@ const MEMORY_TYPES = [
     tradeoff: "Full history rarely fits in context. You need a summary strategy: keep recent N turns verbatim, summarize older ones. What you forget matters.",
   },
   {
-    id: "semantic", name: "Semantic Memory", color: "#22c55e", icon: "archive", analogy: "Knowledge base / RAG",
+    id: "retrieval", name: "External Store + RAG", color: "#22c55e", icon: "archive", analogy: "Vector store, retrieved on demand",
     desc: "Factual knowledge retrieved on demand. The agent retrieves what it needs when it needs it — it doesn't carry everything in context.",
     capacity: "Unlimited — stored externally in vector DB or KB",
     persistence: "Permanent until updated",
@@ -402,12 +402,12 @@ const MEMORY_TYPES = [
     tradeoff: "Retrieval precision matters — bad retrieval = wrong context. Vector DB quality, chunk size, and reranking all affect what ends up in working memory.",
   },
   {
-    id: "procedural", name: "Procedural Memory", color: "#f59e0b", icon: "wrench", analogy: "Skills in weights (fine-tuning)",
+    id: "finetune", name: "Fine-tuned Weights", color: "#f59e0b", icon: "wrench", analogy: "Baked into the weights",
     desc: "How to do things — encoded in the model's weights through training or fine-tuning. Not retrieved at runtime; always present.",
     capacity: "Fixed at training time",
     persistence: "Until the model is retrained",
     cost: "Fine-tuning compute + ongoing inference cost",
-    tradeoff: "Expensive to update. Use for stable, well-defined skills. Avoid for fast-changing knowledge — use semantic memory instead. Don't fine-tune what you can RAG.",
+    tradeoff: "Expensive to update. Use for stable, well-defined skills. Avoid for fast-changing knowledge — use the external store + RAG instead. Don't fine-tune what you can retrieve.",
   },
 ];
 
@@ -418,8 +418,8 @@ export function AgentMemory({ onNavigate }) {
     <div className="space-y-5">
       <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
         <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">Agents have four fundamentally different memory mechanisms — working (in-context), episodic (conversation history), semantic (vector retrieval), procedural (fine-tuned weights) — and they are not interchangeable. Using context window as your only memory mechanism is expensive and breaks on long sessions. Using fine-tuning to store facts that change frequently is an architectural mistake. Getting this wrong determines whether your agent scales past a demo.</p>
-        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The diagnostic question for production agent debugging: is the failure a working memory management problem (context overflow, lost context), or a semantic memory problem (wrong retrieval), or a missing memory type entirely? This module gives you the taxonomy to ask that question precisely.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Agents have four fundamentally different memory mechanisms — working memory (in-context), conversation history, an external store + RAG (vector retrieval), and fine-tuned weights — and they are not interchangeable. Using context window as your only memory mechanism is expensive and breaks on long sessions. Using fine-tuning to store facts that change frequently is an architectural mistake. Getting this wrong determines whether your agent scales past a demo.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The diagnostic question for production agent debugging: is the failure a working memory management problem (context overflow, lost context), or a retrieval problem (wrong chunks pulled from the external store), or a missing memory type entirely? This module gives you the taxonomy to ask that question precisely.</p>
       </div>
       <HowTo
         objective="Understand the 4 memory types every agent has access to — and when each is the right lever to pull."
@@ -504,7 +504,7 @@ export function MultiAgentPatterns({ onNavigate }) {
     <div className="space-y-5">
       <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
         <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">Multi-agent is a complexity multiplier, not an automatic upgrade. Most tasks that seem to require multiple agents are solvable with a better-designed single agent. The three patterns — orchestrator-subagent, peer mesh, hierarchical — each introduce failure modes that single-agent architectures don't have: coordination overhead, message passing failures, partial completion ambiguity.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">Multi-agent is a complexity multiplier, not an automatic upgrade. Most tasks that seem to require multiple agents are solvable with a better-designed single agent. The three patterns — orchestrator-worker, debate/peer review, specialized routing — each introduce failure modes that single-agent architectures don't have: coordination overhead, message passing failures, partial completion ambiguity.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">The gate question before going multi-agent: does the task decompose cleanly into subtasks that have minimal dependencies and can run in parallel? If the subtasks are tightly coupled, you're adding inter-agent coordination cost with no parallel execution benefit. Learn to recognize the gate before you commit to the architecture.</p>
       </div>
       <HowTo
@@ -603,8 +603,8 @@ export function AgentFailureModes({ onNavigate }) {
     <div className="space-y-5">
       <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
         <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The five agent failure modes that repeat across every production deployment — infinite loops, hallucinated tool calls, context overflow, state amnesia, cascade failure — have a common property: they are systems failures, not model failures. The model is doing exactly what its architecture and configuration allow. The engineer who set retryLimit=0 and gave the agent 15 tools caused the infinite loop. Adding a better model doesn't fix it.</p>
-        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Recognising which failure mode you're looking at is the diagnostic skill this module builds. Each has a distinct symptom pattern — same tool called with identical arguments (loop), confident answer citing a non-existent tool parameter (hallucination), sudden quality degradation mid-session (overflow). Learn the patterns before you're reading production logs at 2am.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The five agent failure modes that repeat across every production deployment — infinite loops, hallucinated tool calls, cascading errors, over-delegation, tool/prompt poisoning — have a common property: they are systems failures, not model failures. The model is doing exactly what its architecture and configuration allow. The engineer who set retryLimit=0 and gave the agent 15 tools caused the infinite loop. Adding a better model doesn't fix it.</p>
+        <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Recognising which failure mode you're looking at is the diagnostic skill this module builds. Each has a distinct symptom pattern — same tool called with identical arguments (loop), confident answer citing a non-existent tool parameter (hallucination), an early wrong result quietly carried forward through five more steps with nobody re-checking it (cascading error). Learn the patterns before you're reading production logs at 2am.</p>
       </div>
       <HowTo
         objective="Know the 5 agent failure modes before you hit them in production. Most are systems problems — missing guardrails, no max steps, bad schemas — not model quality."

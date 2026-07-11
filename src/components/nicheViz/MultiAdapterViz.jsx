@@ -56,6 +56,10 @@ export default function MultiAdapterViz({ onNavigate, spec } = {}) {
           The base weights never move. Each task is a small LoRA adapter you snap
           on and off. Serving four specialists costs one big model, not four.
         </div>
+        <div style={{ color: "var(--zinc-500, #71717a)", marginTop: 6, fontStyle: "italic", fontSize: 12 }}>
+          Illustrative smaller model ({BASE_GB}GB base, 40-60MB adapters) — the reasoning
+          scales the same way to the 70B / ~140GB base and ~50-300MB adapters described above.
+        </div>
       </div>
 
       {/* Adapter shelf */}
