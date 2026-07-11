@@ -59,7 +59,7 @@ export const RECAP_PATCH_A = {
       "**SRAM is the lever.** On-chip SRAM (~20MB on an A100) is ~10× faster than HBM but too small to hold the full N×N matrix — so you must tile.",
       "**Online softmax lets you tile.** Maintaining a running max and running sum as each tile arrives computes the exact softmax without ever storing all N scores at once.",
       "**The output is bit-identical, not approximate.** No scores are dropped, thresholded, or quantized — it's the same weighted sum computed in a memory-efficient order.",
-      "**Memory saving is geometric.** The N×N matrix is never materialized in HBM; memory goes from O(N²) to O(N) — the 5–10× reduction is a fact about the algorithm, not an estimate.",
+      "**Memory saving is geometric.** The N×N matrix is never materialized in HBM; memory goes from O(N²) to O(N) — at 16K tokens/32 heads that's ≈17.2GB → ≈202MB (~85×), and the exact ratio grows further as context lengthens. It's a fact about the algorithm, not an estimate.",
       "**Speed follows from fewer HBM accesses.** Round trips drop from ~2GB to ~0.1GB per layer; the speedup is from bandwidth, not faster math.",
     ],
     recap: [

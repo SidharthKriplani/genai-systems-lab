@@ -5236,7 +5236,7 @@ function FlashAttentionConcept() {
   const flashBytes = (seqLen * headDim * 3 + blockSize * blockSize) * heads * fp16;
   const flashGB = flashBytes / 1e9;
 
-  const SEQ_POINTS = [128, 256, 512, 1024, 2048, 4096, 8192, 16384];
+  const SEQ_POINTS = [256, 512, 1024, 2048, 4096, 8192, 16384]; // starts above the ~211-token crossover where this simplified flash-memory model (fixed block-size overhead) would otherwise show flash costing MORE than standard
   const maxStd = SEQ_POINTS[SEQ_POINTS.length - 1] ** 2 * heads * fp16 / 1e9;
 
   const gpuVRAMs = [
@@ -5290,7 +5290,7 @@ function FlashAttentionConcept() {
               <span className="text-zinc-300">Sequence length</span>
               <span className="text-violet-400 font-bold">{seqLen.toLocaleString()} tokens</span>
             </div>
-            <input type="range" min={128} max={16384} step={128} value={seqLen}
+            <input type="range" min={256} max={16384} step={128} value={seqLen}
               onChange={e => setSeqLen(+e.target.value)} className="w-full accent-violet-500" />
             <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
               <span>128</span><span>4k</span><span>8k</span><span>16k</span>
@@ -5335,7 +5335,7 @@ function FlashAttentionConcept() {
 
           <div className="text-[11px] font-mono pt-2 border-t border-zinc-800">
             <span className="text-zinc-500">Reduction: </span>
-            <span className="font-bold text-green-400">{stdGB > 0 ? `${((1 - flashGB / stdGB) * 100).toFixed(1)}%` : "—"} less VRAM</span>
+            <span className="font-bold text-green-400">{stdGB > 0 && flashGB <= stdGB ? `${((1 - flashGB / stdGB) * 100).toFixed(1)}% less VRAM` : stdGB > 0 ? "flash overhead dominates below ~200 tokens" : "—"}</span>
           </div>
 
           {/* GPU lines */}
@@ -5436,14 +5436,14 @@ function FlashAttentionConcept() {
       <div className="rounded-xl border border-zinc-700/50 p-4 space-y-2" style={{ background: "linear-gradient(160deg, rgba(99,102,241,0.08), rgba(34,197,94,0.05))" }}>
         <div className="text-xs font-bold text-zinc-300 uppercase tracking-wide">Key insight</div>
         <p className="text-xs text-zinc-400 leading-relaxed">
-          Flash Attention is not an approximation — it computes <span className="text-zinc-200">exact attention</span>. The speedup comes purely from IO-awareness: minimising reads/writes between HBM and SRAM. Standard attention does O(n²) HBM accesses. Flash does O(n). At 16k tokens with 32 heads, that&apos;s the difference between 34 GB and 34 MB of attention-matrix VRAM.
+          Flash Attention is not an approximation — it computes <span className="text-zinc-200">exact attention</span>. The speedup comes purely from IO-awareness: minimising reads/writes between HBM and SRAM. Standard attention does O(n²) HBM accesses. Flash does O(n). At 16k tokens with 32 heads, that&apos;s the difference between roughly 17.2 GB and 202 MB of attention-matrix VRAM — an ~85× gap.
         </p>
       </div>
 
       {/* Beat 2 — what to notice */}
       <div className="rounded-xl border border-amber-800/40 bg-amber-950/15 px-4 py-3 mt-2">
         <div className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-1">What to notice</div>
-        <p className="text-xs text-zinc-300 leading-relaxed">Drag the sequence length to 8192 and look at the VRAM comparison — standard attention overflows a 16 GB GPU before you even reach 8k tokens with 8 heads. At 16k tokens, Flash is using 34 MB while standard requires 34 GB. That 1000x gap is why 128K+ context windows became practical in 2023: not from bigger GPUs, but from this IO-awareness insight.</p>
+        <p className="text-xs text-zinc-300 leading-relaxed">Drag the sequence length to 16384 with 32 heads and look at the VRAM comparison — standard attention just tips over a 16 GB GPU (≈17.2 GB) while Flash Attention is still using only ≈202 MB for the exact same computation. That ~85× gap is why 128K+ context windows became practical in 2023: not from bigger GPUs, but from this IO-awareness insight.</p>
       </div>
       </div>
       )}
@@ -9559,7 +9559,7 @@ function SpeculativeDecodingModule() {
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
         <p className="text-xs text-zinc-300">
           <span className="font-bold text-amber-400">Mirror the numbers: </span>
-          k=4, α≈<span className="font-mono">0.75</span> → (1−0.75<sup>5</sup>)/(1−0.75) ≈ <span className="font-mono">3.05</span> tokens emitted per target pass → a <span className="font-mono">~3×</span> win. Drop α to <span className="font-mono">0.40</span> and you accept well under one token per round — the draft passes become pure overhead and you go <span className="font-mono">net-neutral or slower</span>. That's why the best drafts are small models distilled from / same-family-as the target. Losslessness (min(1, p/q) accept + resample) holds regardless of α — it only changes speed.
+          k=4, α≈<span className="font-mono">0.75</span>, draftCost≈<span className="font-mono">0.10</span> → (1−0.75<sup>5</sup>)/(1−0.75) ≈ <span className="font-mono">3.05</span> tokens emitted per target pass, but the round also costs 1+4×0.10=1.4 target-pass-equivalents, so wall-clock speedup ≈ 3.05/1.4 ≈ <span className="font-mono">~2.2×</span>. Drop α to <span className="font-mono">0.40</span> (same k, draftCost) and expected tokens fall to ≈1.65, for a wall-clock speedup of only ≈<span className="font-mono">1.2×</span> — a modest win, not net-neutral; true net-neutral-or-slower needs α below roughly 0.35 at this k and draftCost (true 1.0× breakeven is closer to α≈0.29). That's why the best drafts are small models distilled from / same-family-as the target. Losslessness (min(1, p/q) accept + resample) holds regardless of α — it only changes speed.
         </p>
       </div>
     </div>

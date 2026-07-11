@@ -141,7 +141,7 @@ export default function RopeViz({ onNavigate, spec } = {}) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <div style={card}>
-            <div style={label}>Relative offset (m − n)</div>
+            <div style={label}>Relative offset (n − m)</div>
             <div style={numBig}>{offset}</div>
           </div>
           <div style={card}>
