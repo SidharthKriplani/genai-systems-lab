@@ -6010,17 +6010,17 @@ function StubModule({ spec, title, subtitle }) {
 
 // ── KVCacheModule ───────────────────────────────────────────────────────────
 function KVCacheModule() {
-  const models = { "7B": 7, "13B": 13, "70B": 70 };
   const ctxOptions = { "1K": 1024, "4K": 4096, "16K": 16384 };
+  // Real Llama-2-family architecture-derived KV-cache bytes/token: 2 x layers x kv_heads x head_dim x 2 bytes (fp16).
+  // 7B (32 layers, 32 heads, no GQA) and 13B (40 layers, 40 heads, no GQA) use standard MHA (kv_heads == query heads).
+  // 70B (80 layers, 8 KV heads via GQA) matches this module's own worked derivation exactly: 2*80*8*128*2 = 0.33MB/token.
+  const kvMBPerToken = { "7B": 0.52, "13B": 0.82, "70B": 0.33 };
+  const models = Object.keys(kvMBPerToken);
   const [modelKey, setModelKey] = useState("7B");
   const [ctxKey, setCtxKey] = useState("4K");
   const [users, setUsers] = useState(8);
 
-  // KV cache formula: 2 * layers * heads * head_dim * seq_len * 2 bytes
-  // Approximation: ~2 * (params_B/6) layers, each layer stores K+V
-  // Simplified: GB ≈ 2 * 2 * num_layers * d_model * seq_len / 1e9 (fp16)
-  // Practical rule: ~0.5 MB per token per 7B param block
-  const gbPerUser = (ctxOptions[ctxKey] * models[modelKey] * 0.00012).toFixed(2);
+  const gbPerUser = (ctxOptions[ctxKey] * kvMBPerToken[modelKey] / 1024).toFixed(2);
   const totalGB = (gbPerUser * users).toFixed(1);
   const a100ClusterGB = 320; // 4× A100 80GB
   const fillPct = Math.min(100, (totalGB / a100ClusterGB) * 100).toFixed(0);
@@ -6030,7 +6030,7 @@ function KVCacheModule() {
     <div className="space-y-5">
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Model size", opts: Object.keys(models), val: modelKey, set: setModelKey },
+          { label: "Model size", opts: models, val: modelKey, set: setModelKey },
           { label: "Context length", opts: Object.keys(ctxOptions), val: ctxKey, set: setCtxKey },
         ].map(({ label, opts, val, set }) => (
           <div key={label} className="col-span-1 space-y-1">
@@ -6079,9 +6079,10 @@ function KVCacheModule() {
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
         <p className="text-xs text-zinc-300">
           <span className="font-bold text-amber-400">Key insight: </span>
-          KV cache grows linearly with context length × users. At 16K context and 64 users a 70B model
-          needs ~500 GB of KV cache alone — more than a single A100 node. This is why serving systems
-          use paged attention and KV offloading.
+          KV cache grows linearly with context length × users. At the current settings, {modelKey} at {ctxKey}
+          context with {users} users needs {totalGB} GB of KV cache alone{saturated ? " — more than this 4×A100 cluster can hold" : ""}.
+          Notice 70B's GQA design keeps its per-token cost (0.33MB) *below* 7B's and 13B's plain-MHA cost (0.52MB, 0.82MB), despite
+          70B having far more layers (80 vs 32/40) — fewer KV heads per layer matters more than layer count. This is why serving systems use paged attention and KV offloading.
         </p>
       </div>
     </div>
