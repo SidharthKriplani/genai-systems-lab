@@ -4399,3 +4399,25 @@ One more thing surfaced during verification: no other module owned beam search, 
 `contentStatus.js` updated with full receipts for both modules; `npm run check:content-status` passes (20 clean, 0 failures) after refreshing `rag-pipeline`/`eval-loop`/`flashattn`/`kv-cache`'s shared-file hash (all five modules now live in `foundationsRunnerData.js`, sibling-edit drift, each confirmed untouched before the refresh — same documented pattern as every prior round this session).
 
 **Known follow-up, logged not actioned:** `sampling`'s Hands-On interactive doesn't visualize beam search/search-vs-sample at all — worth a real widget addition in a future session if this module's fidelity is revisited.
+
+
+---
+
+## 2026-07-11 13:58 IST (Saturday) — Phase 1 ledger reconciliation (GSL side)
+
+User-directed reconciliation phase, run BEFORE any new content batch, per explicit instruction: "confirmation isn't the only important thing, you must confirm with 100% certainty each thing and correct the ledgers/records else you will keep getting caught in loops later." Executed via the Workflow tool (10 parallel read-only investigation agents, one per thematic batch of the 60 GSL S/A-tier modules still `unclassified` in `contentStatus.js`), each instructed to grep this doc for real evidence (not just a list mention), find and read the live source file, independently spot-check at least one specific claim, and default to `unclassified` when evidence was thin.
+
+**Real interruption note:** the workflow was killed mid-run (`status: "killed"`) after 10 of 11 investigation batches had already returned real results — root cause was almost certainly a device-bridge collision from running an unrelated headcount investigation concurrently on the same connected device. Resumed via `Workflow({resumeFromRunId})`, which replayed the 10 completed batches from cache and only re-ran the missing 11th (MSL's classical-ml-7 batch, logged separately in BACKLOG.md). No data was lost or fabricated to fill the gap — confirmed via the run journal before resuming.
+
+**Result, written back to `src/data/contentStatus.js` in this same session (not deferred):**
+- 32 of 60 investigated modules recommended `clean`, each with a real, independently spot-checked receipt (plan-doc citation + live-file grep/quote match) — written with a fresh 2026-07-11 13:58 IST `verifiedBy` and a freshly computed `verifiedFileHash`.
+- 24 of 60 recommended `in_progress` — real partial work exists (a writer pass, or a fix that was never re-confirmed by an independent Pass-2 audit) but does not meet the `clean` bar. Written with a `note` field summarizing the specific gap, not silently left `unclassified`.
+- 4 of 60 (`custom-when-to-finetune`, `custom-data-curation`, `custom-peft-lora-serving`, `custom-eval-driven-loop`) stayed `unclassified` — only a StubModule→real-interactive wiring entry exists for these in this doc, no narrative writer-pass or audit trail found anywhere. Left as-is, not guessed at.
+- **`latency-planner` gap closed**: this module was fully audited and fixed earlier this session (Latency & Decoding batch, see line ~4348) but its `contentStatus.js` entry was never added — a self-caught gap flagged to the user earlier, now fixed with a real receipt in the same pass.
+
+`npm run check:content-status` result after this write-back: **53 'clean' entries across 81 total tracked modules (21 S-tier, 32 A-tier), all with real receipts, 0 failures.**
+
+**Headcount, run alongside this phase (read-only, no ledger changes from this part):** real enumerated total is **131 Foundations modules in GSL** (source: `src/data/moduleSearchIndex.js`, confirmed to be the complete generated index — all 81 S/A ids present, 0 missing), not the ~218-250 previously assumed from memory. Tier B (implicit, "everything not S/A") = 50 modules, currently absent from `contentStatus.js` entirely — this is the acknowledged scope of the future Phase B (user-approved: S/A tier fully reconciled first, then B tier gets the same treatment).
+
+Full per-module evidence trail (67 entries total, GSL+MSL) exists in the Phase 1 workflow's run journal, not reproduced here for length — available on request if any individual verdict needs re-derivation.
+
