@@ -171,9 +171,11 @@ export default function QnAPanel({ moduleId, unlocked }) {
     </div>
   );
 
-  // ── No content yet: coming-soon stub (parked entries fall through and
-  //    render their questions with "answer in progress" rows) ───────────────
-  if (!entry || entry.status === "draft") {
+  // ── No content yet at all: coming-soon stub. Draft entries (questions
+  //    written, not yet light-question-audited) now render like parked ones —
+  //    2026-07-11 supersedes the original "draft = not rendered" rule in
+  //    QNA-INTERVIEW-STANDARD.md at the user's explicit direction. ──────────
+  if (!entry) {
     return (
       <section>
         {rule}
@@ -264,6 +266,16 @@ export default function QnAPanel({ moduleId, unlocked }) {
   return (
     <section>
       {rule}
+      {entry.status === "draft" && (
+        <div className="mt-3 rounded-lg border border-zinc-700/50 bg-zinc-800/20 px-3.5 py-2.5">
+          <p className="text-[12px] text-zinc-400 leading-relaxed">
+            <span className="text-[10px] font-mono font-bold text-zinc-500 mr-1.5">DRAFT</span>
+            These questions are early, unaudited drafts — phrasing and scope haven't passed the
+            light question-audit yet. Answers are still being written. Use them to self-quiz, but
+            treat the questions themselves as provisional.
+          </p>
+        </div>
+      )}
       {entry.status === "parked" && (
         <div className="mt-3 rounded-lg border border-amber-900/40 bg-amber-950/10 px-3.5 py-2.5">
           <p className="text-[12px] text-zinc-400 leading-relaxed">
