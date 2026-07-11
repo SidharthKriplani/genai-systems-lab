@@ -11592,7 +11592,7 @@ const COT_COMPARISONS = [
     prompt: "What is the capital of France?",
     withoutCoT: { answer: "Paris.", tokens: 1, correct: true },
     withCoT: { answer: "Let's think step by step. France is a country in Western Europe. Its capital city is Paris. Therefore, the answer is Paris.", tokens: 31, correct: true },
-    insight: "Both correct. CoT costs 30× more tokens for zero improvement. For factual lookups, CoT is pure overhead.",
+    insight: "Both correct. CoT costs 31× more tokens (31 ÷ 1) for zero improvement. For factual lookups, CoT is pure overhead.",
   },
   {
     label: "Multi-step math — CoT dramatically helps",

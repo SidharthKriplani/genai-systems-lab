@@ -4,6 +4,7 @@
 import { useState, useRef } from "react";
 import { FOUNDATION_SCENES } from "./components/nicheViz/foundationScenes.jsx";
 import HighlightPopover from "./components/HighlightPopover.jsx";
+import QnAPanel from "./components/QnAPanel.jsx";
 import GlossaryTerm from "./components/GlossaryTerm.jsx";
 import { GLOSSARY } from "./data/glossary.js";
 
@@ -378,6 +379,9 @@ export default function FoundationsRunner({
             )}
           </div>
         </section>
+
+        {/* ── Interview QnA (QNA-INTERVIEW-STANDARD.md) — completion-gated ── */}
+        <QnAPanel moduleId={moduleId} unlocked={alreadyDone} />
 
       </div>
       )}

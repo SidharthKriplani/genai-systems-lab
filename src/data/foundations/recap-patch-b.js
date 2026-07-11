@@ -41,7 +41,7 @@ export const RECAP_PATCH_B = {
       "**CoT routes generation through learned derivation patterns** — each correct step raises the conditional probability of the next correct step, from millions of worked derivations seen in pretraining.",
       "**It adds no new capability, only structure** — the model isn't 'checking' anything; it's completing a familiar pattern instead of guessing cold.",
       "**CoT always costs tokens, but the gain is task-dependent** — strong on multi-step math and complex reasoning, moderate on code gen/debugging, none on simple factual lookups or creative writing.",
-      "**The 'capital of France' pairing shows the downside directly** — 1 token direct vs. 31 tokens with CoT, both correct: a 30× cost for zero gain on a single-fact lookup.",
+      "**The 'capital of France' pairing shows the downside directly** — 1 token direct vs. 31 tokens with CoT, both correct: a 31× cost for zero gain on a single-fact lookup.",
       "**Zero-shot CoT first; few-shot CoT for calculation-style guidance; self-consistency (majority vote) for high-stakes chains.**",
     ],
     recap: [
