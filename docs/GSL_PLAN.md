@@ -4233,6 +4233,8 @@ Retrieval A/B (6 of 6 HIGH modules) now fully closed against 3B1B-STANDARD.md. B
 
 ## Batch 9 (Evaluation & Judgment) — eval-loop, rag-eval, llm-as-judge — full rewrite & verification loop closed
 
+**2026-07-10 (session start ~evening PT) → 2026-07-11 05:03 IST (logged retroactively — see CLAUDE.md's Recordkeeping section for the new standing rule this entry itself prompted).**
+
 Three modules (eval-loop in foundationsRunnerData.js; rag-eval + llm-as-judge in deepen-thin.js) taken through the
 writer→blind-adversarial-audit→fix loop, capped at 3 rounds per 3B1B-STANDARD.md's Enforcement process. All 3 hit
 the round-3 cap with only single small residual items each (not clean-on-first-audit, unlike generalization in MSL
@@ -4281,3 +4283,54 @@ esbuild-verified on-device (node_modules/.bin/esbuild --bundle=false --format=es
 foundationsRunnerData.js, deepen-thin.js.
 
 Batch 9 (Evaluation & Judgment, 3 of 3 modules) now fully closed against 3B1B-STANDARD.md. Batches remaining: 8 of 17.
+
+## 2026-07-11 05:56 IST — CORRECTION: render-order assumption was wrong all session (Batch 9 and earlier)
+
+While auditing `infra-prefill-decode` (start of the Serving Infra batch), an audit finding referenced
+scenario-vs-mcq ordering, which prompted a direct read of `src/FoundationsRunner.jsx` (lines 195-410)
+instead of continuing to trust the assumed order. **This session's standing assumption — `groundUp →
+explanation → mcqs → scenario` (scenario last) — is WRONG.** The actual order, confirmed directly from
+`FoundationsRunner.jsx` and via `Concepts.jsx`'s single shared `RUNNER_DATA[active]` lookup (so this
+applies to every Foundations module regardless of which of the ~30 source files it lives in):
+
+`groundUp/scenario-opener → explanation → deeperMath (conditional) → keyPoints (conditional) → scenario
+("In Production — Apply It", conditional) → Hands-On (conditional) → mcqs ("Quick Check") → takeaway`
+
+**scenario renders BEFORE mcqs, not after.** This means "mcq spoils scenario" was never a real defect
+class under the true order — mcqs come last, after scenario has already been read. The real
+spoiler-adjacent risk is content that renders *before* scenario leaking its material: `explanation` (already
+being checked for this all session, so no gap there) and `keyPoints` (which had NOT been scrutinized under
+this lens until now, since the wrong model put it after scenario too).
+
+**Direct re-check performed:** `keyPoints` for `rag-eval` and `llm-as-judge` (eval-loop has no `keyPoints`
+field) re-read in full directly from `deepen-thin.js` — both confirmed clean, no scenario-spoiling content.
+No actual harm resulted from the wrong model in Batch 9's 3 modules.
+
+**Disposition of Batch 9's actual content fixes:** the mcq/scenario rewrites made under the wrong framing
+(rag-eval's mcq[0] mechanism swap, llm-as-judge's scenario rewrite) are assessed as genuine improvements
+on their own independent merits (fresher fact patterns, real worked arithmetic, resolved closing questions)
+regardless of the original (incorrect) spoiler rationale — **not reverted**. `contentStatus.js` receipts for
+`eval-loop`/`rag-eval`/`llm-as-judge` have been amended in-place with this correction, appended to each
+entry's `verifiedBy` string, so the record is honest about what was actually checked vs. assumed.
+
+**Going forward:** every audit prompt from this point on (starting with the Serving Infra / Latency &
+Decoding batch) bakes in the corrected render order — reviewers are told explicitly that scenario renders
+before mcqs, and that `keyPoints` (not mcqs) is the section to check for scenario-spoiling risk.
+
+## 2026-07-11 (IST, continued) — Serving Infra (4 of 4) closed — infra-prefill-decode, infra-batching-throughput, infra-paged-attention-kv, infra-serving-stacks
+
+All 4 modules in `src/data/tracks/inference-optimization.js` taken through the writer(pre-existing)→blind-adversarial-audit→fix loop, using the corrected render-order model from the correction logged above (explanation/groundUp/keyPoints render BEFORE scenario — real spoiler risk; mcqs render AFTER — not a spoiler risk, but must stay internally self-consistent).
+
+**infra-prefill-decode** (3 rounds, capped): round 1 fixed 5 items (a critical spoiler in explanation[3] that named "the scenario" and gave away its exact 180ms/40ms/400-token/16s numbers and resolution; illustration-vs-scenario numeric floor mismatch, reconciled with a "these are theoretical floors" clarification; bare FlashAttention name-drop, expanded to its actual mechanism; unexpanded HBM; a prerender-unsafe "built up in detail below" self-reference, removed). Round 2 found 2 more (explanation[1]'s "90%/8% split the profiler showed" — same spoiler class, reworded to a generic "any profiler" statement; keyPoints' "More FLOPS barely helps" — pre-answering the scenario's central dramatic question, cut). Round 3 (capped) found 2 more, fixed directly per the standard's 3-round-cap protocol: TPOT left undefined at its first (illustration) appearance; KV cache re-introduced in explanation[4] as if new rather than recall-framed from its first appearance in explanation[0].
+
+**infra-batching-throughput** (3 rounds, capped): round 1 fixed 3 items (explanation naming "the scenario's 5-token answer" directly; TTFT/TPOT undefined; MCQ1 stem too close to scenario's exact fact pattern — varied to 6 requests/8-token/14s/600-token). Round 2 found the MCQ1 fix had only touched the stem — option B, option D, and the answer explanation still carried the old 8-request/800-token/5-token numbers, actively **contradicting** the now-varied stem (a genuine internal-consistency bug, arguably worse than the original spoiler) — all 3 fields reconciled to the varied numbers with the arithmetic re-checked (600−8=592). Round 2 also found 2 more scenario-fact-pattern leaks (groundUp's exact "five-token answer... twenty seconds" tease; explanation para 2 repeating scenario's exact 5/800 split) — both genericized. Round 3 (capped) found HBM undefined — fixed directly.
+
+**infra-paged-attention-kv** (2 rounds): round 1 fixed 2 must-fix items (explanation[1]'s literal "That's the scenario: 30GB 'used', 12GB actually holding KV, and OOM at 14 requests" — the single most direct spoiler found all session, since it names "the scenario" explicitly and gives its full numeric answer; groundUp's "forty conversations... falls over at fourteen" pre-reveal). Round 2 elevated 2 previously-flagged judgment calls to must-fix after they survived unaddressed (HBM used twice, never expanded; "prefix sharing alone can save enormous KV memory" — an unquantified claim in a module whose house style otherwise always shows the number, per rule 4's non-negotiable precision requirement, quantified to "N requests store that shared prefix's KV once instead of N times") plus one new should-fix (the "~60–80%" KV-waste figure read as unbacked at first encounter — tied back to the illustration's own shown 95%/85% numbers).
+
+**infra-serving-stacks** (2 rounds): round 1 fixed 2 must-fix items (explanation[1]'s "For the scenario, one 8×A100 node with TP=8..." spoiler; a numeric inconsistency where the model's weight size was stated as "140GB" in 3 fields and "tens of GB" in the other 7 occurrences describing the identical cold-start weight-load event — reconciled to 140GB everywhere). Round 2 found the round-1 spoiler fix had removed the surface phrase ("for the scenario") but not the substance — explanation and keyPoints both still stated the scenario's exact resolution (TP=8 on 8×A100) as a "practical recipe," so the pause-and-predict gate had nothing left to predict; genericized both to keep the reasoning principle without the hard-coded hardware answer. Round 2 also found a second, independent spoiler (scenario's specific "500 concurrent users" SLA figure restated verbatim in both groundUp and explanation before scenario renders) and a genuine factual/internal-consistency bug unrelated to spoilers: MCQ1's data-parallelism distractor (option C) asserted "roughly 17.5GB each" for 8 full model replicas — that number is actually the *tensor-parallel shard* size (140GB ÷ 8), nonsensical for a full-copy data-parallel replica, and it directly contradicted the same MCQ's own answer explanation ("data parallelism needs each GPU to hold a FULL 140GB copy") — the false number was removed from the distractor.
+
+**Pattern worth naming:** across all 4 modules, the single most common defect class was the same one caught in the render-order correction above — explanation/groundUp/keyPoints (which render before scenario) either naming "the scenario" directly or restating its specific numbers/conclusion, sometimes surviving a first "wording-only" fix pass that removed the literal phrase but not the substantive overlap (infra-serving-stacks' round 2). The second most common was leaving a technical acronym (HBM, TPOT) undefined at its actual first appearance — found independently in 3 of the 4 modules.
+
+esbuild-verified + `node --check` clean on-device for the full file (`src/data/tracks/inference-optimization.js`, 414 lines) after every fix round.
+
+Serving Infra (4 of 4 modules) now closed against 3B1B-STANDARD.md, capped at 2-3 audit rounds each per the standard's enforcement loop. `contentStatus.js` updated with full receipts for all 4; `npm run check:content-status` passes (13 clean entries, 0 failures). Batches remaining: 8 of 17 (Serving Infra was folded into the existing Batch 9+ sequence, not a separately numbered batch). Next: Latency & Decoding (cost-latency-concepts, rope, speculative-decoding, kv-cache, flashattn [needs investigation of its two-file patch mechanism before editing], latency-planner, tempgame).
