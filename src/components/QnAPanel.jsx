@@ -12,6 +12,16 @@
 import { useState } from "react";
 import { qnaForModule, qnaQuestionCount } from "../data/qnaBank.js";
 
+// Small padlock SVG (no emoji per house rule) — reused by the runner's tab bar.
+export function LockIcon({ size = 11, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M8 11V7a4 4 0 1 1 8 0v4" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
 const LEVEL_META = {
   0: { label: "L0", desc: "definition", cls: "border-zinc-600 bg-zinc-800/60 text-zinc-300" },
   1: { label: "L1", desc: "mechanism", cls: "border-sky-800/60 bg-sky-950/30 text-sky-300" },
@@ -47,15 +57,22 @@ function LevelChip({ level }) {
 }
 
 function QuestionRow({ node, expanded, onToggle, onJump }) {
+  const hasAnswer = !!node.answer; // parked questions ship before their answers do
   return (
     <div id={`qna-${node.id}`} className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
       <button
-        onClick={() => onToggle(node.id)}
-        className="w-full flex items-start gap-2.5 text-left px-4 py-3 hover:bg-zinc-900 transition-colors"
+        onClick={() => hasAnswer && onToggle(node.id)}
+        className={`w-full flex items-start gap-2.5 text-left px-4 py-3 transition-colors ${hasAnswer ? "hover:bg-zinc-900" : "cursor-default"}`}
       >
         <LevelChip level={node.level} />
         <span className="text-sm text-zinc-200 leading-snug flex-1">{node.q}</span>
-        <span className="text-zinc-600 text-xs mt-0.5">{expanded ? "−" : "+"}</span>
+        {hasAnswer ? (
+          <span className="text-zinc-600 text-xs mt-0.5">{expanded ? "−" : "+"}</span>
+        ) : (
+          <span className="shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-600 mt-0.5">
+            answer in progress
+          </span>
+        )}
       </button>
       {expanded && (
         <div className="px-4 pb-4 pt-1 space-y-3 border-t border-zinc-800/60">
@@ -97,7 +114,8 @@ export default function QnAPanel({ moduleId, unlocked }) {
     </div>
   );
 
-  // ── No content yet: coming-soon stub ─────────────────────────────────────
+  // ── No content yet: coming-soon stub (parked entries fall through and
+  //    render their questions with "answer in progress" rows) ───────────────
   if (!entry || entry.status === "draft") {
     return (
       <section>
@@ -163,6 +181,15 @@ export default function QnAPanel({ moduleId, unlocked }) {
   return (
     <section>
       {rule}
+      {entry.status === "parked" && (
+        <div className="mt-3 rounded-lg border border-amber-900/40 bg-amber-950/10 px-3.5 py-2.5">
+          <p className="text-[12px] text-zinc-400 leading-relaxed">
+            <span className="text-[10px] font-mono font-bold text-amber-400 mr-1.5">PARKED</span>
+            The question grid is live; audited answers are still being written. Use the questions
+            to self-quiz against the module — answer out loud, then check yourself against the story above.
+          </p>
+        </div>
+      )}
       <div className="mt-3 flex items-center gap-2 flex-wrap">
         <span className="text-[11px] text-zinc-500 font-mono">
           {allNodes.length} questions · tap to reveal · expand all:

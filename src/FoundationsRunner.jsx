@@ -4,7 +4,7 @@
 import { useState, useRef } from "react";
 import { FOUNDATION_SCENES } from "./components/nicheViz/foundationScenes.jsx";
 import HighlightPopover from "./components/HighlightPopover.jsx";
-import QnAPanel from "./components/QnAPanel.jsx";
+import QnAPanel, { LockIcon } from "./components/QnAPanel.jsx";
 import GlossaryTerm from "./components/GlossaryTerm.jsx";
 import { GLOSSARY } from "./data/glossary.js";
 
@@ -51,6 +51,10 @@ export default function FoundationsRunner({
   const [answers, setAnswers]     = useState(() => Array(mcqList.length).fill(null));
   const [submitted, setSubmitted] = useState(() => Array(mcqList.length).fill(false));
   const [recapMode, setRecapMode] = useState(false);
+  // ── Interview QnA view (QNA-INTERVIEW-STANDARD.md) — completion-gated tab ──
+  const [qnaMode, setQnaMode] = useState(false);
+  const [qnaLockMsg, setQnaLockMsg] = useState(false);   // tap/hover feedback on the locked tab
+  const [qnaPulse, setQnaPulse] = useState(false);       // one-shot nudge when completion unlocks it
   const [tab, setTab]             = useState("lesson"); // "lesson" | "code"
   const [deeperOpen, setDeeperOpen] = useState(false);
 
@@ -95,6 +99,10 @@ export default function FoundationsRunner({
 
   function handleComplete() {
     markComplete?.(moduleId);
+    // The unlock happens in the tab bar at the top while the user sits at the
+    // bottom "Mark Complete" button — pulse the QnA tab so the payoff is visible.
+    setQnaPulse(true);
+    setTimeout(() => setQnaPulse(false), 4000);
   }
 
   const allSubmitted = mcqList.length === 0 || submitted.every(Boolean);
@@ -133,29 +141,57 @@ export default function FoundationsRunner({
           <p className="text-sm text-zinc-400 mt-1 leading-relaxed">{module.subtitle}</p>
         )}
 
-        {recap && (
-          <div className="mt-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
+        <div className="mt-4 relative inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
+          <button
+            onClick={() => { setRecapMode(false); setQnaMode(false); }}
+            className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
+              !recapMode && !qnaMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            Full
+          </button>
+          {recap && (
             <button
-              onClick={() => setRecapMode(false)}
+              onClick={() => { setRecapMode(true); setQnaMode(false); }}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
-                !recapMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
-              }`}
-            >
-              Full
-            </button>
-            <button
-              onClick={() => setRecapMode(true)}
-              className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
-                recapMode ? "bg-violet-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+                recapMode && !qnaMode ? "bg-violet-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
               ⚡ Quick recap
             </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={() => {
+              if (!alreadyDone) {
+                setQnaLockMsg(true);
+                setTimeout(() => setQnaLockMsg(false), 2400);
+                return;
+              }
+              setQnaMode(true); setRecapMode(false);
+            }}
+            onMouseEnter={() => { if (!alreadyDone) setQnaLockMsg(true); }}
+            onMouseLeave={() => setQnaLockMsg(false)}
+            aria-disabled={!alreadyDone}
+            className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors inline-flex items-center gap-1.5 ${
+              qnaMode
+                ? "bg-sky-700 text-white"
+                : alreadyDone
+                ? `text-zinc-500 hover:text-zinc-300 ${qnaPulse ? "animate-pulse text-sky-300" : ""}`
+                : "text-zinc-600 cursor-not-allowed"
+            }`}
+          >
+            {!alreadyDone && <LockIcon size={10} />}
+            Interview QnA
+          </button>
+          {qnaLockMsg && !alreadyDone && (
+            <span className="absolute left-0 top-full mt-1.5 whitespace-nowrap text-[10px] font-mono px-2.5 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-300 z-20 shadow-lg">
+              Mark the module complete to unlock Interview QnA
+            </span>
+          )}
+        </div>
 
         {/* ── Lesson / Code tab bar (only when the module carries code) ── */}
-        {hasCode && !recapMode && (
+        {hasCode && !recapMode && !qnaMode && (
           <div className="mt-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
             <button
               onClick={() => setTab("lesson")}
@@ -177,8 +213,10 @@ export default function FoundationsRunner({
         )}
       </div>
 
-      {/* ── Code tab body ── */}
-      {hasCode && tab === "code" && !recapMode ? (
+      {/* ── Interview QnA view (completion-gated; tab above enforces the gate) ── */}
+      {qnaMode ? (
+        <QnAPanel moduleId={moduleId} unlocked={alreadyDone} />
+      ) : hasCode && tab === "code" && !recapMode ? (
         <section className="space-y-6">
           <SectionRule label={`Code${codeBlocks.length > 1 ? ` · ${codeBlocks.length} blocks` : ""}`} />
           {codeBlocks.map((cb, i) => (
@@ -379,9 +417,6 @@ export default function FoundationsRunner({
             )}
           </div>
         </section>
-
-        {/* ── Interview QnA (QNA-INTERVIEW-STANDARD.md) — completion-gated ── */}
-        <QnAPanel moduleId={moduleId} unlocked={alreadyDone} />
 
       </div>
       )}
