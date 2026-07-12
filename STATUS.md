@@ -4,18 +4,19 @@ Read this at session open alongside NEXT.md + CLAUDE.md. One screen of truth.
 
 ---
 
-## Where we are (25 Jun 2026)
+## Where we are (12 Jul 2026)
 
 **Vercel:** live at `genai-systems-lab-ivory.vercel.app`  
-**Last meaningful push:** Sprint 90 (monochrome instrument theme — partial; app-wide rail-kill + GT muted hues push open in PENDING_APPROVALS.md)  
-**Content freeze:** IN EFFECT — distribution/GT posts only until distribution proves out
+**Last meaningful push:** commit `b6ed426` — GSL qnaBank.js now covers all 132/132 modules; draft QnA questions render in the UI  
+**Content freeze:** superseded in practice by an owner-directed 3B1B/Phase-A content-quality pass + the QnA interview-mode build (see below) — GT-post-only framing from 25 Jun is stale, not formally revised here
 
 ---
 
-## What just shipped (this session, 25 Jun 2026)
+## What just shipped (sessions through 12 Jul 2026)
 
-**Icon system migration — monochrome Instrument design standard.**  
-Full HQ canonical `Icon.jsx` (84 icons + GLYPH_TO_ICON map) deployed to `src/`. Two new files added: `CompanyLogo.jsx` (Google favicon + initial-badge fallback, inline rgba styles for GSL's Tailwind base) and `companyDomains.js` (319-entry canonical domain resolver). 26 source files swept; local `CompanyLogo` in `PrepLab.jsx` replaced with canonical HQ import. Targeted fixes in `Agents.jsx`, `systems/modules.jsx`, `Playground.jsx`, `PrepLab.jsx`, `Concepts.jsx`, `MLCiCd.jsx`, `GroundTruth.jsx`. All remaining emoji are legitimate leaves (string ternaries, dynamic lookups, content data, icons not in map). Commit pending (approve-first).
+**3B1B Phase A content pipeline.** `src/data/contentStatus.js` is the queryable ledger (see its own header for the receipt spec) — **66 'clean' / 81 tracked** (S: 23/25, A: 43/56). 15 `in_progress` modules have a logged round-2 residual-issue count each; full list in `docs/GSL_PLAN.md`'s 2026-07-11 23:08 IST entry. Round 2 (fix the 15) not started.
+
+**Interview QnA mode.** Third view tab (Full / Quick recap / Interview QnA) on every Foundations module, `src/components/QnAPanel.jsx` + `src/data/qnaBank.js`. **132/132 id-collision-free GSL modules now have a draft question set** (4225 questions total across 2 batches) — 1 module (`transformer`) is fully `answered` (30 questions, audited). Per explicit user direction (2026-07-12), `draft`-status questions now RENDER in the UI (distinct DRAFT banner) instead of a coming-soon stub — only real-answer eligibility (still gated on narrative `clean` status) is unchanged. Rule detail: root `QNA-INTERVIEW-STANDARD.md`. **Owed, not done:** the standard's own light question-audit pass has never been run on these 4225 draft questions.
 
 ---
 

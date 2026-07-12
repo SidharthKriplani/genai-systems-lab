@@ -4498,3 +4498,20 @@ Not yet clean (round2 still found real issues; `contentStatus.js` notes updated 
 **Also landed in this same working tree, not yet committed (git status at 23:08 IST):** the earlier ledger-loss recovery, the beam-search Hands-On widget on `SamplingModule`, and the QnA panel UI rebuild (accordion + Level/Difficulty filters) + `transformer`'s 30-question `difficulty` backfill. Plus files touched directly by this batch's fix agents beyond `contentStatus.js`: `MASTERY_ROOM.md`, `PENDING_APPROVALS.md`, `src/Agents.jsx`, `src/Concepts.jsx`, 5 `src/components/nicheViz/*.jsx` files, `src/data/agents/{agent-core,agent-scale}.js`, `src/data/foundations/{breadth-2,gap-routing-security,production-tone,quantization,recap-patch-a,recap-patch-b}.js`, `src/data/foundationsRunnerData.js`, `src/data/playground/playground-labs.js`, `src/data/tracks/model-customization.js`. Git commands for this whole accumulated batch are being handed over now rather than split into many small pushes.
 
 **Not started this entry:** round 2 for the 15 not-yet-clean modules above; the `class_imbalance`/`cold_start`-style id-collision check has not been run for GSL (MSL's was found and excluded from MSL's own Phase A batch — see docs/BACKLOG.md).
+
+
+---
+
+## Session 2026-07-11/12 (late night) — QnA drafts: full 132/132 GSL coverage found + closed, draft questions now visible in UI
+
+2026-07-12 09:26 IST (Sunday)
+
+**Coverage gap found:** the original QnA batch (88 modules, commit `614b26b`) was generated from a scan scoped to foundations-style files only. A full-tree re-scan for `groundUp:`/`scenario:` module signatures surfaced 43 more real modules that were never included: `src/data/agents/{agent-core,agent-eco,agent-scale,agent-sim}.js`, `src/data/tracks/{code-generation,inference-optimization,model-customization,voice-ai}.js`, `src/data/playground/playground-labs.js`. Generated + merged (workflow `wf_4883ca3a-890`, Task `wxaa3kpwe`, 43 modules, 1372 questions, 43 id collisions renamed `-v2`/`-v3`) — commit `b6ed426`.
+
+**Result: qnaBank.js now has all 132/132 id-collision-free GSL modules** — 1 `answered` (`transformer`, 30 questions), 131 `draft`. Real module universe is 132, confirmed by this full-tree scan — earlier figures like "218 modules" quoted elsewhere in root `CLAUDE.md` were never re-derived programmatically and should not be trusted over this count.
+
+**Draft-visibility supersession (user-directed, applies to both GSL and MSL):** `QnAPanel.jsx` no longer stubs `draft`-status entries — draft questions (text only, no answers) now render, with a distinct gray/zinc DRAFT banner separate from the amber PARKED banner. Gate changed from `!entry || entry.status === "draft"` to `!entry`. Answer-eligibility (only `clean` narrative modules get real answers) is unchanged. Full rule text: root `QNA-INTERVIEW-STANDARD.md`, "Supersession" section. Commit `fd2e578`.
+
+All pushed. HEAD is `b6ed426`. Working tree clean except untracked `_to_delete/` scratch.
+
+**Still owed:** the standard's light question-audit pass has not been run on any of these 4225 GSL draft questions (2853 + 1372) — deferred, not forgotten. Round 2 for the 15 not-yet-clean Phase A modules (logged in the entry above) also not started.
