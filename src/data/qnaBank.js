@@ -7438,6 +7438,16 @@ export const QNA_BANK = {
           { id: "qna-decision-heuristics-03", level: 2, q: "Given a system whose hard part is control flow across multiple agents rather than any single agent's logic, how would you justify choosing an orchestration framework over hand-rolling it, using this module's cost/benefit framing?", difficulty: "hard" },
           { id: "qna-decision-heuristics-04", level: 2, q: "This module says 'always use framework X' is a weak interview answer. What should a strong answer do instead?", difficulty: "medium" }
         ],
+      },
+      {
+        name: "Naming the landscape",
+        questions: [
+          { id: "qna-name-landscape-01", level: 0, q: "This module names two tools living in the orchestration layer. Which two, and what does that layer own?", difficulty: "easy" },
+          { id: "qna-name-landscape-02", level: 0, q: "Which tool does this module name as the tool/chain glue layer, and what recurring problem does it solve?", difficulty: "easy" },
+          { id: "qna-name-landscape-03", level: 0, q: "This module names three runtime SDKs. Which three, and what do they have in common as a category?", difficulty: "easy" },
+          { id: "qna-name-landscape-04", level: 0, q: "Which tool does this module name for the observability layer, and what does it do?", difficulty: "easy" },
+          { id: "qna-name-landscape-05", level: 1, q: "OpenAI Agents SDK and Google ADK are both runtime SDKs coupled to a single model provider. What kind of coupling does CrewAI have instead, according to this module?", difficulty: "medium" }
+        ],
       }
     ],
     cases: [
@@ -7579,6 +7589,15 @@ export const QNA_BANK = {
           { id: "qna-positioning-01", level: 0, q: "In one line, how would you distinguish what A2A standardizes from what MCP standardizes?", difficulty: "easy" },
           { id: "qna-positioning-02", level: 1, q: "Why does uneven support for A2A across agent frameworks matter when deciding whether to build on it today?", difficulty: "medium" },
           { id: "qna-positioning-03", level: 2, q: "What's wrong with describing A2A as simply \"MCP for agents\"? What does that framing get wrong about how the two protocols relate?", difficulty: "hard" }
+        ],
+      },
+      {
+        name: "Naming the A2A landscape",
+        questions: [
+          { id: "qna-a2a-origin-01", level: 0, q: "Which company introduced A2A, and roughly when?", difficulty: "easy" },
+          { id: "qna-a2a-adoption-01", level: 0, q: "According to this module, which agent framework has native A2A support?", difficulty: "easy" },
+          { id: "qna-a2a-adoption-02", level: 1, q: "This module says A2A support has been added to one framework and is only on the roadmap for two others. Name all three frameworks and their current status.", difficulty: "medium" },
+          { id: "qna-a2a-adoption-03", level: 0, q: "This module says one major agent framework does not support A2A at all. Which one, and what protocol is it built around instead?", difficulty: "easy" }
         ],
       }
     ],
@@ -7893,6 +7912,16 @@ export const QNA_BANK = {
           { id: "qna-calibration-sophistication-cost-01", level: 1, q: "What does it mean, in this module's own terms, to say that 'sophistication is a cost to justify, not a virtue to display'?", difficulty: "medium" },
           { id: "qna-calibration-candidate-distinction-01", level: 2, q: "What distinguishes a candidate who defaults to Tree-of-Thought 'because it's more powerful' from one who defaults to Chain-of-Thought and can articulate exactly when to escalate?", difficulty: "hard" }
         ],
+      },
+      {
+        name: "Naming the planning-technique landscape",
+        questions: [
+          { id: "qna-tot-implementation-technique-01", level: 1, q: "This module attributes Tree-of-Thought's real implementation complexity to two families of search algorithm. What are they?", difficulty: "medium" },
+          { id: "qna-planning-extensions-01", level: 0, q: "Beyond Tree-of-Thought, this module names two techniques that extend the planning-cost ladder further. What are they called?", difficulty: "easy" },
+          { id: "qna-planning-extensions-02", level: 0, q: "According to this module's brief description, how does Graph-of-Thought differ structurally from Tree-of-Thought?", difficulty: "easy" },
+          { id: "qna-planning-extensions-03", level: 1, q: "What two things does LATS combine, according to this module?", difficulty: "medium" },
+          { id: "qna-planning-extensions-04", level: 1, q: "Per this module's calibration discipline, would you reach for Graph-of-Thought or LATS before or after confirming plain Tree-of-Thought is insufficient? Justify using how the module frames these as extending the same ladder.", difficulty: "medium" }
+        ],
       }
     ],
     cases: [
@@ -8051,6 +8080,15 @@ export const QNA_BANK = {
           { id: "qna-cu-last-resort-why-01", level: 1, q: "Why is computer use described as a 'tool of last resort' rather than a default choice for automating software?", difficulty: "medium" },
           { id: "qna-cu-api-vs-cu-choice-01", level: 2, q: "Suppose both an API path and a computer-use path are available for automating the same task. Which should you choose, and what specifically are you trading away if you pick computer use instead?", difficulty: "hard" },
           { id: "qna-cu-tradeoff-framing-01", level: 2, q: "What tradeoff is the module making when it says computer use exchanges 'the reliability of a structured contract' for 'the universality of a human-like interface'?", difficulty: "hard" }
+        ],
+      },
+      {
+        name: "Naming real computer-use systems",
+        questions: [
+          { id: "qna-cu-named-systems-01", level: 0, q: "This module names two vendor-specific products that implement the computer-use loop in production. Which two are they?", difficulty: "easy" },
+          { id: "qna-cu-named-systems-02", level: 0, q: "Beyond vendor computer-use APIs, what open technology stack does this module cite for browser-driving computer-use agents?", difficulty: "easy" },
+          { id: "qna-cu-named-systems-03", level: 1, q: "Anthropic's computer-use API, OpenAI's Operator, and Playwright/Selenium-based browser agents come from different providers. What does this module say they all have in common architecturally?", difficulty: "medium" },
+          { id: "qna-cu-named-systems-04", level: 1, q: "If someone claims Anthropic's computer-use API gives the model a structured, typed contract rather than raw pixels, how would you correct them using this module's framing?", difficulty: "medium" }
         ],
       }
     ],
@@ -9548,6 +9586,17 @@ export const QNA_BANK = {
           { id: "qna-router-candidate-queries-01", level: 1, q: "What kinds of queries are good candidates to keep on-device, and what kinds typically need to be escalated to a cloud model?", difficulty: "medium" },
           { id: "qna-router-build-vs-buy-01", level: 2, q: "How does per-query routing between on-device and cloud models relate to a build-vs-buy tradeoff, and what's different about resolving that tradeoff per request instead of once for the whole product?", difficulty: "hard" }
         ],
+      },
+      {
+        name: "Naming the edge runtime and quantization landscape",
+        questions: [
+          { id: "qna-llamacpp-gguf-01", level: 0, q: "The module names a specific portable inference engine and its quantized model format that together are called the de-facto standard for local LLMs. What are they, and what is GGUF specifically?", difficulty: "easy" },
+          { id: "qna-mlx-unified-mem-01", level: 0, q: "What is MLX, and what specific hardware characteristic is it tuned to exploit?", difficulty: "easy" },
+          { id: "qna-onnx-npu-vendors-01", level: 0, q: "Which runtime, and which two named hardware vendors' stacks, does the module cite as targeting mobile NPUs?", difficulty: "easy" },
+          { id: "qna-nf4-scheme-01", level: 1, q: "The module names a specific non-uniform 4-bit quantization grid used on-device. What is it called, and what family of schemes does the module group it alongside?", difficulty: "medium" },
+          { id: "qna-kquant-naming-01", level: 1, q: "What are k-quant schemes, which runtime does the module associate them with, and what named example does it give?", difficulty: "medium" },
+          { id: "qna-runtime-hw-match-01", level: 1, q: "Pair each of the three named edge-runtime options with the specific hardware it is built around: llama.cpp/GGUF, MLX, and ONNX Runtime plus vendor stacks.", difficulty: "medium" }
+        ],
       }
     ],
     cases: [
@@ -9696,6 +9745,14 @@ export const QNA_BANK = {
           { id: "qna-leakage-metric-effect-01", level: 1, q: "What effect does leakage between train and eval have on your eval metrics compared to actual production behavior?", difficulty: "medium" },
           { id: "qna-overfitting-signature-01", level: 2, q: "What loss-curve pattern is described as the classic signature of overfitting here, and why is the correct response to shrink the run and clean the data rather than add more training epochs?", difficulty: "medium" }
         ],
+      },
+      {
+        name: "The LIMA evidence",
+        questions: [
+          { id: "qna-lima-result-01", level: 0, q: "What is the named research result this module cites as concrete evidence that a small, curated dataset can compete with a fully RLHF-trained model, and roughly how many examples did it use?", difficulty: "easy" },
+          { id: "qna-lima-baseline-01", level: 0, q: "In the comparison this module cites, what specific model was the small curated fine-tune benchmarked against, and how had that baseline model been trained?", difficulty: "easy" },
+          { id: "qna-lima-strength-01", level: 1, q: "Why does citing a comparison against a fully RLHF-trained baseline, rather than an untuned base model, make the quality-beats-quantity claim more compelling?", difficulty: "medium" }
+        ],
       }
     ],
     cases: [
@@ -9767,6 +9824,14 @@ export const QNA_BANK = {
           { id: "qna-lora-good-fit-01", level: 0, q: "What kind of customization task is LoRA well-suited for, according to this module?", difficulty: "easy" },
           { id: "qna-rank-not-substitute-01", level: 1, q: "Why can't simply increasing the LoRA rank substitute for full fine-tuning or continued pretraining when the goal is teaching genuinely new knowledge or a new capability?", difficulty: "medium" },
           { id: "qna-symmetric-mistakes-01", level: 2, q: "What are the two symmetric mistakes an engineer can make when misjudging where a customization task falls on the LoRA-versus-full-fine-tuning boundary?", difficulty: "hard" }
+        ],
+      },
+      {
+        name: "Naming the LoRA-serving and quantization landscape",
+        questions: [
+          { id: "qna-name-lora-systems-01", level: 0, q: "This module names two real production systems that implement batched multi-LoRA inference. Which two are they?", difficulty: "easy" },
+          { id: "qna-name-lora-systems-02", level: 1, q: "According to this module, what do S-LoRA and Punica specifically do to make serving many tenants from one shared base efficient?", difficulty: "medium" },
+          { id: "qna-qlora-nf4-01", level: 0, q: "What specific 4-bit quantization format does this module name for QLoRA's frozen base weights?", difficulty: "easy" }
         ],
       }
     ],
@@ -10137,6 +10202,16 @@ export const QNA_BANK = {
           { id: "qna-leaderboard-trap-01", level: 2, q: "Why might the TTS model that 'tops the naturalness leaderboard' be the wrong choice for a real-time conversational agent?", difficulty: "hard" },
           { id: "qna-realtime-vs-offline-01", level: 2, q: "How would your choice of TTS approach differ between a real-time voice agent and an offline narration product (like an audiobook), and why?", difficulty: "hard" },
           { id: "qna-deployment-driven-selection-01", level: 1, q: "What's the general principle for selecting a TTS approach based on deployment requirements, rather than a single leaderboard metric?", difficulty: "medium" }
+        ],
+      },
+      {
+        name: "Naming the TTS landscape",
+        questions: [
+          { id: "qna-tts-acoustic-model-names-01", level: 0, q: "This module names three examples of an acoustic model in a neural TTS pipeline. What are they, and what do all three produce as output?", difficulty: "easy" },
+          { id: "qna-tts-vocoder-names-01", level: 0, q: "Which vocoder does this module name as the historical default, and which does it name as the modern default?", difficulty: "easy" },
+          { id: "qna-tts-codec-llm-names-01", level: 1, q: "This module names two specific codec/LLM-style TTS systems that predict audio tokens autoregressively. Which two, and what capability do they unlock that the classic acoustic-model/vocoder split does not naturally give you?", difficulty: "medium" },
+          { id: "qna-tts-realtime-stack-example-01", level: 1, q: "This module gives a concrete example pairing of a classic acoustic model and vocoder for a low-latency, controllable real-time stack. Name that pairing, and explain why it beats a codec/LLM-style model on that dimension.", difficulty: "medium" },
+          { id: "qna-tts-model-mapping-01", level: 1, q: "Sort these three named models by pipeline stage: Tacotron, WaveNet, VALL-E. Which is an acoustic model, which is a vocoder, and which one straddles both stages?", difficulty: "medium" }
         ],
       }
     ],

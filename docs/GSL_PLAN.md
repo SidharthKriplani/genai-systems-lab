@@ -4515,3 +4515,32 @@ Not yet clean (round2 still found real issues; `contentStatus.js` notes updated 
 All pushed. HEAD is `b6ed426`. Working tree clean except untracked `_to_delete/` scratch.
 
 **Still owed:** the standard's light question-audit pass has not been run on any of these 4225 GSL draft questions (2853 + 1372) — deferred, not forgotten. Round 2 for the 15 not-yet-clean Phase A modules (logged in the entry above) also not started.
+
+
+---
+
+## Session 2026-07-12 (mid-morning) — QnA landscape-gap sweep: 42 batch2 modules audited, 8 real gaps fixed
+
+2026-07-12 09:59 IST (Sunday)
+
+**Trigger:** user flagged that `agent-frameworks`'s QnA question set didn't test the actual named tools (LangGraph, CrewAI, etc.) its own prose commits to — root cause was the batch2 generation rule ("stay topic-level, don't anchor to specifics" for not-yet-clean modules) over-applying to stable named-entity facts, not just changeable worked-example numbers. Fixed `agent-frameworks` directly first (5-question "Naming the landscape" beat, commit pending).
+
+**Swept the remaining 31 not-yet-clean batch2 modules** for the same bug — dispatched one blind audit agent per source file (9 agents, grouped by `src/data/agents/{agent-core,agent-eco,agent-scale,agent-sim}.js`, `src/data/playground/playground-labs.js`, `src/data/tracks/{code-generation,inference-optimization,model-customization,voice-ai}.js`), each comparing every assigned module's actual prose against its existing question set and reporting only genuine gaps — explicitly instructed not to force additions where coverage was already adequate.
+
+**Result: 7 more real gaps found and fixed** (8 total including `agent-frameworks`), 24 modules confirmed already adequately covered (no changes made — verified, not assumed):
+
+- `agent-a2a` — origin (Google, April 2025) and the framework-adoption matrix (ADK native / CrewAI added / LangGraph+AutoGen roadmap / OpenAI Agents SDK absent) were never named in any question. +4 questions.
+- `agent-planning-patterns` — Tree-of-Thought's named implementation algorithms (beam search/BFS/DFS) and the two named ladder extensions (Graph-of-Thought, LATS) were untested. +5 questions.
+- `agent-computer-use` — the three named production systems (Anthropic's computer-use API, OpenAI's Operator, Playwright/Selenium) were used only as illustration, never tested by name. +4 questions.
+- `infra-edge-ondevice` — llama.cpp/GGUF, MLX, ONNX Runtime + Qualcomm/MediaTek, NF4, and k-quant were all named as fact but never tested. +6 questions.
+- `custom-data-curation` — the LIMA result (~1k examples vs. DaVinci003/RLHF, 65% preference) was cited 3x in prose, never named in a question. +3 questions.
+- `custom-peft-lora-serving` — S-LoRA/Punica (batched multi-LoRA serving) and QLoRA's NF4 quantization were named but untested. +3 questions.
+- `voice-tts-cloning` — the acoustic-model/vocoder taxonomy (Tacotron, FastSpeech, WaveNet, HiFi-GAN, VALL-E, XTTS) was covered conceptually but no question named any of it. +5 questions.
+
+Each fix is a new beat inserted via exact line-splice (not string-anchor) with a pre-flight assertion that the target line really is the module's beat-array closing brace, to avoid any risk of misplacement. All questions are strictly grounded in each module's own stated prose — no invented facts, no worked-example numbers (those stay off-limits per the standard, since none of these 8 modules are narrative-verified `clean` yet). `src/data/qnaBank.js` total: +30 questions across 7 modules (75 lines), plus the 5 from `agent-frameworks` = 35 new questions this pass. `node --check` + esbuild clean.
+
+**24 modules audited and found to already have adequate naming coverage, no changes:** `agent-memory-foundations`, `agent-memory-libraries`, `agent-mcp`, `agent-config-lab`, `agent-failure-modes`, `agent-long-running`, `agent-design-challenge`, `agent-loop-simulator`, `injection-lab`, `prompt-library`, `hallucination-lab`, `bias-lab`, `context-budget-lab`, `codegen-model-training-fim`, `codegen-repo-context-retrieval`, `codegen-agentic-loops`, `codegen-eval-passk-swebench`, `codegen-security-sandboxing`, `custom-when-to-finetune`, `custom-preference-alignment`, `voice-asr-architectures`, `voice-streaming-latency`, `voice-realtime-agents`, `voice-eval-wer-mos`.
+
+**Not pushed yet** — sitting in the working tree alongside anything else uncommitted. Not committed by me (standing rule: never run git myself).
+
+**Still owed, unchanged:** this sweep only checked the batch2 (agents/tracks/playground) modules for the *named-entity gap specifically* — it is not the QnA standard's full light-question-audit pass (in-scope/answerable/no-false-presupposition/correct-level), which has still never been run on any of GSL's or MSL's ~10,600 draft questions, including the batch1 (foundations) modules, which weren't in scope for this particular sweep.
