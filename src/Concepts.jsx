@@ -12778,6 +12778,16 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule, ini
     track("concept_module_completed", { module: id });
   }
 
+  function unmarkComplete(id) {
+    setMastery(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      try { localStorage.setItem(MASTERY_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+    track("concept_module_uncompleted", { module: id });
+  }
+
   // ── View 1: gym selector (landing) ──
   if (!active && !activeGym) {
     return (
@@ -12910,6 +12920,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule, ini
             onNavigate={onNavigate}
             mastery={mastery}
             markComplete={markComplete}
+            unmarkComplete={unmarkComplete}
             onBack={handleBack}
             gymLabel={openedFromTracks ? "My Tracks" : currentGym?.label}
             gymId={activeGym}

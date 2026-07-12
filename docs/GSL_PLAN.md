@@ -4544,3 +4544,22 @@ Each fix is a new beat inserted via exact line-splice (not string-anchor) with a
 **Not pushed yet** — sitting in the working tree alongside anything else uncommitted. Not committed by me (standing rule: never run git myself).
 
 **Still owed, unchanged:** this sweep only checked the batch2 (agents/tracks/playground) modules for the *named-entity gap specifically* — it is not the QnA standard's full light-question-audit pass (in-scope/answerable/no-false-presupposition/correct-level), which has still never been run on any of GSL's or MSL's ~10,600 draft questions, including the batch1 (foundations) modules, which weren't in scope for this particular sweep.
+
+
+---
+
+## Session 2026-07-12 (late morning) — Undo button added to Foundations module completion
+
+2026-07-12 11:41 IST (Sunday)
+
+**Trigger:** user-directed UX parity fix (both labs). MSL's per-module completion widget already had an Undo button (only rendered once a module was actually marked done, correctly gated); GSL's `FoundationsRunner` had no way back once a module showed "✓ Completed" — no Undo at all. GSL's check-question-gates-completion flow itself was already correct (select an option → separate "Check answer" press reveals right/wrong → Mark Complete stays disabled until every question is submitted) — nothing needed fixing there, this was Undo-only.
+
+**`src/Concepts.jsx`:** added `unmarkComplete(id)`, a mirror of the existing `markComplete(id)` — removes `id` from the `mastery` Set, rewrites `gsl-concepts-mastery` in localStorage the same way `markComplete` does (so it stays consistent with the existing per-user supabase sync path), tracks a new `concept_module_uncompleted` analytics event. Wired through as a new `unmarkComplete` prop on `<FoundationsRunner>`.
+
+**`src/FoundationsRunner.jsx`:** accepts the new `unmarkComplete` prop, adds a `handleUndo` function, and adds an Undo button next to the "✓ Completed" text (Tailwind-styled to match the rest of the component, not a copy of MSL's inline-style convention). Scoped to the Foundations module surface only — a separate, simpler "Mark complete" badge elsewhere in `Concepts.jsx` (systems/gym header, no check-question gating, different content type) was left untouched, out of scope for this request.
+
+**Verification:** `node_modules/.bin/esbuild --bundle=false --format=esm` clean on both files. Static verification only, no browser click-through this pass.
+
+**MSL side of this same request** (check questions now gate Mark Complete, single-select no longer auto-reveals right/wrong on click, 19-file scripted diff) — full detail logged in MSL's own `docs/BACKLOG.md`, same timestamp.
+
+**Not pushed** — sitting in the working tree. Not committed by me (standing rule: never run git myself).

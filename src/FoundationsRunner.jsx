@@ -17,6 +17,7 @@ export default function FoundationsRunner({
   onNavigate,
   mastery,
   markComplete,
+  unmarkComplete,
   onBack,
   gymLabel,
   gymId,
@@ -103,6 +104,10 @@ export default function FoundationsRunner({
     // bottom "Mark Complete" button — pulse the QnA tab so the payoff is visible.
     setQnaPulse(true);
     setTimeout(() => setQnaPulse(false), 4000);
+  }
+
+  function handleUndo() {
+    unmarkComplete?.(moduleId);
   }
 
   const allSubmitted = mcqList.length === 0 || submitted.every(Boolean);
@@ -401,7 +406,15 @@ export default function FoundationsRunner({
           </div>
           <div className="mt-5">
             {alreadyDone ? (
-              <p className="text-sm text-emerald-400 font-semibold">✓ Completed</p>
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-emerald-400 font-semibold">✓ Completed</p>
+                <button
+                  onClick={handleUndo}
+                  className="text-xs font-mono text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-600 rounded-lg px-3 py-1.5 transition-colors"
+                >
+                  Undo
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleComplete}
