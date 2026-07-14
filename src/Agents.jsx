@@ -589,6 +589,13 @@ const AGENT_FAILURES = [
     root_cause: "Agent processes untrusted external content without sanitization. Indirect prompt injection via tool outputs (same as RAG indirect injection).",
     fix: "Sanitize tool outputs before injecting into context. Mark external content as untrusted. Never give agents exfiltration-capable tools without output auditing.",
   },
+  {
+    id: "goal_drift", name: "Goal Drift", severity: "medium", color: "#06b6d4",
+    desc: "The agent gradually wanders off its original objective over a long trajectory as context grows and the initial instruction gets buried under accumulated history.",
+    example: "A 40-step task starts with 'update the customer's shipping address'; by step 30, buried context has the agent debugging an unrelated API error it noticed along the way, with no trace of ever being asked about the address.",
+    root_cause: "Context grows over a long trajectory and the initial instruction gets buried further back with every step -- a first cousin of context rot, where the model's effective attention to early context degrades as history accumulates even though the instruction is technically still present.",
+    fix: "Periodic goal re-grounding: re-state the original objective at intervals, or compact/summarize context so the initial instruction doesn't slide out of effective reach.",
+  },
 ];
 
 export function AgentFailureModes({ onNavigate }) {
@@ -603,11 +610,11 @@ export function AgentFailureModes({ onNavigate }) {
     <div className="space-y-5">
       <div className="rounded-lg p-3 sm:p-3.5 space-y-1.5" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderLeft: "3px solid rgba(99,102,241,0.4)" }}>
         <p className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wide leading-snug">What you're building intuition for</p>
-        <p className="text-xs text-zinc-400 leading-relaxed">The five agent failure modes that repeat across every production deployment — infinite loops, hallucinated tool calls, cascading errors, over-delegation, tool/prompt poisoning — have a common property: they are systems failures, not model failures. The model is doing exactly what its architecture and configuration allow. The engineer who set retryLimit=0 and gave the agent 15 tools caused the infinite loop. Adding a better model doesn't fix it.</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">The six agent failure modes that repeat across every production deployment — infinite loops, hallucinated tool calls, cascading errors, over-delegation, goal drift, tool/prompt poisoning — have a common property: they are systems failures, not model failures. The model is doing exactly what its architecture and configuration allow. The engineer who set retryLimit=0 and gave the agent 15 tools caused the infinite loop. Adding a better model doesn't fix it.</p>
         <p className="hidden sm:block text-xs text-zinc-400 leading-relaxed">Recognising which failure mode you're looking at is the diagnostic skill this module builds. Each has a distinct symptom pattern — same tool called with identical arguments (loop), confident answer citing a non-existent tool parameter (hallucination), an early wrong result quietly carried forward through five more steps with nobody re-checking it (cascading error). Learn the patterns before you're reading production logs at 2am.</p>
       </div>
       <HowTo
-        objective="Know the 5 agent failure modes before you hit them in production. Most are systems problems — missing guardrails, no max steps, bad schemas — not model quality."
+        objective="Know the 6 agent failure modes before you hit them in production. Most are systems problems — missing guardrails, no max steps, bad schemas — not model quality."
         steps={[
           "Click each failure mode to see the real example, root cause, and fix",
           "Key insight: most agent failures are preventable with 3 things — schema validation, max steps, and input sanitization",
