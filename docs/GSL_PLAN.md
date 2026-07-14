@@ -4563,3 +4563,32 @@ Each fix is a new beat inserted via exact line-splice (not string-anchor) with a
 **MSL side of this same request** (check questions now gate Mark Complete, single-select no longer auto-reveals right/wrong on click, 19-file scripted diff) — full detail logged in MSL's own `docs/BACKLOG.md`, same timestamp.
 
 **Not pushed** — sitting in the working tree. Not committed by me (standing rule: never run git myself).
+
+
+---
+
+## Session 2026-07-14 (evening) — manual browser confirmation: Undo button (item 6 closed)
+
+2026-07-14 20:26 IST (Tuesday)
+
+The Undo-button addition shipped 2026-07-12 (`247a64b`) had only been statically verified (esbuild) until now — flagged as still owed. User ran `npm run dev` locally (native macOS process — the device-bridge VM can't run this repo's dev server either, hits an EPERM unlinking `node_modules/.vite/deps/_metadata.json` through the bridge mount) and manually clicked through at `localhost:5174`: marked a Foundations module complete, confirmed the Undo button appears next to "✓ Completed", clicked it, confirmed the module reverts to incomplete (button/completion state correctly cleared).
+
+**Item 6 (manual click-through) is now closed for GSL's half.** MSL's check-question-gating half confirmed separately, same session — see `docs/BACKLOG.md` same timestamp.
+
+---
+
+## Session 2026-07-14 22:06 IST (Tuesday) — GSL Phase A batch closed (15 modules), contentStatus.js fully receipt-verified
+
+Closes out this session's GSL ask: Phase A.
+
+**Phase A — 15 GSL modules run through Workflow `wf_4232dbd7-219`** (same fix/verify design as MSL's batch this session — see MSL `docs/BACKLOG.md`'s matching 2026-07-14 22:06 IST entry for the shared cost-gated verify-stage design):
+
+- **6 clean, no fix needed**: hybrid-search-design, pgvector-vs-managed, injection-lab, hallucination-lab, agent-planning-patterns, custom-data-curation.
+- **7 fixed and independently confirmed clean**: hallucination, embeddings, structured-outputs, metadata-filtering, agent-memory-foundations, custom-peft-lora-serving, custom-preference-alignment.
+- **2 fixed by me directly** (independent verify agent found a genuine residual issue after stage-1's fix; I applied the exact quoted fix myself — **not re-verified by a third agent**, disclosed in each module's `contentStatus.js` `note`): custom-when-to-finetune (`src/data/tracks/model-customization.js` — softened "too corporate" framing), agent-failure-modes (`src/data/agents/agent-scale.js` + `src/Agents.jsx` — the takeaway was missing an over-delegation clause; added a new `goal_drift` entry to the `AGENT_FAILURES` array and fixed the intro/HowTo copy's stale "five"/"5" count to "six"/"6").
+
+**contentStatus.js**: all 15 entries carry real `verifiedBy`/`note` receipts + `sourceFile`+`verifiedFileHash` pairs (sha256-based). `npm run check:content-status` → **0 FAILUREs, 0 STALE warnings** (33 sibling-file hash-staleness warnings from this batch's edits — mostly `foundationsRunnerData.js`, a large shared file — resolved in one refresh pass; each sibling module's own content confirmed untouched, not re-audited).
+
+**Real current GSL state, re-verified this session, not from memory:** 81 'clean' / 81 tracked (S: 25/25, A: 56/56) — GSL's tracked Phase-A/S/A-tier pool is now fully clean. (Separate from this: the 132-module full `src/data` universe found in the 2026-07-12 QnA coverage scan — most of that gap is B-tier/agents/tracks/playground content outside this Phase-A tracked pool, not re-checked this session.)
+
+**Still owed, unchanged from the last entry, not attempted this session:** the QnA standard's own question-quality audit (never run on the ~2,850+ GSL draft questions); the 15 modules this file's 2026-07-11 23:08 IST entry logged as `in_progress` with residual issues predating this batch (round 2 not started — worth confirming those aren't the same modules already closed here before re-scoping).
