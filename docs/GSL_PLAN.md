@@ -4667,3 +4667,27 @@ This closes every defect found in this session's GSL audit -- both the 33 data-f
 
 ### Push status
 Local commit attempted directly via the device bridge for the prior round (data-file fixes): commit `31f21c7` succeeded locally, but `git push` failed with "403 from proxy after CONNECT" -- this bridge's network egress does not reach GitHub for push, even though local git operations (commit, log, show) work fine. This round's 3 component files are uncommitted as of this entry; user needs to run the commit+push themselves (commands provided in chat).
+
+## Session 2026-07-15 20:13 IST (Wednesday) — Built cross-device Tracks sync (account-scoped, merge-based)
+
+Built the feature discussed after the audit work: "My Tracks" now syncs across devices for signed-in users, via the existing Supabase `user_progress` table (no schema change -- new dedicated key `gsl-tracks-v1`, reusing the same RLS policy already scoping rows to `auth.uid()=user_id`, so this is already account-isolated by the database, not just app logic).
+
+Deliberately did NOT reuse the existing generic `SYNC_KEYS` whole-value-overwrite mechanism for this key -- that mechanism is fine for scalars (streak, theme, bookmarks) but would silently discard track items added on a device that hadn't synced yet. Built a dedicated `src/utils/tracksSync.js` instead, with a real item-level union merge:
+- Tracks merged by `id`; when a track exists on both sides, its items are unioned by a new per-item `uid` (added at creation in `addItem`/`addQuestion`/`addNote`, with a one-time silent backfill migration in `getTracks()` for pre-existing items with no uid).
+- Item-level conflicts (same uid edited on both sides) resolved by newest `updatedAt`/`addedAt`.
+- Track-level rename conflicts resolved the same way (`renameTrack` now stamps `updatedAt`).
+- Deletions use tombstones (`gsl-tracks-tombstones-v1`, 180-day TTL) so a stale device's local copy can't resurrect a track/item that was deleted elsewhere -- `deleteTrack`/`removeItem` now record a tombstone before removing.
+- Auto-push is debounced (1.5s) and fires on every local edit via a `gsl_tracks` window-event listener in App.jsx (the event tracks.js already dispatched on every `save()`, just not previously listened to for sync purposes) -- also wired into sign-in (pull+merge+push-back) and the manual "Sync now" button in Profile.jsx.
+
+### Verification
+- `node --check` clean on `tracks.js`/`tracksSync.js`; `esbuild`/`@babel/parser` JSX parse clean on `App.jsx`/`Profile.jsx`. No truncation (line/byte counts confirmed before/after on every touched file).
+- `scripts/check-duplicate-keys.mjs`: 0 duplicate keys across 60 files.
+- Standalone Node test of the pure `mergeTracks` function (real module can't import cleanly in plain Node -- `supabase.js` uses `import.meta.env`, not valid outside Vite -- so the function was duplicated verbatim into a temp test file, not reimplemented from memory): 3/3 scenarios PASS -- union-of-adds (both devices' independent additions survive merge), deletion-propagates (a tombstoned item stays gone even when a stale remote copy still has it), rename-newer-wins (newer `updatedAt` wins a name conflict).
+- `git status --short` matches exactly the expected 4 files: `src/App.jsx`, `src/Profile.jsx`, `src/utils/tracks.js` (modified) + `src/utils/tracksSync.js` (new).
+
+### Known limitations (by design, not bugs)
+- Not real-time: two devices open simultaneously won't see each other's edits until the next pull (sign-in, or manual Sync). This is "no data loss, eventually consistent," not live collaboration -- matches how the rest of the app's sync already behaves.
+- Guests (not signed in) keep fully local-only tracks, same as before -- no new sign-in prompt was added, matching existing precedent for other progress features.
+
+### Not yet done
+Live cross-device verification needs a real browser session with two signed-in devices -- still blocked on this bridge (no working dev server, per the `@rollup/rollup-linux-arm64-gnu` issue noted earlier this session). Everything up to that point (logic, wiring, merge correctness) is verified; the actual end-to-end "open on phone, see it on laptop" check is the one thing only the user's own machine can confirm.

@@ -54,6 +54,7 @@ const MePage                 = lazy(() => import("./Me"));
 import { PREP_QUESTIONS, questionTier } from "./data/preplabQuestions";
 import { COMPANIES as CT_COMPANIES } from "./data/companyTracks";
 import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
+import { pullAndMergeTracks, scheduleTracksPush } from "./utils/tracksSync.js";
 
 function pct(v) { return (v * 100).toFixed(0) + "%"; }
 
@@ -1542,6 +1543,7 @@ export default function App() {
       setUser(u);
       if (u) {
         pullProgress(u.id);
+        pullAndMergeTracks(u);
         setTopView(v => v === "home" ? "progress" : v);
       }
     });
@@ -1550,7 +1552,10 @@ export default function App() {
     const unsub = onAuthChange((event, u) => {
       if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
         setUser(u);
-        if (u) pullProgress(u.id);
+        if (u) {
+          pullProgress(u.id);
+          pullAndMergeTracks(u);
+        }
         if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
           setTopView(v => v === "home" ? "progress" : v);
         }
@@ -1571,6 +1576,16 @@ export default function App() {
   useEffect(() => {
     if (user && topView === "home") setTopView("progress");
   }, [user, topView]);
+
+  // Auto-push My Tracks edits to Supabase (debounced) whenever tracks.js dispatches
+  // its 'gsl_tracks' change event and a user is signed in — this is what makes local
+  // Track edits sync across devices without waiting for a nav change or manual click.
+  useEffect(() => {
+    if (!user) return;
+    const handler = () => scheduleTracksPush(user);
+    window.addEventListener("gsl_tracks", handler);
+    return () => window.removeEventListener("gsl_tracks", handler);
+  }, [user]);
 
   useEffect(() => {
     const handler = () => {

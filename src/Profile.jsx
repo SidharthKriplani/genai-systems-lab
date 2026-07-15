@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import { track } from "./analytics";
 import { supabase, signInWithGoogle, signInWithGitHub, signOut, pushProgress, pullProgress } from "./supabase";
+import { pullAndMergeTracks } from "./utils/tracksSync.js";
 import { POSTS } from "./groundTruthIndex";
 import { Icon } from "./Icon.jsx";
 import { getOverallReadiness } from "./readiness";
@@ -300,6 +301,7 @@ export default function ProfilePage({ onNavigate, user, onSignOut }) {
     try {
       await pushProgress(user.id);
       await pullProgress(user.id);
+      await pullAndMergeTracks(user);
       setSyncMsg("Synced ✓");
       track("progress_synced_manual");
     } catch { setSyncMsg("Sync failed"); }

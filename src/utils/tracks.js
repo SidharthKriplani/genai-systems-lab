@@ -10,14 +10,45 @@ import { tierOf } from '../data/moduleTiers.js'
 const KEY = 'gsl-tracks-v1'
 const LAST_KEY = 'gsl-tracks-last-v1'      // id of the most-recently-added-to track
 const QUICK_KEY = 'gsl-tracks-quickadd-v1' // '1' = skip the picker, add straight to last track
+const TOMBSTONE_KEY = 'gsl-tracks-tombstones-v1'  // { trackDeletes: [{id, deletedAt}], itemDeletes: [{trackId, itemUid, deletedAt}] }
+
+export function getTombstones() {
+  try { return JSON.parse(localStorage.getItem(TOMBSTONE_KEY)) || { trackDeletes: [], itemDeletes: [] } }
+  catch { return { trackDeletes: [], itemDeletes: [] } }
+}
+
+function saveTombstones(tombstones) {
+  localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(tombstones))
+}
+
+// Write the fully-merged {tracks, tombstones} state back to localStorage and notify
+// listeners — used by tracksSync.js after a cross-device merge. Distinct from the
+// internal save() above because it also persists tombstones atomically.
+export function applyMergedState({ tracks, tombstones }) {
+  localStorage.setItem(KEY, JSON.stringify(tracks))
+  if (tombstones) saveTombstones(tombstones)
+  window.dispatchEvent(new CustomEvent('gsl_tracks'))
+}
 
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
 }
 
 export function getTracks() {
-  try { return JSON.parse(localStorage.getItem(KEY)) || [] }
+  let tracks
+  try { tracks = JSON.parse(localStorage.getItem(KEY)) || [] }
   catch { return [] }
+  // One-time silent migration: backfill .uid on any item created before uids
+  // existed, so tracksSync.js can identify items across devices. Idempotent —
+  // items that already have a uid are left untouched.
+  let changed = false
+  for (const t of tracks) {
+    for (const it of (t.items || [])) {
+      if (!it.uid) { it.uid = uid(); changed = true }
+    }
+  }
+  if (changed) localStorage.setItem(KEY, JSON.stringify(tracks))
+  return tracks
 }
 
 function save(tracks) {
@@ -36,7 +67,7 @@ export function createTrack(name) {
 }
 
 export function renameTrack(id, name) {
-  save(getTracks().map(t => t.id === id ? { ...t, name } : t))
+  save(getTracks().map(t => t.id === id ? { ...t, name, updatedAt: Date.now() } : t))
 }
 
 // One-click: (re)build the S / A / B tier tracks from every Foundation module,
@@ -57,6 +88,8 @@ export function seedTierTracks() {
 }
 
 export function deleteTrack(id) {
+  const tombstones = getTombstones()
+  saveTombstones({ ...tombstones, trackDeletes: [...tombstones.trackDeletes, { id, deletedAt: Date.now() }] })
   save(getTracks().filter(t => t.id !== id))
 }
 
@@ -66,7 +99,7 @@ export function addQuestion(trackId, questionId, title, topic, difficulty) {
     if (t.id !== trackId) return t
     const already = t.items.some(i => i.type === 'preplab' && i.questionId === questionId)
     if (already) return t
-    return { ...t, items: [...t.items, { type: 'preplab', questionId, title, topic, difficulty, addedAt: Date.now() }] }
+    return { ...t, items: [...t.items, { type: 'preplab', questionId, title, topic, difficulty, addedAt: Date.now(), uid: uid() }] }
   }))
   setLastTrackId(trackId)
 }
@@ -75,7 +108,7 @@ export function addNote(trackId, content) {
   const tracks = getTracks()
   save(tracks.map(t => {
     if (t.id !== trackId) return t
-    return { ...t, items: [...t.items, { type: 'note', content, addedAt: Date.now() }] }
+    return { ...t, items: [...t.items, { type: 'note', content, addedAt: Date.now(), uid: uid() }] }
   }))
   setLastTrackId(trackId)
 }
@@ -89,7 +122,14 @@ export function updateNote(trackId, index, content) {
 }
 
 export function removeItem(trackId, index) {
-  save(getTracks().map(t => {
+  const tracks = getTracks()
+  const track = tracks.find(t => t.id === trackId)
+  const removedItem = track && track.items[index]
+  if (removedItem && removedItem.uid) {
+    const tombstones = getTombstones()
+    saveTombstones({ ...tombstones, itemDeletes: [...tombstones.itemDeletes, { trackId, itemUid: removedItem.uid, deletedAt: Date.now() }] })
+  }
+  save(tracks.map(t => {
     if (t.id !== trackId) return t
     return { ...t, items: t.items.filter((_, i) => i !== index) }
   }))
@@ -148,7 +188,7 @@ export function addItem(trackId, type, itemId, label, meta = {}) {
     if (t.id !== trackId) return t
     const already = t.items.some(i => i.type === type && i.itemId === String(itemId))
     if (already) return t
-    return { ...t, items: [...t.items, { type, itemId: String(itemId), label, meta, addedAt: Date.now() }] }
+    return { ...t, items: [...t.items, { type, itemId: String(itemId), label, meta, addedAt: Date.now(), uid: uid() }] }
   }))
   setLastTrackId(trackId)
 }
