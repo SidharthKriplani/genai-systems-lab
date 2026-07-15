@@ -322,8 +322,8 @@ export const QNA_BANK = {
     ],
   },
   "sparse-attention": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The O(n²) attention cost wall",
@@ -398,8 +398,8 @@ export const QNA_BANK = {
     ],
   },
   "eval-contamination": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "What a benchmark score is supposed to measure (the unseen assumption)",
@@ -481,8 +481,8 @@ export const QNA_BANK = {
     ],
   },
   "calibration": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Calibration vs. accuracy",
@@ -557,8 +557,8 @@ export const QNA_BANK = {
     ],
   },
   "prompt-caching": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Prefill and decode — the two phases of a request",
@@ -623,8 +623,8 @@ export const QNA_BANK = {
     ],
   },
   "multiturn-context": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Statelessness and the resend mechanism",
@@ -704,8 +704,8 @@ export const QNA_BANK = {
     ],
   },
   "reranking": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why rank order matters — retrieval hands off to a second decision",
@@ -780,8 +780,8 @@ export const QNA_BANK = {
     ],
   },
   "rag-eval": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why one blended score can't diagnose a RAG system",
@@ -863,8 +863,8 @@ export const QNA_BANK = {
     ],
   },
   "llm-as-judge": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "What an LLM judge is, and why it exists",
@@ -939,8 +939,8 @@ export const QNA_BANK = {
     ],
   },
   "chunking": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "What chunking is, and why it's high-leverage",
@@ -1011,8 +1011,8 @@ export const QNA_BANK = {
     ],
   },
   "safety-measurement": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Safety as a two-sided tension, not a scalar",
@@ -1078,8 +1078,8 @@ export const QNA_BANK = {
     ],
   },
   "distillation": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Hard labels are an impoverished training signal",
@@ -1159,8 +1159,8 @@ export const QNA_BANK = {
     ],
   },
   "dpo": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The RLHF objective and why it needs two fragile pieces",
@@ -1177,7 +1177,7 @@ export const QNA_BANK = {
           { id: "qna-closed-form-optimum-01", level: 0, q: "What's the closed-form expression for the optimal policy under a KL-constrained reward-maximization objective?", difficulty: "easy" },
           { id: "qna-reward-rearrangement-01", level: 1, q: "Walk me through the algebra step: how do you go from that closed-form optimal policy to an expression for the reward itself in terms of the policy?", difficulty: "medium" },
           { id: "qna-policy-is-reward-01", level: 1, q: "People say 'the policy itself becomes the reward model' in DPO. In what precise sense is that true once you've rearranged the equation?", difficulty: "medium" },
-          { id: "qna-normalizer-role-01", level: 2, q: "What is Z(x) doing in that rearranged reward expression, and why would it be a problem if it didn't go away later?", difficulty: "medium" }
+          { id: "qna-normalizer-role-01", level: 1, q: "What is Z(x) doing in that rearranged reward expression, and why would it be a problem if it didn't go away later?", difficulty: "medium" }
         ],
       },
       {
@@ -1195,7 +1195,7 @@ export const QNA_BANK = {
           { id: "qna-log-ratio-terms-01", level: 0, q: "In the DPO loss, what do the two terms s_chosen and s_rejected actually represent?", difficulty: "easy" },
           { id: "qna-supervised-not-rl-01", level: 1, q: "Why is this loss described as 'a standard supervised classification loss, not an RL update'? What makes it supervised rather than RL?", difficulty: "medium" },
           { id: "qna-gradient-magnitude-01", level: 1, q: "How does the loss's gradient behave differently on a pair the policy already ranks correctly versus a pair it gets backwards?", difficulty: "medium" },
-          { id: "qna-loss-mechanics-01", level: 2, q: "Mechanically, what is minimizing this loss over many pairs doing to log π_θ(y_chosen) and log π_θ(y_rejected) over the course of training?", difficulty: "hard" }
+          { id: "qna-loss-mechanics-01", level: 1, q: "Mechanically, what is minimizing this loss over many pairs doing to log π_θ(y_chosen) and log π_θ(y_rejected) over the course of training?", difficulty: "hard" }
         ],
       },
       {
@@ -1210,7 +1210,7 @@ export const QNA_BANK = {
         name: "β as the anchor temperature, and over-optimization",
         questions: [
           { id: "qna-beta-role-01", level: 0, q: "What does the β coefficient actually control in the DPO loss?", difficulty: "easy" },
-          { id: "qna-beta-small-vs-large-01", level: 1, q: "What's the practical difference in training behavior between setting β small versus setting it large?", difficulty: "medium" },
+          { id: "qna-beta-small-vs-large-01", level: 2, q: "What's the practical difference in training behavior between setting β small versus setting it large?", difficulty: "medium" },
           { id: "qna-overopt-signature-01", level: 1, q: "What is the 'over-optimization signature' in DPO, and what would you actually see if you were watching the training curves and eval quality side by side?", difficulty: "medium" },
           { id: "qna-overopt-fix-01", level: 2, q: "If you saw DPO training loss falling smoothly while output quality got worse, which knobs would you reach for first, and why those specifically?", difficulty: "medium" }
         ],
@@ -1229,7 +1229,7 @@ export const QNA_BANK = {
         questions: [
           { id: "qna-dpo-family-01", level: 0, q: "Name the three variants of DPO this module introduces, and in one phrase, what each one changes.", difficulty: "easy" },
           { id: "qna-ipo-regularizer-01", level: 1, q: "Why does IPO add a regularizer — what specific DPO failure mode is it trying to curb?", difficulty: "medium" },
-          { id: "qna-kto-unpaired-01", level: 1, q: "What kind of feedback data does KTO let you train on that vanilla DPO can't, and what does that change about what you need to collect upstream?", difficulty: "medium" }
+          { id: "qna-kto-unpaired-01", level: 2, q: "What kind of feedback data does KTO let you train on that vanilla DPO can't, and what does that change about what you need to collect upstream?", difficulty: "medium" }
         ],
       }
     ],
@@ -1242,8 +1242,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-eval-trajectory": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Outcome eval and why an agent is a trajectory, not a point",
@@ -1318,8 +1318,8 @@ export const QNA_BANK = {
     ],
   },
   "rag-ingestion-pipeline": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why ingestion and query are two separate pipelines",
@@ -1402,8 +1402,8 @@ export const QNA_BANK = {
     ],
   },
   "model-routing-cascades": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The waste in send-everything-to-one-model",
@@ -1478,8 +1478,8 @@ export const QNA_BANK = {
     ],
   },
   "llm-security-beyond-injection": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Reframing security beyond injection: the LLM app as a pipe with boundaries",
@@ -1506,7 +1506,7 @@ export const QNA_BANK = {
           { id: "qna-exfiltration-flavors-02", level: 1, q: "How does system-prompt leakage happen in practice, and why is a recited system prompt actually dangerous to the business, not just embarrassing?", difficulty: "medium" },
           { id: "qna-exfiltration-flavors-03", level: 1, q: "Cross-tenant leakage and memorized-training-data leakage both end with another party's data surfacing to the wrong user. Are they the same underlying mechanism, or different, per this module?", difficulty: "medium" },
           { id: "qna-exfiltration-flavors-04", level: 2, q: "What makes tool-mediated exfiltration mechanically different from the other two exfiltration flavors — why does giving an agent tools open up a new kind of leak path?", difficulty: "hard" },
-          { id: "qna-exfiltration-flavors-05", level: 1, q: "This module calls exfiltration 'the mirror' of prompt injection. What does that mean concretely?", difficulty: "easy" }
+          { id: "qna-exfiltration-flavors-05", level: 0, q: "This module calls exfiltration 'the mirror' of prompt injection. What does that mean concretely?", difficulty: "easy" }
         ],
       },
       {
@@ -1546,8 +1546,8 @@ export const QNA_BANK = {
     ],
   },
   "context": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why context cost is quadratic, not linear",
@@ -1630,8 +1630,8 @@ export const QNA_BANK = {
     ],
   },
   "eval-design": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The blended-accuracy trap (two demonstrations)",
@@ -1712,8 +1712,8 @@ export const QNA_BANK = {
     ],
   },
   "debug": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Same symptom, different root cause (why a failure-mode taxonomy exists)",
@@ -1781,7 +1781,7 @@ export const QNA_BANK = {
         questions: [
           { id: "qna-taxonomy-01", level: 0, q: "How many named failure modes does this module's taxonomy define in total, and which ones are named without a fully worked incident here?", difficulty: "easy" },
           { id: "qna-taxonomy-02", level: 1, q: "In the hallucination incident, why did it take both reranker=true and answer_policy=helpful together to produce the failure, rather than either setting alone being the culprit?", difficulty: "medium" },
-          { id: "qna-taxonomy-03", level: 1, q: "What is an 'ambiguous query' failure, and how is it different from single-hop retrieval failure, given that both involve a query with more than one valid reading?", difficulty: "medium" },
+          { id: "qna-taxonomy-03", level: 1, q: "What is an 'ambiguous query' failure, and how is it different from single-hop retrieval failure, given that both involve a query that isn't a single, straightforward lookup?", difficulty: "medium" },
           { id: "qna-taxonomy-04", level: 2, q: "Why does this module insist on checking the full config line against the full trace, instead of scanning for the one setting that looks obviously broken?", difficulty: "hard" }
         ],
       }
@@ -1795,8 +1795,8 @@ export const QNA_BANK = {
     ],
   },
   "rope": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why Position Must Be Injected — Absolute PE and Its Limits",
@@ -1812,7 +1812,6 @@ export const QNA_BANK = {
           { id: "qna-rotation-def-01", level: 0, q: "What is the rotation matrix R(theta), and what does it do to a 2D vector geometrically?", difficulty: "easy" },
           { id: "qna-rope-apply-01", level: 1, q: "Concretely, what does RoPE do to a token's Q and K vectors — what gets split up, and what determines the rotation angle for a given token?", difficulty: "medium" },
           { id: "qna-rope-v-untouched-01", level: 1, q: "Why does RoPE rotate Q and K but leave V completely untouched?", difficulty: "medium" },
-          { id: "qna-theta-d-01", level: 1, q: "What is theta_d in RoPE, and why does it use a different rotation frequency for each dimension pair instead of one shared angle?", difficulty: "medium" }
         ],
       },
       {
@@ -1877,14 +1876,14 @@ export const QNA_BANK = {
     ],
   },
   "gqa-mqa": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The KV cache: what it is and why it exists",
         questions: [
           { id: "qna-kv-cache-def-01", level: 0, q: "What is the KV cache, and what does it actually store during generation?", difficulty: "easy" },
-          { id: "qna-kv-cache-def-02", level: 0, q: "Why does the memory used by the model weights stay fixed during generation while the KV cache keeps growing?", difficulty: "easy" },
+          { id: "qna-kv-cache-def-02", level: 1, q: "Why does the memory used by the model weights stay fixed during generation while the KV cache keeps growing?", difficulty: "easy" },
           { id: "qna-kv-cache-def-03", level: 1, q: "Why do serving systems cache keys and values instead of just recomputing them at every decoding step?", difficulty: "medium" },
           { id: "qna-kv-cache-def-04", level: 1, q: "From one decoding step to the next, what exactly gets reused from the cache, and what still has to be computed fresh for the newest token?", difficulty: "medium" }
         ],
@@ -1952,8 +1951,8 @@ export const QNA_BANK = {
     ],
   },
   "grpo-rlvr": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why RL needs a reward signal, and the standard learned-reward-model fix",
@@ -2010,7 +2009,7 @@ export const QNA_BANK = {
       {
         name: "Where a learned RM still wins, and how DPO fits the landscape",
         questions: [
-          { id: "qna-dpo-landscape-01", level: 0, q: "What is DPO, and how does its approach differ from both RLHF/PPO and from GRPO/RLVR?", difficulty: "medium" },
+          { id: "qna-dpo-landscape-01", level: 2, q: "What is DPO, and how does its approach differ from both RLHF/PPO and from GRPO/RLVR?", difficulty: "medium" },
           { id: "qna-subjective-goals-01", level: 1, q: "Why can't RLVR be used to optimize for something like helpfulness or tone, and what do you fall back to instead?", difficulty: "medium" },
           { id: "qna-rl-posttraining-landscape-01", level: 2, q: "How would you lay out RLHF/PPO, DPO, GRPO, and RLVR against each other — what's the axis that actually distinguishes each one from the others?", difficulty: "hard" }
         ],
@@ -2024,8 +2023,8 @@ export const QNA_BANK = {
     ],
   },
   "moe": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The Motivating Tension: Decoupling Knowledge from Compute",
@@ -2100,8 +2099,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-preprocessing": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The tokenization problem and the core tradeoff axis",
@@ -2184,8 +2183,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-bow-tfidf": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "One-Hot Encoding",
@@ -2236,7 +2235,7 @@ export const QNA_BANK = {
         questions: [
           { id: "qna-l2-normalize-01", level: 0, q: "What does L2-normalizing a document's TF-IDF vector do, and why is it done before comparing documents?", difficulty: "easy" },
           { id: "qna-cosine-meaning-01", level: 1, q: "What does cosine similarity actually measure about two vectors, and why does that make it length-invariant?", difficulty: "medium" },
-          { id: "qna-query-as-document-01", level: 2, q: "How is a search query represented in this framework so it can be ranked against corpus documents using the same cosine-similarity mechanism?", difficulty: "medium" }
+          { id: "qna-query-as-document-01", level: 1, q: "How is a search query represented in this framework so it can be ranked against corpus documents using the same cosine-similarity mechanism?", difficulty: "medium" }
         ],
       },
       {
@@ -2266,8 +2265,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-ngram-lm": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "What a Language Model Actually Predicts",
@@ -2346,8 +2345,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-word2vec-glove": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The distributional hypothesis — where the signal for meaning comes from with no labels",
@@ -2422,8 +2421,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-rnn-lstm-gru": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "RNN core mechanism — hidden state and weight sharing",
@@ -2505,8 +2504,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-seq2seq-attention": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Seq2seq: the encoder-decoder setup",
@@ -2581,8 +2580,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-encoder-decoder-objectives": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Same blocks, different machines — the two choices that define a family",
@@ -2663,8 +2662,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-classical-tasks": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why classical NLP tasks still matter in the LLM era",
@@ -2745,8 +2744,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-text-classification": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Framing: what counts as text classification",
@@ -2828,8 +2827,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-eval-metrics": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The evaluation problem for generated text",
@@ -2909,8 +2908,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-transfer-learning": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The paradigm shift: train-from-scratch vs pretrain-then-adapt",
@@ -2991,8 +2990,8 @@ export const QNA_BANK = {
     ],
   },
   "nlp-sentence-embeddings": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why naive sentence similarity (mean-pool + cosine) fails on vanilla BERT",
@@ -3076,8 +3075,8 @@ export const QNA_BANK = {
     ],
   },
   "cost-latency-concepts": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The two-meter billing model (input vs output tokens)",
@@ -3143,8 +3142,8 @@ export const QNA_BANK = {
     ],
   },
   "observability-concepts": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why error rate can't see quality failures",
@@ -3218,8 +3217,8 @@ export const QNA_BANK = {
     ],
   },
   "latency-planner": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Latency is a distribution, not a single average",
@@ -3294,8 +3293,8 @@ export const QNA_BANK = {
     ],
   },
   "quantization": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Precision as a free variable at inference",
@@ -3330,7 +3329,7 @@ export const QNA_BANK = {
           { id: "qna-rtn-breakdown-01", level: 0, q: "What does round-to-nearest quantization actually do to each weight value?", difficulty: "easy" },
           { id: "qna-rtn-breakdown-02", level: 1, q: "What assumption does RTN implicitly make about every weight channel, and why is that assumption false in a transformer?", difficulty: "medium" },
           { id: "qna-rtn-breakdown-03", level: 1, q: "Why does RTN tend to be fine at higher bit-widths but become risky as you push to very low bit-widths?", difficulty: "medium" },
-          { id: "qna-rtn-breakdown-04", level: 2, q: "What's a \"salient\" weight channel in this context, and why do outlier activations make some channels far more consequential to round correctly than others?", difficulty: "hard" }
+          { id: "qna-rtn-breakdown-04", level: 1, q: "What's a \"salient\" weight channel in this context, and why do outlier activations make some channels far more consequential to round correctly than others?", difficulty: "hard" }
         ],
       },
       {
@@ -3355,7 +3354,7 @@ export const QNA_BANK = {
         name: "Three-way tradeoff and calibration-set correctness",
         questions: [
           { id: "qna-tradeoff-calibration-01", level: 0, q: "What are the three competing dimensions the module says you're really trading off when you decide how to shrink a model's footprint?", difficulty: "easy" },
-          { id: "qna-tradeoff-calibration-02", level: 1, q: "Under what circumstances would you prefer just using a smaller model outright, or distilling one, instead of quantizing a larger model?", difficulty: "medium" },
+          { id: "qna-tradeoff-calibration-02", level: 2, q: "Under what circumstances would you prefer just using a smaller model outright, or distilling one, instead of quantizing a larger model?", difficulty: "medium" },
           { id: "qna-tradeoff-calibration-03", level: 2, q: "When does quantization actually \"win\" as the right tool compared to those alternatives — what's the deciding factor?", difficulty: "medium" },
           { id: "qna-tradeoff-calibration-04", level: 1, q: "Why is calibration-set representativeness described as a correctness requirement rather than a minor detail, and what specifically goes wrong internally if the calibration data doesn't match production traffic?", difficulty: "hard" }
         ],
@@ -3370,8 +3369,8 @@ export const QNA_BANK = {
     ],
   },
   "dense-vs-sparse-retrieval": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why keyword search and meaning search fail in mirror-image ways",
@@ -3427,7 +3426,7 @@ export const QNA_BANK = {
         name: "Query-type routing as a cheaper alternative",
         questions: [
           { id: "qna-query-routing-01", level: 0, q: "What is query-type routing, and how is it different from running hybrid retrieval?", difficulty: "easy" },
-          { id: "qna-query-routing-02", level: 1, q: "What's the actual cost tradeoff routing is making versus always running hybrid retrieval?", difficulty: "medium" },
+          { id: "qna-query-routing-02", level: 2, q: "What's the actual cost tradeoff routing is making versus always running hybrid retrieval?", difficulty: "medium" },
           { id: "qna-query-routing-03", level: 2, q: "What kind of query would break a routing classifier in a way that hybrid retrieval wouldn't have a problem with?", difficulty: "medium" },
           { id: "qna-query-routing-04", level: 2, q: "As a default, when would you actually recommend routing over hybrid, and when would you recommend hybrid over routing?", difficulty: "medium" }
         ],
@@ -3442,8 +3441,8 @@ export const QNA_BANK = {
     ],
   },
   "multi-hop-retrieval": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The unwritable second query (what makes a question multi-hop)",
@@ -3493,7 +3492,7 @@ export const QNA_BANK = {
       {
         name: "Cost two — serial latency",
         questions: [
-          { id: "qna-latency-parallel-01", level: 0, q: "Why can't hop 2's retrieval run in parallel with hop 1's, the way you'd normally fire off multiple retrieval calls at once?", difficulty: "easy" },
+          { id: "qna-latency-parallel-01", level: 1, q: "Why can't hop 2's retrieval run in parallel with hop 1's, the way you'd normally fire off multiple retrieval calls at once?", difficulty: "easy" },
           { id: "qna-latency-trick-01", level: 1, q: "What's the usual trick for speeding up retrieval with multiple queries, and specifically what assumption does multi-hop retrieval break that this trick depends on?", difficulty: "medium" },
           { id: "qna-latency-cost-01", level: 1, q: "For a 3-hop question, is the latency cost basically 3x a single hop, or is something worse going on? Walk me through it.", difficulty: "medium" }
         ],
@@ -3502,7 +3501,7 @@ export const QNA_BANK = {
         name: "When multi-hop is actually warranted",
         questions: [
           { id: "qna-whenuse-cheap-01", level: 0, q: "What's the cheaper alternative to the multi-hop loop when two needed facts just happen to sit in nearby chunks?", difficulty: "easy" },
-          { id: "qna-whenuse-test-01", level: 1, q: "What's the actual test for telling whether a question is a genuine dependency chain that needs the multi-hop loop, versus a retrieval-coverage problem you can fix more cheaply?", difficulty: "medium" },
+          { id: "qna-whenuse-test-01", level: 2, q: "What's the actual test for telling whether a question is a genuine dependency chain that needs the multi-hop loop, versus a retrieval-coverage problem you can fix more cheaply?", difficulty: "medium" },
           { id: "qna-whenuse-writeable-01", level: 2, q: "The module's test boils down to: could you write down both search queries right now, without knowing either answer first? Walk me through why that single question is the deciding factor between the two architectures.", difficulty: "hard" },
           { id: "qna-whenuse-limits-01", level: 2, q: "Why doesn't just raising top-k or concatenating two lookups substitute for multi-hop retrieval in every case — where specifically does that cheaper fix stop working?", difficulty: "medium" }
         ],
@@ -3517,8 +3516,8 @@ export const QNA_BANK = {
     ],
   },
   "query-rewriting": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The core reframe — the retriever isn't broken, the query is a bad key",
@@ -3567,7 +3566,7 @@ export const QNA_BANK = {
         name: "Matching technique to failure mode",
         questions: [
           { id: "qna-technique-map-01", level: 2, q: "If I give you four symptoms — vocabulary mismatch, a question/answer shape gap, an overly narrow query, and a dangling pronoun in a follow-up — can you match each one to the technique that fixes it, and explain why the other techniques on this list wouldn't fix it as directly?", difficulty: "hard" },
-          { id: "qna-technique-map-02", level: 1, q: "Both query expansion and HyDE change what gets embedded before retrieval. What's the actual difference in what each one produces as the thing to embed?", difficulty: "medium" },
+          { id: "qna-technique-map-02", level: 2, q: "Both query expansion and HyDE change what gets embedded before retrieval. What's the actual difference in what each one produces as the thing to embed?", difficulty: "medium" },
           { id: "qna-technique-map-03", level: 2, q: "Suppose a query is both narrow AND uses different vocabulary than your corpus. Could you combine two of these techniques on the same query, and what would each one actually be contributing if you did?", difficulty: "hard" }
         ],
       },
@@ -3590,8 +3589,8 @@ export const QNA_BANK = {
     ],
   },
   "speculative-decoding": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why decode is slow: sequential generation and the memory-bandwidth bottleneck",
@@ -3653,7 +3652,7 @@ export const QNA_BANK = {
           { id: "qna-variants-list-01", level: 0, q: "Name two variants of speculative decoding this module mentions and briefly say how each produces its draft proposals.", difficulty: "easy" },
           { id: "qna-variants-common-core-01", level: 1, q: "Self-speculative decoding, Medusa, and EAGLE all generate proposals differently. What do they all still have in common with the original two-model scheme?", difficulty: "medium" },
           { id: "qna-self-speculative-tradeoff-01", level: 1, q: "What does self-speculative decoding remove from the base two-model setup, and what does it use instead to produce draft tokens?", difficulty: "medium" },
-          { id: "qna-why-still-verify-01", level: 2, q: "Why do all of these variants still need an accept/reject verification step, rather than just trusting whatever their proposal mechanism generates?", difficulty: "medium" }
+          { id: "qna-why-still-verify-01", level: 1, q: "Why do all of these variants still need an accept/reject verification step, rather than just trusting whatever their proposal mechanism generates?", difficulty: "medium" }
         ],
       }
     ],
@@ -3666,8 +3665,8 @@ export const QNA_BANK = {
     ],
   },
   "tokenizer": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Framing the problem — why tokenization exists",
@@ -3749,8 +3748,8 @@ export const QNA_BANK = {
     ],
   },
   "attention": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The problem: an isolated token embedding is meaningless",
@@ -3833,8 +3832,8 @@ export const QNA_BANK = {
     ],
   },
   "seq-parallel": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Reframing the problem: it's not about memory",
@@ -3907,8 +3906,8 @@ export const QNA_BANK = {
     ],
   },
   "flashattn": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "GPU memory hierarchy: HBM vs SRAM",
@@ -3980,8 +3979,8 @@ export const QNA_BANK = {
     ],
   },
   "sampling": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "From distribution to decision — what sampling actually is",
@@ -4062,8 +4061,8 @@ export const QNA_BANK = {
     ],
   },
   "nextoken": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The single prediction step: logits → softmax → a distribution over the vocabulary",
@@ -4136,8 +4135,8 @@ export const QNA_BANK = {
     ],
   },
   "tempgame": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "From logits to a distribution shape",
@@ -4211,8 +4210,8 @@ export const QNA_BANK = {
     ],
   },
   "training-signal": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The Next-Token Objective",
@@ -4296,8 +4295,8 @@ export const QNA_BANK = {
     ],
   },
   "positional-encoding": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Attention is order-blind — why positional encoding has to exist",
@@ -4381,8 +4380,8 @@ export const QNA_BANK = {
     ],
   },
   "kv-cache": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why generation needs caching: the recomputation problem",
@@ -4442,13 +4441,13 @@ export const QNA_BANK = {
       { id: "qna-case-new-user-throughput-01", level: 3, q: "You add one new user to a shared inference server and throughput drops immediately for every existing user, not just the newcomer — and memory per request keeps climbing the longer each conversation runs. Walk me through how you'd confirm the KV cache is really the cause, and what you'd point to as proof.", difficulty: "hard" },
       { id: "qna-case-oom-long-conversation-01", level: 3, q: "A single long-running chat session starts throwing out-of-memory errors partway through the conversation, even though the same server handles plenty of short conversations without issue. What's going on, and what would you change to fix it without retraining the model?", difficulty: "hard" },
       { id: "qna-case-capacity-planning-01", level: 3, q: "You're asked to size a GPU memory pool for a 70B fp16 model expected to serve 100 concurrent users averaging 8K-token conversations. Walk me through how you'd estimate the KV cache budget, and what breaks if your estimate is too low.", difficulty: "medium" },
-      { id: "qna-case-quantization-tradeoff-01", level: 3, q: "Your team is under memory pressure and proposes switching the KV cache to INT4 quantization to roughly double capacity. What would you want to check before signing off, and what are you trading away for that headroom?", difficulty: "medium" },
+      { id: "qna-case-quantization-tradeoff-01", level: 3, q: "Your team is under memory pressure and proposes switching the KV cache to INT4 quantization to roughly quadruple capacity. What would you want to check before signing off, and what are you trading away for that headroom?", difficulty: "medium" },
       { id: "qna-case-architecture-swap-01", level: 3, q: "Product wants to extend the max context window on an already-deployed MHA model by 10x, and someone suggests 'just switch it to GQA to make room.' Is that actionable? Walk me through what you'd actually recommend instead, using only levers available at serving time.", difficulty: "hard" }
     ],
   },
   "embeddings": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "From token IDs to a space where meaning is distance",
@@ -4530,8 +4529,8 @@ export const QNA_BANK = {
     ],
   },
   "prompt-regression-signals": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Slow signals vs. fast signals (the timing problem)",
@@ -4605,8 +4604,8 @@ export const QNA_BANK = {
     ],
   },
   "quality-drift": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Beat 1 — \"Nothing changed\" and the reframe to \"nothing I control changed\"",
@@ -4681,8 +4680,8 @@ export const QNA_BANK = {
     ],
   },
   "cost-attribution": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The undifferentiated bill (the starting problem)",
@@ -4745,8 +4744,8 @@ export const QNA_BANK = {
     ],
   },
   "managed-vs-selfhosted": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The billing-basis trap: per-token vs. per-hour, and why utilization is the deciding variable",
@@ -4819,8 +4818,8 @@ export const QNA_BANK = {
     ],
   },
   "enterprise-ai-cost-model": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why naive pilot-to-enterprise extrapolation fails",
@@ -4837,7 +4836,7 @@ export const QNA_BANK = {
           { id: "qna-usage-tiers-01", level: 0, q: "What are the three usage tiers this module splits an enterprise user base into?", difficulty: "easy" },
           { id: "qna-usage-tiers-02", level: 1, q: "Why does the module bother splitting users into tiers instead of just working off a single average token-consumption number?", difficulty: "medium" },
           { id: "qna-usage-tiers-03", level: 1, q: "What is the 'heavy-user tail,' and why does the module call it out as the most common source of enterprise AI budget overruns?", difficulty: "medium" },
-          { id: "qna-usage-tiers-04", level: 2, q: "How can a small minority of users end up responsible for a disproportionate share of total token cost — walk through why that happens?", difficulty: "hard" }
+          { id: "qna-usage-tiers-04", level: 1, q: "How can a small minority of users end up responsible for a disproportionate share of total token cost — walk through why that happens?", difficulty: "hard" }
         ],
       },
       {
@@ -4896,8 +4895,8 @@ export const QNA_BANK = {
     ],
   },
   "zero-shot": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "What zero-shot prompting is",
@@ -4970,8 +4969,8 @@ export const QNA_BANK = {
     ],
   },
   "model-families": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The \"use the strongest model for everything\" trap",
@@ -5046,8 +5045,8 @@ export const QNA_BANK = {
     ],
   },
   "rlhf": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why pre-training alone isn't safe by default",
@@ -5122,8 +5121,8 @@ export const QNA_BANK = {
     ],
   },
   "scaling-laws": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The fixed-budget tradeoff: parameters vs. tokens",
@@ -5197,15 +5196,15 @@ export const QNA_BANK = {
     ],
   },
   "lora": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The operational problem with N full fine-tunes",
         questions: [
           { id: "qna-full-finetune-cost-01", level: 0, q: "If you fully fine-tune a 70B model separately for 10 different clients, what exactly do you end up having to store and run?", difficulty: "easy" },
           { id: "qna-full-finetune-cost-02", level: 1, q: "The module argues the real pain of N full fine-tunes isn't disk space. What is it, and why is that framing more accurate?", difficulty: "medium" },
-          { id: "qna-full-finetune-cost-03", level: 1, q: "Why does the cost of full fine-tuning multiple domain models get worse than linearly as you add more domains, rather than just adding up predictably?", difficulty: "medium" }
+          { id: "qna-full-finetune-cost-03", level: 1, q: "Why does the operational cost of full fine-tuning multiple domain models scale linearly with the number of domains — each new domain adding its own full checkpoint, serving stack, and pipeline — and why is that still painful even though it's a predictable, linear cost?", difficulty: "medium" }
         ],
       },
       {
@@ -5277,8 +5276,8 @@ export const QNA_BANK = {
     ],
   },
   "few-shot": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "From zero-shot to few-shot: examples as demonstration",
@@ -5349,8 +5348,8 @@ export const QNA_BANK = {
     ],
   },
   "chain-of-thought": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The direct-answer failure mode",
@@ -5367,7 +5366,7 @@ export const QNA_BANK = {
           { id: "qna-cot-definition-01", level: 0, q: "How does this module define chain-of-thought, in one sentence?", difficulty: "easy" },
           { id: "qna-cot-not-capability-01", level: 1, q: "The module explicitly says CoT \"doesn't add capability the model didn't have.\" If it's not adding capability, what is it actually doing?", difficulty: "medium" },
           { id: "qna-cot-conditional-prob-01", level: 1, q: "Why does writing \"2 cans × 3 balls = 6\" as an explicit step make the following step, \"5 + 6 = 11,\" more likely to come out right? What is that leaning on from training, per the module's explanation?", difficulty: "hard" },
-          { id: "qna-cot-smarter-vs-routed-01", level: 2, q: "A teammate says CoT works because it makes the model \"try harder\" or \"think more.\" How would you correct that using this module's actual explanation of the mechanism?", difficulty: "medium" }
+          { id: "qna-cot-smarter-vs-routed-01", level: 1, q: "A teammate says CoT works because it makes the model \"try harder\" or \"think more.\" How would you correct that using this module's actual explanation of the mechanism?", difficulty: "medium" }
         ],
       },
       {
@@ -5392,7 +5391,7 @@ export const QNA_BANK = {
         questions: [
           { id: "qna-cot-routing-fix-01", level: 0, q: "The module proposes \"routing\" as the fix to blanket CoT usage. What does routing mean here, concretely?", difficulty: "easy" },
           { id: "qna-cot-safe-default-01", level: 1, q: "A teammate proposes adding \"let's think step by step\" to every prompt \"to be safe.\" What's wrong with that reasoning, according to the module?", difficulty: "medium" },
-          { id: "qna-cot-decide-before-gen-01", level: 1, q: "Walk me through how you'd decide, before generation even starts, whether a given production query should get a CoT prompt or a direct one.", difficulty: "medium" },
+          { id: "qna-cot-decide-before-gen-01", level: 2, q: "Walk me through how you'd decide, before generation even starts, whether a given production query should get a CoT prompt or a direct one.", difficulty: "medium" },
           { id: "qna-cot-safe-default-cost-01", level: 2, q: "Can \"always apply CoT to be safe\" actually be the more expensive choice in a production system, per this module's framing? What tradeoff is being made either way?", difficulty: "hard" }
         ],
       },
@@ -5422,8 +5421,8 @@ export const QNA_BANK = {
     ],
   },
   "vector-db-index-mechanics": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Flat (brute-force) search — the exact baseline",
@@ -5498,8 +5497,8 @@ export const QNA_BANK = {
     ],
   },
   "hybrid-search-design": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why dense-only search fails on exact-match queries",
@@ -5563,8 +5562,8 @@ export const QNA_BANK = {
     ],
   },
   "metadata-filtering": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why shared vector indexes leak across tenants by default",
@@ -5637,8 +5636,8 @@ export const QNA_BANK = {
     ],
   },
   "vision-language-arch": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why VLMs exist — the text-only blind spot",
@@ -5662,7 +5661,6 @@ export const QNA_BANK = {
         name: "Vision encoder stage — turning pixels into patch embeddings",
         questions: [
           { id: "qna-vit-stage-role-01", level: 0, q: "What job does the vision transformer (ViT) stage actually do to an input image?", difficulty: "easy" },
-          { id: "qna-patchification-rationale-01", level: 1, q: "Why does the ViT process an image as a grid of patches rather than the whole image at once or pixel-by-pixel?", difficulty: "medium" },
           { id: "qna-patch-info-loss-01", level: 1, q: "What kind of information can get lost during the patchification/encoding step, and why can't a later stage in the pipeline recover it?", difficulty: "medium" },
           { id: "qna-vit-pretraining-ceiling-01", level: 2, q: "How does the vision encoder's own pretraining distribution shape what the whole downstream VLM ends up being good or bad at?", difficulty: "hard" }
         ],
@@ -5719,8 +5717,8 @@ export const QNA_BANK = {
     ],
   },
   "multimodal-rag": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The flattening problem — why text-parsed RAG loses structure",
@@ -5736,7 +5734,7 @@ export const QNA_BANK = {
         questions: [
           { id: "qna-vision-retriever-01", level: 0, q: "At a high level, what is a vision retriever, and what does it embed instead of a text chunk?", difficulty: "easy" },
           { id: "qna-page-image-embed-01", level: 1, q: "How does retrieving a page as an image avoid the flattening step that a text-based pipeline can't avoid?", difficulty: "medium" },
-          { id: "qna-late-interaction-01", level: 1, q: "What's the idea behind 'late-interaction' vision retrieval models like ColPali, and why does that matter for solving this problem?", difficulty: "medium" },
+          { id: "qna-late-interaction-01", level: 1, q: "The module names ColPali-style models as the current frontier approach for this kind of retrieval. What capability do these vision retrievers have that lets them match a query without ever converting the page to a flat text chunk?", difficulty: "medium" },
           { id: "qna-vision-vs-text-match-01", level: 2, q: "A vision retriever can match on both visual and textual similarity to a query. How is that meaningfully different from a text embedding model matching on text similarity alone?", difficulty: "hard" }
         ],
       },
@@ -5783,8 +5781,8 @@ export const QNA_BANK = {
     ],
   },
   "resolution-token-cost": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why VLM image cost isn't flat per image (visual-token pricing)",
@@ -5852,15 +5850,15 @@ export const QNA_BANK = {
     ],
     cases: [
       { id: "qna-case-vlm-resolution-01", level: 3, q: "You're told your VLM vendor bills 'per image,' but your own cost logs show spend scaling with image resolution. How do you reconcile that, and what would you check first?", difficulty: "medium" },
-      { id: "qna-case-vlm-resolution-02", level: 3, q: "Your team halves every image's resolution expecting the vision bill to roughly halve too, but the actual drop is smaller than expected. Walk me through what's likely going on and how you'd explain it to the team.", difficulty: "medium" },
+      { id: "qna-case-vlm-resolution-02", level: 3, q: "Your team halves every image's resolution expecting the vision bill to roughly halve too, but the actual drop is larger than expected. Walk me through what's likely going on and how you'd explain it to the team.", difficulty: "medium" },
       { id: "qna-case-vlm-resolution-03", level: 3, q: "A colleague argues that since tile count scales with the square of the resolution ratio, cutting resolution in half should always cut cost by a clean, predictable multiple. Where does that reasoning break down?", difficulty: "hard" },
       { id: "qna-case-vlm-resolution-04", level: 3, q: "You're asked to cut a VLM pipeline's vision costs without hurting output quality, and you don't yet know whether the current resolution is even necessary for the task. Walk me through the process you'd follow before touching any settings.", difficulty: "medium" },
       { id: "qna-case-vlm-resolution-05", level: 3, q: "After rolling out a lower resolution setting pipeline-wide, someone reports outputs are fine for most images but subtly wrong for a specific subset. What do you do next, and why not just revert everything back to the old high-resolution setting?", difficulty: "hard" }
     ],
   },
   "alignment-techniques": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Where alignment lives: weight-level change vs. system prompt",
@@ -5886,7 +5884,7 @@ export const QNA_BANK = {
           { id: "qna-rlhf-01", level: 0, q: "What are the moving pieces in a full RLHF pipeline?", difficulty: "easy" },
           { id: "qna-rlhf-02", level: 1, q: "Why does RLHF need a separate reward model at all, instead of optimizing the policy directly against raw human preference labels?", difficulty: "medium" },
           { id: "qna-rlhf-03", level: 1, q: "What is PPO's job in this pipeline, and why does the module call it 'touchy and unstable' to tune in practice?", difficulty: "medium" },
-          { id: "qna-rlhf-04", level: 2, q: "What's reward hacking, and why is it a risk that shows up specifically in RLHF's setup rather than something SFT has to worry about?", difficulty: "hard" }
+          { id: "qna-rlhf-04", level: 2, q: "Why does optimizing a policy against a separately-trained reward model, the way RLHF does, create a risk that SFT's direct imitation training doesn't have?", difficulty: "hard" }
         ],
       },
       {
@@ -5920,7 +5918,7 @@ export const QNA_BANK = {
         name: "The cost ladder: choosing among methods",
         questions: [
           { id: "qna-cost-ladder-01", level: 0, q: "What are the four methods on this module's cost ladder, and in what order does the module build them up?", difficulty: "easy" },
-          { id: "qna-cost-ladder-02", level: 1, q: "For each successor method in the ladder, what single cost does it remove from the one before it, and what new cost does it introduce instead?", difficulty: "medium" },
+          { id: "qna-cost-ladder-02", level: 2, q: "For each successor method in the ladder, what single cost does it remove from the one before it, and what new cost does it introduce instead?", difficulty: "medium" },
           { id: "qna-cost-ladder-03", level: 2, q: "Given a team with a strong annotation budget and plenty of human reviewers, but nobody comfortable tuning an RL loop, which method on this ladder fits best, and why?", difficulty: "medium" },
           { id: "qna-cost-ladder-04", level: 2, q: "Given a team with a highly capable base model but almost no annotation budget, which method fits best, and what's the risk they're accepting by choosing it?", difficulty: "hard" }
         ],
@@ -5935,8 +5933,8 @@ export const QNA_BANK = {
     ],
   },
   "red-teaming": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Defining red-teaming: distinction from QA and benchmark evaluation",
@@ -6007,8 +6005,8 @@ export const QNA_BANK = {
     ],
   },
   "jailbreak-taxonomy": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Scope: jailbreaks vs. red-teaming's other attack surfaces",
@@ -6091,8 +6089,8 @@ export const QNA_BANK = {
     ],
   },
   "pretraining": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "What pretraining actually is: objective and scale",
@@ -6139,7 +6137,7 @@ export const QNA_BANK = {
         name: "Pricing it out: the compute cost gap",
         questions: [
           { id: "qna-compute-formula-01", level: 0, q: "What formula does the module use to estimate training compute, and what do the variables represent?", difficulty: "easy" },
-          { id: "qna-compute-gap-01", level: 1, q: "Walk me through why fine-tuning ends up roughly 10^6–10^8x cheaper than training from scratch here — where does that ratio actually come from in the compute formula?", difficulty: "medium" },
+          { id: "qna-compute-gap-01", level: 1, q: "Walk me through why fine-tuning ends up roughly 10^3–10^6x cheaper than training from scratch here — where does that ratio actually come from in the compute formula?", difficulty: "medium" },
           { id: "qna-compute-gap-02", level: 2, q: "The module frames the compute gap as tracking the token-count ratio at fixed parameter count. Why does token count dominate this comparison rather than parameter count, given both models are the same 7B size?", difficulty: "medium" },
           { id: "qna-compute-gap-03", level: 0, q: "Roughly what does the module estimate a from-scratch domain pretraining run costs, versus a fine-tuning run on the same domain?", difficulty: "easy" }
         ],
@@ -6170,8 +6168,8 @@ export const QNA_BANK = {
     ],
   },
   "hallucination": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Reframing hallucination as structural, not a bug",
@@ -6243,8 +6241,8 @@ export const QNA_BANK = {
     ],
   },
   "finetuning-vs-rag": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The core split — knowledge problem vs. behavior problem",
@@ -6259,8 +6257,8 @@ export const QNA_BANK = {
         name: "Prompting as the cheaper lever before fine-tuning",
         questions: [
           { id: "qna-prompting-lever-01", level: 0, q: "Where does prompting sit relative to RAG and fine-tuning in the order you'd reach for these tools?", difficulty: "easy" },
-          { id: "qna-prompting-lever-02", level: 1, q: "Under what condition does a behavior gap get closed by a better system prompt instead of escalating to fine-tuning?", difficulty: "medium" },
-          { id: "qna-prompting-lever-03", level: 1, q: "You've already found a system prompt that produces the right behavior. What does fine-tuning still buy you at that point that makes it worth the extra cost?", difficulty: "hard" }
+          { id: "qna-prompting-lever-02", level: 2, q: "Under what condition does a behavior gap get closed by a better system prompt instead of escalating to fine-tuning?", difficulty: "medium" },
+          { id: "qna-prompting-lever-03", level: 2, q: "You've already found a system prompt that produces the right behavior. What does fine-tuning still buy you at that point that makes it worth the extra cost?", difficulty: "hard" }
         ],
       },
       {
@@ -6323,8 +6321,8 @@ export const QNA_BANK = {
     ],
   },
   "instruction-tuning": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The base-model puzzle: capability vs. instruction-following",
@@ -6397,8 +6395,8 @@ export const QNA_BANK = {
     ],
   },
   "system-prompts": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "What a system prompt actually is (the mental-model correction)",
@@ -6471,8 +6469,8 @@ export const QNA_BANK = {
     ],
   },
   "structured-outputs": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Generation has no parser: JSON validity is emergent, not enforced",
@@ -6551,8 +6549,8 @@ export const QNA_BANK = {
     ],
   },
   "prompt-security": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The trust-boundary gap (why prompt injection is possible at all)",
@@ -6633,8 +6631,8 @@ export const QNA_BANK = {
     ],
   },
   "pgvector-vs-managed": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Framing the build-vs-buy decision",
@@ -6708,8 +6706,8 @@ export const QNA_BANK = {
     ],
   },
   "vector-migration-patterns": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Beat 1 — An embedding is a model artifact, not a document property",
@@ -6726,7 +6724,6 @@ export const QNA_BANK = {
           { id: "qna-silent-failure-01", level: 0, q: "What actually happens, mechanically, when you compute a similarity score between an old vector and a new-model query vector after a model swap — does it error out or return something?", difficulty: "easy" },
           { id: "qna-silent-failure-02", level: 1, q: "Why does swapping the embedding model produce no exception or error signal anywhere in the system, even though the search results are now wrong?", difficulty: "medium" },
           { id: "qna-silent-failure-03", level: 1, q: "Why is this particular kind of failure more dangerous operationally than a failure that visibly crashes or throws an error?", difficulty: "medium" },
-          { id: "qna-silent-failure-04", level: 2, q: "How does an embedding-model-mismatch failure compare to something like a retrieval miss, in terms of how easy each is to notice from the outside?", difficulty: "hard" }
         ],
       },
       {
@@ -6788,12 +6785,12 @@ export const QNA_BANK = {
       { id: "qna-skip-backfill-risk-01", level: 3, q: "A teammate proposes skipping the backfill job entirely and just letting the new index populate 'organically' through dual-write, on the theory that documents will eventually get rewritten anyway. Walk through what actually happens to old, never-touched documents under this plan, and why it fails the live-availability goal of the pattern.", difficulty: "medium" },
       { id: "qna-decommission-decision-01", level: 3, q: "Some time after a successful cutover, someone asks why you're still paying to keep the old index running. Walk through how you'd decide it's actually safe to decommission it, and what you'd want confirmed first.", difficulty: "medium" },
       { id: "qna-dimensionality-change-01", level: 3, q: "You're migrating to a new embedding model, and it turns out the new model also produces vectors of a different dimensionality than the old one. Walk through what that means for the dual-write and backfill steps, and whether the pattern still works without modification.", difficulty: "hard" },
-      { id: "qna-gradual-cutover-risk-01", level: 3, q: "A downstream system constraint means you can't flip all reads to the new index at once — you need to shift traffic over gradually, say in stages. Walk through what breaks about this pattern's guarantees if you do that, and what you'd need to add to make a staged cutover safe.", difficulty: "hard" }
+      { id: "qna-gradual-cutover-risk-01", level: 3, q: "A downstream system constraint means you can't flip all reads to the new index at once — you need to shift traffic over gradually, say in stages. Walk through what breaks about this pattern's guarantees if you do that, and why the module treats cutover as necessarily atomic rather than gradual.", difficulty: "hard" }
     ],
   },
   "ocr-pipeline-design": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Beat 1 — The failure mode: why OCR errors are silent",
@@ -6868,8 +6865,8 @@ export const QNA_BANK = {
     ],
   },
   "eval-loop": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why a score inherits its trustworthiness from the process behind it",
@@ -6918,7 +6915,7 @@ export const QNA_BANK = {
       {
         name: "Diagnosing which single property broke",
         questions: [
-          { id: "qna-eval-diagnosis-01", level: 0, q: "The module walks through four eval setups that each look rigorous but are broken in exactly one place. Why structure the teaching this way instead of just listing four generic mistakes to avoid?", difficulty: "easy" },
+          { id: "qna-eval-diagnosis-01", level: 0, q: "Real broken evals in production tend to look rigorous everywhere except the one property that's quietly missing. Why is it more useful to audit an eval loop against four independent properties one at a time, rather than just checking whether the whole setup 'feels' rigorous?", difficulty: "easy" },
           { id: "qna-eval-diagnosis-02", level: 1, q: "In \"The Twelve Questions\" example, three of the four properties are completely solid and the eval set is the only broken piece. What let that go unnoticed for six months of releases clearing 85%+?", difficulty: "medium" },
           { id: "qna-eval-diagnosis-03", level: 1, q: "In \"Passing But Blind,\" the new release clears its pre-committed 88% threshold at 91%. Why doesn't clearing that threshold actually tell you anything got better in this particular case?", difficulty: "medium" },
           { id: "qna-eval-diagnosis-04", level: 2, q: "If you were handed a real eval report with just one headline score and asked whether to trust it, what order would you check these four properties in, and does the order actually matter?", difficulty: "hard" }
@@ -6942,8 +6939,8 @@ export const QNA_BANK = {
     ],
   },
   "rag-pipeline": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why RAG exists (the problem retrieval solves)",
@@ -7026,8 +7023,8 @@ export const QNA_BANK = {
   },
 
   "agent-react": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The core problem: a model that can only talk, not act",
@@ -7101,8 +7098,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-tool-design": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The schema is the model's entire view of a tool",
@@ -7168,8 +7165,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-memory-foundations": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The stateless constraint",
@@ -7243,8 +7240,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-memory-libraries": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Beat 1 — Working memory vs. long-term memory (the foundation this module builds on)",
@@ -7318,8 +7315,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-frameworks": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The core agent loop",
@@ -7395,8 +7392,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-mcp": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why MCP Exists — the N×M Integration Problem",
@@ -7462,8 +7459,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-a2a": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Beat 1 — The N×M problem one layer up: what A2A is and why it exists",
@@ -7532,7 +7529,7 @@ export const QNA_BANK = {
         questions: [
           { id: "qna-a2a-origin-01", level: 0, q: "Which company introduced A2A, and roughly when?", difficulty: "easy" },
           { id: "qna-a2a-adoption-01", level: 0, q: "According to this module, which agent framework has native A2A support?", difficulty: "easy" },
-          { id: "qna-a2a-adoption-02", level: 1, q: "This module says A2A support has been added to one framework and is only on the roadmap for two others. Name all three frameworks and their current status.", difficulty: "medium" },
+          { id: "qna-a2a-adoption-02", level: 0, q: "This module says A2A support has been added to one framework and is only on the roadmap for two others. Name all three frameworks and their current status.", difficulty: "medium" },
           { id: "qna-a2a-adoption-03", level: 0, q: "This module says one major agent framework does not support A2A at all. Which one, and what protocol is it built around instead?", difficulty: "easy" }
         ],
       }
@@ -7546,8 +7543,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-config-lab": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The reframe — misconfiguration vs. model failure",
@@ -7581,7 +7578,7 @@ export const QNA_BANK = {
           { id: "qna-model-temp-01", level: 1, q: "How does model choice interact with other configuration knobs, such as tool count or scope, according to this module?", difficulty: "medium" },
           { id: "qna-model-temp-02", level: 0, q: "What does the temperature knob control in an agent's configuration?", difficulty: "easy" },
           { id: "qna-model-temp-03", level: 1, q: "Why should temperature be set differently for deterministic tool-calling or structured-extraction tasks versus creative-generation tasks?", difficulty: "medium" },
-          { id: "qna-model-temp-04", level: 2, q: "What specific failure results from setting a high temperature on an agent whose job is to emit precise tool calls?", difficulty: "medium" }
+          { id: "qna-model-temp-04", level: 1, q: "What specific failure results from setting a high temperature on an agent whose job is to emit precise tool calls?", difficulty: "medium" }
         ],
       },
       {
@@ -7628,8 +7625,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-multiagent": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The Default and the Gate Question",
@@ -7694,8 +7691,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-failure-modes": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Agent = Model + Harness (core definition/framing)",
@@ -7778,8 +7775,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-planning-patterns": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Planning as an economic/calibration choice",
@@ -7853,10 +7850,6 @@ export const QNA_BANK = {
         name: "Naming the planning-technique landscape",
         questions: [
           { id: "qna-tot-implementation-technique-01", level: 1, q: "This module attributes Tree-of-Thought's real implementation complexity to two families of search algorithm. What are they?", difficulty: "medium" },
-          { id: "qna-planning-extensions-01", level: 0, q: "Beyond Tree-of-Thought, this module names two techniques that extend the planning-cost ladder further. What are they called?", difficulty: "easy" },
-          { id: "qna-planning-extensions-02", level: 0, q: "According to this module's brief description, how does Graph-of-Thought differ structurally from Tree-of-Thought?", difficulty: "easy" },
-          { id: "qna-planning-extensions-03", level: 1, q: "What two things does LATS combine, according to this module?", difficulty: "medium" },
-          { id: "qna-planning-extensions-04", level: 1, q: "Per this module's calibration discipline, would you reach for Graph-of-Thought or LATS before or after confirming plain Tree-of-Thought is insufficient? Justify using how the module frames these as extending the same ladder.", difficulty: "medium" }
         ],
       }
     ],
@@ -7869,8 +7862,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-reliability": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The retry-safety inversion (reads vs. actions)",
@@ -7921,7 +7914,7 @@ export const QNA_BANK = {
         name: "Human-in-the-loop (HITL) patterns",
         questions: [
           { id: "qna-hitl-four-patterns-01", level: 0, q: "Name the four human-in-the-loop patterns this module describes.", difficulty: "easy" },
-          { id: "qna-hitl-escalation-threshold-01, ", level: 1, q: "Under the escalation-threshold pattern, what conditions can trigger routing a task to a human?", difficulty: "medium" },
+          { id: "qna-hitl-escalation-threshold-01", level: 1, q: "Under the escalation-threshold pattern, what conditions can trigger routing a task to a human?", difficulty: "medium" },
           { id: "qna-hitl-ambiguity-01", level: 0, q: "Per the ambiguity-surfacing pattern, what should an agent do when it receives an unclear instruction?", difficulty: "easy" },
           { id: "qna-hitl-gate-principle-01", level: 2, q: "What design principle does this module give for deciding which actions to gate with HITL and which to let run autonomously?", difficulty: "medium" }
         ],
@@ -7952,8 +7945,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-computer-use": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The Computer-Use Loop",
@@ -8037,8 +8030,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-long-running": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why long-running agents must survive interruption",
@@ -8112,8 +8105,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-design-challenge": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The design framework and why order matters (task-first, not model-first)",
@@ -8188,8 +8181,8 @@ export const QNA_BANK = {
     ],
   },
   "agent-loop-simulator": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The Control Loop & Model/Runtime Division of Labor",
@@ -8264,8 +8257,8 @@ export const QNA_BANK = {
     ],
   },
   "injection-lab": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Root cause: instructions and data share one token channel",
@@ -8340,8 +8333,8 @@ export const QNA_BANK = {
     ],
   },
   "prompt-library": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Prompts as Probabilistic Specifications",
@@ -8420,8 +8413,8 @@ export const QNA_BANK = {
     ],
   },
   "hallucination-lab": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "LLMs Optimize Fluency, Not Truth",
@@ -8495,8 +8488,8 @@ export const QNA_BANK = {
     ],
   },
   "bias-lab": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Bias as faithful reproduction, not an injected rule",
@@ -8571,8 +8564,8 @@ export const QNA_BANK = {
     ],
   },
   "context-budget-lab": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The context window as a hard token budget",
@@ -8604,7 +8597,7 @@ export const QNA_BANK = {
         name: "Lost in the middle: non-uniform attention within the window",
         questions: [
           { id: "qna-lost-in-middle-def-01", level: 0, q: "What is the 'lost in the middle' phenomenon in the context of long-context language models?", difficulty: "easy" },
-          { id: "qna-lost-in-middle-why-01", level: 1, q: "Why does a model's effective attention tend to favor content near the beginning and end of the context over content buried in the middle?", difficulty: "medium" },
+          { id: "qna-lost-in-middle-why-01", level: 0, q: "According to this module, where within a long context does a model's attention land most reliably, and where is it least reliable?", difficulty: "medium" },
           { id: "qna-more-chunks-lower-quality-01", level: 2, q: "Explain why simply adding more retrieved chunks to a RAG pipeline's context can actually decrease answer quality rather than improve it.", difficulty: "hard" },
           { id: "qna-lost-in-middle-positioning-01", level: 2, q: "How does the 'lost in the middle' effect change how you should think about ordering or positioning content within a prompt?", difficulty: "medium" }
         ],
@@ -8637,8 +8630,8 @@ export const QNA_BANK = {
     ],
   },
   "streaming-lab": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Beat 1 — Prefill vs. decode, and TTFT",
@@ -8710,8 +8703,8 @@ export const QNA_BANK = {
     ],
   },
   "failure-sim-lab": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The mental model: LLM calls as unreliable remote dependencies",
@@ -8795,8 +8788,8 @@ export const QNA_BANK = {
     ],
   },
   "codegen-model-training-fim": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Beat 1 — Continuation vs. infilling: why causal LMs break in an editor",
@@ -8848,7 +8841,7 @@ export const QNA_BANK = {
           { id: "qna-prose-tokenizer-mismatch-01", level: 0, q: "Why don't tokenizers tuned for prose work well for code?", difficulty: "easy" },
           { id: "qna-byte-level-bpe-01", level: 1, q: "What problem does byte-level BPE solve for a code tokenizer that a smaller, word-oriented vocabulary doesn't?", difficulty: "medium" },
           { id: "qna-whitespace-tokens-01", level: 1, q: "Why do code tokenizers add dedicated whitespace tokens, and what goes wrong without them?", difficulty: "medium" },
-          { id: "qna-code-tokenizer-special-tokens-01", level: 2, q: "Besides byte-level BPE and whitespace tokens, what other special tokens does a code tokenizer need to reserve, and what does each one signal to the model?", difficulty: "medium" }
+          { id: "qna-code-tokenizer-special-tokens-01", level: 0, q: "Besides byte-level BPE and whitespace tokens, what other special tokens does a code tokenizer need to reserve, and what does each one signal to the model?", difficulty: "medium" }
         ],
       },
       {
@@ -8870,8 +8863,8 @@ export const QNA_BANK = {
     ],
   },
   "codegen-repo-context-retrieval": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why Repo-Scale Coding Is a Retrieval Problem",
@@ -8914,7 +8907,7 @@ export const QNA_BANK = {
           { id: "qna-chunking-01", level: 0, q: "What's the problem with chunking source code into fixed-size windows (e.g., a fixed token count) for retrieval?", difficulty: "easy" },
           { id: "qna-chunking-02", level: 1, q: "Why does chunking at syntactic or symbol boundaries (via a parser) produce more effective retrieval and generation than fixed-size chunking?", difficulty: "medium" },
           { id: "qna-chunking-03", level: 1, q: "Why does a retrieved chunk that starts mid-function, with no signature, harm both the retriever's ranking and the model's downstream generation — not just one of them?", difficulty: "medium" },
-          { id: "qna-chunking-04", level: 2, q: "Your team already has decent retrieval recall, but the assistant keeps generating edits that 'don't fit' the surrounding code. Chunking strategy aside, what would you inspect first, and why might chunking specifically be the culprit?", difficulty: "hard" }
+          { id: "qna-chunking-04", level: 2, q: "Your team already has decent retrieval recall, but the assistant keeps generating edits that 'don't fit' the surrounding code. What would you inspect first, and why might chunking specifically be the culprit even though recall looks fine?", difficulty: "hard" }
         ],
       },
       {
@@ -8945,8 +8938,8 @@ export const QNA_BANK = {
     ],
   },
   "codegen-agentic-loops": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why one-shot generation fails (grounded feedback vs. blind guessing)",
@@ -9018,8 +9011,8 @@ export const QNA_BANK = {
     ],
   },
   "codegen-eval-passk-swebench": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why match-based grading fails for code",
@@ -9094,8 +9087,8 @@ export const QNA_BANK = {
     ],
   },
   "codegen-security-sandboxing": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Threat Modeling: Naming the Three Attack Surfaces",
@@ -9170,8 +9163,8 @@ export const QNA_BANK = {
     ],
   },
   "infra-prefill-decode": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The Two-Phase Split: Prefill vs Decode",
@@ -9244,8 +9237,8 @@ export const QNA_BANK = {
     ],
   },
   "infra-batching-throughput": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Idle Compute & the Batching Insight",
@@ -9317,8 +9310,8 @@ export const QNA_BANK = {
     ],
   },
   "infra-paged-attention-kv": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Beat 1 — KV cache memory as the serving ceiling (the arithmetic)",
@@ -9383,8 +9376,8 @@ export const QNA_BANK = {
     ],
   },
   "infra-serving-stacks": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why Parallelism Is Necessary",
@@ -9466,8 +9459,8 @@ export const QNA_BANK = {
     ],
   },
   "infra-edge-ondevice": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why the datacenter recipe doesn't transport to the edge",
@@ -9544,8 +9537,8 @@ export const QNA_BANK = {
     ],
   },
   "custom-when-to-finetune": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The Customization Ladder",
@@ -9611,8 +9604,8 @@ export const QNA_BANK = {
     ],
   },
   "custom-data-curation": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The core inversion — quality beats quantity for SFT",
@@ -9700,8 +9693,8 @@ export const QNA_BANK = {
     ],
   },
   "custom-peft-lora-serving": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Full fine-tuning's two costs (training memory + artifact-per-tenant)",
@@ -9780,8 +9773,8 @@ export const QNA_BANK = {
     ],
   },
   "custom-preference-alignment": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "SFT's Ceiling: Imitation vs Preference",
@@ -9816,7 +9809,7 @@ export const QNA_BANK = {
           { id: "qna-choice-01", level: 0, q: "For most customization teams today, which method — RLHF or DPO — is the default starting point, and why?", difficulty: "easy" },
           { id: "qna-choice-02", level: 1, q: "Under what conditions would a service deliberately choose RLHF over DPO despite RLHF's added complexity?", difficulty: "medium" },
           { id: "qna-choice-03", level: 2, q: "How would you frame the RLHF-vs-DPO decision to a stakeholder as a tradeoff, rather than as one method being unconditionally 'better' than the other?", difficulty: "hard" },
-          { id: "qna-choice-04", level: 2, q: "Where do newer direct-preference methods like IPO or KTO fit relative to DPO, and what does that tell you about how the field's default has evolved?", difficulty: "medium" }
+          { id: "qna-choice-04", level: 2, q: "Where do newer direct-preference methods like IPO or KTO fit relative to DPO, according to this module?", difficulty: "medium" }
         ],
       },
       {
@@ -9847,8 +9840,8 @@ export const QNA_BANK = {
     ],
   },
   "custom-eval-driven-loop": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Eval-first discipline: the held-out, production-representative eval as contract",
@@ -9914,8 +9907,8 @@ export const QNA_BANK = {
     ],
   },
   "voice-asr-architectures": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "The alignment problem — why ASR isn't pattern matching",
@@ -9998,8 +9991,8 @@ export const QNA_BANK = {
     ],
   },
   "voice-streaming-latency": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Pipeline architecture and the first-audio metric",
@@ -10074,8 +10067,8 @@ export const QNA_BANK = {
     ],
   },
   "voice-tts-cloning": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "From playback to synthesis: why TTS has to be generative",
@@ -10126,9 +10119,9 @@ export const QNA_BANK = {
         name: "Safety and governance of voice cloning",
         questions: [
           { id: "qna-clone-risk-01", level: 0, q: "What capability does zero-shot voice cloning enable that raises safety and misuse concerns?", difficulty: "easy" },
-          { id: "qna-watermarking-01", level: 1, q: "What is watermarking in the context of synthetic audio, and what purpose does it serve?", difficulty: "medium" },
+          { id: "qna-watermarking-01", level: 0, q: "What is watermarking in the context of synthetic audio, and what purpose does it serve?", difficulty: "medium" },
           { id: "qna-consent-shipblocking-01", level: 1, q: "Why is consent described as a 'ship-blocking' requirement for a voice-cloning feature rather than a nice-to-have?", difficulty: "medium" },
-          { id: "qna-disclosure-obligation-01", level: 2, q: "Besides consent and watermarking, what other governance obligation applies when deploying a synthetic voice in live conversations, and what specifically does it protect against?", difficulty: "hard" }
+          { id: "qna-disclosure-obligation-01", level: 1, q: "Besides consent and watermarking, what other governance obligation applies when deploying a synthetic voice in live conversations, and what specifically does it protect against?", difficulty: "hard" }
         ],
       },
       {
@@ -10160,8 +10153,8 @@ export const QNA_BANK = {
     ],
   },
   "voice-realtime-agents": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "Why the Conversation Layer Is the Hard Problem",
@@ -10237,8 +10230,8 @@ export const QNA_BANK = {
     ],
   },
   "voice-eval-wer-mos": {
-    status: "draft", // draft | parked | answered
-    auditDate: "2026-07-11",
+    status: "parked", // draft | parked | answered
+    auditDate: "2026-07-15",
     beats: [
       {
         name: "WER definition and mechanics",
@@ -10280,7 +10273,7 @@ export const QNA_BANK = {
         name: "Objective MOS proxies",
         questions: [
           { id: "qna-mos-proxy-01", level: 0, q: "What is Mel-Cepstral Distortion (MCD), and what does it measure?", difficulty: "easy" },
-          { id: "qna-mos-proxy-02", level: 1, q: "What are neural MOS predictors, and what advantage do they offer over both human listening panels and reference-based metrics like MCD?", difficulty: "medium" },
+          { id: "qna-mos-proxy-02", level: 2, q: "What are neural MOS predictors, and what advantage do they offer over both human listening panels and reference-based metrics like MCD?", difficulty: "medium" },
           { id: "qna-mos-proxy-03", level: 2, q: "What is the key limitation of a neural MOS predictor, and why can't it fully replace human evaluation?", difficulty: "hard" },
           { id: "qna-mos-proxy-04", level: 2, q: "How should objective MOS proxies and human MOS panels be used together in a practical TTS evaluation workflow?", difficulty: "medium" }
         ],
@@ -10288,7 +10281,7 @@ export const QNA_BANK = {
       {
         name: "The component-vs-system trap",
         questions: [
-          { id: "qna-component-system-01", level: 1, q: "What is the 'component-vs-system trap' in voice AI evaluation?", difficulty: "medium" },
+          { id: "qna-component-system-01", level: 0, q: "What is the 'component-vs-system trap' in voice AI evaluation?", difficulty: "medium" },
           { id: "qna-component-system-02", level: 2, q: "Why can a voice agent with strong ASR and strong TTS component scores still fail to serve users well over the course of a real conversation?", difficulty: "hard" },
           { id: "qna-component-system-03", level: 1, q: "What kinds of failures does the component-vs-system trap describe that neither WER nor MOS is designed to catch?", difficulty: "medium" }
         ],
