@@ -4646,3 +4646,24 @@ These 5 are logged here as open items for a future `.jsx`/`recap-patch-a.js`-sco
 
 ### Not touched
 `git status` also shows the pre-existing `_to_delete/` folder (dead scratch files from earlier in the session, bridge can't delete, user's to remove) and the already-committed `STATUS.md`/earlier `docs/GSL_PLAN.md` entries from this session's tooling-port work -- unrelated to this round.
+
+## Session 2026-07-15 19:49 IST (Wednesday) — Fixed all 5 component-level defects flagged in the blind audit round
+
+The 19:31 IST audit round found 5 defects living in `.jsx`/component-adjacent files, out of that pass's edit scope (data files only). Fixed all 5 now:
+
+1. **`DPOModule` (src/Concepts.jsx)** — stale worked-example text "loss ≈ 0.48" corrected to 0.47 (σ(0.5)≈0.6225, −log(0.6225)≈0.4747, rounds to 0.47), matching the adjacent computed stat tile. No other stale occurrence found.
+2. **`QualityDriftModule` (src/Concepts.jsx)** — "88% peak" label corrected to "89% peak", matching the component's own `scores` array's true max (89, week 2).
+3. **`CostAttributionModule` (src/Concepts.jsx)** — hardcoded `pct` bars replaced with values recomputed from the component's own `tokensPerReq × reqPerDay × pricePerMTok` per feature, normalized to 100% (Search 6%, Summarization 8%, Chat 43%, Classification 2%, Extraction 10%, Agent Loops 31%; total $2,933.4/mo). Also differentiated `pricePerMTok` across features (was identically 0.15 everywhere despite the module's own prose claiming "different models... carry different per-token rates") -- assigned plausible tiered rates (0.05-0.60) consistent with each feature's described model tier, then recomputed shares against the new rates.
+4. **`AgentEvalViz.jsx`** (src/components/nicheViz/) — widget was silently using a 5-step trajectory (missing the module's "Observation: refund failed" step, and mis-scoring the final reply as `ok:true`) against the `agent-eval-trajectory` module's own 6-step, 1/6-scored worked example. Restored the missing step, corrected the final step to trajectory-unearned while adding a separate `outcomeOk` field so outcome-eval mode still renders it correctly (the module explicitly distinguishes outcome eval from trajectory eval) -- widget now shows 1/6, matching the module exactly.
+5. **`recap-patch-a.js`** — `rag-pipeline`'s recap bullet referencing untaught "Recall@k" corrected to "Precision@k", the metric the module actually teaches (confirmed via full re-read of the module's Precision@5=40% worked example).
+
+### Verification
+- Syntax: `Concepts.jsx` and `AgentEvalViz.jsx` parsed clean via `@babel/parser`/esbuild JSX parse (both before and after edits); `recap-patch-a.js` via `node --check`. No truncation on any of the 3 files (line/byte counts confirmed by each agent).
+- `scripts/check-duplicate-keys.mjs`: 0 duplicate keys across 60 files.
+- `scripts/validate-content-status.mjs`: 81/81 clean, unaffected (these 3 files aren't tracked in contentStatus.js's sourceFile ledger -- component-level fixes, not content-ledger entries).
+- `git status --short` matches exactly the 3 files touched.
+
+This closes every defect found in this session's GSL audit -- both the 33 data-file defects (previous entry) and these 5 component-level ones. GSL is now fully audited and fixed to the same standard as MSL.
+
+### Push status
+Local commit attempted directly via the device bridge for the prior round (data-file fixes): commit `31f21c7` succeeded locally, but `git push` failed with "403 from proxy after CONNECT" -- this bridge's network egress does not reach GitHub for push, even though local git operations (commit, log, show) work fine. This round's 3 component files are uncommitted as of this entry; user needs to run the commit+push themselves (commands provided in chat).

@@ -1,9 +1,11 @@
 import { useState } from "react";
 
-// Agent trajectory eval: two eval modes over the SAME 5-step trajectory.
+// Agent trajectory eval: two eval modes over the SAME 6-step trajectory used
+// as the worked example in the agent-eval-trajectory module's illustration
+// ("TRAJECTORY 2 (broken path, lucky)" — scores 1/6 steps ok there too).
 // "Outcome" grades only the final answer (PASS). "Trajectory" grades each step,
-// exposing a hallucinated destructive tool call + a wrong tool arg that outcome
-// eval is blind to. Toggling makes the false-PASS visceral.
+// exposing a hallucinated destructive tool call + a wrong tool arg + an ignored
+// tool failure that outcome eval is blind to. Toggling makes the false-PASS visceral.
 export default function AgentEvalViz({ onNavigate, spec } = {}) {
   const [mode, setMode] = useState("outcome"); // "outcome" | "trajectory"
 
@@ -13,16 +15,20 @@ export default function AgentEvalViz({ onNavigate, spec } = {}) {
   const GOLDEN_FINAL = "It was delivered on Tuesday.";
   // Same Thought -> Action -> Observation loop ReAct teaches, just repeated and
   // scored per step (the final "reply" is itself an Action — final_answer()).
+  // `ok` is the TRAJECTORY-eval verdict for the step. The final reply also gets
+  // `outcomeOk` — outcome eval only compares final text to golden, so it reads
+  // PASS there even though trajectory eval marks the same step "unearned".
   const steps = [
     { n: 1, kind: "plan", text: "Thought: look up the order by its ID", ok: true, note: "sound plan" },
     { n: 2, kind: "tool", text: 'Action: lookup_order("A-9999")', ok: false, note: "WRONG ARG — id was A-4471, not A-9999" },
-    { n: 3, kind: "observe", text: 'Observation: "delivered Tuesday"', ok: false, note: "another customer's order that happens to match" },
+    { n: 3, kind: "observe", text: 'Observation: "delivered Tuesday"', ok: false, note: "WRONG ORDER — another customer's order that happens to match" },
     { n: 4, kind: "tool", text: "Action: issue_refund()", ok: false, note: "HALLUCINATED destructive call — never requested" },
-    { n: 5, kind: "reply", text: 'Action: reply "It was delivered on Tuesday."', ok: true, note: "final answer matches golden — looks right" },
+    { n: 5, kind: "observe", text: "Observation: refund failed", ok: false, note: "IGNORED — no error recovery, agent barreled ahead" },
+    { n: 6, kind: "reply", text: 'Action: reply "It was delivered on Tuesday."', ok: false, outcomeOk: true, note: "UNEARNED — text matches golden, but built on the wrong order and an ignored refund failure" },
   ];
 
   const okCount = steps.filter((s) => s.ok).length;
-  const finalCorrect = true; // final reply matches golden
+  const finalCorrect = true; // final reply text matches golden (outcome eval's only check)
 
   // ---- styling (GSL monochrome instrument standard) ----
   const CYAN = "var(--gal-build, #22d3ee)";
@@ -96,7 +102,10 @@ export default function AgentEvalViz({ onNavigate, spec } = {}) {
             // In outcome mode, only the final step is graded; others are dimmed/ungraded.
             const graded = mode === "trajectory" || isFinal;
             const showBad = mode === "trajectory" && !s.ok;
-            const barColor = !graded ? "#3f3f46" : s.ok ? GREEN : RED;
+            // Outcome mode grades the final step by text-match only (outcomeOk);
+            // trajectory mode grades every step by whether it was actually earned (ok).
+            const gradeOk = mode === "outcome" && isFinal ? s.outcomeOk ?? s.ok : s.ok;
+            const barColor = !graded ? "#3f3f46" : gradeOk ? GREEN : RED;
             return (
               <div
                 key={s.n}
@@ -176,7 +185,8 @@ export default function AgentEvalViz({ onNavigate, spec } = {}) {
               tool-selection error &nbsp;·&nbsp; wrong tool argument (step 2)<br />
               hallucinated destructive call &nbsp;·&nbsp;{" "}
               <span style={{ ...mono, color: RED }}>issue_refund()</span> (step 4)<br />
-              no error recovery: refund failed, agent ignored it and replied anyway
+              no error recovery: refund failed and was ignored (step 5), then the
+              agent replied anyway on an unearned final answer (step 6)
             </div>
             <div style={{ fontSize: "0.82rem", color: "#d4d4d8", marginTop: "0.55rem" }}>
               Per-step scoring separates the agent you can ship from the one that is

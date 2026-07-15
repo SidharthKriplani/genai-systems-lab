@@ -8964,7 +8964,7 @@ function QualityDriftModule() {
             </div>
           ))}
         </div>
-        <div className="flex justify-between text-[9px] text-zinc-600 mt-1"><span>Score: 61%</span><span>↑ 88% peak</span></div>
+        <div className="flex justify-between text-[9px] text-zinc-600 mt-1"><span>Score: 61%</span><span>↑ 89% peak</span></div>
       </div>
       <div className="space-y-1">
         <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Potential causes — click each</div>
@@ -9000,12 +9000,12 @@ function QualityDriftModule() {
 function CostAttributionModule() {
   const [selected, setSelected] = useState(null);
   const features = [
-    { id: "search", label: "Search", pct: 8, tokensPerReq: 800, reqPerDay: 50000, pricePerMTok: 0.15, color: "violet", lever: "Cache top queries. Reduce retrieved chunks from 10→5." },
-    { id: "summarization", label: "Summarization", pct: 22, tokensPerReq: 3200, reqPerDay: 12000, pricePerMTok: 0.15, color: "blue", lever: "Chunk long docs. Use cheaper model for summaries <1k tokens." },
-    { id: "chat", label: "Chat", pct: 31, tokensPerReq: 2100, reqPerDay: 40000, pricePerMTok: 0.15, color: "emerald", lever: "Truncate conversation history. Implement rolling summary after 10 turns." },
-    { id: "classification", label: "Classification", pct: 5, tokensPerReq: 400, reqPerDay: 80000, pricePerMTok: 0.15, color: "amber", lever: "Fine-tune a small model. Classification rarely needs frontier models." },
-    { id: "extraction", label: "Extraction", pct: 14, tokensPerReq: 1800, reqPerDay: 22000, pricePerMTok: 0.15, color: "orange", lever: "Use structured outputs to cap response length. Pre-filter irrelevant sections." },
-    { id: "agents", label: "Agent Loops", pct: 20, tokensPerReq: 8500, reqPerDay: 6000, pricePerMTok: 0.15, color: "red", lever: "Cap loop depth. Add early exit conditions. Log and reuse intermediate results." },
+    { id: "search", label: "Search", pct: 6, tokensPerReq: 800, reqPerDay: 50000, pricePerMTok: 0.15, color: "violet", lever: "Cache top queries. Reduce retrieved chunks from 10→5." },
+    { id: "summarization", label: "Summarization", pct: 8, tokensPerReq: 3200, reqPerDay: 12000, pricePerMTok: 0.20, color: "blue", lever: "Chunk long docs. Use cheaper model for summaries <1k tokens." },
+    { id: "chat", label: "Chat", pct: 43, tokensPerReq: 2100, reqPerDay: 40000, pricePerMTok: 0.50, color: "emerald", lever: "Truncate conversation history. Implement rolling summary after 10 turns." },
+    { id: "classification", label: "Classification", pct: 2, tokensPerReq: 400, reqPerDay: 80000, pricePerMTok: 0.05, color: "amber", lever: "Fine-tune a small model. Classification rarely needs frontier models." },
+    { id: "extraction", label: "Extraction", pct: 10, tokensPerReq: 1800, reqPerDay: 22000, pricePerMTok: 0.25, color: "orange", lever: "Use structured outputs to cap response length. Pre-filter irrelevant sections." },
+    { id: "agents", label: "Agent Loops", pct: 31, tokensPerReq: 8500, reqPerDay: 6000, pricePerMTok: 0.60, color: "red", lever: "Cap loop depth. Add early exit conditions. Log and reuse intermediate results." },
   ];
   const totalMonthlyTokens = features.reduce((sum, f) => sum + f.tokensPerReq * f.reqPerDay * 30, 0);
   const s = selected ? features.find(f => f.id === selected) : null;
@@ -9654,7 +9654,7 @@ function DPOModule() {
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/10 p-3">
         <p className="text-xs text-zinc-300">
           <span className="font-bold text-amber-400">Worked example (β=0.1): </span>
-          At margin <span className="font-mono">+5.0</span>, σ(0.1·5)=σ(0.5)≈<span className="font-mono">0.62</span>, loss ≈ <span className="font-mono">0.48</span> — small, little gradient. Flip the margin to <span className="font-mono">−5.0</span> and loss jumps to ≈<span className="font-mono">0.97</span> — a strong corrective push. Raising β scales βΔ, sharpening the curve so every pair pushes harder toward the reference-anchored preference; too-large β overfits the preference data.
+          At margin <span className="font-mono">+5.0</span>, σ(0.1·5)=σ(0.5)≈<span className="font-mono">0.62</span>, loss ≈ <span className="font-mono">0.47</span> — small, little gradient. Flip the margin to <span className="font-mono">−5.0</span> and loss jumps to ≈<span className="font-mono">0.97</span> — a strong corrective push. Raising β scales βΔ, sharpening the curve so every pair pushes harder toward the reference-anchored preference; too-large β overfits the preference data.
         </p>
       </div>
     </div>

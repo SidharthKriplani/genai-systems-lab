@@ -31,7 +31,7 @@ export const RECAP_PATCH_A = {
       "**Attribution test:** perfect context injected directly, still fails → generation. Fixed by that → retrieval.",
       "**Missing conceptual recall → retrieval failure** — embedding model lacks the synonym link; fix: hybrid search + query expansion.",
       "**Fabricated citations → generation failure** — model completes patterns from training memory; fix: verbatim-only citation constraints.",
-      "**Recall@k and answer faithfulness, measured separately** — stage-isolated evals make attribution rigorous.",
+      "**Precision@k and answer faithfulness, measured separately** — stage-isolated evals make attribution rigorous.",
     ],
   },
 
