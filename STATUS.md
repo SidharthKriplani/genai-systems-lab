@@ -4,6 +4,23 @@ Read this at session open alongside NEXT.md + CLAUDE.md. One screen of truth.
 
 ---
 
+## Where we are (15 Jul 2026)
+
+**Vercel:** live at `genai-systems-lab-ivory.vercel.app` (not re-confirmed by direct fetch this refresh)
+**Last meaningful push:** commit `cab6599` — ported MSL's two new content-verification scripts (`scripts/check-duplicate-keys.mjs` v2, `scripts/extract-numeric-claims.mjs`); no content files touched this session.
+**Content freeze:** unchanged from 12 Jul entry below — still not formally revised.
+**Uncommitted local work:** none — `git status` clean as of HEAD `cab6599` (one pre-existing untracked `_to_delete/` folder, unrelated).
+
+---
+
+## What just shipped (session 15 Jul 2026 — tooling port only, no content work)
+
+**Ported MSL's duplicate-key + numeric-claims verification tooling.** MSL found and fixed 36 duplicate-object-key bugs this session (dead code invisible to prose-only content audits) and built `scripts/check-duplicate-keys.mjs` to catch this class going forward, per the shared root `CLAUDE.md`'s Recordkeeping rule 6. Porting to GSL caught a real bug in the checker itself before it could cause a false alarm here: v1 used an indentation heuristic tuned to MSL's file shape that doesn't hold for GSL's `preplabQuestions.js` (question objects open with several keys inline on one line) — produced 9 false positives there. Rewrote as v2, a real brace-depth parser with no shape assumption; re-verified against MSL (no regression) and GSL. **Result: `node scripts/check-duplicate-keys.mjs` → 0 duplicate keys across 60 files in `src/data/`.** GSL never had this bug class — a clean bill of health, not a fix. Full detail: `docs/GSL_PLAN.md`'s 2026-07-15 14:58 IST entry.
+
+**No blind-adversarial content audit was run on GSL this session.** MSL's parallel session ran 5 rounds of blind audits this session (~55 modules sampled across S/A-tier, roughly a dozen real defects found and fixed) — that work is MSL-only. GSL's own `contentStatus.js` tally (**81 'clean' / 81 tracked, S: 25/25, A: 56/56**, re-verified via `node scripts/validate-content-status.mjs` this refresh) predates this session's audit-rigor findings and has NOT been re-checked against the same standard MSL's "clean" tag turned out to be unreliable under. Given MSL's own experience this session — prior "clean" audits that claimed exhaustiveness while missing the actual defect — do not assume GSL's 81/81 is more reliable than MSL's pre-audit tally was. It just hasn't been tested yet.
+
+**Still open from the 12 Jul entry, unchanged:** 15 GSL modules logged as round-2 `in_progress` residual issues in `docs/GSL_PLAN.md`'s 2026-07-11 23:08 IST entry — never revisited. The QnA standard's own question-quality audit — never run on GSL's draft questions. Neither touched this session.
+
 ## Where we are (12 Jul 2026)
 
 **Vercel:** live at `genai-systems-lab-ivory.vercel.app`  

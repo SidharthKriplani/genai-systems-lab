@@ -4602,3 +4602,7 @@ Porting caught a real bug in the checker itself before it caused a false alarm h
 **Result: `node scripts/check-duplicate-keys.mjs` on GSL's full `src/data/` (60 files) → 0 duplicate keys.** GSL never had this bug class to begin with — this is a clean bill of health, not a fix.
 
 Files touched: `scripts/check-duplicate-keys.mjs` (new, v2), `scripts/extract-numeric-claims.mjs` (new). No content files touched.
+
+## Session 2026-07-15 17:52 IST (Wednesday) — STATUS.md refreshed to current state
+
+MSL's STATUS.md was refreshed earlier this session; GSL's was left stale from 12 Jul. Fixed: added a "Where we are (15 Jul 2026)" section documenting the tooling port (already logged in this file's 14:58 IST entry above) as the only work done here this session, re-verified the 81/81 clean tally via `node scripts/validate-content-status.mjs` (unchanged), and explicitly flagged that GSL's "clean" tag has NOT been tested against the same blind-adversarial audit rigor that found real defects in MSL's own pre-audit "clean" tags this session -- 81/81 should not be read as more trustworthy than MSL's pre-audit number was. No content files touched. Old 12 Jul section preserved below as history.
