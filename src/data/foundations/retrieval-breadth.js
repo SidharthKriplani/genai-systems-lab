@@ -40,7 +40,7 @@ doc-A edges out doc-B, 0.031545 to 0.031514 — its rank-1 exact-token match in 
     keyPoints: [
       "**Sparse (BM25) matches exact tokens; dense (embeddings) matches meaning.** BM25 scores by term overlap weighted by IDF (rare terms discriminate) and TF saturation; embeddings map text to a vector space where semantic closeness is geometric closeness. Their strengths are mirror images.",
       "**BM25 wins on rare, precise tokens** — error codes, ticket/SKU IDs, function names, legal citations — because a token in one doc out of a million gets a huge IDF weight and literal matching demands exactness. It's blind to synonyms/paraphrase (the vocabulary-mismatch problem).",
-      "**Dense wins on paraphrase and synonyms** ('reset password' ≈ 'recover credentials') but *blurs* hyper-specific tokens: an unseen code like `ERR_2048_TLS` gets smoothed toward its semantic neighborhood ('cert trust problems'), the classic near-miss. It trades exact-token precision for semantic reach.",
+      "**Dense wins on paraphrase and synonyms** ('reset password' ≈ 'recover credentials') but *blurs* hyper-specific tokens: an unseen code like `ERR_2048_TLS` gets folded into a generic 'TLS-related error' vector instead of its own precise slot, the classic near-miss. It trades exact-token precision for semantic reach.",
       "**Hybrid retrieval runs both and fuses the lists; RRF is the standard fusion.** BM25 scores and cosines aren't on comparable scales, so RRF ignores raw scores and sums 1/(k+rank) across retrievers (k≈60). Rank-based = scale-free; a doc ranked high by either retriever scores well, by both scores best.",
       "**Per-query-type routing is a cheaper alternative to always running both.** Classify keyword-y (IDs/codes → BM25) vs semantic (conversational → dense) and send to the fitting retriever — one search, not two. Riskier: misrouting hits the wrong blind spot, and many queries are mixed. Default to hybrid+RRF for robustness.",
     ],
@@ -53,15 +53,15 @@ doc-A edges out doc-B, 0.031545 to 0.031514 — its rank-1 exact-token match in 
     ],
     mcqs: [
       {
-        question: "A user searches your RAG bot for the exact error code `ERR_2048_TLS`. The dense/embedding retriever returns a chunk about 'certificate trust problems' but misses the runbook that names `ERR_2048_TLS` verbatim. Why does the embedding retriever fail here where BM25 would succeed?",
+        question: "A user searches for the exact error code `ERR_2048_TLS`. The dense/embedding retriever returns a chunk about a different TLS error entirely, blurred into a generic 'TLS-related error' vector, and misses the document that names `ERR_2048_TLS` verbatim. Why does the embedding retriever fail here where BM25 would succeed?",
         options: [
           "The embedding model uses a fixed context window shorter than BM25's, so the rare token got truncated before it could be indexed or matched at all",
           "BM25 internally computes dense vector representations of its own, and for this error code it happened to land on a more precise vector than embeddings",
-          "Embeddings blur the rare token toward its neighborhood ('cert trust problems'); BM25 matches the literal string and its IDF weight ranks that doc highest",
+          "Embeddings blur the rare token into a generic 'TLS-related error' vector; BM25 matches the literal string and its IDF weight ranks that doc highest",
           "The error code string was too short in character count for the embedding model's tokenizer to process, so it was silently dropped from the vector entirely",
         ],
         correct: 2,
-        explanation: "Option C is correct: dense retrieval generalizes across wording by compressing text into a smooth semantic region, and a hyper-specific, likely-unseen token like `ERR_2048_TLS` has no sharp representation, so it's mapped to the general vicinity of 'certificate trust problems' — the classic near-miss. BM25 matches the literal token, and because that string is extremely rare across the corpus its IDF weight is huge, rocketing the one runbook that contains it to the top. Option A is wrong — the failure is semantic blurring, not context-window truncation; the code isn't dropped, it's smoothed. Option B is wrong — BM25 is a lexical bag-of-terms method and does not use embeddings internally. Option D is wrong — short strings are embeddable; the problem is the lack of a distinct learned representation for a rare token, not length.",
+        explanation: "Option C is correct: dense retrieval generalizes across wording by compressing text into a smooth semantic region, and a hyper-specific, likely-unseen token like `ERR_2048_TLS` has no sharp representation, so it's mapped into a generic 'TLS-related error' vector — the classic near-miss. BM25 matches the literal token, and because that string is extremely rare across the corpus its IDF weight is huge, rocketing the one document that contains it to the top. Option A is wrong — the failure is semantic blurring, not context-window truncation; the code isn't dropped, it's smoothed. Option B is wrong — BM25 is a lexical bag-of-terms method and does not use embeddings internally. Option D is wrong — short strings are embeddable; the problem is the lack of a distinct learned representation for a rare token, not length.",
       },
       {
         question: "You want to combine a BM25 retriever and a dense retriever into one ranked list. Why is Reciprocal Rank Fusion (RRF) preferred over simply adding the two retrievers' scores?",

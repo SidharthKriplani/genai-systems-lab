@@ -4606,3 +4606,43 @@ Files touched: `scripts/check-duplicate-keys.mjs` (new, v2), `scripts/extract-nu
 ## Session 2026-07-15 17:52 IST (Wednesday) — STATUS.md refreshed to current state
 
 MSL's STATUS.md was refreshed earlier this session; GSL's was left stale from 12 Jul. Fixed: added a "Where we are (15 Jul 2026)" section documenting the tooling port (already logged in this file's 14:58 IST entry above) as the only work done here this session, re-verified the 81/81 clean tally via `node scripts/validate-content-status.mjs` (unchanged), and explicitly flagged that GSL's "clean" tag has NOT been tested against the same blind-adversarial audit rigor that found real defects in MSL's own pre-audit "clean" tags this session -- 81/81 should not be read as more trustworthy than MSL's pre-audit number was. No content files touched. Old 12 Jul section preserved below as history.
+
+## Session 2026-07-15 19:31 IST (Wednesday) — GSL blind audit round 1: all 81 modules re-tested, 33/81 had real defects
+
+Following the same "clean" tags being untrustworthy pattern discovered in the sibling ml-systems-lab repo this session (its own "clean" audits missed real defects until adversarially re-checked), ran the identical blind-audit process against GSL's own 81/81 "clean" ledger, which had never been tested this way. All 81 tracked modules re-audited, one dispatched agent per source file (19 files, never split a file across concurrent agents), against 3B1B-STANDARD.md, CONTENT-AUDIT-RUBRIC.md, and GSL's own CONTENT-STANDARD.md. `foundationsRunnerData.js` (34 modules, by far the largest file) was split into 2 sequential batches to keep quality high without concurrent-write risk.
+
+**Result: 33 of 81 modules (41%) had real, fixed defects. 48 passed clean.** This is a materially worse hit rate than MSL's own re-audit (13 defects found across a similar-scale sweep), meaning GSL's prior "clean" tags were, if anything, even less trustworthy than MSL's were before this session's work.
+
+Defect classes found (all fixed in the relevant `src/data/**/*.js` file, never the paired `.jsx` interactive components -- those were flagged, not touched, see below):
+- **Tested-but-not-taught**: `dense-vs-sparse-retrieval` (MCQ + keyPoints referenced a deleted old scenario after a live rewrite), `metadata-filtering` (HNSW graph connectivity tested but never explained).
+- **Forward references to untaught concepts**: `speculative-decoding` ("prefill" used before its defining module in gym order), `pretraining` ("LoRA" used before its defining module), `multiturn-context`/`eval-contamination`/`calibration` (illustration blocks explained concepts before the paragraph that introduces them).
+- **Real arithmetic/numeric errors**: `latency-planner` ("well under half" when the true fraction is just over half), `quality-drift` (15% vs the correct 14%), `pretraining` (fine-tune D units bug -- examples silently treated as tokens, corrupting a 10^6-10^8x ratio claim down to the true ~10^3-10^6x).
+- **Prerender-safety violations** (3B1B-STANDARD Definition of Done #6 -- spatial references like "the tool below" break on statically-rendered pages that don't include the interactive): `cost-latency-concepts`, `eval-design`, `debug`.
+- **Unresolved scenario payoffs** (a posed diagnostic question never answered anywhere in rendered content): `rag-pipeline`, `eval-loop`.
+- **Missing structural fields**: `system-prompts` was silently missing `keyPoints` and `recap` entirely -- the Key Points section and Quick Recap tab didn't exist for this module in the live app.
+- **Missing metadata**: `pgvector-vs-managed` was missing `depthTier`/`interviewWeight`, silently dropping its reading-time estimate and HIGH badge.
+- **False/inaccurate interactive-behavior claims**: `failure-sim-lab` (prose claimed the tool drills network-resilience patterns it doesn't have), `dpo` (claimed an "output quality" axis the interactive doesn't expose), `cost-attribution` (claimed "per-team" breakdown when the module and interactive both use "per-feature"), `infra-paged-attention-kv` (false back-reference to numbers not actually shown above).
+- **Mislabeled/self-contradictory figures**: `custom-peft-lora-serving` (4x total training memory mislabeled as "4x optimizer state alone," which is actually ~2x), `flashattn` (illustration label said 4 tiles, formula showed 3), `managed-vs-selfhosted` (missing "tokens" unit), `dense-vs-sparse-retrieval`/`hybrid-search-design` (rebuttal text argued against the wrong comparison).
+- **Voice violations**: `agent-eval-trajectory` (2 stray exclamation marks, banned per 3B1B-STANDARD).
+- **Missing cross-module continuity links**: `infra-serving-stacks`, `eval-design`, `debug`.
+- **Internally-impossible worked examples**: `tokenizer`'s closing demonstration word used a merge that never appears in its own toy training corpus.
+- **DPO/distillation self-contradictions**: `distillation` MCQ4 mixed two methods the module itself teaches as mutually exclusive; `dpo` MCQ1 explanation used the wrong symbol (pi_theta vs pi*) mid-derivation.
+
+**4 defects found but explicitly NOT fixed** (out of the permitted edit scope -- they live in `.jsx` component files, not the `src/data/**/*.js` the agents were restricted to):
+1. `dpo` -- `DPOModule` in `src/Concepts.jsx` still shows a stale "loss ~= 0.48" next to a correctly-computed 0.47 stat tile, self-contradictory on screen.
+2. `agent-eval-trajectory` -- `AgentEvalViz.jsx` scores an analogous trajectory 2/5 while the module's own prose scores the same logic 1/6.
+3. `quality-drift` -- `QualityDriftModule`'s hardcoded "88% peak" label contradicts its own `scores` array, whose real max is 89.
+4. `cost-attribution` -- `CostAttributionModule`'s hardcoded % bars contradict shares computable from its own exposed per-feature data, and `pricePerMTok` is identical across all 6 features despite the module's own claim that different models carry different rates.
+5. `rag-pipeline` -- rendered `recap` (from `src/data/foundations/recap-patch-a.js`, a separate file not in this pass's scope) references "Recall@k," which this module never actually teaches (only Precision@k).
+
+These 5 are logged here as open items for a future `.jsx`/`recap-patch-a.js`-scoped pass, not silently dropped.
+
+### Verification
+- `node --check` clean on all 19 touched files (all agents confirmed individually; re-verified centrally after the fact).
+- `scripts/check-duplicate-keys.mjs`: 0 duplicate keys across 60 files.
+- `git status --short` matched exactly the 12 files with real fixes (7 files with zero defects correctly show unmodified).
+- `contentStatus.js`: all 81 entries updated with fresh receipts (batch: "GSL blind audit round 1 (session 2026-07-15)", lastAuditDate 2026-07-15, verifiedBy appended not overwritten) and fresh `verifiedFileHash` for every entry, computed directly from the 19 source files' actual current bytes (not a regex sweep -- computed per-file hash then applied to every id whose `sourceFile` matches, covering all 81 entries exactly, confirmed by count). `node scripts/validate-content-status.mjs` -> **81/81 clean** (S: 25/25, A: 56/56), zero stale-hash warnings.
+- One process note: the first attempt at the bulk contentStatus.js update had a real bug -- re-escaping already-escaped `verifiedBy` text from the old entries (which contained literal backslash-quote sequences from a prior session's own escaping) caused a double-escape that corrupted the file (`node --check` caught it immediately, before it was ever saved past the local check). Restored from `git show HEAD:src/data/contentStatus.js` (git's own object store, read-only, no index lock needed) and re-ran with a corrected escaping approach (only escape newly-added text, leave already-escaped old text untouched) and `re.sub` with a lambda replacement (to avoid Python's `re.sub` interpreting backslashes in the replacement string as its own escape codes -- a second, unrelated regex gotcha caught on the same retry). Both fixes verified via `node --check` before writing.
+
+### Not touched
+`git status` also shows the pre-existing `_to_delete/` folder (dead scratch files from earlier in the session, bridge can't delete, user's to remove) and the already-committed `STATUS.md`/earlier `docs/GSL_PLAN.md` entries from this session's tooling-port work -- unrelated to this round.

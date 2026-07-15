@@ -4,22 +4,24 @@ Read this at session open alongside NEXT.md + CLAUDE.md. One screen of truth.
 
 ---
 
-## Where we are (15 Jul 2026)
+## Where we are (15 Jul 2026, updated 19:31 IST)
 
 **Vercel:** live at `genai-systems-lab-ivory.vercel.app` (not re-confirmed by direct fetch this refresh)
-**Last meaningful push:** commit `cab6599` — ported MSL's two new content-verification scripts (`scripts/check-duplicate-keys.mjs` v2, `scripts/extract-numeric-claims.mjs`); no content files touched this session.
+**Last meaningful push:** GSL blind audit round 1 — all 81 tracked modules re-tested, 33 had real defects, all fixed. Not yet pushed as of this write (see git commands owed).
 **Content freeze:** unchanged from 12 Jul entry below — still not formally revised.
-**Uncommitted local work:** none — `git status` clean as of HEAD `cab6599` (one pre-existing untracked `_to_delete/` folder, unrelated).
+**Uncommitted local work:** `contentStatus.js` + 12 content files with real fixes + `docs/GSL_PLAN.md`, pending commit/push (see below).
 
 ---
 
-## What just shipped (session 15 Jul 2026 — tooling port only, no content work)
+## What just shipped (session 15 Jul 2026)
 
-**Ported MSL's duplicate-key + numeric-claims verification tooling.** MSL found and fixed 36 duplicate-object-key bugs this session (dead code invisible to prose-only content audits) and built `scripts/check-duplicate-keys.mjs` to catch this class going forward, per the shared root `CLAUDE.md`'s Recordkeeping rule 6. Porting to GSL caught a real bug in the checker itself before it could cause a false alarm here: v1 used an indentation heuristic tuned to MSL's file shape that doesn't hold for GSL's `preplabQuestions.js` (question objects open with several keys inline on one line) — produced 9 false positives there. Rewrote as v2, a real brace-depth parser with no shape assumption; re-verified against MSL (no regression) and GSL. **Result: `node scripts/check-duplicate-keys.mjs` → 0 duplicate keys across 60 files in `src/data/`.** GSL never had this bug class — a clean bill of health, not a fix. Full detail: `docs/GSL_PLAN.md`'s 2026-07-15 14:58 IST entry.
+**Ported MSL's duplicate-key + numeric-claims verification tooling** (14:58 IST). `node scripts/check-duplicate-keys.mjs` → 0 duplicate keys across 60 files. GSL never had this bug class. Full detail: `docs/GSL_PLAN.md`'s 2026-07-15 14:58 IST entry.
 
-**No blind-adversarial content audit was run on GSL this session.** MSL's parallel session ran 5 rounds of blind audits this session (~55 modules sampled across S/A-tier, roughly a dozen real defects found and fixed) — that work is MSL-only. GSL's own `contentStatus.js` tally (**81 'clean' / 81 tracked, S: 25/25, A: 56/56**, re-verified via `node scripts/validate-content-status.mjs` this refresh) predates this session's audit-rigor findings and has NOT been re-checked against the same standard MSL's "clean" tag turned out to be unreliable under. Given MSL's own experience this session — prior "clean" audits that claimed exhaustiveness while missing the actual defect — do not assume GSL's 81/81 is more reliable than MSL's pre-audit tally was. It just hasn't been tested yet.
+**GSL blind audit round 1 — the audit-rigor gap flagged earlier today is now closed.** Ran the same blind-adversarial process MSL used on itself (one dispatched agent per source file, checked against 3B1B-STANDARD.md/CONTENT-AUDIT-RUBRIC.md/CONTENT-STANDARD.md, every number independently recomputed) against all 81 of GSL's own "clean"-tagged modules — the first time this ledger has been tested this way. **Result: 33 of 81 (41%) had real defects, now fixed — a worse hit rate than MSL's own re-audit found (13 defects at similar scale).** Defect classes: tested-but-not-taught content, forward references to untaught concepts, real arithmetic errors, prerender-safety violations, unresolved scenario payoffs, a module silently missing its `keyPoints`/`recap` arrays entirely, mislabeled/self-contradictory figures, voice violations, and internally-impossible worked examples. 5 additional defects were found in paired `.jsx` interactive components (out of this pass's edit scope) and logged, not fixed — see `docs/GSL_PLAN.md`'s 2026-07-15 19:31 IST entry for the full list and the per-module verdict table.
 
-**Still open from the 12 Jul entry, unchanged:** 15 GSL modules logged as round-2 `in_progress` residual issues in `docs/GSL_PLAN.md`'s 2026-07-11 23:08 IST entry — never revisited. The QnA standard's own question-quality audit — never run on GSL's draft questions. Neither touched this session.
+**Verification:** `node --check` clean on all 19 touched files, 0 duplicate keys, `node scripts/validate-content-status.mjs` → **81/81 clean** (S: 25/25, A: 56/56), zero stale-hash warnings, `git status` matches exactly the 12 files with real fixes.
+
+**Still open:** the 5 `.jsx`-component-level defects found this round (dpo/Concepts.jsx stale number, agent-eval-trajectory/AgentEvalViz.jsx scoring mismatch, quality-drift/QualityDriftModule label mismatch, cost-attribution/CostAttributionModule pct-bar mismatch, rag-pipeline/recap-patch-a.js dangling "Recall@k" reference) — need a follow-up pass scoped to those component files. 15 GSL modules logged as round-2 `in_progress` residual issues in `docs/GSL_PLAN.md`'s 2026-07-11 23:08 IST entry — still never revisited (predates this round, separate from the 81 tracked in contentStatus.js). The QnA standard's own question-quality audit — never run on GSL's draft questions.
 
 ## Where we are (12 Jul 2026)
 
