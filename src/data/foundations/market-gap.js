@@ -210,7 +210,7 @@ GQA (G groups, here G=2):  8 query heads -> 2 KV heads (4 queries share each)
 
   G = H  => MHA        G = 1  => MQA        1 < G < H  => GQA
   Llama-2/3-70B: 64 query heads, 8 KV heads  -> GQA-8 (8x cache cut)` },
-      "This is exactly the Llama-2-70B question from the scenario: **64 query heads, 8 KV heads = GQA with G = 8**. You keep 64 query 'views' for quality but store only 8 sets of K/V, an **8× cut** in KV-cache memory and bandwidth versus full MHA. That's what makes long-context, high-batch serving feasible on the same hardware.\n\nOne caveat for 'just use fewer KV heads on my model': **GQA is an architectural choice made at pretraining time.** The K/V projections are shaped for `G` groups and the model is trained that way — you can't simply drop KV heads from an already-trained MHA checkpoint and expect it to work. There is a technique called **uptraining** (a.k.a. GQA conversion) that mean-pools an MHA model's KV heads into groups and then fine-tunes briefly to recover quality, but it is a retraining step, not a config flag.\n\nNamed users: **MQA** — PaLM, Falcon, the original Shazeer proposal; **GQA** — Llama-2/3 (70B and up), Mistral 7B, and most current open frontier models. ==The recurring interview trap: treating query-head count and KV-head count as the same number. They are decoupled — quality wants many Q heads, the KV cache wants few KV heads, and GQA is how you get both.==",
+      "This is exactly the Llama-2-70B question from the scenario: **64 query heads, 8 KV heads = GQA with G = 8**. You keep 64 query 'views' for quality but store only 8 sets of K/V, an **8× cut** in KV-cache memory and bandwidth versus full MHA. That's what makes long-context, high-batch serving feasible on the same hardware.\n\nOne caveat for 'just use fewer KV heads on my model': **GQA is an architectural choice made at pretraining time.** The K/V projections are shaped for `G` groups and the model is trained that way — you can't simply drop KV heads from an already-trained MHA checkpoint and expect it to work. There is a technique called **uptraining** (a.k.a. GQA conversion) that mean-pools an MHA model's KV heads into groups and then fine-tunes briefly to recover quality, but it is a retraining step, not a config flag.\n\nNamed users: **MQA** — PaLM, Falcon, the original Shazeer proposal; **GQA** — Llama-2-70B (the smaller 7B/13B releases use standard MHA), Llama-3 across all released sizes including 8B, Mistral 7B, and most current open frontier models. ==The recurring interview trap: treating query-head count and KV-head count as the same number. They are decoupled — quality wants many Q heads, the KV cache wants few KV heads, and GQA is how you get both.==",
     ],
     keyPoints: [
       "**The KV cache is the inference memory bottleneck, not the weights.** To avoid O(t²) recompute, decoding caches K and V for all past tokens; its size scales with num_KV_heads × head_dim × layers × seq_len × **batch** — so it grows with both context length and concurrent users.",
@@ -295,6 +295,16 @@ GRPO  (DeepSeek) -- DROP THE CRITIC:
   Score each -> rewards {r_1 ... r_G}.
   baseline = MEAN reward of the group (no value net!)
   advantage(o_i) = (r_i - mean(r)) / std(r)   <- group-relative, normalized
+
+  Worked example, G = 4 (four sampled solutions to the same prompt):
+    r_1 = 0.82   r_2 = 0.54   r_3 = 0.30   r_4 = 0.12
+    mean(r) = (0.82+0.54+0.30+0.12)/4 = 0.445
+    std(r)  = 0.263
+    advantage(o_1) = (0.82-0.445)/0.263 = +1.43   <- best of the four
+    advantage(o_2) = (0.54-0.445)/0.263 = +0.36
+    advantage(o_3) = (0.30-0.445)/0.263 = -0.55
+    advantage(o_4) = (0.12-0.445)/0.263 = -1.24   <- worst of the four
+  No value network computed any of that -- only the group's own numbers.
 
   [ POLICY ] + [ REFERENCE (KL) ] + reward source.  Critic GONE.
   -> ~one fewer large network; simpler, cheaper, less to destabilize.` },

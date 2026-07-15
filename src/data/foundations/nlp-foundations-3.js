@@ -133,7 +133,7 @@ DEPENDENCY PARSE  (arcs: word -> its head)
         |          +------+     |
    +--+ |    +--+  |   +--+     |
    the  cat       sat  on  the  mat
-    det  nsubj      root pobj det
+    det  nsubj      root prep det pobj
   "sat" is the root; "cat" depends on "sat" (subject);
   "the" depends on "cat" (determiner); "on" depends on "sat"
   too (a prepositional attachment); "mat" depends on "on", tagged

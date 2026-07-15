@@ -106,9 +106,9 @@ the assistant literally cannot begin until you stop talking.` },
       "The engineer's '400ms average' is the classic trap: ==in a live voice product you budget and measure at p95/p99, not the mean, because a small fraction of slow turns is what users actually remember and interrupt.==\n\nAn LLM that averages 400ms time-to-first-token but has a p99 of 1,500ms will feel broken on 1 in 100 turns — and across a multi-turn call that's several visible stalls. Averages hide the tail; the tail is the experience. Worse, latency stages are somewhat independent, so their tails can co-occur: a slow ASR finalization AND a slow LLM TTFT on the same turn produces a stall far past budget.\n\nThis is why voice SLOs are written as 'p95 time-to-first-audio < 800ms,' never as an average — and why the profiling report was misleading.",
       { type: "illustration", label: "An 800ms first-audio budget, stage by stage", content: `Target: end-of-user-speech -> first audio out  =  800ms (p95)
 
-  Endpoint decision (silence/semantic)   ~200ms   <- when do we DECIDE user is done?
+  Endpoint decision (silence/semantic)   ~300ms   <- when do we DECIDE user is done?
   Final ASR hypothesis                   ~100ms   <- lock the last partial into final text
-  LLM time-to-first-token (TTFT)         ~300ms   <- NOT full generation, just first token
+  LLM time-to-first-token (TTFT)         ~200ms   <- NOT full generation, just first token
   TTS first audio chunk                  ~150ms   <- first sentence, not whole reply
   Network / buffering                    ~50ms
   ---------------------------------------------
@@ -153,7 +153,7 @@ The two rules the budget encodes:
         explanation: "The second option is correct on both counts: means hide tails — a 400ms average with a long p99 produces stalls on roughly 1 in 100 turns, which is exactly why voice SLOs are written at p95/p99, not as an average. And the LLM is just one additive stage; total first-audio latency also includes endpointing, ASR finalization, and TTS first-chunk time, so a healthy LLM number alone doesn't guarantee the budget is met. The doubling option is wrong — there's no such convention, and 400ms is genuinely under the 800ms target on paper; the flaw is what the average hides, not the arithmetic. The TTS-speed option is a distractor — speaking rate affects how long the reply takes to finish, not how quickly the first sound arrives, which is what 'laggy' and 'gets interrupted' are tracking. The network option is wrong — caller-side network issues wouldn't explain a systematic pattern reproducible across calls; the pipeline's own tail latency is the more direct explanation.",
       },
       {
-        question: "On the 800ms first-audio budget, endpointing is allocated ~200ms via a silence timeout. Product wants to shave perceived latency without cutting users off mid-sentence. What is the best move?",
+        question: "On the 800ms first-audio budget, endpointing is allocated ~300ms via a silence timeout. Product wants to shave perceived latency without cutting users off mid-sentence. What is the best move?",
         options: [
           "Lower the silence timeout aggressively, to around 50ms, since the shorter the wait the more responsive the agent feels, and occasional mid-sentence cutoffs are an acceptable cost",
           "Remove endpointing entirely and let the LLM re-evaluate after every partial transcript, since that avoids committing to any fixed wait time",
@@ -382,17 +382,17 @@ Pick from requirements, not hype:
       "**WER (Word Error Rate)** is the ASR standard, and its definition tells you exactly what it does and doesn't capture.\n\n`WER = (Substitutions + Insertions + Deletions) / (number of reference words)`. Align the hypothesis to the reference transcript, count the three edit types, divide by reference length. It's an **edit distance**, so every word counts the same.\n\n==That equal weighting is the whole limitation: WER treats a dropped 'the' and a wrong drug name or account number as identical one-word errors, even though only one of them breaks the task.== A 6% WER means 6 of every 100 words are wrong on average — but *which* words, WER cannot tell you.",
       "The scenario's paradox — low WER, failed calls — is the classic WER trap, and it's the number-one interview point on ASR eval.\n\n==A 5% WER that lands on the ONE critical entity (the appointment date, the account number) is worse for the product than a 15% WER spread across filler words ('um', 'the', 'you know') that don't change meaning.== WER is entity-blind: it can look excellent while systematically corrupting exactly the words the downstream task depends on.\n\nThat's precisely what the support engineer found: sub-5% WER on calls where the single load-bearing entity was wrong. The aggregate metric was healthy; the task-relevant errors were fatal. This is why WER is necessary but never sufficient for a product decision.",
       { type: "illustration", label: "Two transcripts, same WER, opposite outcomes", content: `Reference: "book the appointment for Tuesday the fourteenth at account 4471"
-                                                      (12 words)
+                                                      (10 words)
 
 Hypothesis A (1 error on filler):
   "book THE appointment for Tuesday the fourteenth at account 4471"
    -> "book uh the ..." style slip, 1 wrong filler word
-   WER = 1/12 = 8.3%   TASK OUTCOME: SUCCESS (entities intact)
+   WER = 1/10 = 10%   TASK OUTCOME: SUCCESS (entities intact)
 
 Hypothesis B (1 error on the entity):
   "book the appointment for THURSDAY the fourteenth at account 4471"
    -> Tuesday -> Thursday, 1 substitution
-   WER = 1/12 = 8.3%   TASK OUTCOME: FAILURE (wrong day booked)
+   WER = 1/10 = 10%   TASK OUTCOME: FAILURE (wrong day booked)
 
 Same WER. Opposite product result. WER cannot tell these apart.
 -> track ENTITY / KEYWORD error rate on the words the task depends on.` },
