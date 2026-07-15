@@ -4592,3 +4592,13 @@ Closes out this session's GSL ask: Phase A.
 **Real current GSL state, re-verified this session, not from memory:** 81 'clean' / 81 tracked (S: 25/25, A: 56/56) — GSL's tracked Phase-A/S/A-tier pool is now fully clean. (Separate from this: the 132-module full `src/data` universe found in the 2026-07-12 QnA coverage scan — most of that gap is B-tier/agents/tracks/playground content outside this Phase-A tracked pool, not re-checked this session.)
 
 **Still owed, unchanged from the last entry, not attempted this session:** the QnA standard's own question-quality audit (never run on the ~2,850+ GSL draft questions); the 15 modules this file's 2026-07-11 23:08 IST entry logged as `in_progress` with residual issues predating this batch (round 2 not started — worth confirming those aren't the same modules already closed here before re-scoping).
+
+## Session 2026-07-15 14:58 IST (Wednesday) — Ported MSL's new content-verification tooling; GSL confirmed clean
+
+MSL found and fixed 36 duplicate-object-key bugs today (dead `interactiveId` etc. fields, invisible to prose/voice content audits) and built `scripts/check-duplicate-keys.mjs` to catch this bug class exhaustively going forward. Ported it here (`scripts/check-duplicate-keys.mjs`, `scripts/extract-numeric-claims.mjs`) per the shared root `CLAUDE.md`'s new Recordkeeping rule 6.
+
+Porting caught a real bug in the checker itself before it caused a false alarm here: v1 used an indentation heuristic tuned to MSL's `foundations/*.js` shape (module objects always open on their own `  {` line) that doesn't hold for GSL's `preplabQuestions.js` (question objects open as `  { id: "x", topic: ..., ...` with several keys inline) — v1 reported 9 false-positive "duplicates" there. Rewrote as v2: a real brace-depth parser that strips strings/comments first, then checks every object literal at any nesting depth independently, no assumption about which depth is "the module" — verified against MSL (no regression, still 0), a synthetic injected duplicate in both file shapes (still caught both), and this file (false positive gone).
+
+**Result: `node scripts/check-duplicate-keys.mjs` on GSL's full `src/data/` (60 files) → 0 duplicate keys.** GSL never had this bug class to begin with — this is a clean bill of health, not a fix.
+
+Files touched: `scripts/check-duplicate-keys.mjs` (new, v2), `scripts/extract-numeric-claims.mjs` (new). No content files touched.
