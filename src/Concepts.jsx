@@ -12575,7 +12575,6 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
           const done = mastery.has(m.id);
           const meta = MODULE_META[m.id] || {};
           const rData = RUNNER_DATA[m.id];
-          const estMins = meta.mins || (rData?.depthTier === "deep" ? 12 : rData?.depthTier === "light" ? 5 : rData ? 8 : null);
           return (
             <div
               key={m.id}
@@ -12612,7 +12611,6 @@ function GymRoomView({ gymId, mastery, onOpenModule, onBack, onNavigate }) {
                 {(m.subtitle || meta.insight) && <p className="text-xs text-zinc-500 leading-relaxed">{m.subtitle || meta.insight}</p>}
               </div>
               <div className="shrink-0 flex flex-col items-end gap-1">
-                {estMins && <span className="text-[10px] text-zinc-600">~{estMins} min</span>}
                 <span className={`text-xs font-semibold ${done ? "text-zinc-500" : "text-violet-400"}`}>
                   {done ? "Revisit" : "Start →"}
                 </span>

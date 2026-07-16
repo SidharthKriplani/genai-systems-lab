@@ -4956,3 +4956,52 @@ draft: 0, parked: 109, answered: 22.
 
 **Not yet committed/pushed** -- local working tree only, exact git commands handed to the user
 after this entry. Next up per `QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 6.
+
+---
+
+### 2026-07-16 14:10 IST (Thursday) — Time-estimate badges archived (both labs), then GSL / Language Models / Tier S done (sequence item 6)
+
+**Time-estimate badges.** Per explicit user feedback (screenshotted from live MSL: "50 min ·
+intermediate" list badge and "Intermediate ~50 min [tags]" header badge, called out as "way
+stupid" / "low value for now") -- archived, not deleted. Removed from render only; underlying data
+fields left in place in case this is revisited later.
+
+- MSL: `estimatedMin` field is defined per-module in `src/data/foundations/*Modules.js` (19
+  content files) and was rendered at exactly two sites per tab -- a sidebar list-item line
+  (`{m.estimatedMin} min · {m.difficulty}`) and a header badge (`~{selected.estimatedMin} min`) --
+  across all 19 `src/tabs/foundations/*Tab.jsx` files, byte-for-byte identical pattern in every
+  file. Patched all 19 with one script: dropped the list-item time+separator (kept difficulty),
+  removed the header badge line entirely. `estimatedMin` data itself untouched.
+- GSL: no comparable field existed -- the one "~X min" badge GSL did show (in `Concepts.jsx`'s
+  module grid) was a fallback computed at render time from a small hardcoded `MODULE_META.mins`
+  dict covering ~25 modules, not a real per-module data field. Removed the `estMins` computation
+  and its render line; `MODULE_META`'s `mins` entries left in the dict, just unused now.
+
+Build-validated: GSL via clean `npx vite build`. MSL via `@babel/parser` syntax check across all
+19 patched files (0 parse errors) -- this sandbox still can't run a full MSL `vite build` (its
+`node_modules` only ships the Mac's darwin-arm64 `@rollup` binary, npm registry unreachable here
+to install the linux one).
+
+**GSL / Language Models / Tier S batch — sequence item 6, 268 questions, 1 hand-patch.** Modules:
+`attention` (36q), `gqa-mqa` (32q), `hallucination` (30q), `nextoken` (31q), `sampling` (34q),
+`sparse-attention` (33q), `tokenizer` (35q), `training-signal` (37q). Source content: `attention`,
+`hallucination`, `nextoken`, `sampling`, `tokenizer`, `training-signal` live directly in
+`src/data/foundationsRunnerData.js`; `gqa-mqa` in `src/data/foundations/market-gap.js`; `sparse-
+attention` in `src/data/foundations/breadth-2.js`. Extracted all 8 with the established
+`awk` block-extract + `node --input-type=module eval()` technique (Node can't resolve Vite's
+extensionless bundler imports directly).
+
+8 parallel writer agents, one per module. Independently re-validated programmatically across all
+268 questions: 1 flagged in `gqa-mqa` (`qna-gqa-training-time-01`, an L0 question that landed with
+0 Grounding bullets against the required 1). Hand-patched with a source-grounded bullet citing
+Llama-2-70B's real GQA-8 config (64 query heads, 8 KV heads) and PaLM/Falcon's MQA usage --
+re-validated clean, 0 issues, 268/268.
+
+Applied via the standard centralized single-writer regex-splice script, `node --check` clean on
+both `qnaBank.js` and `qnaStatus.js`, 0 duplicate keys, `validate-qna-status.mjs` reports 0 drift.
+Direct `node -e` read confirms all 268 touched questions carry non-empty `answer` arrays and all 8
+module statuses read `"answered"`. `qnaStatus.js` tally after this batch: 131/131 entries, 0 drift,
+draft: 0, parked: 101, answered: 30.
+
+**Not yet committed/pushed** -- local working tree only, exact git commands handed to the user
+after this entry. Next up per `QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 7.
