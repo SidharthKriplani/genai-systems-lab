@@ -501,3 +501,21 @@ html:not([data-theme="light"])[data-palette="luna"] .border-violet-500 {
   white-space: nowrap; color: currentColor;
 }
 .nb-block-row:hover .nb-edited { opacity: 0.4; }
+
+
+/* NoteEditor mobile pass (2026-07-17): phone screens reclaim the chrome. */
+.nb-editor .nb-meta-compact { display: none; }
+@media (max-width: 700px) {
+  /* The +/drag gutter is hover-era desktop furniture — on touch it only eats
+     40px of a narrow column (block types via toolbar/slash; delete via select
+     + backspace). */
+  .nb-editor .nb-gutter { display: none !important; }
+  .nb-editor .nb-body-pad { padding: 1rem 0.9rem 40vh !important; }
+  /* Toolbar swipes; no visible scrollbar strip under it. */
+  .nb-editor .nb-toolbar { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .nb-editor .nb-toolbar::-webkit-scrollbar { display: none; }
+  /* Header meta: words/read-time/Created hidden — Edited time only. */
+  .nb-editor .nb-meta-full { display: none !important; }
+  .nb-editor .nb-meta-compact { display: inline !important; }
+  .nb-editor .nb-export { display: none !important; }
+}

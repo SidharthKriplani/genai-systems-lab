@@ -1390,23 +1390,24 @@ export function NoteEditor({ trackId, note, onBack }) {
         <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a78bfa', background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 4, padding: '0.14rem 0.45rem', textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>📝 Note</span>
         <span style={{ fontSize: '0.78rem', fontWeight: 600, color: T.mid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{title || 'Untitled'}</span>
         <div style={{ flex: 1, minWidth: 0 }} />
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.7rem', color: T.ghost, flexShrink: 0, whiteSpace: 'nowrap' }}>
+        <span className="nb-meta-full" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.7rem', color: T.ghost, flexShrink: 0, whiteSpace: 'nowrap' }}>
           <span key={savedAt || 0} className="nb-savedot" style={{ width: 6, height: 6, borderRadius: '50%', background: savedAt ? '#34d399' : T.ghost, display: 'inline-block', flexShrink: 0 }} />
           {stats.words} words · {stats.minutes} min read
           {stats.todos > 0 ? ` · ${stats.todosDone}/${stats.todos} done` : ''}{createdLabel ? ` · ${createdLabel}` : ''} · {savedLabel}
         </span>
+        <span className="nb-meta-compact" style={{ fontSize: '0.7rem', color: T.ghost, flexShrink: 0, whiteSpace: 'nowrap' }}>{savedLabel}</span>
         <button onClick={copyMarkdown} title="Copy note as Markdown" className="nb-chip"
           style={{ background: 'rgba(24,24,27,0.9)', border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', color: copiedMd ? '#a78bfa' : T.low, fontSize: '0.7rem', fontWeight: 600, padding: '0.28rem 0.6rem', whiteSpace: 'nowrap', fontFamily: T.sans }}>
           {copiedMd ? 'Copied ✓' : 'Copy MD'}
         </button>
-        <button onClick={downloadMarkdown} title="Download as .md" className="nb-chip"
+        <button onClick={downloadMarkdown} title="Download as .md" className="nb-chip nb-export"
           style={{ background: 'rgba(24,24,27,0.9)', border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', color: T.low, fontSize: '0.7rem', fontWeight: 600, padding: '0.28rem 0.6rem', whiteSpace: 'nowrap', fontFamily: T.sans }}>
           Export ↓
         </button>
       </div>
 
       {/* ── Format toolbar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0.4rem 1.25rem', borderBottom: `1px solid ${T.border}`, flexShrink: 0, overflowX: 'auto', background: 'rgba(24,24,27,0.55)', backdropFilter: 'blur(6px)' }}>
+      <div className="nb-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0.4rem 1.25rem', borderBottom: `1px solid ${T.border}`, flexShrink: 0, overflowX: 'auto', background: 'rgba(24,24,27,0.55)', backdropFilter: 'blur(6px)' }}>
         <button className="nb-tbbtn" style={tbBtn(false)} title="Bold (⌘B)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('**')}><b>B</b></button>
         <button className="nb-tbbtn" style={tbBtn(false)} title="Italic (⌘I)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('*')}><i>I</i></button>
         <button className="nb-tbbtn" style={tbBtn(false)} title="Strikethrough (⌘⇧S)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('~~')}><s>S</s></button>
@@ -1434,7 +1435,7 @@ export function NoteEditor({ trackId, note, onBack }) {
 
       {/* ── Body ── */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex' }}>
-        <div style={{ flex: 1, minWidth: 0, padding: '1.75rem 2rem 40vh', background: 'radial-gradient(640px 220px at 50% -60px, rgba(124,58,237,0.10), transparent)' }}>
+        <div className="nb-body-pad" style={{ flex: 1, minWidth: 0, padding: '1.75rem 2rem 40vh', background: 'radial-gradient(640px 220px at 50% -60px, rgba(124,58,237,0.10), transparent)' }}>
           <div style={{ maxWidth: 720, margin: '0 auto' }}>
             {/* Title */}
             <textarea
