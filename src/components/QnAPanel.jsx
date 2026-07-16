@@ -24,9 +24,40 @@
 //     "expand" state, since the natural next click is to finish expanding, and it also
 //     correctly represents that the set is no longer fully closed OR fully open — "expand"
 //     is the safer default because it never leaves a stray collapsed item unreachable).
+//
+// Answer bullet display (2026-07-16): qnaBank.js's `answer` arrays carry AMGB category labels
+// (**Answer.**/**Mechanism.**/**Grounding.**/**Boundary.**) per QNA-ANSWER-SPEC v1 — that
+// structure is for the writer/verify pipeline, not for on-screen display. The panel strips the
+// label before rendering each bullet and offers a numbered/dotted list-style toggle instead
+// (persisted to localStorage, same pattern as SpeakMode's `gsl-speak-history`).
 
 import { useState } from "react";
 import { qnaForModule, qnaQuestionCount } from "../data/qnaBank.js";
+
+const BULLET_STYLE_KEY = "gsl-qna-bullet-style"; // "dot" | "number"
+
+function loadBulletStyle() {
+  try {
+    const v = localStorage.getItem(BULLET_STYLE_KEY);
+    return v === "number" ? "number" : "dot";
+  } catch {
+    return "dot";
+  }
+}
+
+function saveBulletStyle(style) {
+  try {
+    localStorage.setItem(BULLET_STYLE_KEY, style);
+  } catch {}
+}
+
+// Strips the leading **Answer./Mechanism./Grounding./Boundary.** category label a bullet
+// carries in qnaBank.js — that labeling is for the writer/verify pipeline (QNA-ANSWER-SPEC v1),
+// not for on-screen display, where it reads as clutter rather than structure.
+const CATEGORY_PREFIX_RE = /^\*\*(?:Answer|Mechanism|Grounding|Boundary)\.\*\*\s*/;
+function stripCategoryLabel(text) {
+  return typeof text === "string" ? text.replace(CATEGORY_PREFIX_RE, "") : text;
+}
 
 // Small padlock SVG (no emoji per house rule) — reused by the runner's tab bar.
 export function LockIcon({ size = 11, className = "" }) {
@@ -75,19 +106,53 @@ function Md({ text }) {
   );
 }
 
+// Toggle between numbered (1. 2. 3.) and dotted (•) bullet-list styles.
+function BulletStyleToggle({ style, onChange }) {
+  return (
+    <div className="inline-flex items-center rounded-md border border-zinc-700 overflow-hidden">
+      <button
+        onClick={() => onChange("dot")}
+        title="Dotted list"
+        aria-pressed={style === "dot"}
+        className={`text-[10px] font-mono px-2 py-0.5 transition-colors ${
+          style === "dot" ? "bg-zinc-700 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
+        }`}
+      >
+        •
+      </button>
+      <button
+        onClick={() => onChange("number")}
+        title="Numbered list"
+        aria-pressed={style === "number"}
+        className={`text-[10px] font-mono px-2 py-0.5 transition-colors border-l border-zinc-700 ${
+          style === "number" ? "bg-zinc-700 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
+        }`}
+      >
+        1.2.3
+      </button>
+    </div>
+  );
+}
+
 // Renders node.answer in either supported shape:
-//   - array of AMGB bullet strings (QNA-ANSWER-SPEC v1, current format) → bulleted list
+//   - array of AMGB bullet strings (QNA-ANSWER-SPEC v1, current format) → list, category label
+//     stripped, style per `bulletStyle`
 //   - single prose string (pre-2026-07-16 format, grandfathered pilots) → one paragraph
-function AnswerBody({ answer }) {
+function AnswerBody({ answer, bulletStyle }) {
   if (Array.isArray(answer)) {
+    const numbered = bulletStyle === "number";
+    const Tag = numbered ? "ol" : "ul";
+    const listCls = numbered
+      ? "space-y-1.5 list-decimal list-outside pl-4 marker:text-zinc-500 marker:font-mono marker:text-xs"
+      : "space-y-1.5 list-disc list-outside pl-4 marker:text-zinc-600";
     return (
-      <ul className="space-y-1.5 list-disc list-outside pl-4 marker:text-zinc-700">
+      <Tag className={listCls}>
         {answer.map((bullet, i) => (
           <li key={i} className="text-sm text-zinc-300 leading-relaxed">
-            <Md text={bullet} />
+            <Md text={stripCategoryLabel(bullet)} />
           </li>
         ))}
-      </ul>
+      </Tag>
     );
   }
   return (
@@ -132,7 +197,7 @@ function FilterChip({ active, dimmed, cls, onClick, children }) {
   );
 }
 
-function QuestionRow({ node, expanded, onToggle, onJump }) {
+function QuestionRow({ node, expanded, onToggle, onJump, bulletStyle }) {
   const hasAnswer = !!node.answer; // parked questions ship before their answers do
   return (
     <div id={`qna-${node.id}`} className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
@@ -153,7 +218,7 @@ function QuestionRow({ node, expanded, onToggle, onJump }) {
       </button>
       {expanded && (
         <div className="px-4 pb-4 pt-1 space-y-3 border-t border-zinc-800/60">
-          <AnswerBody answer={node.answer} />
+          <AnswerBody answer={node.answer} bulletStyle={bulletStyle} />
           {node.trap && (
             <div className="rounded-lg border border-rose-900/40 bg-rose-950/10 px-3 py-2.5">
               <p className="text-[13px] leading-relaxed text-zinc-400">
@@ -181,6 +246,12 @@ export default function QnAPanel({ moduleId, unlocked }) {
   const [expanded, setExpanded] = useState(() => new Set());
   const [levelFilter, setLevelFilter] = useState(null); // 0-3 | null
   const [difficultyFilter, setDifficultyFilter] = useState(null); // "easy"|"medium"|"hard" | null
+  const [bulletStyle, setBulletStyle] = useState(loadBulletStyle); // "dot" | "number"
+
+  function changeBulletStyle(style) {
+    setBulletStyle(style);
+    saveBulletStyle(style);
+  }
 
   const rule = (
     <div className="flex items-center gap-3">
@@ -306,9 +377,15 @@ export default function QnAPanel({ moduleId, unlocked }) {
         </div>
       )}
 
-      <p className="mt-3 text-[11px] text-zinc-500 font-mono">
-        {allNodes.length} questions · tap to reveal
-      </p>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="text-[11px] text-zinc-500 font-mono">
+          {allNodes.length} questions · tap to reveal
+        </p>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] font-mono text-zinc-600 uppercase">List style</span>
+          <BulletStyleToggle style={bulletStyle} onChange={changeBulletStyle} />
+        </div>
+      </div>
 
       <div className="mt-2 flex items-center gap-1.5 flex-wrap">
         <span className="text-[9px] font-mono text-zinc-600 uppercase mr-0.5">Level</span>
@@ -377,6 +454,7 @@ export default function QnAPanel({ moduleId, unlocked }) {
                   expanded={expanded.has(node.id)}
                   onToggle={toggle}
                   onJump={jump}
+                  bulletStyle={bulletStyle}
                 />
               ))}
             </div>
@@ -396,6 +474,7 @@ export default function QnAPanel({ moduleId, unlocked }) {
                   expanded={expanded.has(node.id)}
                   onToggle={toggle}
                   onJump={jump}
+                  bulletStyle={bulletStyle}
                 />
               ))}
             </div>
