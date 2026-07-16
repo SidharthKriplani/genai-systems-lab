@@ -487,3 +487,6 @@ html:not([data-theme="light"])[data-palette="luna"] .border-violet-500 {
   .mo-rise, .mo-fade, .mo-pop, .mo-lock, .mo-shake, .mo-correct, .mo-count,
   .mo-expand, .mo-stagger > * { animation: none !important; }
 }
+
+/* Notes editor: block placeholder is a whisper - only the focused block shows it (NoteEditor) */
+.nb-block-input::placeholder { color: currentColor; opacity: 0.18; }

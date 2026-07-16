@@ -298,7 +298,7 @@ const taBase = {
 
 function EditableBlock({
   block, number, focusReq, onChangeContent, onPatch, onSplit, onMergePrev,
-  onNavigate, onExitList, onPaste, onFocusBlock, onSlash, slashOpen, onSlashKey,
+  onRangeSelect, onNavigate, onExitList, onPaste, onFocusBlock, onSlash, slashOpen, onSlashKey,
 }) {
   const ref = useRef(null)
   const [focused, setFocused] = useState(false)
@@ -377,6 +377,12 @@ function EditableBlock({
       onMergePrev()
       return
     }
+    if (e.key === 'ArrowDown' && e.shiftKey && el.selectionEnd === block.content.length) {
+      e.preventDefault(); onRangeSelect(1); return
+    }
+    if (e.key === 'ArrowUp' && e.shiftKey && el.selectionStart === 0 && el.selectionEnd === 0) {
+      e.preventDefault(); onRangeSelect(-1); return
+    }
     if (e.key === 'ArrowUp' && el.selectionStart === 0 && el.selectionEnd === 0) {
       e.preventDefault(); onNavigate(-1); return
     }
@@ -437,7 +443,8 @@ function EditableBlock({
           onPaste={onPaste}
           onFocus={() => { setFocused(true); onFocusBlock(); requestAnimationFrame(() => autosize(ref.current)) }}
           onBlur={() => { setFocused(false); onSlash(null) }}
-          placeholder={block.type === 'text' ? "Type '/' for blocks, or just write…" : ''}
+          className="nb-block-input"
+          placeholder={block.type === 'text' && focused ? "Type '/' for blocks, or just write…" : ''}
           style={{ ...taBase, ...typo, display: showRendered ? 'none' : 'block',
             fontStyle: block.type === 'quote' ? 'italic' : 'normal' }}
           onInput={e => autosize(e.target)}
@@ -764,6 +771,7 @@ export function NoteEditor({ trackId, note, onBack }) {
     note.blocks?.length ? note.blocks : [{ id: uid(), type: 'text', content: '' }])
   const [focusReq, setFocusReq] = useState(null)          // { id, pos, t }
   const [focusedId, setFocusedId] = useState(null)
+  const [sel, setSel] = useState(null)              // block-range selection { a, h }
   const [slash, setSlash] = useState(null)                // { blockId, query, index }
   const [menuFor, setMenuFor] = useState(null)            // block id with open handle-menu
   const [dragIdx, setDragIdx] = useState(null)
@@ -983,6 +991,48 @@ export function NoteEditor({ trackId, note, onBack }) {
     // single-line non-URL → default paste
   }
 
+  // ── Block-range selection (docs-style shift+arrow across blocks) ─────────
+
+  function rangeSelect(id, dir) {
+    const i = idx(id)
+    const h = Math.max(0, Math.min(blocks.length - 1, i + dir))
+    if (h === i) return
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur() } catch {}
+    setSel({ a: i, h })
+  }
+
+  useEffect(() => {
+    if (!sel) return
+    const lo = Math.min(sel.a, sel.h), hi = Math.max(sel.a, sel.h)
+    const onKey = (e) => {
+      if (e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.preventDefault()
+        const nh = Math.max(0, Math.min(blocks.length - 1, sel.h + (e.key === 'ArrowDown' ? 1 : -1)))
+        setSel({ a: sel.a, h: nh })
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault()
+        try { navigator.clipboard.writeText(blocksToMarkdown('', blocks.slice(lo, hi + 1))) } catch {}
+        return
+      }
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault()
+        const next = blocks.filter((_, i2) => i2 < lo || i2 > hi)
+        commit(next.length ? next : [{ id: uid(), type: 'text', content: '' }])
+        setSel(null)
+        return
+      }
+      if (e.key === 'Escape' || (!e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) || (!e.metaKey && !e.ctrlKey && e.key.length === 1)) {
+        setSel(null)
+      }
+    }
+    const onMouse = () => setSel(null)
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('mousedown', onMouse)
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onMouse) }
+  }, [sel, blocks])
+
   // ── Derived stats ─────────────────────────────────────────────────────────
 
   const stats = useMemo(() => {
@@ -1148,6 +1198,8 @@ export function NoteEditor({ trackId, note, onBack }) {
                       animationDelay: `${Math.min(i, 10) * 22}ms`,
                       padding: '0.14rem 0', borderTop: overIdx === i && dragIdx !== null && dragIdx !== i ? `2px solid ${T.accent}` : '2px solid transparent',
                       opacity: dragIdx === i ? 0.45 : 1,
+                      background: sel && i >= Math.min(sel.a, sel.h) && i <= Math.max(sel.a, sel.h) ? T.accentFaint : 'transparent',
+                      borderRadius: 6,
                     }}
                     className="nb-row"
                   >
@@ -1193,6 +1245,7 @@ export function NoteEditor({ trackId, note, onBack }) {
                           onPatch={(patch, opts) => patchBlock(block.id, patch, opts)}
                           onSplit={(before, after) => splitBlock(block.id, before, after)}
                           onMergePrev={() => mergePrev(block.id)}
+                          onRangeSelect={dir => rangeSelect(block.id, dir)}
                           onNavigate={dir => navigate(block.id, dir)}
                           onExitList={() => patchBlock(block.id, { type: 'text' }, { refocus: true })}
                           onPaste={e => handlePaste(e, block.id)}
