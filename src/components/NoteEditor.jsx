@@ -18,6 +18,7 @@
 // blocks load untouched; new types are additive.
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { updateNoteById } from '../utils/tracks.js'
 
 // ── Theme (lab design tokens) ─────────────────────────────────────────────────
@@ -229,6 +230,7 @@ const BLOCK_DEFS = [
   { type: 'h3',       label: 'Heading 3',     icon: 'H3',  desc: 'Small section heading',          kw: 'heading three small h3' },
   { type: 'bullet',   label: 'Bulleted list', icon: '•',   desc: 'Simple bullet point',            kw: 'bullet list unordered ul point' },
   { type: 'numbered', label: 'Numbered list', icon: '1.',  desc: 'Ordered list item',              kw: 'numbered ordered list ol' },
+  { type: 'subbullet', label: 'Sub-bullet',   icon: '↳',   desc: 'Indented bullet (Tab does this too)', kw: 'sub bullet indent nested child level' },
   { type: 'todo',     label: 'To-do',         icon: '☑',   desc: 'Checkbox you can tick off',      kw: 'todo task checkbox check tick' },
   { type: 'quote',    label: 'Quote',         icon: '❝',   desc: 'Pull-quote block',               kw: 'quote blockquote citation' },
   { type: 'callout',  label: 'Callout',       icon: '💡',  desc: 'Highlighted info box',           kw: 'callout info tip warning note box' },
@@ -649,17 +651,24 @@ function LinkBlock({ block, onPatch, pending }) {
 
 // ── Slash menu ────────────────────────────────────────────────────────────────
 
-function SlashMenu({ query, index, onPick }) {
+function SlashMenu({ anchorId, query, index, onPick }) {
   const items = BLOCK_DEFS.filter(d => d.type !== 'text' && (
     !query || d.label.toLowerCase().includes(query.toLowerCase()) || d.kw.includes(query.toLowerCase())
   ))
   if (!items.length) return null
-  return (
+  // Portal + fixed positioning (2026-07-16): the in-flow absolute version could
+  // be painted UNDER later block rows and used the page background color, so it
+  // read as a transparent ghost. Portal to <body> + solid elevated surface.
+  const anchorEl = typeof document !== 'undefined' ? document.getElementById(`nb-${anchorId}`) : null
+  const r = anchorEl ? anchorEl.getBoundingClientRect() : null
+  const top = r ? Math.max(8, Math.min(r.bottom + 4, (window.innerHeight || 800) - 336)) : 120
+  const left = r ? Math.max(8, Math.min(r.left + 24, (window.innerWidth || 1200) - 296)) : 120
+  return createPortal(
     <div className="nb-pop" style={{
-      position: 'absolute', zIndex: 40, top: '100%', left: '2rem', marginTop: 4,
+      position: 'fixed', zIndex: 9999, top, left,
       width: 280, maxHeight: 320, overflowY: 'auto',
-      background: T.bg, border: `1px solid ${T.border}`, borderRadius: 10,
-      boxShadow: '0 12px 32px rgba(0,0,0,0.45)', padding: '0.35rem',
+      background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10,
+      boxShadow: '0 16px 40px rgba(0,0,0,0.6)', padding: '0.35rem',
     }}>
       <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.ghost, padding: '0.3rem 0.6rem' }}>Blocks</div>
       {items.map((d, i) => (
@@ -685,7 +694,8 @@ function SlashMenu({ query, index, onPick }) {
           </div>
         </div>
       ))}
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -968,6 +978,7 @@ export function NoteEditor({ trackId, note, onBack }) {
       return
     }
     setSlash(null)
+    if (type === 'subbullet') { patchBlock(blockId, { type: 'bullet', content: '', indent: 1 }, { refocus: true }); return }
     if (type === 'divider') { patchBlock(blockId, { type: 'divider', content: '' }, { thenAddText: true }); return }
     if (type === 'code') { patchBlock(blockId, { type: 'code', content: '', lang: '' }, { refocus: true }); return }
     if (type === 'toggle') { patchBlock(blockId, { type: 'toggle', content: '', body: '' }, { refocus: true }); return }
@@ -1309,14 +1320,18 @@ export function NoteEditor({ trackId, note, onBack }) {
           <span style={{ background: T.highlightBg, borderRadius: 3, padding: '0 3px' }}>H</span>
         </button>
         <span style={{ width: 1, height: 16, background: T.border, margin: '0 6px', flexShrink: 0 }} />
-        {[['h1', 'H1'], ['h2', 'H2'], ['h3', 'H3'], ['bullet', '•'], ['numbered', '1.'], ['todo', '☑'], ['quote', '❝'], ['callout', '💡'], ['code', '</>']].map(([type, label]) => (
+        {[['h1', 'H1'], ['h2', 'H2'], ['h3', 'H3'], ['bullet', '•'], ['numbered', '1.']].map(([type, label]) => (
+          <button key={type} className="nb-tbbtn" style={{ ...tbBtn(focusedBlock?.type === type), fontFamily: T.sans }}
+            title={BLOCK_DEFS.find(d => d.type === type)?.label}
+            onMouseDown={e => e.preventDefault()} onClick={() => toolbarType(type)}>{label}</button>
+        ))}
+        <button className="nb-tbbtn" style={tbBtn(false)} title="Sub-bullet — indent (Tab)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarIndent(1)}>⇥</button>
+        <button className="nb-tbbtn" style={tbBtn(false)} title="Outdent (Shift+Tab)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarIndent(-1)}>⇤</button>
+        {[['todo', '☑'], ['quote', '❝'], ['callout', '💡'], ['code', '</>']].map(([type, label]) => (
           <button key={type} className="nb-tbbtn" style={{ ...tbBtn(focusedBlock?.type === type), fontFamily: type === 'code' ? T.mono : T.sans }}
             title={BLOCK_DEFS.find(d => d.type === type)?.label}
             onMouseDown={e => e.preventDefault()} onClick={() => toolbarType(type)}>{label}</button>
         ))}
-        <span style={{ width: 1, height: 16, background: T.border, margin: '0 6px', flexShrink: 0 }} />
-        <button className="nb-tbbtn" style={tbBtn(false)} title="Outdent (Shift+Tab)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarIndent(-1)}>⇤</button>
-        <button className="nb-tbbtn" style={tbBtn(false)} title="Sub-bullet — indent (Tab)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarIndent(1)}>⇥</button>
         <span style={{ marginLeft: 'auto', fontSize: '0.64rem', color: T.ghost, whiteSpace: 'nowrap', paddingLeft: 8 }}>
           “/” for blocks · “# ” “- ” “[] ” “&gt; ” “```” shortcuts · ⇥ sub-bullet
         </span>
@@ -1382,6 +1397,7 @@ export function NoteEditor({ trackId, note, onBack }) {
                         <BlockMenu
                           onTurnInto={type => {
                             if (type === 'toggle') patchBlock(block.id, { type, body: block.body || '' }, { refocus: true })
+                            else if (type === 'subbullet') patchBlock(block.id, { type: 'bullet', indent: 1 }, { refocus: true })
                             else patchBlock(block.id, { type }, { refocus: true })
                           }}
                           onDuplicate={() => duplicateBlock(block.id)}
@@ -1440,6 +1456,7 @@ export function NoteEditor({ trackId, note, onBack }) {
 
                       {isSlashHere && (
                         <SlashMenu
+                          anchorId={block.id}
                           query={slash.query}
                           index={slash.index}
                           onPick={type => applySlashPick(block.id, type)}
