@@ -5114,3 +5114,40 @@ Wrote AMGB atomic-bullet answers for all 226 questions across Tier A group 3: `p
 Cumulative rollout total after this batch: **67 modules, 2,164 questions, all answered** (GSL only).
 
 Next: moduleTiers.js TIER_A group 4, Prompt Engineering — `system-prompts`, `structured-outputs`, `prompt-caching`, `multiturn-context`, `injection-lab` (5 modules).
+
+## 2026-07-16 — QnA rollout batch 15: Prompt Engineering (Tier A group 4)
+
+Fourth batch of the real `moduleTiers.js` TIER_A priority order (after Language
+Models, Retrieval, Foundation Models). Modules: system-prompts (31q),
+structured-outputs (32q), prompt-caching (28q), multiturn-context (33q),
+injection-lab (33q) — 157 questions total.
+
+Source files: `src/data/foundationsRunnerData.js` (system-prompts,
+structured-outputs), `src/data/foundations/breadth-2.js` (prompt-caching,
+multiturn-context), `src/data/playground/playground-labs.js` (injection-lab).
+Note: structured-outputs has no keyPoints/recap fields in source (confirmed
+genuinely absent, not an extraction bug) — writer agent worked from
+groundUp/scenario/explanation/mcqs/takeaway only.
+
+5 parallel writer agents, one per module, each grounded strictly in that
+module's own source content. Independently re-validated programmatically
+against the full spec checklist (bullet anatomy, word caps, banned openers,
+per-level Mechanism/Grounding/Boundary bands) across all 157 questions — 2
+flagged:
+- `structured-outputs/qna-confidence-threshold-01` (L2): under-band at 6
+  bullets (source genuinely gives no numeric confidence threshold). Fixed by
+  adding a second, genuinely distinct Grounding bullet quoting the source's
+  "cannot express uncertainty" / "coerce a plausible-looking value" language
+  — brings total to 7, within the L2 band.
+- `prompt-caching/qna-caching-payoffs-01` (L0): real gap, zero Grounding
+  bullets against a required-1 band. Fixed by converting the cost-mechanism
+  bullet into a Grounding bullet citing the module's own worked-example
+  illustration numbers (6,050 tokens → ~50 tokens per call on a cache hit),
+  keeping total bullet count within the L0 band.
+
+0 fabricated facts found. Applied via centralized single-writer script,
+`node --check` clean, 0 duplicate keys, all 157 questions confirmed non-empty.
+
+**Cumulative GSL QnA status**: 74/131 modules answered, 57 parked, 0 draft.
+Group 4 (Prompt Engineering) of `moduleTiers.js` TIER_A now closed. Group 5
+(Vector Infrastructure) is next whenever the rollout resumes.
