@@ -5,6 +5,7 @@ import {
 } from "./utils/tracks.js";
 import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
 import { highlightColorHex } from "./utils/highlightColors.js";
+import { Md, FormatToolbar } from "./components/RichText.jsx";
 
 // moduleId → foundation/gym label, so saved Foundation modules group by their
 // foundation (Language Models, Retrieval, NLP Foundations…) not their raw tag.
@@ -195,6 +196,7 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
   const [noteText, setNoteText] = useState("");
   const [dragFrom, setDragFrom] = useState(null);
   const nameInputRef = useRef(null);
+  const noteTextareaRef = useRef(null);
 
   useEffect(() => {
     setDraftName(track.name);
@@ -312,7 +314,9 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
 
                   {editNoteIdx === idx ? (
                     <div className="mb-2">
+                      <FormatToolbar textareaRef={noteTextareaRef} value={editNoteDraft} onChange={setEditNoteDraft} className="mb-1.5" />
                       <textarea
+                        ref={noteTextareaRef}
                         value={editNoteDraft}
                         onChange={e => setEditNoteDraft(e.target.value)}
                         rows={3}
@@ -334,7 +338,7 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
                   ) : (
                     <div className="flex items-start gap-2 mb-2">
                       {item.meta?.note ? (
-                        <p className="text-xs text-zinc-500 leading-relaxed whitespace-pre-wrap flex-1">{item.meta.note}</p>
+                        <p className="text-xs text-zinc-500 leading-relaxed whitespace-pre-wrap flex-1"><Md text={item.meta.note} /></p>
                       ) : (
                         <p className="text-xs text-zinc-700 italic flex-1">No note yet.</p>
                       )}
@@ -385,7 +389,9 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
                   </div>
                   {editNoteIdx === idx ? (
                     <div>
+                      <FormatToolbar textareaRef={noteTextareaRef} value={editNoteDraft} onChange={setEditNoteDraft} className="mb-1.5" />
                       <textarea
+                        ref={noteTextareaRef}
                         value={editNoteDraft}
                         onChange={e => setEditNoteDraft(e.target.value)}
                         rows={4}
@@ -404,7 +410,7 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">{item.content}</p>
+                    <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap"><Md text={item.content} /></p>
                   )}
                 </div>
               ) : (

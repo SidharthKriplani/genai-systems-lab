@@ -36,6 +36,7 @@
 
 import { useState } from "react";
 import { qnaForModule, qnaQuestionCount } from "../data/qnaBank.js";
+import { Md } from "./RichText.jsx";
 
 const BULLET_STYLE_KEY = "gsl-qna-bullet-style"; // "dot" | "number"
 
@@ -104,24 +105,6 @@ const DIFFICULTY_META = {
 
 const LEVELS = [0, 1, 2, 3];
 const DIFFICULTIES = ["easy", "medium", "hard"];
-
-// Minimal inline markdown: **bold**, *italic*. Kept local so the panel has no
-// dependency on FoundationsRunner's internal InlineMd.
-function Md({ text }) {
-  if (!text) return null;
-  const parts = String(text).split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g);
-  return (
-    <>
-      {parts.map((p, i) => {
-        if (p.startsWith("**") && p.endsWith("**"))
-          return <strong key={i} className="text-zinc-100 font-semibold">{p.slice(2, -2)}</strong>;
-        if (p.startsWith("*") && p.endsWith("*") && p.length > 2)
-          return <em key={i}>{p.slice(1, -1)}</em>;
-        return <span key={i}>{p}</span>;
-      })}
-    </>
-  );
-}
 
 // Toggle between numbered (1. 2. 3.) and dotted (•) bullet-list styles.
 function BulletStyleToggle({ style, onChange }) {
