@@ -984,14 +984,9 @@ export function NoteEditor({ trackId, note, onBack }) {
     }
     // Structured markdown -> real blocks (keeps the cut/paste section-move flow).
     // Plain multi-line prose -> falls through to NATIVE paste: stays in THIS block.
-    // Ratio rule: split into blocks only when md markers DOMINATE the paste
-    // (>=2 marker lines and >=50% of non-empty lines), or it opens with a
-    // heading/fence. One numbered line inside prose stays prose (Sidharth's spines).
-    const mdRe = /^(#{1,3}\s|[-*]\s|\d+\.\s|```|>\s|\[[ x]\]\s)/
-    const nonEmpty = text.split('\n').filter(l => l.trim() !== '')
-    const mdLines = nonEmpty.filter(l => mdRe.test(l)).length
-    const looksMd = /^(#{1,3}\s|```)/.test(text.trimStart()) || (mdLines >= 2 && mdLines >= nonEmpty.length * 0.5)
-    if (text.includes('\n') && looksMd) {
+    // Multi-line paste ALWAYS splits into blocks (Notion behavior; settled
+    // 2026-07-17 after trying one-block: headings need lines to land on).
+    if (text.includes('\n')) {
       e.preventDefault()
       const parsed = markdownToBlocks(text)
       const i = idx(blockId)
