@@ -5106,3 +5106,11 @@ Wrote AMGB atomic-bullet answers for all 134 questions across Tier A group 2: `c
 Cumulative rollout total after this batch: **60 modules, 1,938 questions, all answered** (GSL only).
 
 Next: moduleTiers.js TIER_A group 3, Foundation Models — `pretraining`, `instruction-tuning`, `model-families`, `scaling-laws`, `quantization`, `moe`, `distillation` (7 modules).
+
+## 2026-07-16 20:00 IST (Thursday) — GSL / Foundation Models / Tier A batch (226q, Tier A group 3 closed)
+
+Wrote AMGB atomic-bullet answers for all 226 questions across Tier A group 3: `pretraining` (31q), `instruction-tuning` (31q), `model-families` (33q), `scaling-laws` (32q), `quantization` (33q), `moe` (33q), `distillation` (33q) — the largest Tier A batch so far. Drafted by 7 parallel writer agents, one per module, each grounded strictly in that module's own source content (groundUp/scenario/explanation/keyPoints/recap/mcqs/takeaway from `src/data/foundationsRunnerData.js`, `src/data/foundations/quantization.js`, `src/data/foundations/moe.js`, `src/data/foundations/distillation.js`) — no new facts introduced. Independently re-validated programmatically against the full QNA-ANSWER-SPEC v1 checklist across all 226 questions — 0 flagged, clean on first validation pass. Applied via centralized single-writer regex-splice script, `node --check` clean on both `qnaBank.js` and `qnaStatus.js`, 0 duplicate keys across 4,257 total question ids, all 226 confirmed non-empty, `validate-qna-status.mjs` passes clean (131/131 entries, 0 drift, draft: 0, parked: 62, answered: 69).
+
+Cumulative rollout total after this batch: **67 modules, 2,164 questions, all answered** (GSL only).
+
+Next: moduleTiers.js TIER_A group 4, Prompt Engineering — `system-prompts`, `structured-outputs`, `prompt-caching`, `multiturn-context`, `injection-lab` (5 modules).
