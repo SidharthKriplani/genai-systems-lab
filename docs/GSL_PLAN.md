@@ -5064,3 +5064,11 @@ Wrote AMGB atomic-bullet answers for all 124 questions across sequence item 9: `
 Cumulative rollout total after this batch: **46 modules, 1,480 questions, all answered** (GSL only; MSL rollout not yet started).
 
 Sequence item 9 closed. Next: sequence item 10, GSL / Retrieval / Tier S — `chunking`, `dense-vs-sparse-retrieval`, `embeddings`, `rag-pipeline`, `reranking` (161 questions).
+
+## 2026-07-16 17:20 IST (Thursday) — GSL / Retrieval / Tier S batch (161q, sequence item 10 closed)
+
+Wrote AMGB atomic-bullet answers for all 161 questions across sequence item 10: `chunking` (29q), `dense-vs-sparse-retrieval` (29q), `embeddings` (35q), `rag-pipeline` (35q), `reranking` (33q). Drafted by 5 parallel writer agents, one per module, each grounded strictly in that module's own source content (groundUp/scenario/explanation/keyPoints/recap/mcqs/takeaway from `src/data/foundationsRunnerData.js`, `src/data/foundations/retrieval-breadth.js`, and `src/data/foundations/deepen-thin.js`) — no new facts introduced. Independently re-validated programmatically against the full QNA-ANSWER-SPEC v1 checklist (exactly one Answer bullet first, Mechanism/Grounding/Boundary counts within each level's band, every bullet 15-30 words, no banned filler/hedge words) across all 161 questions — 0 flagged, clean on first validation pass. Applied via centralized single-writer regex-splice script, `node --check` clean on both `qnaBank.js` and `qnaStatus.js`, 0 duplicate keys across 4,257 total question ids, all 161 questions confirmed to have non-empty answer arrays, `validate-qna-status.mjs` passes clean (131/131 entries, 0 drift, draft: 0, parked: 78, answered: 53).
+
+Cumulative rollout total after this batch: **51 modules, 1,641 questions, all answered** (GSL only; MSL rollout not yet started).
+
+Sequence item 10 closed. Next: sequence item 11, GSL / Voice & Speech AI / Tier S — `voice-asr-architectures`, `voice-realtime-agents`, `voice-streaming-latency` (103 questions). This closes out ALL of GSL Tier S.
