@@ -406,7 +406,7 @@ function EditableBlock({
 
   const wrapStyle = (() => {
     if (block.type === 'quote') return { borderLeft: `3px solid ${T.accent}`, paddingLeft: '0.85rem' }
-    if (block.type === 'callout') return { background: T.accentFaint, border: `1px solid ${T.border}`, borderRadius: 8, padding: '0.65rem 0.85rem', display: 'flex', gap: '0.6rem' }
+    if (block.type === 'callout') return { background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.28)', borderRadius: 10, padding: '0.65rem 0.85rem', display: 'flex', gap: '0.6rem' }
     return {}
   })()
 
@@ -461,8 +461,8 @@ function CodeBlock({ block, onPatch, onRemoveEmptyBackspace, onFocusBlock, focus
   useEffect(() => { autosize(ref.current) }, [block.content])
 
   return (
-    <div style={{ border: `1px solid ${T.border}`, borderRadius: 8, background: T.codeBg, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.7rem', borderBottom: `1px solid ${T.border}` }}>
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, background: '#0c0c0e', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.7rem', borderBottom: `1px solid ${T.border}`, background: 'rgba(39,39,42,0.45)' }}>
         <input
           value={block.lang || ''}
           onChange={e => onPatch({ lang: e.target.value })}
@@ -704,6 +704,19 @@ function BlockMenu({ onTurnInto, onDuplicate, onMoveUp, onMoveDown, onDelete, on
     </div>
   )
 }
+
+
+// ── Scoped polish CSS (violet accents, hover-reveal gutters, selection tint) ──
+const EDITOR_CSS = `
+.gsl-note-editor textarea::placeholder, .gsl-note-editor input::placeholder { color: #52525b; }
+.gsl-note-editor textarea, .gsl-note-editor input { caret-color: #a78bfa; }
+.gsl-note-editor ::selection { background: rgba(139,92,246,0.35); }
+.gsl-note-editor .nb-gutter { opacity: 0; transition: opacity 0.15s ease; }
+.gsl-note-editor .nb-row:hover .nb-gutter, .gsl-note-editor .nb-gutter.open { opacity: 1; }
+.gsl-note-editor .nb-gutter button:hover, .gsl-note-editor .nb-gutter span:hover { color: #a78bfa !important; }
+.gsl-note-editor .nb-tbbtn:hover { color: #e4d4fc !important; background: rgba(139,92,246,0.12) !important; }
+.gsl-note-editor .nb-chip:hover { border-color: rgba(139,92,246,0.6) !important; color: #c4b5fd !important; }
+`
 
 // ── Main NoteEditor ───────────────────────────────────────────────────────────
 
@@ -1012,42 +1025,48 @@ export function NoteEditor({ trackId, note, onBack }) {
 
   return (
     <div
+      className="gsl-note-editor"
       style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', fontFamily: T.sans }}
       onKeyDownCapture={e => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveNow() }
       }}
     >
+      <style>{EDITOR_CSS}</style>
       {/* ── Top bar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.6rem 1.25rem', borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.6rem 1.25rem', borderBottom: `1px solid ${T.border}`, flexShrink: 0, background: 'rgba(9,9,11,0.7)' }}>
         <button onClick={() => { saveNow(); onBack() }} title="Back to track"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.low, fontSize: '1rem', padding: 0, lineHeight: 1 }}>←</button>
+          style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(24,24,27,0.9)', border: `1px solid ${T.border}`, borderRadius: 8, cursor: 'pointer', color: T.mid, fontSize: '0.95rem', padding: 0, lineHeight: 1, flexShrink: 0 }}
+          className="nb-chip">←</button>
+        <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a78bfa', background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 4, padding: '0.14rem 0.45rem', textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>📝 Note</span>
+        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: T.mid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{title || 'Untitled'}</span>
         <div style={{ flex: 1, minWidth: 0 }} />
-        <span style={{ fontSize: '0.7rem', color: T.ghost, flexShrink: 0, whiteSpace: 'nowrap' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.7rem', color: T.ghost, flexShrink: 0, whiteSpace: 'nowrap' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: savedAt ? '#34d399' : T.ghost, display: 'inline-block', flexShrink: 0 }} />
           {stats.words} words · {stats.minutes} min read
           {stats.todos > 0 ? ` · ${stats.todosDone}/${stats.todos} done` : ''} · {savedLabel}
         </span>
-        <button onClick={copyMarkdown} title="Copy note as Markdown"
-          style={{ background: 'none', border: `1px solid ${T.border}`, borderRadius: 6, cursor: 'pointer', color: copiedMd ? T.accentText : T.low, fontSize: '0.7rem', padding: '0.22rem 0.55rem', whiteSpace: 'nowrap', fontFamily: T.sans }}>
+        <button onClick={copyMarkdown} title="Copy note as Markdown" className="nb-chip"
+          style={{ background: 'rgba(24,24,27,0.9)', border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', color: copiedMd ? '#a78bfa' : T.low, fontSize: '0.7rem', fontWeight: 600, padding: '0.28rem 0.6rem', whiteSpace: 'nowrap', fontFamily: T.sans }}>
           {copiedMd ? 'Copied ✓' : 'Copy MD'}
         </button>
-        <button onClick={downloadMarkdown} title="Download as .md"
-          style={{ background: 'none', border: `1px solid ${T.border}`, borderRadius: 6, cursor: 'pointer', color: T.low, fontSize: '0.7rem', padding: '0.22rem 0.55rem', whiteSpace: 'nowrap', fontFamily: T.sans }}>
+        <button onClick={downloadMarkdown} title="Download as .md" className="nb-chip"
+          style={{ background: 'rgba(24,24,27,0.9)', border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', color: T.low, fontSize: '0.7rem', fontWeight: 600, padding: '0.28rem 0.6rem', whiteSpace: 'nowrap', fontFamily: T.sans }}>
           Export ↓
         </button>
       </div>
 
       {/* ── Format toolbar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0.35rem 1.25rem', borderBottom: `1px solid ${T.border}`, flexShrink: 0, overflowX: 'auto' }}>
-        <button style={tbBtn(false)} title="Bold (⌘B)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('**')}><b>B</b></button>
-        <button style={tbBtn(false)} title="Italic (⌘I)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('*')}><i>I</i></button>
-        <button style={tbBtn(false)} title="Strikethrough (⌘⇧S)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('~~')}><s>S</s></button>
-        <button style={{ ...tbBtn(false), fontFamily: T.mono }} title="Inline code (⌘E)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('`')}>{'<>'}</button>
-        <button style={tbBtn(false)} title="Highlight (⌘⇧H)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('==')}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0.4rem 1.25rem', borderBottom: `1px solid ${T.border}`, flexShrink: 0, overflowX: 'auto', background: 'rgba(24,24,27,0.55)', backdropFilter: 'blur(6px)' }}>
+        <button className="nb-tbbtn" style={tbBtn(false)} title="Bold (⌘B)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('**')}><b>B</b></button>
+        <button className="nb-tbbtn" style={tbBtn(false)} title="Italic (⌘I)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('*')}><i>I</i></button>
+        <button className="nb-tbbtn" style={tbBtn(false)} title="Strikethrough (⌘⇧S)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('~~')}><s>S</s></button>
+        <button className="nb-tbbtn" style={{ ...tbBtn(false), fontFamily: T.mono }} title="Inline code (⌘E)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('`')}>{'<>'}</button>
+        <button className="nb-tbbtn" style={tbBtn(false)} title="Highlight (⌘⇧H)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarMark('==')}>
           <span style={{ background: T.highlightBg, borderRadius: 3, padding: '0 3px' }}>H</span>
         </button>
         <span style={{ width: 1, height: 16, background: T.border, margin: '0 6px', flexShrink: 0 }} />
         {[['h1', 'H1'], ['h2', 'H2'], ['h3', 'H3'], ['bullet', '•'], ['numbered', '1.'], ['todo', '☑'], ['quote', '❝'], ['callout', '💡'], ['code', '</>']].map(([type, label]) => (
-          <button key={type} style={{ ...tbBtn(focusedBlock?.type === type), fontFamily: type === 'code' ? T.mono : T.sans }}
+          <button key={type} className="nb-tbbtn" style={{ ...tbBtn(focusedBlock?.type === type), fontFamily: type === 'code' ? T.mono : T.sans }}
             title={BLOCK_DEFS.find(d => d.type === type)?.label}
             onMouseDown={e => e.preventDefault()} onClick={() => toolbarType(type)}>{label}</button>
         ))}
@@ -1058,7 +1077,7 @@ export function NoteEditor({ trackId, note, onBack }) {
 
       {/* ── Body ── */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex' }}>
-        <div style={{ flex: 1, minWidth: 0, padding: '1.75rem 2rem 40vh' }}>
+        <div style={{ flex: 1, minWidth: 0, padding: '1.75rem 2rem 40vh', background: 'radial-gradient(640px 220px at 50% -60px, rgba(124,58,237,0.10), transparent)' }}>
           <div style={{ maxWidth: 720, margin: '0 auto' }}>
             {/* Title */}
             <textarea
@@ -1073,7 +1092,7 @@ export function NoteEditor({ trackId, note, onBack }) {
               }}
               placeholder="Untitled"
               rows={1}
-              style={{ ...taBase, fontSize: '2rem', fontWeight: 800, lineHeight: 1.25, marginBottom: '1.1rem', color: T.text }}
+              style={{ ...taBase, fontSize: '2.2rem', fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.02em', marginBottom: '1.1rem', color: T.text }}
               onInput={e => autosize(e.target)}
             />
 
@@ -1094,7 +1113,7 @@ export function NoteEditor({ trackId, note, onBack }) {
                     className="nb-row"
                   >
                     {/* Gutter */}
-                    <div className="nb-gutter" style={{ display: 'flex', gap: 1, width: 40, flexShrink: 0, justifyContent: 'flex-end', paddingTop: block.type === 'h1' ? 10 : block.type === 'h2' ? 6 : 4, position: 'relative' }}>
+                    <div className={'nb-gutter' + (menuFor === block.id ? ' open' : '')} style={{ display: 'flex', gap: 1, width: 40, flexShrink: 0, justifyContent: 'flex-end', paddingTop: block.type === 'h1' ? 10 : block.type === 'h2' ? 6 : 4, position: 'relative' }}>
                       <button
                         title="Add block below"
                         onMouseDown={e => e.preventDefault()}
@@ -1158,7 +1177,7 @@ export function NoteEditor({ trackId, note, onBack }) {
                       )}
                       {block.type === 'divider' && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.5rem 0' }}>
-                          <div style={{ flex: 1, borderTop: `1px solid ${T.border}` }} />
+                          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.45), transparent)' }} />
                           <button onClick={() => removeBlock(block.id, false)} title="Remove divider"
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ghost, fontSize: '0.65rem', padding: 0, opacity: 0.6 }}>✕</button>
                         </div>
@@ -1196,7 +1215,7 @@ export function NoteEditor({ trackId, note, onBack }) {
         {/* ── Outline rail ── */}
         {wide && headings.length >= 2 && (
           <div style={{ width: 200, flexShrink: 0, padding: '2rem 1.25rem 2rem 0', position: 'sticky', top: 0, alignSelf: 'flex-start', maxHeight: '100%', overflowY: 'auto' }}>
-            <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.ghost, marginBottom: '0.5rem' }}>Outline</div>
+            <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a78bfa', marginBottom: '0.5rem' }}>Outline</div>
             {headings.map(h => (
               <div
                 key={h.id}

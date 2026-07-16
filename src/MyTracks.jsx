@@ -319,7 +319,8 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
               style={{
                 background: dragFrom === idx ? "rgba(124,58,237,0.15)" : "rgba(24,24,27,0.9)",
                 border: `1px solid ${dragFrom === idx ? "rgba(139,92,246,0.5)" : "rgba(63,63,70,0.6)"}`,
-                borderLeft: item.type === "highlight" ? `3px solid ${highlightColorHex(item.meta?.color)}` : undefined,
+                borderLeft: item.type === "highlight" ? `3px solid ${highlightColorHex(item.meta?.color)}`
+                  : item.type === "note" ? "3px solid rgba(139,92,246,0.55)" : undefined,
                 cursor: "grab",
               }}
             >
@@ -409,11 +410,21 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
               ) : item.type === "note" ? (
                 <>
                   <div className="flex-1 min-w-0" onClick={() => onOpenNote(item)} style={{ cursor: "pointer" }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">📝 Note</span>
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                      <span style={{
+                        fontSize: "0.62rem", fontWeight: 700, color: "#a78bfa",
+                        background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)",
+                        borderRadius: "4px", padding: "0.05rem 0.4rem",
+                        textTransform: "uppercase", letterSpacing: "0.05em",
+                      }}>📝 Note</span>
                       <span className="text-[10px] font-mono text-zinc-600">{noteBlockSummary(item)}</span>
+                      {item.updatedAt && (
+                        <span className="text-[10px] font-mono text-zinc-700">
+                          {new Date(item.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-zinc-200 leading-snug font-semibold m-0">
+                    <p className="text-sm text-zinc-100 leading-snug font-semibold m-0">
                       {item.title || "Untitled note"}
                     </p>
                     {notePreview(item) && (
