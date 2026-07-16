@@ -4,6 +4,28 @@ Read this at session open alongside NEXT.md + CLAUDE.md. One screen of truth.
 
 ---
 
+## Where we are (16 Jul 2026, updated 20:15 IST)
+
+**QnA answer-writing rollout: COMPLETE — 131/131 GSL modules answered, 0 parked, 0 draft, 4,257 questions.**
+Closed out via `QNA-ANSWER-ROLLOUT-PLAN.md`'s batch sequence (batches 1-26): real Tier S (25 modules) +
+Tier A (56 modules across 11 domain groups) completed first, then a 4-sub-batch "Tier B" closeout
+(batches 23-26, 729 questions across 22 modules: Agents/Codegen, Safety/Security/Cost, Multimodal/Infra/
+Vector/Prompt, Voice AI) finished the remaining modules. Every question has a full AMGB atomic-bullet
+answer (`**Answer.**`/`**Mechanism.**`/`**Grounding.**`/`**Boundary.**`) per `QNA-ANSWER-SPEC v1`, drafted
+by parallel per-module writer agents grounded strictly in that module's own source content, independently
+re-validated by a fresh Python script per batch against the full spec checklist (word counts, category
+anatomy, per-level bullet-count bands), with every flagged item hand-reviewed and classified as either a
+real gap (hand-patched) or a legitimate spec-sanctioned exception (accepted as-is). Final full-repo sweep:
+`node --check` clean on `qnaBank.js`/`qnaStatus.js`, 0 duplicate keys, 0 empty answer arrays across all
+4,257 questions. **Owed, not done (superseded):** the "light question-audit pass" mentioned in the 12 Jul
+entry below is now effectively superseded by this per-batch independent-validator process, which is
+stricter than what was originally scoped.
+
+**Vercel:** live at `genai-systems-lab-ivory.vercel.app` (not re-confirmed by direct fetch this refresh)
+**Content freeze:** unchanged from 12 Jul entry below — still not formally revised.
+
+---
+
 ## Where we are (15 Jul 2026, updated 19:31 IST)
 
 **Vercel:** live at `genai-systems-lab-ivory.vercel.app` (not re-confirmed by direct fetch this refresh)
