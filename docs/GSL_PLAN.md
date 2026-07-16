@@ -5437,3 +5437,14 @@ answer-writing effort that ran across 26 batches (batches 1-22 covering real Tie
 groups, batches 23-26 covering the remaining 22 "Tier B" modules across 4 sub-batches). GSL work now shifts
 to MSL (ml-systems-lab), which has its own separate, much-earlier-stage QnA rollout (1/206 modules answered
 as of this date -- see MSL's own qnaStatus.js and docs).
+
+---
+
+## 2026-07-16 20:22 IST (Thursday) — Daily Drill mounted on Progress (the signed-in landing)
+
+Cross-lab fix from the PL skeleton session (full context: root CLAUDE.md, same-date entry). Home is
+signed-out-only (App.jsx redirects signed-in 'home' -> 'progress' — documented in the sidebar nav
+comment), so DailyDrill on Home.jsx was invisible to signed-in users. Change: src/Progress.jsx now
+imports DailyDrill (./components/DailyDrill.jsx) and mounts it at the top of the view (onTrain ->
+preplab). Home copy kept for signed-out visitors; card idempotent (same storage key). esbuild-verified.
+One-file change; commit handed to Sidharth in-session.
