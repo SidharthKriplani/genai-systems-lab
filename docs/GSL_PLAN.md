@@ -5151,3 +5151,35 @@ flagged:
 **Cumulative GSL QnA status**: 74/131 modules answered, 57 parked, 0 draft.
 Group 4 (Prompt Engineering) of `moduleTiers.js` TIER_A now closed. Group 5
 (Vector Infrastructure) is next whenever the rollout resumes.
+
+## 2026-07-16 — QnA rollout batch 16: Vector Infrastructure (Tier A group 5)
+
+Fifth batch of the real `moduleTiers.js` TIER_A priority order. Modules:
+vector-db-index-mechanics (33q), hybrid-search-design (27q),
+metadata-filtering (31q), pgvector-vs-managed (32q) — 123 questions total.
+All 4 sourced from `src/data/foundationsRunnerData.js`; none of the four have
+keyPoints/recap fields in source (confirmed genuinely absent).
+
+4 parallel writer agents, one per module, each grounded strictly in that
+module's own source content. Independently re-validated programmatically
+against the full spec checklist across all 123 questions — 2 flagged:
+- `hybrid-search-design/qna-hybrid-pipeline-flow-01` (L0): real over-band at
+  6 bullets vs the 3-4 target. Fixed by consolidating three Mechanism bullets
+  into one and re-tagging the RRF-fusion detail (the `1/(rank+k)`, k=60
+  mechanic plus the optional-reranker note) as a single Grounding bullet —
+  brings total to 4, within band.
+- `pgvector-vs-managed/qna-migration-mechanics-04` (L2): accepted as a
+  legitimate thin-content exception per QNA-ANSWER-SPEC v1's explicit
+  allowance ("a question with genuinely thin content can land below its
+  band") — all category sub-bands (Mechanism/Grounding/Boundary) are
+  individually satisfied, only the aggregate total sits at 5 vs the 7-9
+  target, because the source states the migration is "non-disruptive" but
+  never gives an explicit decommissioning-timing claim to ground further
+  bullets in. No padding added.
+
+0 fabricated facts found. Applied via centralized single-writer script,
+`node --check` clean, 0 duplicate keys, all 123 questions confirmed non-empty.
+
+**Cumulative GSL QnA status**: 78/131 modules answered, 53 parked, 0 draft.
+Group 5 (Vector Infrastructure) of `moduleTiers.js` TIER_A now closed. Group 6
+(AI Agents) is next whenever the rollout resumes.
