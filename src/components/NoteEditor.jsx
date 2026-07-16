@@ -806,6 +806,12 @@ export function NoteEditor({ trackId, note, onBack }) {
 
   function commit(nextBlocks, nextTitle = title) {
     if (sel && nextBlocks.length !== blocks.length) setSel(null) // structure changed -> stale indices
+    // History: snapshot the PRE-change blocks. Structural changes (count/id/type)
+    // always cut an undo boundary; plain typing coalesces (see snapshot()).
+    const structural = nextBlocks.length !== blocks.length ||
+      nextBlocks.some((b, i) => b.id !== blocks[i].id || b.type !== blocks[i].type)
+    snapshot(blocks, structural)
+    hist.current.redo = []
     setBlocks(nextBlocks)
     persist(nextTitle, nextBlocks)
   }
@@ -1003,24 +1009,40 @@ export function NoteEditor({ trackId, note, onBack }) {
 
   // ── Block-range selection (docs-style shift+arrow across blocks) ─────────
 
-  // Undo for DESTRUCTIVE block ops (range delete/cut, menu delete). Textareas
-  // keep native undo for typing; Cmd+Z here only fires when no field is focused.
-  const undoStack = useRef([])
-  function pushUndo() {
-    undoStack.current.push(blocks)
-    if (undoStack.current.length > 20) undoStack.current.shift()
+  // Full-document undo/redo (2026-07-16). Every commit snapshots the PRE-change
+  // blocks; typing bursts coalesce (800ms window) so Cmd+Z steps back a chunk,
+  // not a keystroke. Cmd+Z / Cmd+Shift+Z work everywhere in the editor —
+  // including inside a block textarea (field-local native undo can't restore
+  // splits, merges, deletes, or paste explosions anyway).
+  const hist = useRef({ stack: [], redo: [], last: 0 })
+  function snapshot(prevBlocks, structural) {
+    const h = hist.current
+    const now = Date.now()
+    if (!structural && h.stack.length && now - h.last < 800) { h.last = now; return }
+    h.stack.push(prevBlocks)
+    if (h.stack.length > 100) h.stack.shift()
+    h.last = now
+  }
+  function applyHistory(nextBlocks) {
+    setSel(null)
+    setBlocks(nextBlocks)
+    persist(title, nextBlocks)
   }
   useEffect(() => {
     const onKey = (e) => {
-      if (!(e.metaKey || e.ctrlKey) || (e.key !== 'z' && e.key !== 'Z') || e.shiftKey) return
-      const ae = document.activeElement
-      if (ae && (ae.tagName === 'TEXTAREA' || ae.tagName === 'INPUT' || ae.isContentEditable)) return
-      const prev = undoStack.current.pop()
-      if (prev) { e.preventDefault(); commit(prev); setSel(null) }
+      if (!(e.metaKey || e.ctrlKey) || (e.key !== 'z' && e.key !== 'Z')) return
+      const h = hist.current
+      if (e.shiftKey) {
+        const next = h.redo.pop()
+        if (next) { e.preventDefault(); h.stack.push(blocks); h.last = 0; applyHistory(next) }
+      } else {
+        const prev = h.stack.pop()
+        if (prev) { e.preventDefault(); h.redo.push(blocks); h.last = 0; applyHistory(prev) }
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }) // re-bound each render so commit/blocks stay fresh
+  }) // re-bound each render so blocks/title stay fresh
 
   function selectAllBlocks() {
     if (!blocks.length) return
@@ -1053,7 +1075,6 @@ export function NoteEditor({ trackId, note, onBack }) {
         return
       }
       const deleteRange = () => {
-        pushUndo()
         const kept = blocks.filter((_, i2) => i2 < lo || i2 > hi)
         const safe = kept.length ? kept : [{ id: uid(), type: 'text', content: '' }]
         commit(safe)
@@ -1289,7 +1310,7 @@ export function NoteEditor({ trackId, note, onBack }) {
                           onDuplicate={() => duplicateBlock(block.id)}
                           onMoveUp={() => moveBlock(i, Math.max(0, i - 1))}
                           onMoveDown={() => moveBlock(i, Math.min(blocks.length - 1, i + 1))}
-                          onDelete={() => { pushUndo(); removeBlock(block.id) }}
+                          onDelete={() => removeBlock(block.id)}
                           onClose={() => setMenuFor(null)}
                         />
                       )}

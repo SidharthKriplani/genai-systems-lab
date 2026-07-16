@@ -218,7 +218,6 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
   const [editNoteIdx, setEditNoteIdx] = useState(null);
   const [editNoteDraft, setEditNoteDraft] = useState("");
   const [draftName, setDraftName] = useState(track.name);
-  const [noteText, setNoteText] = useState("");
   const [dragFrom, setDragFrom] = useState(null);
   const nameInputRef = useRef(null);
   const noteTextareaRef = useRef(null);
@@ -239,12 +238,6 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
     setEditingName(false);
   }
 
-  function handleAddNote(e) {
-    e.preventDefault();
-    if (!noteText.trim()) return;
-    onAddNote(noteText.trim());
-    setNoteText("");
-  }
 
   return (
     <div className="flex-1 overflow-y-auto p-4 sm:px-8 sm:py-6" style={{ minWidth: 0 }}>
@@ -549,28 +542,6 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
           ))}
         </div>
       )}
-
-      {/* Add note */}
-      <form onSubmit={handleAddNote} className="flex gap-2 items-start">
-        <textarea
-          value={noteText}
-          onChange={e => setNoteText(e.target.value)}
-          placeholder="Quick note… (Enter creates a rich note and opens the editor)"
-          rows={2}
-          className="flex-1 text-sm rounded-xl px-3 py-2 resize-none outline-none leading-relaxed"
-          style={{
-            background: "rgba(24,24,27,0.8)", border: "1px solid rgba(63,63,70,0.6)",
-            color: "#d4d4d8", fontFamily: "inherit",
-          }}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (noteText.trim()) { onAddNote(noteText.trim()); setNoteText(""); } } }}
-        />
-        <button
-          type="submit"
-          disabled={!noteText.trim()}
-          className="px-4 py-2 text-sm font-semibold rounded-xl text-white shrink-0 transition-opacity"
-          style={{ background: "#7c3aed", opacity: noteText.trim() ? 1 : 0.4 }}
-        >Add Note</button>
-      </form>
     </div>
   );
 }
