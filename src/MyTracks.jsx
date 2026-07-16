@@ -110,7 +110,7 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveIte
       {onBuildTiers && (
         <button
           onClick={onBuildTiers}
-          title="Create the S / A / B tier tracks from every Foundation module, ranked by interview frequency"
+          title="S = always asked, A = shows up often, B = the depth that makes you unbreakable (default) -- builds one track per tier from every Foundation module, ranked by interview frequency"
           className="mx-2 mb-3 text-[11px] font-semibold rounded-lg px-2 py-1.5 transition-colors hover:opacity-90"
           style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.35)", color: "#fcd34d", cursor: "pointer" }}
         >

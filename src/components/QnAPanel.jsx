@@ -30,6 +30,9 @@
 // structure is for the writer/verify pipeline, not for on-screen display. The panel strips the
 // label before rendering each bullet and offers a numbered/dotted list-style toggle instead
 // (persisted to localStorage, same pattern as SpeakMode's `gsl-speak-history`).
+//
+// Level-chip hover tooltips (2026-07-16): each L0-L3 chip's `title` is the level's real
+// definition from QNA-INTERVIEW-STANDARD.md's level taxonomy — not invented copy.
 
 import { useState } from "react";
 import { qnaForModule, qnaQuestionCount } from "../data/qnaBank.js";
@@ -69,11 +72,25 @@ export function LockIcon({ size = 11, className = "" }) {
   );
 }
 
+// title text is each level's real definition per QNA-INTERVIEW-STANDARD.md's level taxonomy —
+// shown as a hover tooltip on the level's filter chip.
 const LEVEL_META = {
-  0: { label: "L0", desc: "definition", cls: "border-zinc-600 bg-zinc-800/60 text-zinc-300" },
-  1: { label: "L1", desc: "mechanism", cls: "border-sky-800/60 bg-sky-950/30 text-sky-300" },
-  2: { label: "L2", desc: "tradeoff", cls: "border-amber-800/60 bg-amber-950/30 text-amber-300" },
-  3: { label: "L3", desc: "case", cls: "border-rose-800/60 bg-rose-950/30 text-rose-300" },
+  0: {
+    label: "L0", desc: "definition", cls: "border-zinc-600 bg-zinc-800/60 text-zinc-300",
+    title: "L0 — definition/recall: what it is, where it lives, what it's for.",
+  },
+  1: {
+    label: "L1", desc: "mechanism", cls: "border-sky-800/60 bg-sky-950/30 text-sky-300",
+    title: "L1 — mechanism/why: how it works, why it's built this way, what breaks without it.",
+  },
+  2: {
+    label: "L2", desc: "tradeoff", cls: "border-amber-800/60 bg-amber-950/30 text-amber-300",
+    title: "L2 — comparison/tradeoff: X vs Y, when to use which, where X stops holding.",
+  },
+  3: {
+    label: "L3", desc: "case", cls: "border-rose-800/60 bg-rose-950/30 text-rose-300",
+    title: "L3 — case: an applied production/diagnostic scenario you walk through step by step.",
+  },
 };
 
 // Difficulty is an axis independent of level (see qnaBank.js header) — deliberately a
@@ -165,7 +182,10 @@ function AnswerBody({ answer, bulletStyle }) {
 function LevelChip({ level }) {
   const m = LEVEL_META[level] || LEVEL_META[0];
   return (
-    <span className={`shrink-0 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${m.cls}`}>
+    <span
+      title={m.title}
+      className={`shrink-0 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${m.cls}`}
+    >
       {m.label}
     </span>
   );
@@ -183,11 +203,13 @@ function DifficultyChip({ difficulty }) {
 
 // Filter chip: same base look as the old per-level buttons, but now purely a filter toggle —
 // active gets a ring + full brightness, inactive (while some filter in this row IS active)
-// dims slightly so the selection reads clearly.
-function FilterChip({ active, dimmed, cls, onClick, children }) {
+// dims slightly so the selection reads clearly. Optional `title` renders as a native hover
+// tooltip (used by the level row to explain what each L0-L3 level means).
+function FilterChip({ active, dimmed, cls, onClick, title, children }) {
   return (
     <button
       onClick={onClick}
+      title={title}
       className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border transition-all hover:brightness-125 ${cls} ${
         active ? "ring-1 ring-white/50 brightness-110" : dimmed ? "opacity-50" : ""
       }`}
@@ -403,6 +425,7 @@ export default function QnAPanel({ moduleId, unlocked }) {
             active={levelFilter === l}
             dimmed={levelFilter !== null && levelFilter !== l}
             cls={LEVEL_META[l].cls}
+            title={LEVEL_META[l].title}
             onClick={() => selectLevel(l)}
           >
             {LEVEL_META[l].label} · {LEVEL_META[l].desc}

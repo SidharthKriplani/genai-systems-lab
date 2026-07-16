@@ -4858,3 +4858,68 @@ pass, no exceptions needed this time. Applied via the centralized single-writer 
 **Not yet done.** Not committed/pushed yet -- local working tree only. Next up per
 `QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 4, GSL / Evaluation / Tier S (3 modules --
 `eval-loop`, `llm-as-judge`, `rag-eval` -- 99 questions).
+
+---
+
+### 2026-07-16 12:25 IST (Thursday) — L0-L3 / S-A-B hover tooltips (both labs), then GSL/Evaluation/Tier S batch (99 questions)
+
+**Hover tooltips.** User requested: hovering L0/L1/L2/L3 filter chips and the "Build S/A/B tier
+tracks" button should show what each level/tier actually means, across both GSL and MSL.
+
+- `src/components/QnAPanel.jsx` (GSL): added a `title` field to each of the four `LEVEL_META`
+  entries, sourced verbatim in meaning from `QNA-INTERVIEW-STANDARD.md`'s level taxonomy (L0
+  definition/recall, L1 mechanism/why, L2 comparison/tradeoff, L3 case). Threaded `title` through
+  `LevelChip` and `FilterChip` so both the per-question level badge and the level filter-chip row
+  now show the real definition on hover. Not invented copy -- pulled from the standard doc.
+- `src/MyTracks.jsx` (GSL): enriched the "Build S / A / B tier tracks" button's `title` from a
+  generic "ranked by interview frequency" line to the actual S/A/B semantics from
+  `src/data/moduleTiers.js` ("S = always asked, A = shows up often, B = the depth that makes you
+  unbreakable (default)").
+- Same two fixes ported to MSL: `src/components/foundations/QnAPanel.jsx` (added `title` to
+  `LEVEL_META`, added a `title` prop to `FilterChip` which didn't have one before, wired it
+  through `LevelChip` and the level-chip row) and `src/tabs/MyTracksTab.jsx` (same tier-tooltip
+  enrichment).
+
+Build-validated: GSL via a clean `npx vite build --outDir /tmp/dist_check_gsl_<ts>` (this
+sandbox's mounted repo lost its device-folder connection mid-session on resume from a context
+compaction -- re-granted, then confirmed the mount path is `~/mnt/BreakLabs/...`, not the Mac's
+absolute `/Users/ASUS/...` path, which `device_bash` can't `cd` into directly). MSL could not run
+a full `vite build` in this sandbox -- its local `node_modules` only ships the Mac's darwin-arm64
+`@rollup` binary and the sandbox is linux-arm64, and the npm registry is unreachable from here
+(403) so the missing linux binary can't be installed either. Validated MSL's two edited files
+instead with `@babel/parser` (`sourceType: 'module', plugins: ['jsx']`) -- both parse clean. The
+edits are the identical mechanical pattern that already built clean in GSL, so this is treated as
+sufficient, but a real `npm run build` in the user's own terminal is the stronger check if ever in
+doubt.
+
+**GSL / Evaluation / Tier S batch — sequence item 4, 99 questions, 0 violations after one
+hand-patch.** Modules: `eval-loop` (31q), `rag-eval` (35q), `llm-as-judge` (33q). Source content:
+`eval-loop`'s full narrative (groundUp/scenario/explanation/mcqs/takeaway -- the Friday-grading
+contractor scenario, the reranker running example, the four named diagnostic scenarios) lives in
+`src/data/foundationsRunnerData.js`, not in `src/data/foundations/recap-patch-a.js` as first
+checked -- that file only carries `eval-loop`'s `keyPoints`/`recap`, which on its own would have
+been too thin to ground several questions that name specific examples ("the Friday-grading
+example", "In 'The Twelve Questions'"). Caught before drafting by grepping for the named examples
+directly and finding the fuller entry in `foundationsRunnerData.js`. `rag-eval` and
+`llm-as-judge`'s full narratives were already in `src/data/foundations/deepen-thin.js`.
+
+Drafted by 3 parallel writer agents (one per module), each grounded strictly in its module's own
+source content. Independently re-validated with a Python spec-checker across all 99 questions:
+2 questions in `llm-as-judge` (`qna-other-biases-01`, `qna-calibration-unreliable-01`) came back
+with 0 Boundary bullets against the spec's L1 band of 1-2 -- both enumerative "what are the other
+X" style questions where the writer agent's Answer bullet already carried the caveat-like content
+and it didn't naturally split into a separate Boundary bullet. Hand-patched one source-grounded
+Boundary bullet onto each (drawn from the module's own "these biases are systematic, not
+averageable noise" and "even a well-designed rubric doesn't rescue these four situations" lines)
+rather than accepting the gap or force-inventing new content. Re-validated clean, 0 issues, 99/99.
+
+Applied via the standard centralized single-writer regex-splice script, `node --check` clean on
+both `qnaBank.js` and `qnaStatus.js`, 0 duplicate keys, `validate-qna-status.mjs` reports 0 drift
+(minor snag: my first `qnaStatus.js` receipt draft omitted the "IST" timestamp token the validator
+requires -- caught immediately by the validator itself, one-line patch, re-ran clean). Direct
+`node -e` read confirms all 99 touched questions carry non-empty `answer` arrays and all 3 module
+statuses read `"answered"`. `qnaStatus.js` tally after this batch: 131/131 entries, 0 drift,
+draft: 0, parked: 114, answered: 17.
+
+**Not yet committed/pushed** -- local working tree only, exact git commands handed to the user
+after this entry. Next up per `QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 5.
