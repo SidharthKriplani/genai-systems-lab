@@ -6,6 +6,7 @@ import { POSTS } from "./groundTruthIndex";
 import { getAllAreasReadiness, getOverallReadiness } from "./readiness";
 import { Icon } from "./Icon.jsx";
 import ReadinessWidget from "./ReadinessWidget";
+import DailyDrill from "./components/DailyDrill.jsx";
 
 // ─── CountUp ──────────────────────────────────────────────────────────────────
 function CountUp({ target, duration = 1200, suffix = "" }) {
@@ -470,6 +471,12 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
             <span className="text-xs font-bold text-violet-400 mt-auto">{featuredPost.readMin} min read →</span>
           </button>
         </div>
+      </div>
+
+      {/* Daily Drill — one judgment MCQ per day, streak + share */}
+      <div>
+        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Daily Drill</p>
+        <DailyDrill />
       </div>
 
       {/* Streak + activity heatmap */}
