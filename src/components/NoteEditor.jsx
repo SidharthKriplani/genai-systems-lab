@@ -298,7 +298,7 @@ const taBase = {
 
 function EditableBlock({
   block, number, focusReq, onChangeContent, onPatch, onSplit, onMergePrev,
-  onRangeSelect, onNavigate, onExitList, onPaste, onFocusBlock, onSlash, slashOpen, onSlashKey,
+  onSelectAll, lone, onRangeSelect, onNavigate, onExitList, onPaste, onFocusBlock, onSlash, slashOpen, onSlashKey,
 }) {
   const ref = useRef(null)
   const [focused, setFocused] = useState(false)
@@ -377,6 +377,11 @@ function EditableBlock({
       onMergePrev()
       return
     }
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
+      const whole = el.selectionStart === 0 && el.selectionEnd === block.content.length
+      if (whole || block.content === '') { e.preventDefault(); onSelectAll(); return }
+      return // first Cmd+A: native select-within-block
+    }
     if (e.key === 'ArrowDown' && e.shiftKey && el.selectionEnd === block.content.length) {
       e.preventDefault(); onRangeSelect(1); return
     }
@@ -444,7 +449,7 @@ function EditableBlock({
           onFocus={() => { setFocused(true); onFocusBlock(); requestAnimationFrame(() => autosize(ref.current)) }}
           onBlur={() => { setFocused(false); onSlash(null) }}
           className="nb-block-input"
-          placeholder={block.type === 'text' && focused ? "Type '/' for blocks, or just write…" : ''}
+          placeholder={block.type === 'text' && (focused || lone) ? "Type '/' for blocks, or just write…" : ''}
           style={{ ...taBase, ...typo, display: showRendered ? 'none' : 'block',
             fontStyle: block.type === 'quote' ? 'italic' : 'normal' }}
           onInput={e => autosize(e.target)}
@@ -800,6 +805,7 @@ export function NoteEditor({ trackId, note, onBack }) {
   }, [trackId, note.id])
 
   function commit(nextBlocks, nextTitle = title) {
+    if (sel && nextBlocks.length !== blocks.length) setSel(null) // structure changed -> stale indices
     setBlocks(nextBlocks)
     persist(nextTitle, nextBlocks)
   }
@@ -993,6 +999,32 @@ export function NoteEditor({ trackId, note, onBack }) {
 
   // ── Block-range selection (docs-style shift+arrow across blocks) ─────────
 
+  // Undo for DESTRUCTIVE block ops (range delete/cut, menu delete). Textareas
+  // keep native undo for typing; Cmd+Z here only fires when no field is focused.
+  const undoStack = useRef([])
+  function pushUndo() {
+    undoStack.current.push(blocks)
+    if (undoStack.current.length > 20) undoStack.current.shift()
+  }
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || (e.key !== 'z' && e.key !== 'Z') || e.shiftKey) return
+      const ae = document.activeElement
+      if (ae && (ae.tagName === 'TEXTAREA' || ae.tagName === 'INPUT' || ae.isContentEditable)) return
+      const prev = undoStack.current.pop()
+      if (prev) { e.preventDefault(); commit(prev); setSel(null) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }) // re-bound each render so commit/blocks stay fresh
+
+  function selectAllBlocks() {
+    if (!blocks.length) return
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur() } catch {}
+    setSel({ a: 0, h: blocks.length - 1 })
+  }
+
+
   function rangeSelect(id, dir) {
     const i = idx(id)
     const h = Math.max(0, Math.min(blocks.length - 1, i + dir))
@@ -1016,11 +1048,24 @@ export function NoteEditor({ trackId, note, onBack }) {
         try { navigator.clipboard.writeText(blocksToMarkdown('', blocks.slice(lo, hi + 1))) } catch {}
         return
       }
+      const deleteRange = () => {
+        pushUndo()
+        const kept = blocks.filter((_, i2) => i2 < lo || i2 > hi)
+        const safe = kept.length ? kept : [{ id: uid(), type: 'text', content: '' }]
+        commit(safe)
+        const target = safe[Math.min(lo, safe.length - 1)]
+        if (target) setFocusReq({ id: target.id, pos: 0, t: Date.now() })
+        setSel(null)
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'x' || e.key === 'X')) {
+        e.preventDefault()
+        try { navigator.clipboard.writeText(blocksToMarkdown('', blocks.slice(lo, hi + 1))) } catch {}
+        deleteRange()
+        return
+      }
       if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault()
-        const next = blocks.filter((_, i2) => i2 < lo || i2 > hi)
-        commit(next.length ? next : [{ id: uid(), type: 'text', content: '' }])
-        setSel(null)
+        deleteRange()
         return
       }
       if (e.key === 'Escape' || (!e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) || (!e.metaKey && !e.ctrlKey && e.key.length === 1)) {
@@ -1228,7 +1273,7 @@ export function NoteEditor({ trackId, note, onBack }) {
                           onDuplicate={() => duplicateBlock(block.id)}
                           onMoveUp={() => moveBlock(i, Math.max(0, i - 1))}
                           onMoveDown={() => moveBlock(i, Math.min(blocks.length - 1, i + 1))}
-                          onDelete={() => removeBlock(block.id)}
+                          onDelete={() => { pushUndo(); removeBlock(block.id) }}
                           onClose={() => setMenuFor(null)}
                         />
                       )}
@@ -1245,6 +1290,8 @@ export function NoteEditor({ trackId, note, onBack }) {
                           onPatch={(patch, opts) => patchBlock(block.id, patch, opts)}
                           onSplit={(before, after) => splitBlock(block.id, before, after)}
                           onMergePrev={() => mergePrev(block.id)}
+                          onSelectAll={() => selectAllBlocks()}
+                          lone={blocks.length === 1}
                           onRangeSelect={dir => rangeSelect(block.id, dir)}
                           onNavigate={dir => navigate(block.id, dir)}
                           onExitList={() => patchBlock(block.id, { type: 'text' }, { refocus: true })}
