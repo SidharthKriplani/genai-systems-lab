@@ -1,5 +1,13 @@
 # NEXT.md — Next build session
 
+---
+
+## ⚠ FIRST — verify 16 Jul wave (after Sidharth's push deploys)
+
+Notes editor: ⇤⇥ buttons, Tab sub-bullets, hover timestamps, Cmd+Z everywhere. Track detail: quick-note composer GONE. Highlights: select text on any content page → swatches → paint; click → Remove; survives reload.
+
+---
+
 Read this at session start. Do only this. Update before closing.
 
 ---

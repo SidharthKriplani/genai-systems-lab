@@ -398,3 +398,10 @@ Teaching centrepieces built as proof (mockups, `outputs/`): a working **multi-he
 **Selection = value, no rails.** Active nav rows → filled lighter row + hairline ring (killed the cyan `inset 3px` left rail). Then, on the request "I hate rails everywhere, left and top," a scripted app-wide sweep neutralised **6 left `inset Npx 0 0 <colour>` rails + 66 decorative top `borderTop` accent bars → hairlines across 18 files**, keeping only the semantic green/red (pass/fail) top accents. **GT cards** went de-rainbow → flat grey → (on feedback) **muted per-area hues** (foundations/retrieval/agents/evaluation/production/general) for slight distinguishability, no rail.
 
 Shipped in three pushes (approve-first, built on Mac): (1) index.css base remap + guard — live; (2) GT challenge-area greys + nav-rail kill — live; (3) app-wide rail-kill + GT muted hues (19 files) — **OPEN in `PENDING_APPROVALS.md`, awaiting Mac build+push.** All edits esbuild-verified (native Vite build is macOS-only). Parked: Layer-C viz tokenisation (then `--strict`); 3D embeddings instrument.
+
+
+---
+
+### Notes family wave + page highlights (16 Jul 2026)
+
+Received the cross-lab NoteEditor patch-set (see BreakLabs/CLAUDE.md): block-range selection + range formatting, full undo/redo, always-split paste, sub-bullets (Tab/⇤⇥, per-level numbering), per-block edit timestamps, Created·Edited header, whisper placeholder. GSL-specific: removed the redundant bottom "Quick note…" composer in track detail (dead space under items; + New Note covers it). New: global PageHighlighter (src/PageHighlighter.jsx + utils/localHighlights.js, storage `gsl_page_highlights_v1`) mounted at App root over #main-content, pageKey "v:"+topView — select text anywhere → swatch → instant persistent highlight; click mark → remove. Ignores selections in editable fields.

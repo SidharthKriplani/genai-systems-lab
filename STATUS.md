@@ -1,5 +1,7 @@
 # STATUS.md — Cold-start view
 
+> **16 Jul 2026 session close:** NoteEditor family wave (selection/undo/sub-bullets/timestamps — see LINEAGE tail), quick-note composer removed, global PageHighlighter added. Commit command handed to Sidharth (approve-first). Verify-on-deploy list in NEXT.md.
+
 Read this at session open alongside NEXT.md + CLAUDE.md. One screen of truth.
 
 ---
