@@ -5183,3 +5183,38 @@ against the full spec checklist across all 123 questions — 2 flagged:
 **Cumulative GSL QnA status**: 78/131 modules answered, 53 parked, 0 draft.
 Group 5 (Vector Infrastructure) of `moduleTiers.js` TIER_A now closed. Group 6
 (AI Agents) is next whenever the rollout resumes.
+
+## 2026-07-16 — QnA rollout batch 17: AI Agents (Tier A group 6)
+
+Sixth batch of the real `moduleTiers.js` TIER_A priority order. Modules:
+agent-memory-foundations (32q), agent-multiagent (28q), agent-failure-modes
+(36q), agent-planning-patterns (34q), agent-reliability (35q) — 165 questions
+total. Source files: `src/data/agents/agent-core.js` (agent-memory-foundations),
+`src/data/agents/agent-scale.js` (the other four).
+
+5 parallel writer agents, one per module, each grounded strictly in that
+module's own source content. agent-planning-patterns' writer was explicitly
+briefed that this module's takeaway defers Graph-of-Thought/LATS mechanics to
+an external deep-dive post (4 questions probing that content were already cut
+in a prior audit) — stayed within what's actually taught.
+
+Independently re-validated programmatically against the full spec checklist
+across all 165 questions — 3 flagged, all reviewed by hand and accepted as
+legitimate spec-sanctioned exceptions under QNA-ANSWER-SPEC v1's "if Answer
+names N parallel components, Mechanism gets up to N bullets, one per
+component" rule:
+- agent-multiagent's two L0 questions ("three multi-agent patterns" /
+  "three win conditions") each land at 5 bullets (1 Answer + 3 Mechanism + 1
+  Grounding) since their Answer bullets each name exactly 3 components.
+- agent-reliability's L3 money-transfer-design question lands at 5 Mechanism
+  bullets (9 total) since its Answer names 5 parallel safety patterns
+  (idempotency keys, rollback/compensation, step budget, least-privilege,
+  HITL gate), each getting its own Mechanism bullet.
+
+0 fabricated facts found, 0 hand-patches needed this batch. Applied via
+centralized single-writer script, `node --check` clean, 0 duplicate keys, all
+165 questions confirmed non-empty.
+
+**Cumulative GSL QnA status**: 83/131 modules answered, 48 parked, 0 draft.
+Group 6 (AI Agents) of `moduleTiers.js` TIER_A now closed. Group 7
+(Evaluation) is next whenever the rollout resumes.
