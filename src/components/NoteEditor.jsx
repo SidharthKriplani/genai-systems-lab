@@ -982,7 +982,10 @@ export function NoteEditor({ trackId, note, onBack }) {
       insertUrlAt(blockId, trimmed, cur && cur.content === '')
       return
     }
-    if (text.includes('\n')) {
+    // Structured markdown -> real blocks (keeps the cut/paste section-move flow).
+    // Plain multi-line prose -> falls through to NATIVE paste: stays in THIS block.
+    const looksMd = /^(#{1,3}\s|[-*]\s|\d+\.\s|```|>\s|\[[ x]\]\s)/m.test(text)
+    if (text.includes('\n') && looksMd) {
       e.preventDefault()
       const parsed = markdownToBlocks(text)
       const i = idx(blockId)
