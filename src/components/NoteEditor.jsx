@@ -239,6 +239,12 @@ const BLOCK_DEFS = [
   { type: 'link',     label: 'Link card',     icon: '🔗',  desc: 'Bookmark any URL',               kw: 'link bookmark url web page' },
 ]
 
+// "Jul 16, 11:49 PM" — per-block hover timestamps + the header Edited label.
+function fmtEdited(ts) {
+  if (!ts) return ''
+  return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
 const TEXTISH = new Set(['text', 'h1', 'h2', 'h3', 'bullet', 'numbered', 'todo', 'quote', 'callout'])
 
 // Markdown shortcuts applied while typing at the start of a text block.
@@ -444,7 +450,8 @@ function EditableBlock({
   }
 
   return (
-    <div id={`nb-${block.id}`} style={{ display: 'flex', alignItems: 'flex-start', ...(block.indent && ['bullet', 'numbered', 'todo'].includes(block.type) ? { paddingLeft: `${Math.min(2, block.indent) * 1.5}rem` } : {}), ...wrapStyle }}>
+    <div id={`nb-${block.id}`} className="nb-block-row" style={{ display: 'flex', alignItems: 'flex-start', ...(block.indent && ['bullet', 'numbered', 'todo'].includes(block.type) ? { paddingLeft: `${Math.min(2, block.indent) * 1.5}rem` } : {}), ...wrapStyle }}>
+      {block.editedAt ? <span className="nb-edited">{fmtEdited(block.editedAt)}</span> : null}
       {block.type === 'callout' && <span style={{ fontSize: '1rem', lineHeight: 1.5, userSelect: 'none' }}>💡</span>}
       {marker}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -826,8 +833,21 @@ export function NoteEditor({ trackId, note, onBack }) {
       nextBlocks.some((b, i) => b.id !== blocks[i].id || b.type !== blocks[i].type)
     snapshot(blocks, structural)
     hist.current.redo = []
-    setBlocks(nextBlocks)
-    persist(nextTitle, nextBlocks)
+    // Stamp editedAt on blocks whose substance changed this commit (new blocks
+    // get stamped too). Same-reference blocks skip the compare entirely.
+    const prevById = new Map(blocks.map(b => [b.id, b]))
+    const stamped = nextBlocks.map(b => {
+      const pb = prevById.get(b.id)
+      if (!pb) return { ...b, editedAt: b.editedAt || Date.now() }
+      if (pb === b) return b
+      if (pb.content !== b.content || pb.type !== b.type || pb.indent !== b.indent
+        || pb.checked !== b.checked || pb.lang !== b.lang || pb.body !== b.body) {
+        return { ...b, editedAt: Date.now() }
+      }
+      return b
+    })
+    setBlocks(stamped)
+    persist(nextTitle, stamped)
   }
 
   function setTitleAndSave(t) { setTitle(t); persist(t, blocks) }
@@ -1193,9 +1213,28 @@ export function NoteEditor({ trackId, note, onBack }) {
     patchBlock(focusedId, { type }, { refocus: true })
   }
 
-  const savedLabel = savedAt
-    ? `Saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-    : 'Auto-saves'
+  const editedTs = savedAt || note.updatedAt || 0
+  const savedLabel = editedTs ? `Edited ${fmtEdited(editedTs)}` : 'Auto-saves'
+  const createdLabel = note.addedAt
+    ? `Created ${new Date(note.addedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}`
+    : ''
+
+  // Indent / outdent the focused list block — or every list block in a range
+  // selection. The visible-toolbar twin of Tab / Shift+Tab.
+  function toolbarIndent(dir) {
+    const LIST = new Set(['bullet', 'numbered', 'todo'])
+    const shift = b => ({ ...b, indent: Math.max(0, Math.min(2, (b.indent || 0) + dir)) })
+    if (sel) {
+      const lo = Math.min(sel.a, sel.h), hi = Math.max(sel.a, sel.h)
+      if (!blocks.slice(lo, hi + 1).some(b => LIST.has(b.type))) return
+      commit(blocks.map((b, i) => (i >= lo && i <= hi && LIST.has(b.type)) ? shift(b) : b))
+      return
+    }
+    if (!focusedId) return
+    const b = blocks.find(x => x.id === focusedId)
+    if (!b || !LIST.has(b.type)) return
+    commit(blocks.map(x => (x.id === focusedId ? shift(x) : x)))
+  }
 
   // Numbered-list numbering: per indent level (1. / a. / i.), docs-style.
   // Interleaved bullets/todos do NOT reset the run — only a non-list block does.
@@ -1248,7 +1287,7 @@ export function NoteEditor({ trackId, note, onBack }) {
         <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.7rem', color: T.ghost, flexShrink: 0, whiteSpace: 'nowrap' }}>
           <span key={savedAt || 0} className="nb-savedot" style={{ width: 6, height: 6, borderRadius: '50%', background: savedAt ? '#34d399' : T.ghost, display: 'inline-block', flexShrink: 0 }} />
           {stats.words} words · {stats.minutes} min read
-          {stats.todos > 0 ? ` · ${stats.todosDone}/${stats.todos} done` : ''} · {savedLabel}
+          {stats.todos > 0 ? ` · ${stats.todosDone}/${stats.todos} done` : ''}{createdLabel ? ` · ${createdLabel}` : ''} · {savedLabel}
         </span>
         <button onClick={copyMarkdown} title="Copy note as Markdown" className="nb-chip"
           style={{ background: 'rgba(24,24,27,0.9)', border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', color: copiedMd ? '#a78bfa' : T.low, fontSize: '0.7rem', fontWeight: 600, padding: '0.28rem 0.6rem', whiteSpace: 'nowrap', fontFamily: T.sans }}>
@@ -1275,6 +1314,9 @@ export function NoteEditor({ trackId, note, onBack }) {
             title={BLOCK_DEFS.find(d => d.type === type)?.label}
             onMouseDown={e => e.preventDefault()} onClick={() => toolbarType(type)}>{label}</button>
         ))}
+        <span style={{ width: 1, height: 16, background: T.border, margin: '0 6px', flexShrink: 0 }} />
+        <button className="nb-tbbtn" style={tbBtn(false)} title="Outdent (Shift+Tab)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarIndent(-1)}>⇤</button>
+        <button className="nb-tbbtn" style={tbBtn(false)} title="Sub-bullet — indent (Tab)" onMouseDown={e => e.preventDefault()} onClick={() => toolbarIndent(1)}>⇥</button>
         <span style={{ marginLeft: 'auto', fontSize: '0.64rem', color: T.ghost, whiteSpace: 'nowrap', paddingLeft: 8 }}>
           “/” for blocks · “# ” “- ” “[] ” “&gt; ” “```” shortcuts · ⇥ sub-bullet
         </span>

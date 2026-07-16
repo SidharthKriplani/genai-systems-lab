@@ -490,3 +490,14 @@ html:not([data-theme="light"])[data-palette="luna"] .border-violet-500 {
 
 /* Notes editor: block placeholder is a whisper - only the focused block shows it (NoteEditor) */
 .nb-block-input::placeholder { color: currentColor; opacity: 0.18; }
+
+
+/* NoteEditor: per-block hover timestamp (2026-07-16) */
+.nb-block-row { position: relative; }
+.nb-edited {
+  position: absolute; right: 0.25rem; top: 0.3rem;
+  font-size: 0.6rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  opacity: 0; transition: opacity 0.15s ease; pointer-events: none;
+  white-space: nowrap; color: currentColor;
+}
+.nb-block-row:hover .nb-edited { opacity: 0.4; }
