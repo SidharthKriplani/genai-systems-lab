@@ -911,6 +911,7 @@ export function NoteEditor({ trackId, note, onBack }) {
   const [pendingLink, setPendingLink] = useState(null)
   const [copiedMd, setCopiedMd] = useState(false)
   const [wide, setWide] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1180 : true)
+  const [outlineOpen, setOutlineOpen] = useState(false) // mobile outline drawer
 
   const saveTimer = useRef(null)
   const latest = useRef({ title, blocks })
@@ -1577,6 +1578,59 @@ export function NoteEditor({ trackId, note, onBack }) {
             />
           </div>
         </div>
+
+        {/* ── Outline (mobile, 2026-07-17): the rail is desktop-only (wide ≥1180),
+            so phones had NO outline at all. Floating button → slide-in drawer;
+            rendered inside the editor (not a portal) so theme vars resolve. ── */}
+        {!wide && headings.length >= 2 && (
+          <>
+            <button
+              onClick={() => setOutlineOpen(o => !o)}
+              aria-label="Outline"
+              title="Outline"
+              style={{
+                position: 'fixed', right: 14, bottom: 84, zIndex: 60,
+                width: 42, height: 42, borderRadius: '50%', cursor: 'pointer',
+                background: T.surface, border: `1px solid ${T.border}`,
+                color: T.mid, fontSize: '1.05rem', lineHeight: 1,
+                boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >☰</button>
+            {outlineOpen && (
+              <div
+                onClick={() => setOutlineOpen(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 61, background: 'rgba(0,0,0,0.45)' }}
+              >
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    position: 'absolute', top: 0, right: 0, bottom: 0, width: 'min(78vw, 320px)',
+                    background: T.bg, borderLeft: `1px solid ${T.border}`,
+                    padding: '1.1rem 1rem calc(1.1rem + env(safe-area-inset-bottom))', overflowY: 'auto', overscrollBehavior: 'contain',
+                  }}
+                >
+                  <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.ghost, marginBottom: '0.6rem' }}>Outline</div>
+                  {headings.map(h => (
+                    <div
+                      key={h.id}
+                      onClick={() => {
+                        setOutlineOpen(false)
+                        document.getElementById(`nb-${h.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }}
+                      style={{
+                        fontSize: '0.85rem', color: T.mid, cursor: 'pointer', padding: '0.45rem 0.1rem',
+                        paddingLeft: h.type === 'h2' ? 12 : h.type === 'h3' ? 24 : 2,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        borderBottom: `1px solid ${T.border}`,
+                      }}
+                    >{h.content}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {/* ── Outline rail ── */}
         {wide && headings.length >= 2 && (
