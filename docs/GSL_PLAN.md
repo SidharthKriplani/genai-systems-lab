@@ -4808,3 +4808,53 @@ modules flipped to `status: "answered"` in both `qnaBank.js` and `qnaStatus.js`,
 still pending on the user's end as of this entry). Next up per the corrected sequence in
 `QNA-ANSWER-ROLLOUT-PLAN.md`: sequence item 2, GSL / AI Safety & Alignment / Tier S (1 module,
 `bias-lab`, 33 questions).
+
+## 2026-07-16 11:06 IST (Thursday): Catch-up log entry -- bias-lab, QnAPanel display fixes, Code Generation & AI Coding Tier S batch
+
+**Catch-up note.** The two items below (bias-lab, QnAPanel fixes) were done and pushed earlier
+today but never logged here -- only the root `QNA-ANSWER-ROLLOUT-PLAN.md` progress log got
+updated for bias-lab, and the QnAPanel fixes weren't logged anywhere in this file. Logging both
+now, plus this session's actual next batch, in one entry rather than leaving the gap.
+
+**GSL / AI Safety & Alignment / Tier S -- done (sequence item 2).** `bias-lab`, 33 questions,
+flipped to `answered`. Same pipeline as prior batches: 1 writer agent grounded in the module's own
+`playground-labs.js` content, independently re-validated programmatically against the full spec
+checklist -- 0 real violations (1 flagged case was the documented Mechanism-count-== N-parallel-
+components exception, same pattern seen in agent-mcp). Commit `f9548f4`.
+
+**QnAPanel rendering bugs found and fixed (user caught these live on the deployed app, not by me
+during the writing/apply pipeline -- a real gap in this rollout's own verification coverage, since
+none of the batches so far had actually been checked in the rendered UI, only in the raw
+`qnaBank.js` data).**
+1. `<Md text={node.answer} />` fed the new bullet *array* into a component built for a single
+   prose *string* -- `String(array)` implicitly joins with commas, so every bullet-format answer
+   rendered as one comma-blobbed run-on instead of a list. Fixed with a new `AnswerBody` component
+   that branches on `Array.isArray(answer)`: array -> `<ul>` of `<li>`, string (grandfathered
+   prose pilots) -> the original single paragraph. Commit `3050e49`.
+2. User flagged that the `**Answer.**`/`**Mechanism.**`/`**Grounding.**`/`**Boundary.**` category
+   labels, correct and necessary in `qnaBank.js` for the writer/verify pipeline, read as clutter
+   inline in the rendered UI. Fixed: labels stripped from displayed text via a regex
+   (`CATEGORY_PREFIX_RE`) applied only at render time -- the underlying data is untouched. Added a
+   numbered/dotted list-style toggle (persisted to `localStorage` key `gsl-qna-bullet-style`, same
+   pattern as `SpeakMode`'s `gsl-speak-history`). Commit `cb4bf1b`.
+
+Both fixes verified with a real `npm run build` (not just JSX eyeballing) before being handed back
+each time -- confirmed the built bundle contains the new component/toggle code and the build
+completes cleanly.
+
+**GSL / Code Generation & AI Coding / Tier S -- done (sequence item 3).** `codegen-agentic-loops`
+(35q), `codegen-eval-passk-swebench` (33q), `codegen-model-training-fim` (32q),
+`codegen-repo-context-retrieval` (32q) -- 132 questions, all flipped to `answered`. Drafted by 4
+parallel writer agents (one per module), grounded strictly in each module's own source content
+(`tracks/code-generation.js`), no new facts introduced. Independently re-validated
+programmatically against the full spec checklist across all 132 questions -- 0 violations, clean
+pass, no exceptions needed this time. Applied via the centralized single-writer script.
+
+**Verification.** `node --check` clean on `qnaBank.js` and `qnaStatus.js`.
+`scripts/check-duplicate-keys.mjs` -- 0 duplicates across 61 files. `scripts/validate-qna-status.mjs`
+-- 131/131 entries, 0 drift (draft: 0, parked: 117, answered: 14). Direct live read confirmed all
+132 questions carry non-empty `answer` arrays, and all 4 module statuses read `"answered"`.
+
+**Not yet done.** Not committed/pushed yet -- local working tree only. Next up per
+`QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 4, GSL / Evaluation / Tier S (3 modules --
+`eval-loop`, `llm-as-judge`, `rag-eval` -- 99 questions).
