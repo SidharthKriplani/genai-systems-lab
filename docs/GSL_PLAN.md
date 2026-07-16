@@ -5250,3 +5250,31 @@ centralized single-writer script, `node --check` clean, 0 duplicate keys, all
 **Cumulative GSL QnA status**: 88/131 modules answered, 43 parked, 0 draft.
 Group 7 (Evaluation) of `moduleTiers.js` TIER_A now closed. Group 8
 (Production) is next whenever the rollout resumes.
+
+## 2026-07-16 — QnA rollout batch 19: Production (Tier A group 8, largest batch)
+
+Eighth and largest batch of the real `moduleTiers.js` TIER_A priority order —
+10 modules. flashattn (30q), latency-planner (33q), observability-concepts
+(32q), prompt-regression-signals (32q), quality-drift (33q), cost-attribution
+(26q), managed-vs-selfhosted (31q), streaming-lab (30q), failure-sim-lab
+(37q), model-routing-cascades (33q) — 317 questions total, the largest
+single batch of the entire rollout. Source files:
+`src/data/foundationsRunnerData.js`, `src/data/foundations/production-tone.js`,
+`src/data/playground/playground-labs.js`, `src/data/foundations/
+gap-routing-security.js`.
+
+10 parallel writer agents, one per module, each grounded strictly in that
+module's own source content. Each was explicitly briefed to use a
+uniquely-named scratch/validator filename, avoiding the concurrent-agent
+shared-filename collision seen in the previous batch. All 10 self-validated
+and caught/fixed their own issues (word-count violations, band shortfalls,
+banned openers) before returning.
+
+Independently re-validated programmatically against the full spec checklist
+across all 317 questions — 0 flags, clean on first pass. 0 fabricated facts
+found. Applied via centralized single-writer script, `node --check` clean, 0
+duplicate keys, all 317 questions confirmed non-empty.
+
+**Cumulative GSL QnA status**: 98/131 modules answered, 33 parked, 0 draft.
+Group 8 (Production) of `moduleTiers.js` TIER_A now closed. Group 9
+(Inference Optimization & Serving) is next whenever the rollout resumes.
