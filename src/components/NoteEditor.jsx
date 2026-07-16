@@ -247,6 +247,49 @@ function fmtEdited(ts) {
   return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+
+// ── Caret visual-line detection (soft-wrap aware) ────────────────────────────
+// Arrow navigation used to require the caret to be at the ABSOLUTE start/end of
+// a block before ↑/↓ would cross blocks — so every hop cost two keypresses
+// (first press snapped to the boundary, second press moved). Docs behavior is:
+// ↑ on the FIRST VISUAL LINE leaves immediately, ↓ on the LAST VISUAL LINE
+// leaves immediately. Textareas soft-wrap, so "visual line" can't be read from
+// the value alone — we mirror the text up to the caret in a hidden div with the
+// same metrics and measure the caret's Y offset.
+let _caretMirror = null
+function caretOnEdgeLine(el, edge) {
+  try {
+    const cs = window.getComputedStyle(el)
+    if (!_caretMirror) {
+      _caretMirror = document.createElement('div')
+      const st = _caretMirror.style
+      st.position = 'absolute'; st.visibility = 'hidden'; st.top = '-9999px'; st.left = '-9999px'
+      document.body.appendChild(_caretMirror)
+    }
+    const m = _caretMirror
+    for (const p of ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textTransform']) m.style[p] = cs[p]
+    m.style.whiteSpace = 'pre-wrap'
+    m.style.wordBreak = cs.wordBreak || 'break-word'
+    m.style.overflowWrap = cs.overflowWrap || 'break-word'
+    m.style.padding = '0'
+    m.style.border = '0'
+    m.style.boxSizing = 'content-box'
+    const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)
+    m.style.width = Math.max(10, el.clientWidth - padX) + 'px'
+    const pos = el.selectionStart
+    m.textContent = ''
+    m.appendChild(document.createTextNode(el.value.slice(0, pos)))
+    const marker = document.createElement('span')
+    marker.textContent = '\u200b'
+    m.appendChild(marker)
+    m.appendChild(document.createTextNode(el.value.slice(pos)))
+    const lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 16) * 1.6
+    const caretTop = marker.offsetTop
+    if (edge === 'first') return caretTop < lh * 0.75
+    return caretTop > m.scrollHeight - lh * 1.25
+  } catch { return false } // measurement failure → fall back to boundary-only behavior
+}
+
 const TEXTISH = new Set(['text', 'h1', 'h2', 'h3', 'bullet', 'numbered', 'todo', 'quote', 'callout'])
 
 // Markdown shortcuts applied while typing at the start of a text block.
@@ -410,10 +453,27 @@ function EditableBlock({
     if (e.key === 'ArrowUp' && e.shiftKey && el.selectionStart === 0 && el.selectionEnd === 0) {
       e.preventDefault(); onRangeSelect(-1); return
     }
-    if (e.key === 'ArrowUp' && el.selectionStart === 0 && el.selectionEnd === 0) {
+    // ↑/↓ cross blocks from the first/last VISUAL line (one press, docs-style) —
+    // not just from the absolute start/end, which cost two presses per hop.
+    if (e.key === 'ArrowUp' && !e.shiftKey && !mod && !e.altKey) {
+      if ((el.selectionStart === 0 && el.selectionEnd === 0)
+        || (el.selectionStart === el.selectionEnd && caretOnEdgeLine(el, 'first'))) {
+        e.preventDefault(); onNavigate(-1); return
+      }
+    }
+    if (e.key === 'ArrowDown' && !e.shiftKey && !mod && !e.altKey) {
+      if ((el.selectionStart === block.content.length && el.selectionEnd === block.content.length)
+        || (el.selectionStart === el.selectionEnd && caretOnEdgeLine(el, 'last'))) {
+        e.preventDefault(); onNavigate(1); return
+      }
+    }
+    // ←/→ at a block's very edge cross into the neighbor instead of dead-ending.
+    if (e.key === 'ArrowLeft' && !e.shiftKey && !mod && !e.altKey
+      && el.selectionStart === 0 && el.selectionEnd === 0) {
       e.preventDefault(); onNavigate(-1); return
     }
-    if (e.key === 'ArrowDown' && el.selectionStart === block.content.length && el.selectionEnd === block.content.length) {
+    if (e.key === 'ArrowRight' && !e.shiftKey && !mod && !e.altKey
+      && el.selectionStart === block.content.length && el.selectionEnd === block.content.length) {
       e.preventDefault(); onNavigate(1); return
     }
   }
