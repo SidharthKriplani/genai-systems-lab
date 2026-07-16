@@ -5337,3 +5337,35 @@ centralized single-writer script, `node --check` clean, 0 duplicate keys, all
 Group 10 (Model Customization & Fine-Tuning) of `moduleTiers.js` TIER_A now
 closed. Group 11 (AI Safety & Alignment, the final group) is next whenever
 the rollout resumes.
+
+## 2026-07-16 — QnA rollout batch 22: AI Safety & Alignment (Tier A group 11, FINAL group)
+
+Eleventh and FINAL batch of the real `moduleTiers.js` TIER_A priority order —
+this closes out real Tier S + Tier A entirely. Modules: alignment-techniques
+(33q), llm-security-beyond-injection (30q) — 63 questions total. Source
+files: `src/data/foundationsRunnerData.js` (alignment-techniques),
+`src/data/foundations/gap-routing-security.js` (llm-security-beyond-injection).
+
+2 parallel writer agents, one per module, each grounded strictly in that
+module's own source content.
+
+Independently re-validated programmatically against the full spec checklist
+across all 63 questions — 3 flagged, all reviewed by hand and accepted as
+legitimate spec-sanctioned exceptions under the "N parallel components -> N
+Mechanism bullets" rule: llm-security-beyond-injection's pipe-boundaries
+(input/context/output), exfiltration-flavors (system-prompt leakage,
+cross-tenant/memorized-data leakage, tool-mediated exfiltration), and
+compliance-concerns (data residency, audit logging, retention) L0 questions
+each name 3 parallel components.
+
+0 fabricated facts found, 0 hand-patches needed this batch. Applied via
+centralized single-writer script, `node --check` clean, 0 duplicate keys, all
+63 questions confirmed non-empty.
+
+**Cumulative GSL QnA status**: 109/131 modules answered, 22 parked, 0 draft.
+**`moduleTiers.js` real Tier S (25 modules) + Tier A (~56 modules) are now
+100% complete** — all 11 TIER_A domain groups closed across batches 12-22.
+Remaining 22 parked modules are all Tier B (per moduleTiers.js) or leftover
+contentStatus.js-tagged items (e.g. Voice & Speech AI) not in the real
+TIER_S/TIER_A at all — per the standing strategy-change plan, these are
+lower priority and picked up next only if the rollout continues.
