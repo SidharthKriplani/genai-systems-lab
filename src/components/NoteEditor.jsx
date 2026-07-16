@@ -1076,7 +1076,7 @@ export function NoteEditor({ trackId, note, onBack }) {
         setSel(null)
       }
     }
-    const onMouse = () => setSel(null)
+    const onMouse = (e) => { if (e.target && e.target.closest && e.target.closest('.nb-tbbtn')) return; setSel(null) }
     window.addEventListener('keydown', onKey)
     window.addEventListener('mousedown', onMouse)
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onMouse) }
@@ -1129,6 +1129,18 @@ export function NoteEditor({ trackId, note, onBack }) {
   }
 
   function toolbarType(type) {
+    // Range selection active -> apply to EVERY selected textish block (toggle:
+    // if all are already that type, revert them to text). Selection survives.
+    if (sel) {
+      const lo = Math.min(sel.a, sel.h), hi = Math.max(sel.a, sel.h)
+      const inRange = blocks.slice(lo, hi + 1).filter(b => TEXTISH.has(b.type))
+      if (!inRange.length) return
+      const allAlready = inRange.every(b => b.type === type)
+      const nextType = allAlready ? 'text' : type
+      const ids = new Set(inRange.map(b => b.id))
+      commit(blocks.map(b => (ids.has(b.id) ? { ...b, type: nextType } : b)))
+      return
+    }
     if (!focusedId) return
     const b = blocks.find(x => x.id === focusedId)
     if (!b) return
