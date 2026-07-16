@@ -5056,3 +5056,11 @@ Wrote AMGB atomic-bullet answers for all 57 questions across sequence item 8: `c
 Cumulative rollout total after this batch: **42 modules, 1,356 questions, all answered** (GSL only; MSL rollout not yet started).
 
 Sequence item 8 closed. Next: sequence item 9, GSL / Prompt Engineering / Tier S — `chain-of-thought`, `few-shot`, `prompt-security`, `zero-shot` (124 questions).
+
+## 2026-07-16 16:35 IST (Thursday) — GSL / Prompt Engineering / Tier S batch (124q, sequence item 9 closed)
+
+Wrote AMGB atomic-bullet answers for all 124 questions across sequence item 9: `zero-shot` (31q), `few-shot` (29q), `chain-of-thought` (30q), `prompt-security` (34q). Drafted by 4 parallel writer agents, one per module, each grounded strictly in that module's own source content (groundUp/scenario/explanation/mcqs/takeaway from `src/data/foundationsRunnerData.js`, lines 1350-2761) — no new facts introduced. Independently re-validated programmatically against the full QNA-ANSWER-SPEC v1 checklist (exactly one Answer bullet first, Mechanism/Grounding/Boundary counts within each level's band, every bullet 15-30 words, no banned filler/hedge words) across all 124 questions — 0 flagged, clean on first validation pass. Applied via centralized single-writer regex-splice script, `node --check` clean on both `qnaBank.js` and `qnaStatus.js`, 0 duplicate keys across 4,257 total question ids, all 124 questions confirmed to have non-empty answer arrays, `validate-qna-status.mjs` passes clean (131/131 entries, 0 drift, draft: 0, parked: 83, answered: 48).
+
+Cumulative rollout total after this batch: **46 modules, 1,480 questions, all answered** (GSL only; MSL rollout not yet started).
+
+Sequence item 9 closed. Next: sequence item 10, GSL / Retrieval / Tier S — `chunking`, `dense-vs-sparse-retrieval`, `embeddings`, `rag-pipeline`, `reranking` (161 questions).
