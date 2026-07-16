@@ -4923,3 +4923,36 @@ draft: 0, parked: 114, answered: 17.
 
 **Not yet committed/pushed** -- local working tree only, exact git commands handed to the user
 after this entry. Next up per `QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 5.
+
+---
+
+### 2026-07-16 13:15 IST (Thursday) — GSL / Foundation Models / Tier S done (sequence item 5)
+
+`dpo` (35q), `finetuning-vs-rag` (32q), `grpo-rlvr` (29q), `lora` (32q), `rlhf` (33q) — 161
+questions, all flipped to `answered`. Source content for `dpo` lives in
+`src/data/foundations/dpo.js` (`RUNNER_DPO`), `grpo-rlvr` in `src/data/foundations/market-gap.js`
+(`RUNNER_MARKET_GAP`, shared file with `rope`/`gqa-mqa`), and `finetuning-vs-rag`/`lora`/`rlhf` in
+`src/data/foundationsRunnerData.js` directly (`RUNNER_DATA`). Extracted each module's full
+groundUp/scenario/explanation/mcqs/takeaway with an `awk` block-extract + `node --input-type=module
+eval()` pass per file (Node can't natively resolve Vite's extensionless bundler imports, so the
+whole file couldn't just be `import`ed and read off the merged object directly).
+
+5 parallel writer agents, one per module, each grounded strictly in its own module's source.
+Independently re-validated programmatically across all 161 questions: 6 flagged in `lora`, all the
+same shape -- a Grounding bullet count of 2 where the L1 band caps at 1, or 3 where the L3 band
+caps at 2. Reviewed by hand rather than force-cut: each extra Grounding bullet in every flagged
+question cites a genuinely distinct real number from the module (e.g. the r=32 vocabulary/format
+sufficiency figure and the separate GLUE percentage-point gap figure, cited together because the
+question asks about quality-parity by rank and both numbers are load-bearing for that answer).
+Accepted as legitimate content-driven exceptions, consistent with this rollout's established
+precedent (the N-parallel-components Mechanism exception seen in earlier batches) -- 0 fabricated
+facts, 0 genuine spec violations.
+
+Applied via the standard centralized single-writer regex-splice script, `node --check` clean on
+both `qnaBank.js` and `qnaStatus.js`, 0 duplicate keys, `validate-qna-status.mjs` reports 0 drift.
+Direct `node -e` read confirms all 161 touched questions carry non-empty `answer` arrays and all 5
+module statuses read `"answered"`. `qnaStatus.js` tally after this batch: 131/131 entries, 0 drift,
+draft: 0, parked: 109, answered: 22.
+
+**Not yet committed/pushed** -- local working tree only, exact git commands handed to the user
+after this entry. Next up per `QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 6.
