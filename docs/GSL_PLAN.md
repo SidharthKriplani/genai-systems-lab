@@ -5369,3 +5369,46 @@ Remaining 22 parked modules are all Tier B (per moduleTiers.js) or leftover
 contentStatus.js-tagged items (e.g. Voice & Speech AI) not in the real
 TIER_S/TIER_A at all — per the standing strategy-change plan, these are
 lower priority and picked up next only if the rollout continues.
+
+### 2026-07-16 IST (Thursday) -- QnA batch 23: Agents & Codegen (Tier B closeout, batch 1 of 4)
+Scope: 5 remaining parked modules -- agent-a2a (36q), agent-computer-use (37q), agent-long-running (32q),
+agent-memory-libraries (32q), codegen-security-sandboxing (33q) -- total 170 questions. First batch of the
+post-Tier-A closeout covering all 22 modules left outside moduleTiers.js real Tier S/A ("Tier B" per user framing).
+Sources: agents/agent-eco.js, agents/agent-sim.js (x2), agents/agent-core.js, tracks/code-generation.js.
+5 parallel writer agents (one per module), each grounded strictly in its own module's source content, each
+instructed to use uniquely-named scratch/validator filenames to avoid concurrent-agent collisions (none occurred).
+Independently re-validated via validate_batch23.py against full spec checklist across all 170 questions -- 5 flagged:
+4 legitimate "N parallel components -> N Mechanism bullets" exceptions (agent-a2a MCP-vs-A2A positioning; codegen's
+three-attack-surface, three-least-privilege-component, three-backstop questions, each naming exactly N parallel
+items), 1 legitimate thin-content exception (agent-long-running's state-machine-vs-event-sourcing question, all
+sub-bands individually satisfied). 0 real gaps, 0 hand-patches needed. Applied via centralized apply_batch23.py,
+qnaStatus.js updated via update_qnastatus23.py, node --check clean on both files, 0 duplicate keys, all 170
+questions confirmed non-empty. GSL running total: 114/131 modules answered, 17 parked.
+
+### 2026-07-16 IST (Thursday) -- QnA batch 24: Safety, Security & Cost (Tier B closeout, batch 2 of 4)
+Scope: 6 remaining parked modules -- enterprise-ai-cost-model (34q), jailbreak-taxonomy (36q),
+red-teaming (29q), resolution-token-cost (33q), seq-parallel (31q, all foundationsRunnerData.js),
+safety-measurement (29q, foundations/deepen-thin.js) -- total 192 questions.
+6 parallel writer agents (one per module), each grounded strictly in its own module's source content,
+each instructed to use uniquely-named scratch/validator filenames (no collisions occurred; one agent
+self-caught and fixed an id typo before final validation). Independently re-validated via
+validate_batch24.py against full spec checklist across all 192 questions -- 1 flagged: jailbreak-taxonomy's
+six-category enumeration question (L0, 8 bullets), accepted as a legitimate "N parallel components -> N
+Mechanism bullets" exception (Answer names all 6 taxonomy categories, Mechanism gives one bullet per
+category). 0 real gaps, 0 hand-patches needed. Applied via centralized apply_batch24.py, qnaStatus.js
+updated via update_qnastatus24.py, node --check clean on both files, 0 duplicate keys, all 192 questions
+confirmed non-empty. GSL running total: 120/131 modules answered, 11 parked.
+
+### 2026-07-16 IST (Thursday) -- QnA batch 25: Multimodal, Infra, Vector & Prompt (Tier B closeout, batch 3 of 4)
+Scope: 6 remaining parked modules -- multimodal-rag (26q), ocr-pipeline-design (33q), vision-language-arch
+(33q), vector-migration-patterns (35q, all foundationsRunnerData.js); infra-edge-ondevice (35q,
+tracks/inference-optimization.js); prompt-library (32q, playground/playground-labs.js) -- total 194 questions.
+6 parallel writer agents (one per module), each grounded strictly in its own module's source content, each
+instructed to use uniquely-named scratch/validator filenames (no collisions occurred). Independently
+re-validated via validate_batch25.py against full spec checklist across all 194 questions -- 3 flagged: 2
+legitimate "N parallel components -> N Mechanism bullets" exceptions (ocr-pipeline-design's three-tier
+overview and three-step diagnostic-order questions), 1 legitimate thin-content exception (multimodal-rag's
+prose-corpus-no-benefit question, all sub-bands individually satisfied). 0 real gaps, 0 hand-patches needed.
+Applied via centralized apply_batch25.py, qnaStatus.js updated via update_qnastatus25.py, node --check clean
+on both files, 0 duplicate keys, all 194 questions confirmed non-empty. GSL running total: 126/131 modules
+answered, 5 parked.
