@@ -5218,3 +5218,35 @@ centralized single-writer script, `node --check` clean, 0 duplicate keys, all
 **Cumulative GSL QnA status**: 83/131 modules answered, 48 parked, 0 draft.
 Group 6 (AI Agents) of `moduleTiers.js` TIER_A now closed. Group 7
 (Evaluation) is next whenever the rollout resumes.
+
+## 2026-07-16 — QnA rollout batch 18: Evaluation (Tier A group 7)
+
+Seventh batch of the real `moduleTiers.js` TIER_A priority order. Modules:
+eval-design (34q), debug (35q), hallucination-lab (32q), eval-contamination
+(35q), calibration (33q) — 169 questions total. Source files:
+`src/data/foundations/hardcoded-migration.js` (eval-design, debug),
+`src/data/playground/playground-labs.js` (hallucination-lab),
+`src/data/foundations/breadth-2.js` (eval-contamination, calibration).
+
+5 parallel writer agents, one per module, each grounded strictly in that
+module's own source content. One agent hit the known concurrent-agent
+shared-scratch-filename collision (its own throwaway `validate.py` got
+overwritten by a sibling agent's script of the same name) — caught it,
+switched to a uniquely-named validator, and confirmed its own deliverable
+(`answers_calibration.json`) was unaffected; no data was lost.
+
+Independently re-validated programmatically against the full spec checklist
+across all 169 questions — 1 flagged, reviewed by hand and accepted as a
+legitimate spec-sanctioned exception under the "N parallel components -> N
+Mechanism bullets" rule: hallucination-lab's L0 "fabrication signatures"
+question lands at 5 bullets since its Answer names 3 signature types
+(plausible specifics, wrong attributions, fabricated numbers), each earning
+its own Mechanism bullet.
+
+0 fabricated facts found, 0 hand-patches needed this batch. Applied via
+centralized single-writer script, `node --check` clean, 0 duplicate keys, all
+169 questions confirmed non-empty.
+
+**Cumulative GSL QnA status**: 88/131 modules answered, 43 parked, 0 draft.
+Group 7 (Evaluation) of `moduleTiers.js` TIER_A now closed. Group 8
+(Production) is next whenever the rollout resumes.
