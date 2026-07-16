@@ -5072,3 +5072,29 @@ Wrote AMGB atomic-bullet answers for all 161 questions across sequence item 10: 
 Cumulative rollout total after this batch: **51 modules, 1,641 questions, all answered** (GSL only; MSL rollout not yet started).
 
 Sequence item 10 closed. Next: sequence item 11, GSL / Voice & Speech AI / Tier S — `voice-asr-architectures`, `voice-realtime-agents`, `voice-streaming-latency` (103 questions). This closes out ALL of GSL Tier S.
+
+## 2026-07-16 18:10 IST (Thursday) — GSL / Language Models / Tier A batch (163q) — STRATEGY SWITCH
+
+User flagged that "Voice & Speech AI / Tier S" didn't match expectations. Investigation found two
+distinct "Tier S" concepts in the codebase: `moduleTiers.js`'s TIER_S/TIER_A (the real, live-site
+tier badges users see) vs `contentStatus.js`'s per-module `tier` field (a separate content-audit
+priority tag that the rollout plan had been unintentionally following). Cross-checked all 25 modules
+in the real moduleTiers.js TIER_S -- all 25 already answered. Switched the rollout's priority source
+to moduleTiers.js TIER_A, sequenced by the domain-group order in the file itself. Full rationale and
+new sequence logged in root `QNA-ANSWER-ROLLOUT-PLAN.md`.
+
+First Tier A batch: `positional-encoding` (37q), `rope` (33q), `speculative-decoding` (33q),
+`tempgame` (32q), `kv-cache` (28q), 163 questions total. Drafted by 5 parallel writer agents, one
+per module, each grounded strictly in that module's own source content (groundUp/scenario/
+explanation/keyPoints/recap/mcqs/takeaway from `src/data/foundationsRunnerData.js`,
+`src/data/foundations/speculative-decoding.js`, `src/data/foundations/market-gap.js`) -- no new
+facts introduced. Independently re-validated programmatically -- 2 flagged in kv-cache (Grounding
+count one over band), reviewed by hand and accepted as legitimate content-driven exceptions. Applied
+via centralized single-writer script, `node --check` clean, 0 duplicate keys across 4,257 total
+question ids, all 163 confirmed non-empty, `validate-qna-status.mjs` passes clean (131/131 entries,
+0 drift, draft: 0, parked: 73, answered: 58).
+
+Cumulative rollout total after this batch: **56 modules, 1,804 questions, all answered** (GSL only).
+
+Next: moduleTiers.js TIER_A group 2, Retrieval — `context`, `query-rewriting`,
+`multi-hop-retrieval`, `rag-ingestion-pipeline`.
