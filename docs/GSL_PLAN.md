@@ -5005,3 +5005,46 @@ draft: 0, parked: 101, answered: 30.
 
 **Not yet committed/pushed** -- local working tree only, exact git commands handed to the user
 after this entry. Next up per `QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 7.
+
+---
+
+### 2026-07-16 15:05 IST (Thursday) — GSL / NLP Foundations / Tier S done (sequence item 7, largest batch yet)
+
+`nlp-bow-tfidf` (34q), `nlp-classical-tasks` (34q), `nlp-encoder-decoder-objectives` (34q),
+`nlp-eval-metrics` (33q), `nlp-ngram-lm` (32q), `nlp-preprocessing` (36q), `nlp-rnn-lstm-gru`
+(35q), `nlp-sentence-embeddings` (37q), `nlp-seq2seq-attention` (33q), `nlp-text-classification`
+(35q), `nlp-transfer-learning` (34q), `nlp-word2vec-glove` (33q) — 410 questions, all flipped to
+`answered`. Source content lives in 4 files, 3 modules each:
+`src/data/foundations/nlp-foundations-1.js` through `-4.js`. Extracted with the established
+`export const RUNNER_NLP_N = {...}` regex-wrap + `node --input-type=module eval()` technique
+(same as prior batches).
+
+12 parallel writer agents, one per module -- largest fan-out this rollout has used. Independently
+re-validated programmatically across all 410 questions: 10 flagged, all the same shape (a
+Grounding or Boundary bullet count one over its level's band). Reviewed by hand rather than
+force-cut: every flagged question's extra bullet cites a genuinely distinct real fact already in
+the source (e.g. `nlp-ngram-lm`'s `qna-case-smoothed-still-fails-01` cites three separate real
+facts -- the fixed-window example, the module's own "patches the zeros but touches neither limit"
+quote, and Kneser-Ney's actual scope -- because the question asks why smoothing specifically fails
+to fix two named limits, and both limits needed their own grounding). Accepted as legitimate
+content-driven exceptions, consistent with this rollout's established precedent -- 0 fabricated
+facts, 0 genuine spec violations.
+
+One writer agent (`nlp-ngram-lm`) flagged that its intermediate scratch file
+(`build_answers.py`) got silently overwritten mid-task, apparently by another concurrent agent
+writing a same-named scratch file into the shared `/tmp/batch8` directory. This did not corrupt
+the deliverable -- the agent independently re-verified its final `answers_nlp-ngram-lm.json`
+against the source questions list before reporting, and the centralized apply step's own
+100%-question-count check (410/410 applied, 0 missing) confirms no cross-contamination reached
+`qnaBank.js`. Noting this as a real risk in the parallel-writer-agent pattern for future batches:
+scratch filenames used *inside* an agent's own work (not the deliverable path itself) should be
+module-namespaced to avoid this class of collision, even though it didn't cause harm here.
+
+Applied via the standard centralized single-writer regex-splice script, `node --check` clean on
+both `qnaBank.js` and `qnaStatus.js`, 0 duplicate keys, `validate-qna-status.mjs` reports 0 drift.
+Direct `node -e` read confirms all 410 touched questions carry non-empty `answer` arrays and all
+12 module statuses read `"answered"`. `qnaStatus.js` tally after this batch: 131/131 entries, 0
+drift, draft: 0, parked: 89, answered: 42.
+
+**Not yet committed/pushed** -- local working tree only, exact git commands handed to the user
+after this entry. Next up per `QNA-ANSWER-ROLLOUT-PLAN.md`'s sequence: sequence item 8.
