@@ -4723,3 +4723,88 @@ Following the 50-module untracked-gap closure above, moved to the user's next ex
 **Verification:** `node --check` clean on `qnaBank.js` and `qnaStatus.js`. `node scripts/validate-qna-status.mjs` -> 131/131 entries checked, 0 draft / 130 parked / 1 answered, zero drift between `qnaStatus.js` and `qnaBank.js`'s own status fields, all parked/answered entries carry real receipts. `node scripts/check-duplicate-keys.mjs` -> 0 duplicates across 61 files (up from 60 -- the new `qnaStatus.js`). Live question count: 4,257 (down from 4,264 pre-audit by exactly the 7 cuts). `git status --short`: `qnaBank.js` modified, `qnaStatus.js` + `scripts/validate-qna-status.mjs` new/untracked, plus the pre-existing `_to_delete/`.
 
 **Not yet done:** MSL's side of Task #47 (205 draft modules) is queued next. Full AMGB answer-writing (parked -> answered) remains explicitly deprioritized per the user's stated order.
+
+## 2026-07-16 08:40 IST (Thursday): QnA answer-writing rollout starts -- atomic-bullet format locked, Batch 1 (agent-core) done
+
+Following the light-question-audit completion (both labs at `parked`, logged above and in MSL's
+`docs/BACKLOG.md`), moved to the next explicit priority: writing real AMGB answers for the ~11,000
+`parked`-but-unanswered questions across both labs. Before any bulk execution, the user required a
+small human-reviewed pilot to pin down the answer format (explicit standing instruction: "no full
+execution before it").
+
+**Format decision.** The pilot (run against real already-`answered` content from `transformer`
+GSL and `logistic_regression` MSL, several rounds of direct user feedback) concluded the format
+should be atomic bullet points -- one idea per bullet, `**Category.**` labeled (Answer/Mechanism/
+Grounding/Boundary), 15-30 words each, bullet count scaled by question level (L0 3-4, L1 5-6, L2
+7-9, L3 8-10). This directly contradicts the flowing-prose format `QNA-INTERVIEW-STANDARD.md`
+(root doc) had specified since 2026-07-11 and that both existing `answered` pilots actually use --
+a real conflict, caught only by re-reading the standard before logging this work, not by either of
+us checking it during the pilot itself. User resolved it explicitly: bullets supersede prose for
+all new answer-writing, the two existing pilots stay grandfathered as-is. Full spec plus the
+supersession rationale is now recorded in `QNA-INTERVIEW-STANDARD.md` itself (not left in a
+session-local scratch file) -- see that file's 2026-07-16 Supersession section. The tiered rollout
+plan (sequencing, full module roster, batch-by-batch progress log) lives in a new root doc,
+`QNA-ANSWER-ROLLOUT-PLAN.md`.
+
+**Rollout granularity and sequencing** (both explicitly set by the user): batch = one (tier,
+foundation family, lab) group; sequence Tier S -> A -> B, GSL families before MSL within each
+tier. Full target roster enumerated live from both labs' `contentStatus.js`/`qnaStatus.js`: 335
+modules, 10,988 questions remaining (GSL 130 modules/4,227 questions; MSL 205 modules/6,761
+questions).
+
+**Batch 1 -- Tier S / `agent-core` / GSL -- done.** `agent-react` (32 questions) and
+`agent-tool-design` (29 questions), 61 total. Answers grounded in each module's own `explanation`/
+`keyPoints`/`recap`/`takeaway` content, no new facts introduced. Applied via the established
+centralized single-writer script pattern (regex block-splice, avoids the concurrent-write
+collision bug hit earlier in this project). Both modules flipped to `status: "answered"` in both
+`qnaBank.js` and `qnaStatus.js`, with real 3-part `verifiedBy` receipts.
+
+**Verification.** `node --check` clean on both touched files. `scripts/check-duplicate-keys.mjs`
+-- 0 duplicates across 61 files. `scripts/validate-qna-status.mjs` -- 131/131 entries, 0 drift
+(draft: 0, parked: 128, answered: 3). Direct live read confirmed all 61 questions carry non-empty
+`answer` arrays satisfying the spec's bullet-count/word-count rules.
+
+**Not yet done.** Not committed/pushed yet -- local working tree only. Remaining 334 modules /
+~10,927 questions queued per the plan doc's sequencing; next up is Tier S / `agent-eco` / GSL (3
+modules, 97 questions).
+
+## 2026-07-16 09:59 IST (Thursday): Foundation-grouping correction + GSL/AI Agents/Tier S closed out
+
+**Correction to the entry above.** The prior entry's "Batch 1" and its "not yet done" pointer both
+used the wrong foundation grouping -- `contentStatus.js`'s `sourceFile` field (a code-organization
+artifact, not a topic taxonomy). Caught by direct user review before further batches were written.
+The real foundation source for GSL is `src/data/moduleSearchIndex.js`'s `gymLabel` field (15 real
+gyms, 131/131 modules matched, 0 unmatched) -- confirmed complete and now the authoritative
+grouping. Full detail and the rebuilt roster/sequence live in the root
+`QNA-ANSWER-ROLLOUT-PLAN.md`, not duplicated here. Under the corrected grouping, `agent-react` +
+`agent-tool-design` (the prior entry's "Batch 1") turned out to be 2/8 of the real
+GSL / AI Agents / Tier S unit, not a complete batch on their own.
+
+**This batch -- GSL / AI Agents / Tier S closed out (6 remaining modules).** `agent-config-lab`
+(34q), `agent-design-challenge` (33q), `agent-eval-trajectory` (33q), `agent-frameworks` (34q),
+`agent-loop-simulator` (33q), `agent-mcp` (29q) -- 196 questions total. Drafted by 6 parallel
+writer agents, one per module, each grounded strictly in that module's own source content
+(`agent-eco.js`, `agent-sim.js`, or `gap-agenteval-ragingest.js` -- `groundUp`/`scenario`/
+`explanation`/`keyPoints`/`recap`/`takeaway`), no new facts introduced. Independently re-validated
+(not just self-reported by the writer agents) with a programmatic check against the full
+QNA-ANSWER-SPEC v1 checklist across all 196 questions: exactly one Answer bullet first, every
+bullet 15-30 words, Mechanism/Grounding/Boundary counts within each level's band, no banned
+filler/hedge words. Result: 0 real violations -- the only flag was `qna-four-primitives-01`
+(agent-mcp, L0), which legitimately used 4 Mechanism bullets because its Answer names 4 parallel
+components (Tools/Resources/Prompts/Sampling), matching the spec's documented exception, not a
+defect. Applied via the same centralized single-writer regex-splice script as batch 1. All 6
+modules flipped to `status: "answered"` in both `qnaBank.js` and `qnaStatus.js`, with real 3-part
+`verifiedBy` receipts.
+
+**GSL / AI Agents / Tier S is now fully answered (8/8 modules, 257 questions):** `agent-react`,
+`agent-tool-design` (batch 1) + the 6 above (this batch).
+
+**Verification.** `node --check` clean on `qnaBank.js` and `qnaStatus.js`.
+`scripts/check-duplicate-keys.mjs` -- 0 duplicates across 61 files. `scripts/validate-qna-status.mjs`
+-- 131/131 entries, 0 drift (draft: 0, parked: 122, answered: 9). Direct live read confirmed all
+196 questions carry non-empty `answer` arrays, and all 6 module statuses read `"answered"`.
+
+**Not yet done.** Not committed/pushed yet -- local working tree only (batch 1's commit is also
+still pending on the user's end as of this entry). Next up per the corrected sequence in
+`QNA-ANSWER-ROLLOUT-PLAN.md`: sequence item 2, GSL / AI Safety & Alignment / Tier S (1 module,
+`bias-lab`, 33 questions).
