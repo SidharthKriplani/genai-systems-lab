@@ -5305,3 +5305,35 @@ centralized single-writer script, `node --check` clean, 0 duplicate keys, all
 Group 9 (Inference Optimization & Serving) of `moduleTiers.js` TIER_A now
 closed. Group 10 (Model Customization & Fine-Tuning) is next whenever the
 rollout resumes.
+
+## 2026-07-16 — QnA rollout batch 21: Model Customization & Fine-Tuning (Tier A group 10)
+
+Tenth batch of the real `moduleTiers.js` TIER_A priority order. Modules:
+custom-when-to-finetune (29q), custom-data-curation (36q),
+custom-peft-lora-serving (32q), custom-preference-alignment (29q),
+custom-eval-driven-loop (29q) — 155 questions total. All 5 sourced from
+`src/data/tracks/model-customization.js`.
+
+5 parallel writer agents, one per module, each grounded strictly in that
+module's own source content. custom-preference-alignment's writer was
+explicitly briefed to stay conservative on IPO/KTO, matching a prior
+question-audit trim that already cut one question for the same reason.
+
+Independently re-validated programmatically against the full spec checklist
+across all 155 questions — 5 flagged, all reviewed by hand and accepted as
+legitimate spec-sanctioned exceptions: 4 under the "N parallel components ->
+N Mechanism bullets" rule (custom-data-curation's 2-property eval-set
+question, custom-preference-alignment's 3-stage RLHF-pipeline question,
+custom-eval-driven-loop's 3-tool measurement question and 3-element
+governance question), 1 as the spec's explicit thin-content allowance
+(custom-preference-alignment's IPO/KTO question, kept intentionally thin
+since the source gives it only one sentence).
+
+0 fabricated facts found, 0 hand-patches needed this batch. Applied via
+centralized single-writer script, `node --check` clean, 0 duplicate keys, all
+155 questions confirmed non-empty.
+
+**Cumulative GSL QnA status**: 107/131 modules answered, 24 parked, 0 draft.
+Group 10 (Model Customization & Fine-Tuning) of `moduleTiers.js` TIER_A now
+closed. Group 11 (AI Safety & Alignment, the final group) is next whenever
+the rollout resumes.
