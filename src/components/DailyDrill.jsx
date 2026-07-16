@@ -127,6 +127,31 @@ function msToMidnight() {
   return next - now
 }
 
+
+// Animated Elo count-up (Wave 1 motion) — rating ticks from pre- to post-value.
+function EloTicker({ delta, rating }) {
+  const [shown, setShown] = useState(rating - delta)
+  useEffect(() => {
+    const from = rating - delta
+    const dur = 700
+    const t0 = performance.now()
+    let raf
+    const tick = now => {
+      const p = Math.min(1, (now - t0) / dur)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setShown(Math.round(from + eased * delta))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [delta, rating])
+  return (
+    <>
+      {delta >= 0 ? '+' : ''}{delta} elo → <span className="mo-count">{shown}</span>
+    </>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function DailyDrill({ onTrain }) {
@@ -303,7 +328,7 @@ export default function DailyDrill({ onTrain }) {
           return (
             <button
               key={i}
-              className={'dd-opt' + (isWrong ? ' dd-wrong' : '')}
+              className={'dd-opt' + (isWrong ? ' dd-wrong' : '') + (solved && st === 'idle-locked' ? ' mo-lock' : '') + (isRight && solved ? ' mo-correct' : '')}
               disabled={solved || guesses.includes(i)}
               onClick={() => pick(i)}
               style={{
@@ -314,6 +339,7 @@ export default function DailyDrill({ onTrain }) {
                 color: isRight ? T.green : isWrong ? T.red : T.mid,
                 opacity: solved && st === 'idle-locked' ? 0.55 : 1,
                 textDecoration: isWrong ? 'line-through' : 'none',
+                animationDelay: solved && st === 'idle-locked' ? `${i * 45}ms` : undefined,
               }}
             >
               <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, marginRight: 8, opacity: 0.7 }}>
@@ -344,7 +370,7 @@ export default function DailyDrill({ onTrain }) {
               <span style={{ marginLeft: 8, letterSpacing: 0 }}>{guesses.map(g => (g === drill.answer ? '🟩' : '🟥')).join('')}</span>
               {ratingFx && (
                 <span style={{ marginLeft: 10, letterSpacing: 0, color: ratingFx.delta >= 0 ? T.green : T.red }}>
-                  {ratingFx.delta >= 0 ? '+' : ''}{ratingFx.delta} elo → {ratingFx.rating}
+                  <EloTicker delta={ratingFx.delta} rating={ratingFx.rating} />
                 </span>
               )}
             </div>

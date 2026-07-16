@@ -16,6 +16,25 @@
 import { useState, useEffect, useRef } from "react";
 import { loadPython, runPython, isPyodideReady } from "./python.js";
 import { AddTrackBtn } from "./AddToTrackPopover.jsx";
+import { recordAttempt } from "./utils/ratings.js";
+
+// ── Staff-format extensions (2026-07-16) ──────────────────────────────────────
+// Backwards compatible: exercises may optionally carry
+//   testTiers: [{ name, label, tests }]  — run in order; rank = tiers passed
+//   actTwo:    { prompt, tests, solution } — production twist, unlocked after
+//              all tiers pass; passing it = "Staff clear"
+//   tradeoff:  { q, options[], correct, explanation } — one post-solve MCQ
+// Exercises without these fields behave exactly as before (single `tests`).
+
+const TIER_RANK = ["Working", "Solid", "Senior", "Staff-track"];
+
+function rankForTiers(passedCount, total) {
+  if (passedCount === 0) return null;
+  if (passedCount >= total && total >= 3) return TIER_RANK[3];
+  return TIER_RANK[Math.min(passedCount, TIER_RANK.length - 1) - 1] || TIER_RANK[0];
+}
+
+const ELO_DIFF = { intro: "easy", easy: "easy", core: "medium", medium: "medium", advanced: "hard", hard: "hard" };
 
 const CYAN = "var(--gal-build, #22d3ee)";
 
@@ -118,6 +137,13 @@ export default function CodeExercise({ exercise, onBack, onSolved }) {
   const [checkOut, setCheckOut] = useState(""); // error/stdout text on fail
   const [showSolution, setShowSolution] = useState(false);
   const [hintsShown, setHintsShown] = useState(0);
+  const [tierResults, setTierResults] = useState(null); // [{name,label,ok,detail}]
+  const [actTwoState, setActTwoState] = useState(null); // null | 'pass' | 'fail'
+  const [actTwoOut, setActTwoOut] = useState("");
+  const [showActTwoSolution, setShowActTwoSolution] = useState(false);
+  const [tradeoffSel, setTradeoffSel] = useState(null);
+  const [tradeoffDone, setTradeoffDone] = useState(false);
+  const eloRecorded = useRef(false);
   const taRef = useRef(null);
 
   useEffect(() => {
@@ -130,6 +156,13 @@ export default function CodeExercise({ exercise, onBack, onSolved }) {
     setCheckOut("");
     setShowSolution(false);
     setHintsShown(0);
+    setTierResults(null);
+    setActTwoState(null);
+    setActTwoOut("");
+    setShowActTwoSolution(false);
+    setTradeoffSel(null);
+    setTradeoffDone(false);
+    eloRecorded.current = false;
   }, [exercise.id]);
 
   const busy = phase === "loading" || phase === "running";
@@ -164,14 +197,50 @@ export default function CodeExercise({ exercise, onBack, onSolved }) {
     setRunOut(null);
     setCheckState(null);
     setCheckOut("");
+    setTierResults(null);
     const ready = await ensurePython();
     if (!ready) return;
     setPhase("running");
     setProgress("");
-    // GRADING: user code + hidden asserts. No exception == passed.
+
+    const tiers = exercise.testTiers;
+    if (Array.isArray(tiers) && tiers.length > 0) {
+      // Tiered grading: run each tier in order, stop at first failure.
+      const results = [];
+      let firstFailDetail = "";
+      for (const tier of tiers) {
+        const res = await runPython(code + "\n\n" + (tier.tests || ""));
+        results.push({ name: tier.name, label: tier.label || tier.name, ok: res.ok });
+        if (!res.ok) { firstFailDetail = res.error || res.stdout || "Tier failed."; break; }
+      }
+      setPhase("idle");
+      setTierResults(results);
+      const passed = results.filter((r) => r.ok).length;
+      const correctness = results[0]?.ok;
+      // Elo: the FIRST Check on an exercise is the scored attempt.
+      if (!eloRecorded.current) {
+        eloRecorded.current = true;
+        recordAttempt("Coding · " + (exercise.topic || "General"), !!correctness, ELO_DIFF[exercise.difficulty] || "medium");
+      }
+      if (correctness) {
+        setCheckState("pass");
+        onSolved?.(exercise.id);
+        if (passed < results.length || passed < tiers.length) setCheckOut(firstFailDetail);
+      } else {
+        setCheckState("fail");
+        setCheckOut(firstFailDetail);
+      }
+      return;
+    }
+
+    // Legacy single-block grading: user code + hidden asserts. No exception == passed.
     const composed = code + "\n\n" + (exercise.tests || "");
     const res = await runPython(composed);
     setPhase("idle");
+    if (!eloRecorded.current) {
+      eloRecorded.current = true;
+      recordAttempt("Coding · " + (exercise.topic || "General"), res.ok, ELO_DIFF[exercise.difficulty] || "medium");
+    }
     if (res.ok) {
       setCheckState("pass");
       onSolved?.(exercise.id);
@@ -179,6 +248,19 @@ export default function CodeExercise({ exercise, onBack, onSolved }) {
       setCheckState("fail");
       setCheckOut(res.error || res.stdout || "Tests failed.");
     }
+  }
+
+  async function handleCheckActTwo() {
+    if (!exercise.actTwo) return;
+    setActTwoState(null);
+    setActTwoOut("");
+    const ready = await ensurePython();
+    if (!ready) return;
+    setPhase("running");
+    const res = await runPython(code + "\n\n" + (exercise.actTwo.tests || ""));
+    setPhase("idle");
+    if (res.ok) setActTwoState("pass");
+    else { setActTwoState("fail"); setActTwoOut(res.error || res.stdout || "Act II tests failed."); }
   }
 
   function onKeyDown(e) {
@@ -314,22 +396,126 @@ export default function CodeExercise({ exercise, onBack, onSolved }) {
       {/* Check result */}
       {checkState === "pass" && (
         <div
-          className="rounded-xl px-5 py-4 mb-4 border"
+          className="rounded-xl px-5 py-4 mb-4 border mo-pop"
           style={{
             borderColor: "rgba(52,211,153,0.4)",
             background: "rgba(52,211,153,0.08)",
             color: "#34d399",
           }}
         >
-          <p className="text-sm font-black">All tests passed ✓</p>
-          <p className="text-xs text-zinc-400 mt-1">
-            Your implementation satisfies every hidden assert. Marked solved.
-          </p>
+          {tierResults ? (
+            <>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-black m-0">
+                  {tierResults.every((r) => r.ok) && tierResults.length === (exercise.testTiers?.length || 0)
+                    ? "All tiers passed ✓"
+                    : "Correctness passed ✓"}
+                </p>
+                {rankForTiers(tierResults.filter((r) => r.ok).length, exercise.testTiers?.length || 0) && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-800/50 bg-emerald-950/30 text-emerald-300">
+                    {rankForTiers(tierResults.filter((r) => r.ok).length, exercise.testTiers?.length || 0)}
+                    {actTwoState === "pass" ? " · Staff clear" : ""}
+                  </span>
+                )}
+              </div>
+              <div className="mo-stagger mt-3 space-y-1">
+                {(exercise.testTiers || []).map((tier, i) => {
+                  const r = tierResults[i];
+                  const state = r ? (r.ok ? "pass" : "fail") : "locked";
+                  return (
+                    <div key={tier.name} className="flex items-center gap-2 text-xs font-mono">
+                      <span style={{ color: state === "pass" ? "#34d399" : state === "fail" ? "#f87171" : "#52525b" }}>
+                        {state === "pass" ? "✓" : state === "fail" ? "✗" : "○"}
+                      </span>
+                      <span className={state === "locked" ? "text-zinc-600" : "text-zinc-300"}>{tier.label || tier.name}</span>
+                      {state === "locked" && <span className="text-zinc-700">(not reached)</span>}
+                    </div>
+                  );
+                })}
+              </div>
+              {checkOut && (
+                <pre className="text-[11px] font-mono text-zinc-400 leading-relaxed mt-2 whitespace-pre-wrap overflow-x-auto">{checkOut}</pre>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-black">All tests passed ✓</p>
+              <p className="text-xs text-zinc-400 mt-1">
+                Your implementation satisfies every hidden assert. Marked solved.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Post-solve tradeoff MCQ — one judgment question about the choice just made */}
+      {checkState === "pass" && exercise.tradeoff && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 mb-4 mo-rise">
+          <p className="text-[10px] font-mono uppercase tracking-widest mb-2" style={{ color: CYAN }}>Tradeoff check</p>
+          <p className="text-sm font-semibold text-zinc-100 leading-relaxed mb-3"><InlineMd text={exercise.tradeoff.q} /></p>
+          <div className="space-y-2">
+            {exercise.tradeoff.options.map((opt, i) => {
+              const chosen = tradeoffSel === i;
+              const right = i === exercise.tradeoff.correct;
+              let cls = "text-zinc-400 border-zinc-800 bg-zinc-900/50 hover:border-zinc-600";
+              if (tradeoffDone) {
+                if (right) cls = "text-emerald-300 border-emerald-800/50 bg-emerald-950/20 mo-correct";
+                else if (chosen) cls = "text-red-300 border-red-800/50 bg-red-950/20 mo-shake";
+                else cls = "text-zinc-600 border-zinc-800 bg-zinc-900/30 opacity-50 mo-lock";
+              } else if (chosen) cls = "text-cyan-300 border-cyan-700 bg-cyan-950/30";
+              return (
+                <button key={i} disabled={tradeoffDone}
+                  onClick={() => { setTradeoffSel(i); setTradeoffDone(true); }}
+                  className={`w-full text-left text-sm px-4 py-2.5 rounded-lg border transition-all ${cls}`}>
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+          {tradeoffDone && (
+            <p className="text-xs text-zinc-400 leading-relaxed mt-3 mo-rise"><InlineMd text={exercise.tradeoff.explanation} /></p>
+          )}
+        </div>
+      )}
+
+      {/* Act II — production twist, unlocked when every tier passes */}
+      {checkState === "pass" && exercise.actTwo && tierResults && tierResults.every((r) => r.ok) &&
+        tierResults.length === (exercise.testTiers?.length || 0) && (
+        <div className="rounded-xl border p-5 mb-4 mo-rise" style={{ borderColor: "rgba(34,211,238,0.35)", background: "rgba(34,211,238,0.05)" }}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded border" style={{ color: CYAN, borderColor: "rgba(34,211,238,0.4)" }}>
+              Act II · production twist
+            </span>
+            {actTwoState === "pass" && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-800/50 bg-emerald-950/20 text-emerald-400 mo-pop">✓ Staff clear</span>
+            )}
+          </div>
+          <div className="text-sm text-zinc-200 leading-relaxed mb-3"><InlineMd text={exercise.actTwo.prompt} /></div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={handleCheckActTwo} disabled={busy}
+              className="px-4 py-2 rounded-lg text-sm font-black transition-all disabled:opacity-40"
+              style={{ background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.4)", color: CYAN }}>
+              {phase === "running" ? "Checking…" : "✓ Check Act II"}
+            </button>
+            <span className="text-[11px] font-mono text-zinc-500">Edit your solution above to survive the new constraint, then re-check.</span>
+            {exercise.actTwo.solution && actTwoState && (
+              <button onClick={() => setShowActTwoSolution((v) => !v)}
+                className="ml-auto text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-all">
+                {showActTwoSolution ? "Hide Act II solution" : "Reveal Act II solution"}
+              </button>
+            )}
+          </div>
+          {actTwoState === "fail" && (
+            <pre className="text-xs font-mono text-red-300/90 leading-relaxed mt-3 whitespace-pre-wrap overflow-x-auto mo-rise">{actTwoOut}</pre>
+          )}
+          {showActTwoSolution && exercise.actTwo.solution && (
+            <pre className="text-xs font-mono text-zinc-300 leading-relaxed mt-3 px-4 py-3 rounded-lg border border-zinc-800 bg-zinc-950 overflow-x-auto whitespace-pre">{exercise.actTwo.solution}</pre>
+          )}
         </div>
       )}
       {checkState === "fail" && (
         <div
-          className="rounded-xl px-5 py-4 mb-4 border"
+          className="rounded-xl px-5 py-4 mb-4 border mo-rise"
           style={{
             borderColor: "rgba(248,113,113,0.4)",
             background: "rgba(248,113,113,0.08)",

@@ -632,9 +632,11 @@ function QuestionBlock({ qi, total, q, selected, isSubmitted, onSelect, onSubmit
           const right = correctArr.includes(i);
           let cls = "text-zinc-400 border-zinc-800 bg-zinc-900/50 hover:border-zinc-600 hover:text-zinc-300";
           if (isSubmitted) {
-            if (right) cls = "text-emerald-300 border-emerald-800/50 bg-emerald-950/20";
+            // Motion (Wave 1): correct settles with an overshoot pop, wrong keeps
+            // its shake, the rest lock in with a stagger (mo-* in index.css).
+            if (right) cls = "text-emerald-300 border-emerald-800/50 bg-emerald-950/20 mo-correct";
             else if (sel) cls = "text-red-300 border-red-800/50 bg-red-950/20 animate-wrongShake";
-            else cls = "text-zinc-600 border-zinc-800 bg-zinc-900/30 opacity-50";
+            else cls = "text-zinc-600 border-zinc-800 bg-zinc-900/30 opacity-50 mo-lock";
           } else if (sel) {
             cls = "text-violet-300 border-violet-600 bg-violet-950/30";
           }
@@ -644,6 +646,7 @@ function QuestionBlock({ qi, total, q, selected, isSubmitted, onSelect, onSubmit
               onClick={() => onSelect(i)}
               disabled={isSubmitted}
               className={`w-full text-left text-sm px-4 py-3 rounded-lg border transition-all ${cls}`}
+              style={isSubmitted && cls.includes('mo-lock') ? { animationDelay: `${i * 45}ms` } : undefined}
             >
               <span className="font-mono text-[11px] mr-2 opacity-60">
                 {isMulti ? (sel ? "☑" : "☐") : `${String.fromCharCode(65 + i)}.`}
@@ -657,7 +660,7 @@ function QuestionBlock({ qi, total, q, selected, isSubmitted, onSelect, onSubmit
       </div>
 
       {isSubmitted ? (
-        <div className={`rounded-lg px-4 py-3 text-sm leading-relaxed border ${
+        <div className={`mo-rise rounded-lg px-4 py-3 text-sm leading-relaxed border ${
           isCorrect
             ? "bg-emerald-950/20 border-emerald-800/40 text-emerald-300"
             : "bg-zinc-900/50 border-zinc-800 text-zinc-300"
