@@ -12,6 +12,7 @@
 // Storage: '<pfx>-daily-drill-v1' → { history: { 'YYYY-MM-DD': { guesses:[i], solved, qid } } }
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { recordAttempt, getRatings, getRating } from '../utils/ratings.js'
 
 // ── Lab config ────────────────────────────────────────────────────────────────
 
@@ -94,17 +95,19 @@ function writeStore(s) {
 }
 
 function computeStats(history, today) {
-  const days = Object.keys(history).filter(k => history[k]?.solved)
-  const played = days.length
-  const firstTry = days.filter(k => (history[k].guesses || []).length === 1).length
-  // Current streak: walk back from today (or yesterday, if today unplayed yet).
+  const solvedDays = Object.keys(history).filter(k => history[k]?.solved)
+  const played = solvedDays.length
+  const firstTry = solvedDays.filter(k => (history[k].guesses || []).length === 1).length
+  // "Active" = solved OR bridged by a streak freeze — freezes keep streaks
+  // alive but never count as played/solved.
+  const active = k => !!(history[k]?.solved || history[k]?.frozen)
   let streak = 0
-  let cursor = history[today]?.solved ? today : prevKey(today)
-  while (history[cursor]?.solved) { streak += 1; cursor = prevKey(cursor) }
-  // Best streak: scan all solved days.
+  let cursor = active(today) ? today : prevKey(today)
+  while (active(cursor)) { streak += 1; cursor = prevKey(cursor) }
   let best = 0
-  const set = new Set(days)
-  for (const d of days) {
+  const activeDays = Object.keys(history).filter(active)
+  const set = new Set(activeDays)
+  for (const d of activeDays) {
     if (set.has(prevKey(d))) continue // not a streak start
     let len = 0, c = d
     while (set.has(c)) {
@@ -126,12 +129,15 @@ function msToMidnight() {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function DailyDrill() {
+export default function DailyDrill({ onTrain }) {
   const [pool, setPool] = useState(null)
   const [store, setStore] = useState(() => readStore())
   const [copied, setCopied] = useState(false)
   const [countdown, setCountdown] = useState('')
   const [justSolved, setJustSolved] = useState(false)
+  const [froze, setFroze] = useState(false)
+  const [ratingFx, setRatingFx] = useState(null) // { delta, rating } from today's first guess
+  const [showRatings, setShowRatings] = useState(false)
   const mounted = useRef(true)
 
   const today = todayKey()
@@ -144,6 +150,22 @@ export default function DailyDrill() {
     mounted.current = true
     loadPool().then(p => { if (mounted.current) setPool(p) }).catch(() => { if (mounted.current) setPool([]) })
     return () => { mounted.current = false }
+  }, [])
+
+  // Streak freeze: bridge exactly ONE missed day, at most once per week —
+  // applied automatically so a single busy day never kills a streak.
+  useEffect(() => {
+    const s = readStore()
+    const y = prevKey(todayKey())
+    const y2 = prevKey(y)
+    const week = Math.floor(Date.now() / 604800000)
+    const activeDay = k => !!(s.history[k]?.solved || s.history[k]?.frozen)
+    if (!activeDay(y) && activeDay(y2) && s.lastFreezeWeek !== week) {
+      const next = { ...s, lastFreezeWeek: week, history: { ...s.history, [y]: { frozen: true } } }
+      writeStore(next)
+      setStore(next)
+      setFroze(true)
+    }
   }, [])
 
   // Countdown ticker (only while solved — that's when it's shown).
@@ -166,10 +188,21 @@ export default function DailyDrill() {
 
   const stats = useMemo(() => computeStats(store.history, today), [store, today])
 
+  // Rating context (localStorage-backed; re-reads on solve/panel toggle).
+  const domRating = drill ? getRating(drill.tag || 'general') : null
+  const ratingsData = useMemo(() => getRatings(), [store, ratingFx, showRatings]) // eslint-disable-line
+  const weakest = ratingsData.domains.length >= 2 ? ratingsData.domains[0] : null
+
   function pick(i) {
     if (solved || guesses.includes(i) || !drill) return
     const nextGuesses = [...guesses, i]
     const isSolve = i === drill.answer
+    // Elo: the FIRST guess is the scored attempt — solve-on-retry keeps the
+    // streak but the rating already took the first-guess result.
+    if (guesses.length === 0) {
+      const res = recordAttempt(drill.tag || 'general', isSolve, drill.level)
+      setRatingFx({ delta: res.delta, rating: res.rating })
+    }
     const nextEntry = { guesses: nextGuesses, solved: isSolve, qid: drill.qid }
     const next = { ...store, history: { ...store.history, [today]: nextEntry } }
     setStore(next)
@@ -183,7 +216,7 @@ export default function DailyDrill() {
     return [
       `BreakLabs Daily Drill #${drillNo} · ${LAB_NAME}`,
       `${grid} ${tries}/${drill.options.length}${tries === 1 ? ' — first try' : ''}`,
-      `🔥 ${stats.streak}-day streak`,
+      `🔥 ${stats.streak}-day streak · ⚡ ${drill.tag || 'overall'} ${getRating(drill.tag || 'general')}`,
       SHARE_URL,
     ].join('\n')
   }
@@ -237,7 +270,9 @@ export default function DailyDrill() {
           ⚡ Daily Drill #{drillNo}
         </span>
         {drill.tag && (
-          <span style={{ fontSize: 10, fontFamily: T.mono, color: T.ghost, border: `1px solid ${T.border}`, borderRadius: 999, padding: '1px 8px' }}>{drill.tag}</span>
+          <span style={{ fontSize: 10, fontFamily: T.mono, color: T.ghost, border: `1px solid ${T.border}`, borderRadius: 999, padding: '1px 8px' }}>
+            {drill.tag} · <b style={{ color: T.accentText }}>{domRating}</b>
+          </span>
         )}
         {drill.level && (
           <span style={{ fontSize: 10, fontFamily: T.mono, color: T.ghost, textTransform: 'capitalize' }}>{drill.level}</span>
@@ -246,6 +281,12 @@ export default function DailyDrill() {
           {stats.streak > 0 ? `🔥 ${stats.streak}-day streak` : 'one judgment call · every day'}
         </span>
       </div>
+
+      {froze && (
+        <p style={{ fontSize: 11, fontFamily: T.mono, color: T.ghost, margin: '0 0 8px' }}>
+          🧊 Streak freeze used — yesterday's gap was bridged automatically.
+        </p>
+      )}
 
       {/* Scenario */}
       {drill.context && (
@@ -301,6 +342,11 @@ export default function DailyDrill() {
             <div style={{ fontSize: 10, fontFamily: T.mono, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.green, marginBottom: 5 }}>
               {guesses.length === 1 ? 'Solved — first try' : `Solved in ${guesses.length}`}
               <span style={{ marginLeft: 8, letterSpacing: 0 }}>{guesses.map(g => (g === drill.answer ? '🟩' : '🟥')).join('')}</span>
+              {ratingFx && (
+                <span style={{ marginLeft: 10, letterSpacing: 0, color: ratingFx.delta >= 0 ? T.green : T.red }}>
+                  {ratingFx.delta >= 0 ? '+' : ''}{ratingFx.delta} elo → {ratingFx.rating}
+                </span>
+              )}
             </div>
             {drill.explanation && (
               <p style={{ fontSize: 12.5, color: T.mid, lineHeight: 1.65, margin: 0 }}>{drill.explanation}</p>
@@ -314,6 +360,10 @@ export default function DailyDrill() {
               <span><b style={{ color: T.text, fontSize: 13 }}>{stats.streak}</b> streak</span>
               <span><b style={{ color: T.text, fontSize: 13 }}>{stats.best}</b> best</span>
               <span><b style={{ color: T.text, fontSize: 13 }}>{stats.played ? Math.round((stats.firstTry / stats.played) * 100) : 0}%</b> first-try</span>
+              <button
+                onClick={() => setShowRatings(v => !v)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.accentText, fontFamily: T.mono, fontSize: 10.5, fontWeight: 700, padding: 0 }}
+              >{showRatings ? 'Ratings ▴' : 'Ratings ▾'}</button>
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 10.5, fontFamily: T.mono, color: T.ghost }}>next in {countdown}</span>
@@ -331,6 +381,37 @@ export default function DailyDrill() {
               </button>
             </div>
           </div>
+
+          {/* Ratings panel — per-domain Elo, weakest-first */}
+          {showRatings && (
+            <div className="dd-reveal" style={{ marginTop: 12, borderTop: `1px solid ${T.border}`, paddingTop: 12 }}>
+              {ratingsData.domains.length === 0 ? (
+                <p style={{ fontSize: 11.5, color: T.ghost, fontFamily: T.mono, margin: 0 }}>No rated attempts yet — ratings build from each day's first guess.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ fontSize: 10, fontFamily: T.mono, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.ghost }}>
+                    Your ratings · overall <b style={{ color: T.text }}>{ratingsData.overall}</b> · {ratingsData.attempts} rated
+                  </div>
+                  {ratingsData.domains.map(d => (
+                    <div key={d.dom} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: T.mid, width: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{d.dom}</span>
+                      <div style={{ flex: 1, height: 5, background: T.bg, borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.max(4, Math.min(100, ((d.rating - 800) / 900) * 100))}%`, height: '100%', background: d === weakest ? T.red : T.accent, borderRadius: 3, transition: 'width 0.4s ease' }} />
+                      </div>
+                      <b style={{ fontSize: 12, fontFamily: T.mono, color: T.text, width: 40, textAlign: 'right', flexShrink: 0 }}>{d.rating}</b>
+                      <span style={{ fontSize: 9.5, fontFamily: T.mono, color: T.ghost, width: 30, flexShrink: 0 }}>×{d.attempts}</span>
+                    </div>
+                  ))}
+                  {weakest && onTrain && (
+                    <button
+                      onClick={onTrain}
+                      style={{ alignSelf: 'flex-start', marginTop: 4, background: 'none', border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', color: T.accentText, fontFamily: T.mono, fontSize: 11, fontWeight: 700, padding: '5px 10px' }}
+                    >Train your weakest — {weakest.dom} ({weakest.rating}) →</button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

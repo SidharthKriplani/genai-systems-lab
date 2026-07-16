@@ -476,7 +476,7 @@ function ReturningHomeView({ onNavigate, onNavigateTo, data }) {
       {/* Daily Drill — one judgment MCQ per day, streak + share */}
       <div>
         <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Daily Drill</p>
-        <DailyDrill />
+        <DailyDrill onTrain={() => onNavigate("preplab")} />
       </div>
 
       {/* Streak + activity heatmap */}
