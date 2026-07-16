@@ -75,6 +75,28 @@ function Md({ text }) {
   );
 }
 
+// Renders node.answer in either supported shape:
+//   - array of AMGB bullet strings (QNA-ANSWER-SPEC v1, current format) → bulleted list
+//   - single prose string (pre-2026-07-16 format, grandfathered pilots) → one paragraph
+function AnswerBody({ answer }) {
+  if (Array.isArray(answer)) {
+    return (
+      <ul className="space-y-1.5 list-disc list-outside pl-4 marker:text-zinc-700">
+        {answer.map((bullet, i) => (
+          <li key={i} className="text-sm text-zinc-300 leading-relaxed">
+            <Md text={bullet} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return (
+    <p className="text-sm text-zinc-300 leading-relaxed">
+      <Md text={answer} />
+    </p>
+  );
+}
+
 function LevelChip({ level }) {
   const m = LEVEL_META[level] || LEVEL_META[0];
   return (
@@ -131,9 +153,7 @@ function QuestionRow({ node, expanded, onToggle, onJump }) {
       </button>
       {expanded && (
         <div className="px-4 pb-4 pt-1 space-y-3 border-t border-zinc-800/60">
-          <p className="text-sm text-zinc-300 leading-relaxed">
-            <Md text={node.answer} />
-          </p>
+          <AnswerBody answer={node.answer} />
           {node.trap && (
             <div className="rounded-lg border border-rose-900/40 bg-rose-950/10 px-3 py-2.5">
               <p className="text-[13px] leading-relaxed text-zinc-400">
