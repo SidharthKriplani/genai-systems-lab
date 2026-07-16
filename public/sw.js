@@ -1,69 +1,73 @@
-const CACHE_NAME = 'genai-lab-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/start.html',
-  '/manifest.json',
-  '/og-image.png',
-  '/robots.txt',
-];
+// GenAI Systems Lab — Service Worker (v2, 2026-07-17)
+//
+// v1 ('genai-lab-v1') pre-cached '/' and '/index.html' and used them as the
+// navigation fallback, and cached every fetched JS/CSS body under CACHE_NAME —
+// a recipe for users running STALE bundles that survive hard refresh
+// (Ctrl+Shift+R bypasses the HTTP cache, NOT a controlling service worker's
+// Cache Storage). Same class of bug MSL fixed in its sw v2.
+//
+// v2 strategy (mirrors MSL):
+//   - Cache name bumped → activate purges every v1 cache (heals poisoned users).
+//   - Navigations are NOT intercepted at all — index.html always loads with
+//     normal browser semantics, so new deploys' chunk hashes always arrive.
+//   - /assets/* hashed files: cache-first (immutable by construction), with a
+//     content-type guard so an HTML body is never cached under a .js/.css URL.
+//   - Everything else: network-first with same-guard opportunistic caching.
+//   - SELF-HEAL: on activate, every controlled window is re-navigated once so
+//     tabs running a poisoned bundle reload into the fresh one automatically.
 
-// Install: cache static shell
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-  );
-  self.skipWaiting();
-});
+const CACHE = 'gsl-v2'
 
-// Activate: clear old caches
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+self.addEventListener('install', () => {
+  self.skipWaiting()
+})
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then(clients => Promise.all(clients.map(c => c.navigate(c.url).catch(() => {}))))
+  )
+})
+
+function cacheable(url, res) {
+  if (!res.ok || res.status !== 200 || res.type !== 'basic') return false
+  const type = (res.headers.get('content-type') || '').toLowerCase()
+  if (/\.(js|mjs|css|json|svg|png|jpg|jpeg|webp|woff2?)$/i.test(url.pathname) && type.includes('text/html')) return false
+  return true
+}
+
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return
+  const url = new URL(e.request.url)
+  if (url.origin !== location.origin) return
+  if (e.request.mode === 'navigate') return // never intercept navigations
+
+  if (url.pathname.startsWith('/assets/')) {
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        if (cached) return cached
+        return fetch(e.request).then(res => {
+          if (cacheable(url, res)) {
+            const clone = res.clone()
+            caches.open(CACHE).then(c => c.put(e.request, clone))
+          }
+          return res
+        })
+      })
     )
-  );
-  self.clients.claim();
-});
-
-// Fetch: network-first for JS/CSS bundles, cache-first for images
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Skip non-GET, chrome-extension, and external requests
-  if (request.method !== 'GET') return;
-  if (!url.origin.includes(self.location.origin)) return;
-
-  // Network-first for HTML navigation (always fresh app shell)
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then(res => { const clone = res.clone(); caches.open(CACHE_NAME).then(c => c.put(request, clone)); return res; })
-        .catch(() => caches.match('/index.html'))
-    );
-    return;
+    return
   }
 
-  // Cache-first for static assets (images, fonts)
-  if (url.pathname.match(/\.(png|jpg|jpeg|svg|ico|woff2?|ttf)$/)) {
-    event.respondWith(
-      caches.match(request).then(cached => cached || fetch(request).then(res => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(c => c.put(request, clone));
-        return res;
-      }))
-    );
-    return;
-  }
-
-  // Network-first for JS/CSS (stale-while-revalidate)
-  if (url.pathname.match(/\.(js|css)$/)) {
-    event.respondWith(
-      fetch(request)
-        .then(res => { const clone = res.clone(); caches.open(CACHE_NAME).then(c => c.put(request, clone)); return res; })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
-});
+  e.respondWith(
+    fetch(e.request).then(res => {
+      if (cacheable(url, res)) {
+        const clone = res.clone()
+        caches.open(CACHE).then(c => c.put(e.request, clone))
+      }
+      return res
+    }).catch(() => caches.match(e.request))
+  )
+})
