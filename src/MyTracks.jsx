@@ -1,11 +1,36 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   getTracks, createTrack, renameTrack, deleteTrack,
-  addNote, updateNote, updateItemMeta, removeItem, reorderItems, moveItem, seedTierTracks,
+  createNote, updateItemMeta, removeItem, reorderItems, moveItem, seedTierTracks,
 } from "./utils/tracks.js";
 import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
 import { highlightColorHex } from "./utils/highlightColors.js";
 import { Md, FormatToolbar } from "./components/RichText.jsx";
+import { NoteEditor } from "./components/NoteEditor.jsx";
+
+// ── Rich-note preview helpers (block shapes live in components/NoteEditor.jsx) ─
+const NOTE_TEXTISH = ["text", "h1", "h2", "h3", "bullet", "numbered", "todo", "quote", "callout"];
+
+function notePreview(note) {
+  const b = (note.blocks || []).find(x => NOTE_TEXTISH.includes(x.type) && x.content?.trim());
+  return b ? b.content.replace(/[*~=`#>]/g, "").slice(0, 90) : "";
+}
+
+function noteBlockSummary(note) {
+  const blocks = note.blocks || [];
+  const videos = blocks.filter(b => b.type === "video").length;
+  const links = blocks.filter(b => b.type === "link").length;
+  const todos = blocks.filter(b => b.type === "todo").length;
+  const todosDone = blocks.filter(b => b.type === "todo" && b.checked).length;
+  const texts = blocks.filter(b => NOTE_TEXTISH.includes(b.type) && b.type !== "todo" && b.content?.trim()).length
+    + blocks.filter(b => ["code", "toggle"].includes(b.type) && (b.content?.trim() || b.body?.trim())).length;
+  const parts = [];
+  if (texts) parts.push(`${texts} block${texts > 1 ? "s" : ""}`);
+  if (todos) parts.push(`${todosDone}/${todos} todos`);
+  if (videos) parts.push(`${videos} video${videos > 1 ? "s" : ""}`);
+  if (links) parts.push(`${links} link${links > 1 ? "s" : ""}`);
+  return parts.join(" · ") || "empty";
+}
 
 // moduleId → foundation/gym label, so saved Foundation modules group by their
 // foundation (Language Models, Retrieval, NLP Foundations…) not their raw tag.
@@ -188,7 +213,7 @@ function TrackList({ tracks, selectedId, onSelect, onCreate, onDelete, onMoveIte
   );
 }
 
-function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddNote, onUpdateNote, onUpdateHighlightNote, onRemoveItem, onReorderItems }) {
+function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddNote, onNewNote, onOpenNote, onUpdateHighlightNote, onRemoveItem, onReorderItems }) {
   const [editingName, setEditingName] = useState(false);
   const [editNoteIdx, setEditNoteIdx] = useState(null);
   const [editNoteDraft, setEditNoteDraft] = useState("");
@@ -255,6 +280,11 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
         <span className="ml-auto text-xs text-zinc-600">
           {track.items.length} item{track.items.length !== 1 ? "s" : ""}
         </span>
+        <button
+          onClick={onNewNote}
+          className="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg text-white transition-opacity hover:opacity-90"
+          style={{ background: "#7c3aed", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+        >+ New Note</button>
       </div>
 
       {/* Items */}
@@ -377,42 +407,26 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
                   >Open →</button>
                 </>
               ) : item.type === "note" ? (
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">Note</div>
-                    {editNoteIdx !== idx && (
-                      <button onClick={() => { setEditNoteIdx(idx); setEditNoteDraft(item.content); }}
-                        title="Edit note"
-                        className="text-zinc-600 hover:text-violet-400 text-xs transition-colors"
-                        style={{ background: "none", border: "none", cursor: "pointer" }}>✎ Edit</button>
+                <>
+                  <div className="flex-1 min-w-0" onClick={() => onOpenNote(item)} style={{ cursor: "pointer" }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">📝 Note</span>
+                      <span className="text-[10px] font-mono text-zinc-600">{noteBlockSummary(item)}</span>
+                    </div>
+                    <p className="text-sm text-zinc-200 leading-snug font-semibold m-0">
+                      {item.title || "Untitled note"}
+                    </p>
+                    {notePreview(item) && (
+                      <p className="text-xs text-zinc-500 leading-relaxed truncate m-0 mt-1">{notePreview(item)}</p>
                     )}
                   </div>
-                  {editNoteIdx === idx ? (
-                    <div>
-                      <FormatToolbar textareaRef={noteTextareaRef} value={editNoteDraft} onChange={setEditNoteDraft} className="mb-1.5" />
-                      <textarea
-                        ref={noteTextareaRef}
-                        value={editNoteDraft}
-                        onChange={e => setEditNoteDraft(e.target.value)}
-                        rows={4}
-                        autoFocus
-                        className="w-full text-sm rounded-lg px-2 py-1.5 outline-none leading-relaxed"
-                        style={{ background: "rgba(39,39,42,0.9)", border: "1px solid #7c3aed", color: "#f4f4f5", resize: "vertical" }}
-                        onKeyDown={e => { if (e.key === "Escape") setEditNoteIdx(null); }}
-                      />
-                      <div className="flex gap-2 mt-1.5">
-                        <button onClick={() => { onUpdateNote(idx, editNoteDraft.trim()); setEditNoteIdx(null); }}
-                          className="px-2.5 py-1 text-xs font-semibold rounded-lg text-white"
-                          style={{ background: "#7c3aed", cursor: "pointer", border: "none" }}>Save</button>
-                        <button onClick={() => setEditNoteIdx(null)}
-                          className="px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200"
-                          style={{ background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap"><Md text={item.content} /></p>
-                  )}
-                </div>
+                  <button
+                    onClick={() => onOpenNote(item)}
+                    title="Open note editor"
+                    className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-zinc-400 border-zinc-700 hover:border-violet-500 hover:text-violet-400 transition-all"
+                    style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                  >Open →</button>
+                </>
               ) : (
                 <>
                   <div className="flex-1 min-w-0">
@@ -530,7 +544,7 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
         <textarea
           value={noteText}
           onChange={e => setNoteText(e.target.value)}
-          placeholder="Add a note to this track…"
+          placeholder="Quick note… (Enter creates a rich note and opens the editor)"
           rows={2}
           className="flex-1 text-sm rounded-xl px-3 py-2 resize-none outline-none leading-relaxed"
           style={{
@@ -553,6 +567,7 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
 export default function MyTracks({ onNavigate, onNavigateTo }) {
   const [tracks, setTracks] = useState(() => getTracks());
   const [selectedId, setSelectedId] = useState(null);
+  const [openNote, setOpenNote] = useState(null); // { trackId, noteId }
 
   useEffect(() => {
     const h = () => setTracks(getTracks());
@@ -574,12 +589,25 @@ export default function MyTracks({ onNavigate, onNavigateTo }) {
 
   const selectedTrack = tracks.find(t => t.id === selectedId) || null;
 
+  // If a note is open, resolve it from the latest track state so edits
+  // elsewhere (sync merges) are reflected.
+  const liveNote = openNote
+    ? (tracks.find(t => t.id === openNote.trackId)?.items.find(i => i.type === "note" && i.id === openNote.noteId) || null)
+    : null;
+
+  function handleNewNote() {
+    if (!selectedId) return;
+    const note = createNote(selectedId, "");
+    refresh();
+    setOpenNote({ trackId: selectedId, noteId: note.id });
+  }
+
   return (
     <div className="flex bg-zinc-950 text-zinc-100" style={{ height: "calc(100vh - 48px)", overflow: "hidden", fontFamily: "inherit" }}>
       <TrackList
         tracks={tracks}
         selectedId={selectedId}
-        onSelect={setSelectedId}
+        onSelect={id => { setOpenNote(null); setSelectedId(id); }}
         onCreate={name => { const t = createTrack(name); refresh(); setSelectedId(t.id); }}
         onDelete={id => { deleteTrack(id); refresh(); if (selectedId === id) setSelectedId(null); }}
         onMoveItem={(fromTrackId, toTrackId, index) => { moveItem(fromTrackId, toTrackId, index); refresh(); }}
@@ -594,8 +622,15 @@ export default function MyTracks({ onNavigate, onNavigateTo }) {
         }}
       />
 
-      <div className={`${selectedTrack ? "flex" : "hidden sm:flex"} flex-1 overflow-hidden flex-col`} style={{ background: "rgba(9,9,11,0.4)" }}>
-        {selectedTrack ? (
+      <div className={`${selectedTrack || liveNote ? "flex" : "hidden sm:flex"} flex-1 overflow-hidden flex-col`} style={{ background: "rgba(9,9,11,0.4)" }}>
+        {openNote && liveNote ? (
+          <NoteEditor
+            key={liveNote.id}
+            trackId={openNote.trackId}
+            note={liveNote}
+            onBack={() => { refresh(); setOpenNote(null); }}
+          />
+        ) : selectedTrack ? (
           <TrackDetail
             key={selectedTrack.id}
             track={selectedTrack}
@@ -603,8 +638,9 @@ export default function MyTracks({ onNavigate, onNavigateTo }) {
             onNavigateTo={onNavigateTo}
             onBack={() => setSelectedId(null)}
             onRename={name => { renameTrack(selectedTrack.id, name); refresh(); }}
-            onAddNote={content => { addNote(selectedTrack.id, content); refresh(); }}
-            onUpdateNote={(idx, content) => { updateNote(selectedTrack.id, idx, content); refresh(); }}
+            onAddNote={content => { const n = createNote(selectedTrack.id, "", content); refresh(); setOpenNote({ trackId: selectedTrack.id, noteId: n.id }); }}
+            onNewNote={handleNewNote}
+            onOpenNote={note => setOpenNote({ trackId: selectedTrack.id, noteId: note.id })}
             onUpdateHighlightNote={(idx, content) => { updateItemMeta(selectedTrack.id, idx, { note: content }); refresh(); }}
             onRemoveItem={idx => { removeItem(selectedTrack.id, idx); refresh(); }}
             onReorderItems={(from, to) => { reorderItems(selectedTrack.id, from, to); refresh(); }}

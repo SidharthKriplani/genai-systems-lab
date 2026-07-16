@@ -2,7 +2,16 @@
 // localStorage key: 'gsl-tracks-v1'
 // Track shape: { id, name, createdAt, items: [...] }
 // PrepLab item: { type: 'preplab', questionId, title, topic, difficulty, addedAt }
-// Note item:    { type: 'note', content, addedAt }
+// Note item:    { type: 'note', id, title, blocks: [...], addedAt, updatedAt }
+//   Block shapes (see components/NoteEditor.jsx):
+//     { id, type: 'text'|'h1'|'h2'|'h3'|'bullet'|'numbered'|'todo'|'quote'|'callout', content, checked? }
+//     { id, type: 'code', content, lang }
+//     { id, type: 'toggle', content, body }
+//     { id, type: 'divider' }
+//     { id, type: 'video', url, videoId, platform, title }
+//     { id, type: 'link',  url, domain, title, summary }
+//   Legacy plain notes ({ type: 'note', content }) are silently migrated to the
+//   block shape on first read — see getTracks().
 
 import { MODULE_SEARCH_INDEX } from '../data/moduleSearchIndex.js'
 import { tierOf } from '../data/moduleTiers.js'
@@ -45,6 +54,18 @@ export function getTracks() {
   for (const t of tracks) {
     for (const it of (t.items || [])) {
       if (!it.uid) { it.uid = uid(); changed = true }
+      // Migrate legacy plain-text notes ({ content }) to the rich block shape
+      // the NoteEditor uses. Idempotent — notes that already carry blocks are
+      // left untouched. The original text becomes the first text block; the
+      // first line doubles as a starter title.
+      if (it.type === 'note' && !Array.isArray(it.blocks)) {
+        const content = typeof it.content === 'string' ? it.content : ''
+        it.id = it.id || uid()
+        it.title = it.title || (content.split('\n')[0] || '').replace(/[*~=`#>]/g, '').slice(0, 60)
+        it.blocks = [{ id: uid(), type: 'text', content }]
+        it.updatedAt = it.updatedAt || it.addedAt || Date.now()
+        changed = true
+      }
     }
   }
   if (changed) localStorage.setItem(KEY, JSON.stringify(tracks))
@@ -104,21 +125,71 @@ export function addQuestion(trackId, questionId, title, topic, difficulty) {
   setLastTrackId(trackId)
 }
 
-export function addNote(trackId, content) {
-  const tracks = getTracks()
-  save(tracks.map(t => {
+// ── Note CRUD (rich, block-based) ─────────────────────────────────────────────
+
+// Create a new rich note. `seedText` (optional) becomes the first text block —
+// used by the quick "add a note to this track…" composer.
+export function createNote(trackId, title = '', seedText = '') {
+  const note = {
+    type: 'note',
+    id: uid(),
+    uid: uid(),
+    title,
+    blocks: [{ id: uid(), type: 'text', content: seedText }],
+    addedAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+  save(getTracks().map(t => {
     if (t.id !== trackId) return t
-    return { ...t, items: [...t.items, { type: 'note', content, addedAt: Date.now(), uid: uid() }] }
+    return { ...t, items: [...t.items, note] }
   }))
   setLastTrackId(trackId)
+  return note
 }
 
-// Edit an existing plain-text note in place (by item index).
+// Patch a rich note by its note id — patch can be { title } or { blocks } or both.
+export function updateNoteById(trackId, noteId, patch) {
+  save(getTracks().map(t => {
+    if (t.id !== trackId) return t
+    return {
+      ...t,
+      items: t.items.map(i =>
+        i.type === 'note' && i.id === noteId
+          ? { ...i, ...patch, updatedAt: Date.now() }
+          : i
+      ),
+    }
+  }))
+}
+
+export function deleteNoteById(trackId, noteId) {
+  const t = getTracks().find(x => x.id === trackId)
+  if (!t) return
+  const idx = t.items.findIndex(i => i.type === 'note' && i.id === noteId)
+  if (idx >= 0) removeItem(trackId, idx)
+}
+
+// Legacy alias — kept so older call sites (index-based plain-text edit) keep
+// working; getTracks() migration guarantees blocks exist, so this writes the
+// text into the first block.
 export function updateNote(trackId, index, content) {
   save(getTracks().map(t => {
     if (t.id !== trackId) return t
-    return { ...t, items: t.items.map((it, i) => (i === index && it.type === 'note') ? { ...it, content, updatedAt: Date.now() } : it) }
+    return {
+      ...t,
+      items: t.items.map((it, i) => {
+        if (i !== index || it.type !== 'note') return it
+        const blocks = Array.isArray(it.blocks) && it.blocks.length
+          ? [{ ...it.blocks[0], content }, ...it.blocks.slice(1)]
+          : [{ id: uid(), type: 'text', content }]
+        return { ...it, content, blocks, updatedAt: Date.now() }
+      }),
+    }
   }))
+}
+
+export function addNote(trackId, content) {
+  createNote(trackId, '', content)
 }
 
 export function removeItem(trackId, index) {
