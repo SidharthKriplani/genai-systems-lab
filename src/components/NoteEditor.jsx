@@ -1388,7 +1388,7 @@ export function NoteEditor({ trackId, note, onBack }) {
         <button onClick={() => { saveNow(); onBack() }} title="Back to track"
           style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(24,24,27,0.9)', border: `1px solid ${T.border}`, borderRadius: 8, cursor: 'pointer', color: T.mid, fontSize: '0.95rem', padding: 0, lineHeight: 1, flexShrink: 0 }}
           className="nb-chip">←</button>
-        <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a78bfa', background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 4, padding: '0.14rem 0.45rem', textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>📝 Note</span>
+        <span className="nb-note-chip" style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a78bfa', background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 4, padding: '0.14rem 0.45rem', textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>📝 Note</span>
         <span style={{ fontSize: '0.78rem', fontWeight: 600, color: T.mid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{title || 'Untitled'}</span>
         <div style={{ flex: 1, minWidth: 0 }} />
         <span className="nb-meta-full" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.7rem', color: T.ghost, flexShrink: 0, whiteSpace: 'nowrap' }}>
@@ -1589,7 +1589,7 @@ export function NoteEditor({ trackId, note, onBack }) {
               aria-label="Outline"
               title="Outline"
               style={{
-                position: 'fixed', right: 14, bottom: 84, zIndex: 60,
+                position: 'fixed', right: 14, bottom: 136, zIndex: 450,
                 width: 42, height: 42, borderRadius: '50%', cursor: 'pointer',
                 background: T.surface, border: `1px solid ${T.border}`,
                 color: T.mid, fontSize: '1.05rem', lineHeight: 1,

@@ -518,4 +518,6 @@ html:not([data-theme="light"])[data-palette="luna"] .border-violet-500 {
   .nb-editor .nb-meta-full { display: none !important; }
   .nb-editor .nb-meta-compact { display: inline !important; }
   .nb-editor .nb-export { display: none !important; }
+  /* GSL's extra 📝 NOTE chip: decorative — costs header room on phones. */
+  .nb-editor .nb-note-chip { display: none !important; }
 }
