@@ -405,3 +405,45 @@ Shipped in three pushes (approve-first, built on Mac): (1) index.css base remap 
 ### Notes family wave + page highlights (16 Jul 2026)
 
 Received the cross-lab NoteEditor patch-set (see BreakLabs/CLAUDE.md): block-range selection + range formatting, full undo/redo, always-split paste, sub-bullets (Tab/⇤⇥, per-level numbering), per-block edit timestamps, Created·Edited header, whisper placeholder. GSL-specific: removed the redundant bottom "Quick note…" composer in track detail (dead space under items; + New Note covers it). New: global PageHighlighter (src/PageHighlighter.jsx + utils/localHighlights.js, storage `gsl_page_highlights_v1`) mounted at App root over #main-content, pageKey "v:"+topView — select text anywhere → swatch → instant persistent highlight; click mark → remove. Ignores selections in editable fields.
+
+
+---
+
+### Late-night editor wave 2 — slash v3, arrow nav, mobile pass (17 Jul 2026)
+
+Same-night reopening after Sidharth's live testing. (1) **SlashMenu v3**: the menu was a
+transparent ghost (v2 used T.surface — translucent rgba in GSL) and keyboard selection
+walked below the fold with no scroll-follow. Now: portal to body, position:fixed anchored
+to the block (re-measured on scroll/resize, rAF-throttled), SOLID T.bg background + blur,
+overscroll-contain (touchpad inside the menu scrolls the MENU), flips above near the
+viewport bottom, selected item scrollIntoView; "Sub-bullet ↳" added to slash + turn-into
+menus; ⇥⇤ toolbar buttons moved next to the •/1. list buttons (they were scrolled off the
+right edge — "couldn't find the sub bullet thing"). (2) **One-press arrow navigation**:
+↑/↓ used to cross blocks only from the ABSOLUTE start/end (two presses per hop); now they
+leave from the first/last VISUAL line (soft-wrap aware via a hidden caret-mirror
+measurement), and ←/→ at a block edge cross into the neighbor. (3) **Mobile pass (≤700px)**:
++/⠿ gutter hidden (40px reclaimed; hover-era furniture), toolbar swipes with scrollbar
+hidden, header meta collapses to the Edited time, Export hidden, body padding tightened.
+Hooks: nb-toolbar/nb-body-pad/nb-meta-full/nb-meta-compact/nb-export + index.css block.
+
+GSL-specific: editor markup has DRIFTED from the family (nb-chip buttons, savedot inside
+the meta span, blurred toolbar bg) — future family patches need GSL-variant anchors in the
+header/toolbar regions. The slash-menu ghost Sidharth re-reported IS fixed in 5983c1a
+(pushed); his screenshot was a stale deploy/browser cache — verify Vercel built past it.
+
+
+---
+
+### Post-close micro-waves (17 Jul 2026, late)
+
+Mobile: outline ☰ button + slide-in drawer (rail is desktop-only ≥1180; phones had no
+outline) — first shipped hidden UNDER the Rate/feedback chip (z400 vs z60, same corner),
+repositioned bottom:136 z:450. SERVICE WORKERS root-caused as the universal staleness
+villain (hard refresh bypasses HTTP cache, not SW Cache Storage; the tell: live slash
+menu missing the Sub-bullet entry present in a Ready deploy).
+GSL: sw.js was still v1-style
+(pre-cached '/' + '/index.html', cached all JS/CSS bodies) — replaced with the MSL-v2
+strategy + self-heal, registration now { updateViaCache: 'none' }. Mobile header: the
+📝 NOTE chip is hidden ≤700px (it alone made Copy clip on phones — MSL has no chip).
+OPEN: GSL's newest commits had NO deployment rows on Vercel with the status filter at
+6/7 (one status hidden — likely Error). Clear the filter, check for red GSL builds.

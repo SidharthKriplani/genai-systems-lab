@@ -1,5 +1,16 @@
 # STATUS.md — Cold-start view
 
+> **17 Jul 2026 FINAL — ONE BLOCKER: Vercel.** GSL's newest commits had NO deployment
+> rows (status filter at 6/7 hides one status — likely Error). Until a green build lands,
+> NOTHING new is visible on GSL anywhere: SW v2 (kills the v1 stale-bundle cache — v1
+> pre-cached index.html itself), SlashMenu v3 (ghost fix), arrow nav, mobile pass,
+> NOTE-chip hidden on phones (the Copy clip), outline ☰ drawer. All committed + pushed.
+> First action next session: clear the Vercel status filter, find the red GSL builds,
+> redeploy. After that one green build, every fix appears at once and the SW self-heals
+> all devices.
+
+> **17 Jul 2026:** editor wave 2 — SlashMenu v3 (the ghost fix; v2's T.surface is translucent rgba in GSL — token values differ per lab), one-press arrow nav, mobile pass. Ghost re-report was a stale deploy: fix is pushed in 5983c1a, check Vercel + hard-refresh.
+
 > **16 Jul 2026 session close:** NoteEditor family wave (selection/undo/sub-bullets/timestamps — see LINEAGE tail), quick-note composer removed, global PageHighlighter added. Commit command handed to Sidharth (approve-first). Verify-on-deploy list in NEXT.md.
 
 Read this at session open alongside NEXT.md + CLAUDE.md. One screen of truth.

@@ -1,5 +1,7 @@
 # NEXT.md — Next build session
 
+> **17 Jul FINAL — DO FIRST:** Vercel status filter 6/7 → find GSL's red/missing builds → redeploy. Everything (SW v2, SlashMenu v3, mobile fixes, outline ☰) is pushed and queued behind that one green build.
+
 ---
 
 ## ⚠ FIRST — verify 16 Jul wave (after Sidharth's push deploys)
