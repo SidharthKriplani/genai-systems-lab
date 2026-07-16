@@ -5098,3 +5098,11 @@ Cumulative rollout total after this batch: **56 modules, 1,804 questions, all an
 
 Next: moduleTiers.js TIER_A group 2, Retrieval — `context`, `query-rewriting`,
 `multi-hop-retrieval`, `rag-ingestion-pipeline`.
+
+## 2026-07-16 19:00 IST (Thursday) — GSL / Retrieval / Tier A batch (134q, Tier A group 2 closed)
+
+Wrote AMGB atomic-bullet answers for all 134 questions across Tier A group 2: `context` (36q), `query-rewriting` (30q), `multi-hop-retrieval` (32q), `rag-ingestion-pipeline` (36q). Drafted by 4 parallel writer agents, one per module, each grounded strictly in that module's own source content (groundUp/scenario/explanation/keyPoints/recap/mcqs/takeaway from `src/data/foundations/hardcoded-migration.js`, `src/data/foundations/gap-agenteval-ragingest.js`, and `src/data/foundations/retrieval-breadth.js`) — no new facts introduced. Independently re-validated programmatically — 2 flagged: 1 real gap (context module's L0 question missing a required Grounding bullet, hand-patched with the source's stale-drift "turn 15-to-20" rule of thumb), 1 accepted as a legitimate content-driven exception (3 genuinely distinct Boundary points in a query-rewriting L3 case). Applied via centralized single-writer script, `node --check` clean on both files, 0 duplicate keys across 4,257 total question ids, all 134 confirmed non-empty, `validate-qna-status.mjs` passes clean (131/131 entries, 0 drift, draft: 0, parked: 69, answered: 62).
+
+Cumulative rollout total after this batch: **60 modules, 1,938 questions, all answered** (GSL only).
+
+Next: moduleTiers.js TIER_A group 3, Foundation Models — `pretraining`, `instruction-tuning`, `model-families`, `scaling-laws`, `quantization`, `moe`, `distillation` (7 modules).
