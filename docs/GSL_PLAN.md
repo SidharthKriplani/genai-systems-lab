@@ -5278,3 +5278,30 @@ duplicate keys, all 317 questions confirmed non-empty.
 **Cumulative GSL QnA status**: 98/131 modules answered, 33 parked, 0 draft.
 Group 8 (Production) of `moduleTiers.js` TIER_A now closed. Group 9
 (Inference Optimization & Serving) is next whenever the rollout resumes.
+
+## 2026-07-16 — QnA rollout batch 20: Inference Optimization & Serving (Tier A group 9)
+
+Ninth batch of the real `moduleTiers.js` TIER_A priority order. Modules:
+infra-prefill-decode (31q), infra-batching-throughput (30q),
+infra-paged-attention-kv (28q), infra-serving-stacks (35q) — 124 questions
+total. All 4 sourced from `src/data/tracks/inference-optimization.js`.
+
+4 parallel writer agents, one per module, each grounded strictly in that
+module's own source content, each self-validating with a uniquely-named
+scratch validator (no filename collisions this batch).
+
+Independently re-validated programmatically against the full spec checklist
+across all 124 questions — 1 flagged, reviewed by hand and accepted as a
+legitimate spec-sanctioned exception under the "N parallel components -> N
+Mechanism bullets" rule: infra-paged-attention-kv's L0 "three extra levers"
+question lands at 5 bullets since its Answer names 3 levers (KV-cache
+quantization, eviction/windowing, preemption with CPU swap).
+
+0 fabricated facts found, 0 hand-patches needed this batch. Applied via
+centralized single-writer script, `node --check` clean, 0 duplicate keys, all
+124 questions confirmed non-empty.
+
+**Cumulative GSL QnA status**: 102/131 modules answered, 29 parked, 0 draft.
+Group 9 (Inference Optimization & Serving) of `moduleTiers.js` TIER_A now
+closed. Group 10 (Model Customization & Fine-Tuning) is next whenever the
+rollout resumes.
