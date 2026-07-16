@@ -655,31 +655,66 @@ function SlashMenu({ anchorId, query, index, onPick }) {
   const items = BLOCK_DEFS.filter(d => d.type !== 'text' && (
     !query || d.label.toLowerCase().includes(query.toLowerCase()) || d.kw.includes(query.toLowerCase())
   ))
+  const activeIdx = items.length ? index % items.length : 0
+  const [, setTick] = useState(0)
+  const listRef = useRef(null)
+
+  // The menu is a fixed-position portal: follow the anchor block when the page
+  // scrolls or the window resizes (rAF-throttled re-render → fresh rect).
+  useEffect(() => {
+    let raf = 0
+    const onMove = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; setTick(t => t + 1) }) }
+    window.addEventListener('scroll', onMove, { capture: true, passive: true })
+    window.addEventListener('resize', onMove)
+    return () => {
+      window.removeEventListener('scroll', onMove, { capture: true })
+      window.removeEventListener('resize', onMove)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  // Keep the keyboard-selected item visible inside the menu's own scroll —
+  // arrowing below the fold used to walk the selection out of view.
+  useEffect(() => {
+    const el = listRef.current && listRef.current.querySelector('[data-active="1"]')
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' })
+  }, [activeIdx, query])
+
   if (!items.length) return null
-  // Portal + fixed positioning (2026-07-16): the in-flow absolute version could
-  // be painted UNDER later block rows and used the page background color, so it
-  // read as a transparent ghost. Portal to <body> + solid elevated surface.
   const anchorEl = typeof document !== 'undefined' ? document.getElementById(`nb-${anchorId}`) : null
   const r = anchorEl ? anchorEl.getBoundingClientRect() : null
-  const top = r ? Math.max(8, Math.min(r.bottom + 4, (window.innerHeight || 800) - 336)) : 120
+  const H = 320
+  const vh = window.innerHeight || 800
+  // Flip ABOVE the block when there's no room below (instead of covering it).
+  const top = r
+    ? (r.bottom + H + 16 > vh && r.top - H - 8 > 8
+        ? r.top - H - 8
+        : Math.max(8, Math.min(r.bottom + 4, vh - H - 16)))
+    : 120
   const left = r ? Math.max(8, Math.min(r.left + 24, (window.innerWidth || 1200) - 296)) : 120
   return createPortal(
-    <div className="nb-pop" style={{
+    <div ref={listRef} className="nb-pop" style={{
       position: 'fixed', zIndex: 9999, top, left,
-      width: 280, maxHeight: 320, overflowY: 'auto',
-      background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10,
-      boxShadow: '0 16px 40px rgba(0,0,0,0.6)', padding: '0.35rem',
+      width: 280, maxHeight: H, overflowY: 'auto',
+      // never let a wheel/touchpad gesture inside the menu chain to the page
+      overscrollBehavior: 'contain',
+      // T.bg is a SOLID color in all four labs (GSL's T.surface is rgba(...,0.9)
+      // — that translucency was the "ghost menu"); blur is belt-and-suspenders.
+      background: T.bg, backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+      border: `1px solid ${T.border}`, borderRadius: 10,
+      boxShadow: '0 16px 40px rgba(0,0,0,0.55)', padding: '0.35rem',
     }}>
       <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.ghost, padding: '0.3rem 0.6rem' }}>Blocks</div>
       {items.map((d, i) => (
         <div
           key={d.type}
           className="nb-slashitem"
+          data-active={i === activeIdx ? '1' : '0'}
           onMouseDown={e => { e.preventDefault(); onPick(d.type) }}
           style={{
             display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.4rem 0.6rem',
             borderRadius: 7, cursor: 'pointer',
-            background: i === (index % items.length) ? T.accentFaint : 'transparent',
+            background: i === activeIdx ? T.accentFaint : 'transparent',
           }}
         >
           <span style={{
