@@ -447,3 +447,7 @@ strategy + self-heal, registration now { updateViaCache: 'none' }. Mobile header
 📝 NOTE chip is hidden ≤700px (it alone made Copy clip on phones — MSL has no chip).
 OPEN: GSL's newest commits had NO deployment rows on Vercel with the status filter at
 6/7 (one status hidden — likely Error). Clear the filter, check for red GSL builds.
+
+### Design Studio skeletons (17 Jul 2026, 11:10 IST)
+New system-design training surface, skeletons only (commit ccb04d9). SD_GSL_DS extends the SystemDesignTrainer
+(SD_SCENARIOS) with a spec-openness dial (S1-S4). 5 seeds, scoped-not-vague, unwired. Authority: DESIGN-STUDIO-SPEC.md (root).

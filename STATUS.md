@@ -113,3 +113,11 @@ Read NEXT.md. The IA rebuild (P2 GT toggle) is next up but paused for freeze-con
 - **FROM-ZERO pedagogy rewrite across ALL 25 S + 52 A modules**: `groundUp` "Start Here" opener + explanation as first-principles causal chain + `scenario` demoted to "In Production — Apply It". Mechanism in FoundationsRunner.jsx (backward-compatible). Gold standard = `embeddings`. B-tier not yet done.
 - Difficulty ordering (gyms BEG→INT→ADV via sortIdsByLevel + hub/question lists). My Tracks: Study→ deep-links to module + editable notes. Mobile master-detail (My Tracks, Company Tracks). Wave 3: Profile 5-card + Progress heatmap/streak/async-leaderboard.
 - All esbuild-verified; push via `git add src/`. **NEXT = SEO → ../../HANDOFF-SEO.md** (GSL already prerenders GT via scripts/prerender-gt.js — extend it).
+
+---
+
+## 2026-07-17 11:10 IST — Design Studio skeletons added (post session-close-v3)
+New open-ended system-design surface, SKELETONS ONLY (commit ccb04d9): `src/data/sdScenarios-gsl-designstudio.js`
+(`SD_GSL_DS`, 5 seeds) extends the System Design Trainer (`SD_SCENARIOS`) with a spec-openness dial (S1-S4). Unwired,
+node --check clean. Detail: docs/GSL_PLAN.md same-date entry + root DESIGN-STUDIO-SPEC.md. NOTE: a large uncommitted
+`public/modules/*.html` prerender diff is present in the working tree — regenerated artifacts, Sidharth to decide commit/discard.

@@ -5448,3 +5448,16 @@ comment), so DailyDrill on Home.jsx was invisible to signed-in users. Change: sr
 imports DailyDrill (./components/DailyDrill.jsx) and mounts it at the top of the view (onTrain ->
 preplab). Home copy kept for signed-out visitors; card idempotent (same storage key). esbuild-verified.
 One-file change; commit handed to Sidharth in-session.
+
+---
+
+## 2026-07-17 11:10 IST (Friday) — Design Studio skeletons (GSL half)
+
+New open-ended system-design training surface — SKELETONS ONLY, commit ccb04d9. `src/data/sdScenarios-gsl-designstudio.js`
+(`SD_GSL_DS`, 5 seeds) EXTENDS the existing System Design Trainer (`SD_SCENARIOS` / SystemDesignTrainer.jsx) — same schema
++ new fields `specLevel`(S1-S4) / `withheld` / `roleTrack` / `modality`. Seeds: ds-payment-exception-agent (agentic S1, UBS
+PS exemplar, worked-planned), ds-incident-triage-agent (agentic S2), ds-rag-evolving-corpus (RAG S3, worked-planned),
+ds-llm-eval-harness (eval S2), ds-rag-refactor (refactor/debug bucket). Scoped-not-vague: each stage `ask` PINNED,
+considerations/strong/traps/probes DEFERRED with `_flesh` notes. Root authority `../../DESIGN-STUDIO-SPEC.md`. Wiring TODO:
+add `SD_GSL_DS` to systemDesignScenarios.js spread + render `withheld` stages as "derive this". NOT wired, NOT pushed-to-deploy
+(unused export). Flesh the proof cell first: ds-payment-exception-agent + the rubric-critic (the critic is the moat, not brief count).
