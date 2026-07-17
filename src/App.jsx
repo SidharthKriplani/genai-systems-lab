@@ -48,6 +48,7 @@ const MyTracksPage           = lazy(() => import("./MyTracks"));
 const ReviewPage             = lazy(() => import("./Review"));
 const CompanyTracksPage      = lazy(() => import("./CompanyTracks"));
 const SystemDesignTrainerApp = lazy(() => import("./SystemDesignTrainer"));
+const DesignStudioApp        = lazy(() => import("./DesignStudio"));
 const AboutPage              = lazy(() => import("./About"));
 const MePage                 = lazy(() => import("./Me"));
 
@@ -319,6 +320,7 @@ const NAV_SECTIONS = [
   ]},
   { key: "build", label: "BUILD", icon: "hammer", items: [
     { id: "career", label: "Workshop" },  // renamed from "Project Labs" (R4, 2026-07-03)
+    { id: "designstudio", label: "Design Studio" },
   ]},
   // R3 (2026-07-03): Code promoted OUT of Learn into its own top-level frame (Coding Dojo + sister labs).
   { key: "code", label: "CODE", icon: "terminal", items: [
@@ -2128,6 +2130,11 @@ export default function App() {
           {topView === "sysdesign" && (
             <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
               <SystemDesignTrainerApp onExit={() => navigate("preplab")} />
+            </Suspense>
+          )}
+          {topView === "designstudio" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
+              <DesignStudioApp onExit={() => navigate("career")} />
             </Suspense>
           )}
           {topView === "progress"    && <ProgressPage visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}

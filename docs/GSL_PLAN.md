@@ -5469,3 +5469,6 @@ Ride-the-flow expansion on the FROZEN schema (pure applications, no new mechanic
 
 ## 2026-07-17 11:58 IST (Friday) — Design Studio MECHANIC CORRECTED (schema replaced)
 Tick/MCQ schema was wrong for the vision. Replaced with produce->reference->self-critique: new files designStudioBriefs.js (+ designStudioFlaws.js in MSL); old sdScenarios-gsl-designstudio/silentDataBugs-chains/mlSystemDesignBriefs moved to _to_delete/. See root DESIGN-STUDIO-SPEC.md 'MECHANIC CORRECTION'. Wiring (trainer rewrite) is the next, separate build; prove the loop on ds-payment-exception-agent at N=1 first.
+
+## 2026-07-17 12:10 IST — Design Studio VIEWER wired (GSL, deployable)
+New src/DesignStudio.jsx (read-only brief browser: prompt/context/produce/rubric/flawGraph) + 3 App.jsx insertions (lazy import L51, BUILD-frame nav item 'designstudio' L323, render branch L2135, onExit->career). Renders DESIGN_STUDIO_GSL. Read-only for now (full produce->reveal->self-critique workspace is the later build). Deploy = npm run build (must pass) -> commit -> push (Vercel auto-deploy). MSL viewer = same 3-insertion pattern, pending.
