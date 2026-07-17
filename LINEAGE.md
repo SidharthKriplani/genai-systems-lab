@@ -451,3 +451,6 @@ OPEN: GSL's newest commits had NO deployment rows on Vercel with the status filt
 ### Design Studio skeletons (17 Jul 2026, 11:10 IST)
 New system-design training surface, skeletons only (commit ccb04d9). SD_GSL_DS extends the SystemDesignTrainer
 (SD_SCENARIOS) with a spec-openness dial (S1-S4). 5 seeds, scoped-not-vague, unwired. Authority: DESIGN-STUDIO-SPEC.md (root).
+
+## 2026-07-17 12:29 IST (Friday) — Design Studio SHIPPED (live, read-only)
+Deployed under the BUILD frame (HEAD 095fc51). `src/DesignStudio.jsx` renders `DESIGN_STUDIO_GSL` (11 corrected-mechanic briefs: agentic S1-S4, RAG S1-S3, doc-extraction, eval-harness, refactor, agent-debug). Mechanic = **produce artifact -> reveal reference -> self-critique** (NO tick/MCQ, NO LLM in the loop). Read-only viewer for now; briefs are skeletons (reference/rubric prose deferred via `_flesh`). Old tick-schema `sdScenarios-gsl-designstudio.js` superseded -> `_to_delete/`. Commit arc: ccb04d9 -> d99d2e9 -> c7bdde7 -> d8d0453 -> 095fc51. NEXT: (1) flesh the proof cell `ds-payment-exception-agent` + the rubric-critic at N=1, then fan out; (2) upgrade the viewer to the interactive produce->reveal->self-critique workspace. Authority: root `DESIGN-STUDIO-SPEC.md`. NOTE: uncommitted `public/modules/*.html` prerender diff in the tree is pre-existing, not Design Studio.
