@@ -5461,3 +5461,8 @@ ds-llm-eval-harness (eval S2), ds-rag-refactor (refactor/debug bucket). Scoped-n
 considerations/strong/traps/probes DEFERRED with `_flesh` notes. Root authority `../../DESIGN-STUDIO-SPEC.md`. Wiring TODO:
 add `SD_GSL_DS` to systemDesignScenarios.js spread + render `withheld` stages as "derive this". NOT wired, NOT pushed-to-deploy
 (unused export). Flesh the proof cell first: ds-payment-exception-agent + the rubric-critic (the critic is the moat, not brief count).
+
+---
+
+## 2026-07-17 11:32 IST (Friday) — Design Studio skeletons EXPANDED (frozen-schema batch)
+Ride-the-flow expansion on the FROZEN schema (pure applications, no new mechanics — anything unwanted at flesh time is a cheap delete). Counts now: GSL `SD_GSL_DS` = **11** (+6: ds-support-resolution-agent S1, ds-claims-adjudication-agent S4, ds-rag-multihop S2, ds-doc-extraction-agent S2, ds-multiagent-content S3, ds-agent-debug-loop refactor/F-dependent). MSL `SILENT_DATA_BUG_CHAINS` = **7** (+4: SDC04 F2 group-leak, SDC05 F3 fraud-label chain, SDC06 F3 text chain, SDC07 F2 NDCG-tie). MSL `ML_SYSTEM_DESIGN_BRIEFS` = **12** (+6: mlsd-search-ranking S2, mlsd-churn-notebook S1, mlsd-anomaly-detection S2, mlsd-ab-uplift-notebook S2, mlsd-recsys-coldstart S3, mlsd-feature-store S3). **30 seeds total.** Now spans the full S1-S4 spec ladder, F2+F3 flaw depth, both MSL modalities, and within-domain ladder rungs (recsys S2+S3, mlops S2+S3). All node --check clean, unwired, still skeletons (scoped-not-vague, prose deferred with _flesh notes). Data files overwritten in-place; commit them.
