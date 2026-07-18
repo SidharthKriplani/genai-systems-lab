@@ -454,3 +454,15 @@ New system-design training surface, skeletons only (commit ccb04d9). SD_GSL_DS e
 
 ## 2026-07-17 12:29 IST (Friday) — Design Studio SHIPPED (live, read-only)
 Deployed under the BUILD frame (HEAD 095fc51). `src/DesignStudio.jsx` renders `DESIGN_STUDIO_GSL` (11 corrected-mechanic briefs: agentic S1-S4, RAG S1-S3, doc-extraction, eval-harness, refactor, agent-debug). Mechanic = **produce artifact -> reveal reference -> self-critique** (NO tick/MCQ, NO LLM in the loop). Read-only viewer for now; briefs are skeletons (reference/rubric prose deferred via `_flesh`). Old tick-schema `sdScenarios-gsl-designstudio.js` superseded -> `_to_delete/`. Commit arc: ccb04d9 -> d99d2e9 -> c7bdde7 -> d8d0453 -> 095fc51. NEXT: (1) flesh the proof cell `ds-payment-exception-agent` + the rubric-critic at N=1, then fan out; (2) upgrade the viewer to the interactive produce->reveal->self-critique workspace. Authority: root `DESIGN-STUDIO-SPEC.md`. NOTE: uncommitted `public/modules/*.html` prerender diff in the tree is pre-existing, not Design Studio.
+
+## 2026-07-18 — My Tracks note persistence hardening (close-flush + cross-tab reconcile)
+
+Owner-reported tracker notes "don't get saved" / "multiple tabs conflict." Root-caused from source across the family (MSL/GSL/PAL/PL); GSL fixed alongside MSL this pass. Two GSL bugs (GSL's `<NoteEditor>` was already keyed by `liveNote.id`, so no key change here — that gap was MSL-only):
+
+**(1) Debounced autosave lost on tab close/refresh.** `NoteEditor` persists via `setTimeout(…, 500)`; the only flush was the React unmount cleanup, which does NOT run on a real page close/hard-refresh. Fix: added a `visibilitychange`(hidden) + `pagehide` effect that flushes `latest.current` via `updateNoteById` immediately.
+
+**(2) Cross-tab clobber / stale list.** `save()` in `utils/tracks.js` dispatches the **same-tab-only** `gsl_tracks` CustomEvent; no `storage` listener refreshed tracks, so a 2nd tab held stale state and its open editor overwrote the whole note body on next autosave. Fix: `MyTracks.jsx` now also listens to `window 'storage'` (`e.key === "gsl-tracks-v1" || e.key === null`) and re-reads tracks.
+
+**Residual (deliberate):** same note open in two editors at once still resolves note-level last-writer-wins on the body — no live block-merge into an open editor (would cause text jump/revert while typing). Existing notes untouched; additive, no storage-format change.
+
+**Files changed:** `src/components/NoteEditor.jsx` (close-flush effect), `src/MyTracks.jsx` (`storage` listener; editor already keyed). esbuild-verified. **LOCAL/uncommitted** — push on Mac (approve-first); hard-clear the SW after the green Vercel build to see it. **Not in this pass:** PAL (`pal-tracks-v1` absent from `syncProgress.PROGRESS_KEYS`, no `tracksSync.js` → tracks never reach Supabase) and PL/programming (tracks local-only by design) still carry the close-flush + cross-tab gaps.

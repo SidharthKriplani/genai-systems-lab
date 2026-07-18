@@ -1,5 +1,16 @@
 # STATUS.md — Cold-start view
 
+> **18 Jul 2026 — Tracker note persistence hardened.** My Tracks notes now survive tab
+> close/refresh and multi-tab editing. Two fixes (editor already keyed by `liveNote.id`, so
+> no key change needed here — unlike MSL): (1) **close-flush** — `NoteEditor` flushes the
+> 500ms autosave buffer on `visibilitychange`(hidden)+`pagehide` (unmount cleanup never runs
+> on a real page close); (2) **cross-tab reconcile** — `MyTracks.jsx` now listens to `window
+> 'storage'` (key `gsl-tracks-v1`) so a 2nd tab stops holding stale state and clobbering the
+> 1st tab's writes (`gsl_tracks` CustomEvent was same-tab only). Files: `src/components/
+> NoteEditor.jsx`, `src/MyTracks.jsx`. esbuild-verified, additive (existing notes untouched),
+> **LOCAL/uncommitted** — push on Mac. Residual: same note in two editors = note-level
+> last-writer-wins (no live block-merge, deliberate). PAL/PL not done this pass.
+
 > **17 Jul 2026 FINAL — ONE BLOCKER: Vercel.** GSL's newest commits had NO deployment
 > rows (status filter at 6/7 hides one status — likely Error). Until a green build lands,
 > NOTHING new is visible on GSL anywhere: SW v2 (kills the v1 stale-bundle cache — v1
