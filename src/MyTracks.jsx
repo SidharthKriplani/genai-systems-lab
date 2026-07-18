@@ -554,7 +554,16 @@ export default function MyTracks({ onNavigate, onNavigateTo }) {
   useEffect(() => {
     const h = () => setTracks(getTracks());
     window.addEventListener("gsl_tracks", h);
-    return () => window.removeEventListener("gsl_tracks", h);
+    // Cross-tab reconciliation: the 'gsl_tracks' CustomEvent is same-tab only.
+    // localStorage 'storage' events fire in OTHER tabs when any tab writes the
+    // tracks key, so a second tab's list won't go stale (or clobber the first
+    // tab's writes on its next save). Fires on key match, or key === null (clear()).
+    const onStorage = (e) => { if (e.key === "gsl-tracks-v1" || e.key === null) h(); };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("gsl_tracks", h);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   useEffect(() => {

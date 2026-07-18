@@ -970,6 +970,24 @@ export function NoteEditor({ trackId, note, onBack }) {
     updateNoteById(trackId, note.id, { title: latest.current.title, blocks: latest.current.blocks })
   }, []) // eslint-disable-line
 
+  // Flush pending edits when the tab is hidden or closed. The 500ms debounced
+  // autosave is otherwise lost on close/refresh/tab-switch because React's
+  // unmount cleanup (above) does NOT run on a real page close. visibilitychange
+  // fires reliably on mobile backgrounding + desktop tab close; pagehide backs it up.
+  useEffect(() => {
+    const flush = () => {
+      clearTimeout(saveTimer.current)
+      updateNoteById(trackId, note.id, { title: latest.current.title, blocks: latest.current.blocks })
+    }
+    const onHide = () => { if (document.visibilityState === 'hidden') flush() }
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', flush)
+    }
+  }, [trackId, note.id])
+
   // ── Block ops ──────────────────────────────────────────────────────────────
 
   const idx = id => blocks.findIndex(b => b.id === id)
