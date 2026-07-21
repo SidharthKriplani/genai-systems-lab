@@ -1583,4 +1583,86 @@ Frame: modern agentic pipelines (planner→router→retriever→generator→revi
   ],
   status: "authored",
 },
+
+  // ── Grounded G1 variation (Microsoft) under the RAG root — cross-encoder reranking ──
+  {
+  id: "ds-rag-var-reranking",
+  roleTrack: "AIE", domain: "rag", modality: "design",
+  specLevel: "S2", withheld: [], flawMode: null, difficulty: "senior",
+  parentRoot: "ds-rag-pipeline-root",
+  companies: ["Microsoft"],
+  provenance: { tier: "G1", sources: ["LinkedIn: Mohit Kumar Dubey — Microsoft RAG retrieval architecture (2026)"], companies: ["Microsoft"], lastVerified: "2026-07" },
+  tags: ["rag", "reranking", "cross-encoder", "bi-encoder", "retrieval", "variation"],
+  title: "Cross-encoder reranking — why two-stage retrieval",
+  prompt: "Variation of the RAG root (grounded, Microsoft): defend the retrieve-then-rerank architecture. Why add a cross-encoder when you already have vector similarity search — and why not just use the cross-encoder for retrieval?",
+  context: "Real Microsoft RAG interview. A focused depth drill on retrieval architecture: the interviewer pushes on every layer — why rerank, why not trust the vector score, why not cross-encode everything. Staff bar: name the bi-encoder-vs-cross-encoder distinction (independent vs joint encoding) and the scale/accuracy funnel.",
+  produce: { artifact: "the two-stage retrieval justification: recall vs precision split, why vector scores aren't relevance judgments, why the cross-encoder can't be the retriever, and the scalability/accuracy tradeoff", format: "design-doc", workspace: "in-app-text" },
+  stages: [
+    {
+      id: "why-cross-encoder", title: "Stage 1 — Why a cross-encoder at all",
+      ask: "Why do you use a cross-encoder in your RAG pipeline when you already have similarity search?",
+      attemptHint: "Similarity search and reranking do different jobs. Name the two jobs.",
+      model: "Vector similarity search (a bi-encoder over precomputed embeddings) is optimized for FAST, HIGH-RECALL candidate retrieval — it fetches potentially relevant docs cheaply at corpus scale. The cross-encoder RERANKS that retrieved set to improve final PRECISION and ranking before context reaches the LLM. Two distinct objectives: recall (get the right docs into the candidate pool) and precision (order them so the best are on top). Retrieval is a funnel — cheap wide recall, then expensive narrow precision.",
+      heuristic: "Recall and precision are different objectives that need different models. The tell: high recall but a noisy top-k → you need a dedicated precision stage.",
+      control: "Measure recall@k on the retrieval stage and precision@k / nDCG after reranking — separately.",
+      trap: "Assuming similarity search already gives good final ordering. It gives candidates, not a precise ranking.",
+      tell: "The right doc is in the retrieved set but not in the top few, so the LLM attends to distractors and answers from noise.",
+      anchors: [
+        { dim: "recall-vs-precision", anchor: "point to the line separating recall (retrieval) from precision (rerank) as two jobs", cost: "you treat retrieval as one step and never fix the noisy top-k" },
+      ],
+    },
+    {
+      id: "why-rerank-scores", title: "Stage 2 — Why rerank when you already have similarity scores",
+      ask: "But the vector DB already gives similarity scores. Why rerank again?",
+      attemptHint: "What can a jointly-encoded pair capture that two independent embeddings cannot?",
+      model: "The vector score is the distance between INDEPENDENTLY generated embeddings — the query and the document are each embedded separately, never seeing each other. It captures semantic similarity but not deep query-document INTERACTION. A cross-encoder processes the query and document TOGETHER (joint attention over the pair), so it models contextual relevance and gives much better ranking precision. The bi-encoder score is a fast proxy computed without any query-document interaction; it is a similarity signal, not a relevance judgment.",
+      heuristic: "Bi-encoder = independent embeddings (fast, approximate). Cross-encoder = joint encoding (accurate, expensive). When ranking quality matters, you need the query-doc interaction independent embeddings can't represent.",
+      control: "Compare vector-score ordering vs cross-encoder ordering on a labeled set; the gap is the precision the reranker buys.",
+      trap: "Treating the vector similarity score as a relevance score — it's a similarity proxy, not a judgment of how well the doc answers the query.",
+      tell: "Two docs with near-identical vector scores where one is clearly more relevant — the bi-encoder can't separate them; the cross-encoder can.",
+      anchors: [
+        { dim: "joint-vs-independent", anchor: "point to joint query-document encoding as why the cross-encoder beats the raw vector score", cost: "you trust the similarity score as relevance and ship worse ranking" },
+      ],
+    },
+    {
+      id: "why-not-cross-retrieve", title: "Stage 3 — Then why not retrieve with the cross-encoder",
+      ask: "Then why not directly use the cross-encoder for retrieval?",
+      attemptHint: "What's the complexity of cross-encoding against the whole corpus per query?",
+      model: "Cost and latency. A cross-encoder must process every query-document pair together — that's O(N) forward passes over the corpus for a single query, versus the bi-encoder's precomputed embeddings + ANN lookup. On millions of documents, cross-encoding everything is far too slow and expensive. So you narrow to top candidates cheaply with vector search, then rerank only the top-k with the cross-encoder. The funnel exists precisely BECAUSE the accurate model doesn't scale to the full corpus.",
+      heuristic: "Put the expensive-accurate model only where the candidate set is small; let the cheap-approximate model do the wide pass. That's the retrieve-then-rerank funnel.",
+      control: "Tune candidate depth (top-50/100) against rerank latency; the cross-encoder runs on k, never N.",
+      trap: "Cross-encoding the full corpus — O(N) forward passes per query; latency and cost scale linearly with corpus size and fall over.",
+      tell: "Cross-encoder-only retrieval: per-query latency and cost climb with corpus size instead of staying flat.",
+      anchors: [
+        { dim: "why-not-cross-retrieve", anchor: "point to the O(N) per-pair cost that makes the cross-encoder infeasible as the retriever, hence narrow-then-rerank", cost: "cross-encoding everything doesn't scale; the system is unusably slow/expensive" },
+      ],
+    },
+    {
+      id: "benefit", title: "Stage 4 — Overall benefit",
+      ask: "So what's the overall benefit of this architecture?",
+      attemptHint: "One frame tying recall, precision, scale, and accuracy together.",
+      model: "The best balance of scalability and accuracy: bi-encoder vector search gives fast, high-recall candidate generation at corpus scale; the cross-encoder gives precision and ranking quality on the small candidate set. Each model is used where it's strong — recall cheaply and wide, precision expensively and narrow. The through-line: two-stage retrieval separates 'find the candidates' (a scale problem) from 'order them correctly' (an accuracy problem), so you don't have to compromise either.",
+      heuristic: "Two-stage retrieval = cheap-wide-recall then expensive-narrow-precision. Use each model where it's strong.",
+      control: "",
+      trap: "Presenting it as 'just add a reranker' without the recall/precision and scale/accuracy tradeoff frame.",
+      tell: "",
+      anchors: [
+        { dim: "scale-accuracy-frame", anchor: "point to the scale(recall)/accuracy(precision) split as the unifying benefit", cost: "'add a reranker' without the frame reads as recall, not architectural judgment" },
+      ],
+    },
+  ],
+  reference: { type: "solution", worked: `A strong answer defends every layer of retrieve-then-rerank as a recall/precision and scale/accuracy tradeoff.
+
+1. Two jobs: vector (bi-encoder) search = fast, high-recall candidate retrieval; cross-encoder = precision reranking of that set before the LLM. Recall gets the right docs into the pool; precision orders them on top.
+2. Why rerank despite similarity scores: the vector score is distance between INDEPENDENTLY embedded query and doc — semantic similarity, no query-document interaction. The cross-encoder encodes the pair JOINTLY, modeling contextual relevance; the vector score is a similarity proxy, not a relevance judgment.
+3. Why not cross-encode retrieval: it's O(N) query-doc forward passes per query — infeasible over millions of docs. So bi-encoder narrows to top-k cheaply, cross-encoder reranks only those.
+4. Benefit: scalability (recall, cheap and wide) + accuracy (precision, expensive and narrow), each model used where it's strong. Two-stage retrieval separates 'find candidates' from 'order them right.'` },
+  rubric: [
+    { dim: "recall-vs-precision", anchor: "did you separate recall (retrieval) from precision (rerank) as two distinct jobs?", cost: "you treat retrieval as one step and never fix the noisy top-k" },
+    { dim: "joint-vs-independent", anchor: "cross-encoder encodes query+doc JOINTLY vs bi-encoder's independent embeddings — named as the reason?", cost: "you trust the vector score as relevance and ship worse ranking" },
+    { dim: "why-not-cross-retrieve", anchor: "did you give the O(N) per-pair cost as why the cross-encoder can't be the retriever?", cost: "cross-encoding everything doesn't scale; the system falls over" },
+    { dim: "scale-accuracy-frame", anchor: "did you frame the benefit as scale(recall) + accuracy(precision), each model where it's strong?", cost: "'just add a reranker' reads as recall, not architecture" },
+  ],
+  status: "authored",
+},
 ];
