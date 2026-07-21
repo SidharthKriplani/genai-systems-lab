@@ -1242,4 +1242,345 @@ The through-line an interviewer is listening for: the provider is a metered, fai
   ],
   status: "authored",
 },
+
+  // ── Grounded G1 roots harvested from real interviews (Amazon/Google/Netflix) ──
+  {
+  id: "ds-llm-gateway-root",
+  roleTrack: "AIE", domain: "production", modality: "design",
+  specLevel: "S1", withheld: [], flawMode: null, difficulty: "staff",
+  companies: ["Amazon"],
+  provenance: { tier: "G1", sources: ["LinkedIn: Mohit Kumar Dubey — Amazon LLM Gateway interview (2026)"], companies: ["Amazon"], lastVerified: "2026-07" },
+  tags: ["gateway", "routing", "governance", "reliability", "cost", "platform", "root"],
+  isRoot: true,
+  title: "LLM Gateway — the control plane for an enterprise AI platform",
+  prompt: "An enterprise AI platform (chatbots, doc summarization, coding assistants) has every application calling GPT-4 directly. Costs are climbing, provider outages hit users, teams now want Claude and Gemini too, and leadership wants visibility into AI spend. Redesign the architecture — and hold up as the interviewer probes each concern.",
+  context: "Grounded in a real Amazon AI-platform interview. A compounding chain: point-to-point provider integration → a gateway → why a layer → routing → reliability+caching → governance → tooling. Staff bar: justify the layer against duplication, and make caching/fallback correct, not just present.",
+  produce: { artifact: "the gateway architecture: what it centralizes (access, routing, fallback, caching, observability, governance), why a layer beats per-team integration, the routing policy, and the control-plane metrics", format: "design-doc", workspace: "in-app-text" },
+  stages: [
+    {
+      id: "introduce-gateway", title: "Stage 1 — Redesign: introduce the control plane",
+      ask: "Every app calls GPT-4 directly; costs rise, outages hit users, teams want other providers, leadership wants spend visibility. How do you redesign?",
+      attemptHint: "What single structural change addresses all four pains at once — and what does it become the home for?",
+      model: "Introduce an LLM Gateway between applications and providers: one API that all apps call, which becomes the central home for model access, routing, reliability, governance, and observability. The move isn't 'add a proxy' — it's recognizing that access, retries, provider-switching, cost-tracking, and monitoring are CROSS-CUTTING concerns. Left in each app, they get reimplemented N times, inconsistently, with no unified spend view. Centralizing them behind one provider-agnostic API is what makes every downstream ask (routing, fallback, quotas) even possible.",
+      heuristic: "When N teams each integrate the same provider, every cross-cutting concern gets built N times and drifts. The tell: consolidate them at one boundary that maps to 'model access.'",
+      control: "Watch for the smell: duplicated retry/monitoring code across services, and no single answer to 'what did we spend on AI this month?'",
+      trap: "Treating it as just a passthrough proxy, or letting each team keep integrating 'their' provider for speed — that's the very duplication and lock-in you're being asked to fix.",
+      tell: "In production: each service has its own retry logic and dashboards, provider migrations touch every repo, and finance can't attribute spend by team.",
+      anchors: [
+        { dim: "gateway-as-control-plane", anchor: "point to the line where the gateway centralizes access/routing/reliability/governance/observability — not just proxies calls", cost: "you describe a proxy, and the routing/governance/observability asks later have nowhere to live" },
+        { dim: "provider-agnostic", anchor: "point to apps calling one provider-agnostic API, not a specific provider", cost: "apps stay coupled to a provider; the multi-provider requirement is unmet" },
+      ],
+    },
+    {
+      id: "justify-layer", title: "Stage 2 — Justify the layer",
+      ask: "Why introduce another layer? Why not let each team integrate the provider they need?",
+      attemptHint: "Name what per-team integration actually costs, concretely.",
+      model: "Per-team integration creates duplication and vendor lock-in: every team reimplements retries, provider switching, monitoring, and cost tracking differently, and each is coupled to a provider's SDK. The gateway standardizes all of that behind one API while keeping apps provider-agnostic — so a provider change is a config change in one place, not a migration across every service.",
+      heuristic: "A layer earns its keep when it removes N duplicated implementations and one shared coupling — not when it just adds a hop.",
+      control: "",
+      trap: "Conceding 'a layer adds latency/complexity' without pricing the alternative — N inconsistent implementations and lock-in are the more expensive path.",
+      tell: "",
+      anchors: [
+        { dim: "duplication-and-lockin", anchor: "point to the line naming duplication + vendor lock-in as the cost of per-team integration", cost: "the layer reads as gratuitous; you can't defend it under pushback" },
+      ],
+    },
+    {
+      id: "routing", title: "Stage 3 — Intelligent routing",
+      ask: "How would the gateway help with costs, model selection, and future provider changes?",
+      attemptHint: "Who chooses the model — the app or the gateway? Why does that placement matter for cost AND for change?",
+      model: "The gateway routes by task: simple tasks → a small/cheap model (GPT-4o-mini, Gemini Flash), summarization → a mid model (Claude Haiku), complex reasoning → a frontier model. Applications DON'T choose models — the gateway does, by policy. That's the whole point: when a better/cheaper model ships tomorrow, you update a routing rule, not application code. Cost control and change-agility come from the same design decision — moving model choice out of the apps and into policy.",
+      heuristic: "Put the model-selection decision where it can change without redeploying apps. Routing policy is config; app code is not.",
+      control: "Monitor per-route model distribution and cost/request; rebalance routing rules as prices and model quality shift.",
+      trap: "Hardcoding a model per application (even in the gateway) — you get the hop without the agility; every model change is still a code change somewhere.",
+      tell: "When a cheaper model lands, a well-designed gateway adopts it via a rule edit; a poorly-designed one needs a coordinated multi-team deploy.",
+      anchors: [
+        { dim: "gateway-chooses", anchor: "point to the line where the gateway (not the app) selects the model by task/complexity", cost: "apps stay coupled to models; every routing change is a code change" },
+        { dim: "route-by-task", anchor: "point to complexity-based routing (cheap for simple, frontier for hard)", cost: "you pay frontier prices for trivial calls — the cost pain persists" },
+      ],
+    },
+    {
+      id: "reliability-cache", title: "Stage 4 — Reliability and caching",
+      ask: "What happens when OpenAI is unavailable, and how would you improve performance for repeated requests?",
+      attemptHint: "Fallback and caching both live here — but caching an LLM response has a correctness trap. Name it.",
+      model: "Reliability: on timeout/error the gateway fails over to another provider (Claude/Gemini) with retries — the provider-agnostic API makes this transparent to apps. Performance/cost: a cache serves repeated requests without re-calling the model. But caching is where correctness bites — a semantic cache must NOT return a hit when intent differs despite high similarity ('Annexure 4' vs 'Annexure 5' are near-identical embeddings, different answers). So cache on exact/normalized keys, and if using semantic similarity, gate it with deterministic checks on critical entities (IDs, dates, numbers) before reusing a response.",
+      heuristic: "Fallback needs a provider-agnostic contract; caching needs an equivalence definition stricter than 'similar.' High semantic similarity is not identical intent.",
+      control: "Track fallback rate + which provider served, and cache-hit rate WITH a false-hit audit on entity-sensitive queries.",
+      trap: "A semantic cache keyed on similarity alone — it returns confident wrong answers when two requests are close in embedding space but differ on a critical identifier.",
+      tell: "Cache 'works' in aggregate but users occasionally get the answer to a neighboring question (wrong invoice, wrong clause).",
+      anchors: [
+        { dim: "provider-fallback", anchor: "point to automatic failover across providers on outage/timeout", cost: "a single provider outage takes down the platform — one of the original pains" },
+        { dim: "cache-correctness", anchor: "point to the line preventing a semantic cache from returning a hit when a critical entity differs", cost: "confident wrong answers from near-miss cache hits" },
+      ],
+    },
+    {
+      id: "governance", title: "Stage 5 — Governance and observability",
+      ask: "Leadership wants usage visibility and wants to ensure one team can't consume all resources. How?",
+      attemptHint: "Why is the gateway the natural place for this, and what exactly does it enforce and expose?",
+      model: "Because all traffic flows through it, the gateway is the control plane. Observability: cost tracking, token usage, latency/error monitoring, cache-hit rates, team-wise reporting. Governance: per-team rate limits, token quotas, and model-access policies. One team can't starve others because the gateway enforces quotas at the boundary every request already crosses — you get visibility and control from the same chokepoint, no per-app instrumentation.",
+      heuristic: "The single boundary all traffic crosses is the only place you can both SEE everything and ENFORCE limits without instrumenting every app.",
+      control: "Per-team dashboards (spend, tokens, latency, cache-hit) + quota/rate-limit enforcement with alerting on approach.",
+      trap: "Bolting metrics onto each app instead of the gateway — inconsistent, incomplete, and no enforcement point for quotas.",
+      tell: "Without it: a runaway team's job silently consumes the shared quota and everyone else starts getting throttled.",
+      anchors: [
+        { dim: "gateway-as-observability", anchor: "point to per-team cost/token/latency/cache visibility at the gateway", cost: "leadership's spend-visibility ask is unmet; attribution is guesswork" },
+        { dim: "quota-enforcement", anchor: "point to per-team quotas/rate limits enforced at the boundary", cost: "one team can consume the shared budget and throttle everyone else" },
+      ],
+    },
+    {
+      id: "synthesize", title: "Stage 6 — Synthesize",
+      ask: "Summarize LLM Gateways in one sentence — and name a tool.",
+      attemptHint: "One frame that ties abstraction, routing, reliability, caching, observability, governance together.",
+      model: "An LLM Gateway is a centralized control layer between applications and models that provides provider abstraction, intelligent routing, fallbacks, caching, observability, governance, and cost optimization through a single interface. LiteLLM is a common open-source implementation (multi-provider, routing, fallbacks, caching, cost tracking, OpenAI-compatible API). The through-line: apps should talk to 'AI', not to a provider — everything cross-cutting lives at the boundary.",
+      heuristic: "Frame it as 'apps talk to AI, not to a provider'; the seven capabilities fall out of that one boundary.",
+      control: "",
+      trap: "Listing capabilities without the unifying 'single control layer / apps stay provider-agnostic' frame.",
+      tell: "",
+      anchors: [
+        { dim: "unifying-frame", anchor: "point to the single-control-layer / provider-agnostic frame that ties the capabilities together", cost: "a feature list without a frame reads as memorized, not designed" },
+      ],
+    },
+  ],
+  reference: { type: "solution", worked: `A staff answer builds the gateway as a control plane, not a proxy, and defends every layer under pressure.
+
+1. The move: one provider-agnostic API all apps call. Access, routing, retries, provider-switching, caching, cost-tracking, and monitoring are cross-cutting — centralize them or reimplement N times, inconsistently, with no unified spend view.
+2. Justify the layer: per-team integration = duplication + vendor lock-in. The gateway standardizes those concerns and makes a provider swap a one-place config change.
+3. Routing: the gateway (not the app) picks the model by task complexity — cheap for simple, frontier for hard — so cost control AND future model swaps are both just rule edits.
+4. Reliability + caching: cross-provider failover on outage; caching for repeats — but a semantic cache must gate similarity with deterministic entity checks (Annexure 4 vs 5) or it returns confident wrong answers.
+5. Governance/observability: because all traffic crosses it, the gateway is the control plane — per-team cost/token/latency/cache visibility plus quota and rate-limit enforcement so no team starves the rest.
+6. Frame: apps talk to 'AI', not to a provider; abstraction, routing, fallback, caching, observability, governance, and cost all live at that one boundary. LiteLLM is a ready implementation.` },
+  rubric: [
+    { dim: "control-plane-not-proxy", anchor: "gateway centralizes access/routing/reliability/governance/observability, not just proxies?", cost: "later asks (routing, quotas, spend) have nowhere to live" },
+    { dim: "layer-justified", anchor: "named duplication + vendor lock-in as the cost of per-team integration?", cost: "the layer reads as gratuitous under pushback" },
+    { dim: "policy-routing", anchor: "gateway chooses model by task, so model swaps are config not code?", cost: "apps stay coupled to models; you pay frontier prices for trivial calls" },
+    { dim: "fallback-and-safe-cache", anchor: "cross-provider fallback AND a cache gated against near-miss entity collisions?", cost: "single-provider outages persist, or the cache serves confident wrong answers" },
+    { dim: "governance-at-boundary", anchor: "per-team quotas + spend visibility enforced at the gateway?", cost: "leadership gets no spend view; one team can starve the rest" },
+  ],
+  status: "authored",
+},
+{
+  id: "ds-cost-inflation-root",
+  roleTrack: "AIE", domain: "production", modality: "diagnose",
+  specLevel: "S1", withheld: [], flawMode: "silent", difficulty: "staff",
+  companies: ["Google"],
+  provenance: { tier: "G1", sources: ["LinkedIn: Mohit Kumar Dubey — Google AI platform cost investigation (2026)", "LinkedIn: Mohit Kumar Dubey — token inflation essay (2026)"], companies: ["Google"], lastVerified: "2026-07" },
+  tags: ["cost", "tokens", "observability", "diagnosis", "agents", "retrieval", "root"],
+  isRoot: true,
+  title: "Cost doubled, traffic flat — diagnosing token/cost inflation",
+  prompt: "Your AI platform's cost doubled over the last month, but user traffic stayed flat. Walk through how you'd investigate — under a time limit, and as the interviewer keeps narrowing the scenario.",
+  context: "Grounded in a real Google AI-platform interview, framed by the industry-wide 'token inflation' shift: pipelines went from Prompt→Model→Guardrails to Planner→Router→Retriever→Generator→Reviewer→Guardrails, each running multiple times — 5-10x tokens per answer. This is a DIAGNOSIS root: the skill is decomposition and finding the biggest delta fast, not naming a fix.",
+  produce: { artifact: "a cost investigation: decompose to cost-per-request, find the biggest delta under time pressure, localize input-vs-output token growth, and a leadership-ready root-cause deliverable", format: "design-doc", workspace: "in-app-text" },
+  stages: [
+    {
+      id: "decompose", title: "Stage 1 — Decompose the increase",
+      ask: "Cost doubled, traffic is flat. Walk me through how you'd investigate.",
+      attemptHint: "Traffic is flat — so what do you refuse to look at, and what do you look at instead?",
+      model: "Traffic unchanged means this is a cost-PER-REQUEST problem, not a volume problem — so I ignore total volume and decompose per-request drivers: input tokens/request, output tokens/request, model distribution, tool-calls/request, cache-hit rate, and retrieval payload size. Compare each month-over-month to find what changed. In modern agentic pipelines (planner→router→retriever→generator→reviewer→guardrails, each firing multiple times) any one of these can silently 5-10x.",
+      heuristic: "Flat traffic + rising cost ⇒ cost/request, not volume. Decompose into the handful of per-request drivers before touching anything.",
+      control: "The metric set to pull first: input/output tokens per request, model mix, tool-calls/request, cache-hit, retrieval payload — all month-over-month.",
+      trap: "Assuming it's scale/traffic and chasing infra, when traffic is explicitly flat — or 'just switch to a cheaper model' before knowing the driver.",
+      tell: "The bill doubles while request count is flat — the delta is entirely inside per-request consumption.",
+      anchors: [
+        { dim: "per-request-not-volume", anchor: "point to the line where you switch from total volume to cost-PER-request because traffic is flat", cost: "you chase traffic/scale and miss that each request now costs 2x" },
+        { dim: "driver-decomposition", anchor: "point to the specific per-request drivers you'd compare month-over-month", cost: "no decomposition means no way to localize the 2x" },
+      ],
+    },
+    {
+      id: "triage", title: "Stage 2 — Triage under time pressure",
+      ask: "You only have one hour to diagnose. What do you do?",
+      attemptHint: "One hour changes the strategy from 'thorough' to what?",
+      model: "Prioritize the biggest delta. Build a quick cost breakdown and ask: did token usage jump, did a pricier model enter the mix, did tool usage grow, did caching regress? Usually ONE category explains most of the increase, so I take the fastest path to that category rather than analyzing everything evenly.",
+      heuristic: "Under time pressure, hunt the dominant term. Cost regressions are usually concentrated in one driver, not spread evenly.",
+      control: "A single cost-breakdown-by-category view; whichever category moved most gets the hour.",
+      trap: "Boiling the ocean — investigating every driver evenly and running out of the hour with no answer.",
+      tell: "One category (often tokens or model mix) accounts for the bulk of the delta; the rest are noise.",
+      anchors: [
+        { dim: "biggest-delta-first", anchor: "point to prioritizing the single largest cost delta over exhaustive analysis", cost: "you spread the hour thin and finish without a root cause" },
+      ],
+    },
+    {
+      id: "localize-tokens", title: "Stage 3 — Localize the token growth",
+      ask: "Token usage per request increased 70%. What's your next step?",
+      attemptHint: "70% more tokens — but the fix depends on a fork you must resolve first.",
+      model: "Determine whether the growth is in INPUTS or OUTPUTS — because the root causes and fixes differ. If inputs grew: larger prompts, longer conversation histories, retrieval returning more docs, or memory injecting excessive context. If outputs grew: prompt changes encouraging longer answers, new reasoning settings, or agent workflows emitting intermediate responses. I don't propose a fix until I know which side moved.",
+      heuristic: "Input-token growth and output-token growth are different bugs with different fixes. Resolve the fork before optimizing.",
+      control: "Split the 70% into input-token delta vs output-token delta per request; attribute each to its likely source.",
+      trap: "Treating '70% more tokens' as one thing and reaching for a generic fix (shorter max_tokens, cheaper model) that may target the wrong side.",
+      tell: "Input growth shows as ballooning prompt/context size; output growth shows as longer completions or extra intermediate agent turns.",
+      anchors: [
+        { dim: "input-vs-output", anchor: "point to the line splitting the increase into input vs output tokens before choosing a fix", cost: "you optimize the wrong side and the cost stays" },
+      ],
+    },
+    {
+      id: "spike-catalog", title: "Stage 4 — Known AI-specific spike causes",
+      ask: "What AI-specific issues have you seen cause unexpected cost spikes?",
+      attemptHint: "Name the usual suspects — the ones that don't show up in a classic infra cost review.",
+      model: "The recurring ones: agent loops repeatedly calling tools, retrieval returning too many chunks, cache-hit rate dropping after a deploy, a routing bug sending traffic to premium models, evaluation jobs accidentally running in production, and prompt changes lengthening responses. A single routing bug can double spend overnight. These are the AI-native failure modes a traditional cost review misses.",
+      heuristic: "AI cost spikes concentrate in a small catalog — loops, retrieval bloat, cache regression, routing bugs, eval-in-prod, prompt bloat. Check these first.",
+      control: "Alerts on: iteration/tool-call counts (loops), chunks-per-query (retrieval), cache-hit rate deltas post-deploy, premium-model share (routing), and non-prod job tags in prod.",
+      trap: "Only looking at classic infra cost levers and missing agent loops or a routing regression that a standard cloud-cost tool won't surface.",
+      tell: "Routing bug: premium-model share jumps overnight with no product change. Cache regression: hit-rate drops right after a deploy.",
+      anchors: [
+        { dim: "ai-native-catalog", anchor: "point to at least the top AI-specific causes (loops, retrieval bloat, cache regression, routing bug, eval-in-prod)", cost: "you run a classic cost review and miss the AI-native driver entirely" },
+      ],
+    },
+    {
+      id: "fix-retrieval", title: "Stage 5 — Fix the retrieval bloat",
+      ask: "A new retrieval config raised context from 3,000 to 9,000 tokens/request. What do you do?",
+      attemptHint: "3x the context — but don't reflexively cut it. What's the first question, and what's the real objective?",
+      model: "First verify the extra context actually improves quality. If the gains are marginal, reduce the payload: better ranking, smaller chunks, deduplication, context compression, and dynamic retrieval limits. The objective is NOT minimizing tokens — it's maximizing useful information per token. Cutting context that was earning its keep would trade cost for quality.",
+      heuristic: "Never cut context blind. The goal is useful-info-per-token, so measure the quality contribution before trimming.",
+      control: "A/B the 9k vs a reduced payload on quality; watch answer quality alongside tokens, not tokens alone.",
+      trap: "Minimizing tokens as the goal — slashing 9k→3k without checking whether the added context was improving answers.",
+      tell: "If quality is flat between 3k and 9k, the extra 6k is pure waste; if it drops when trimmed, the context was load-bearing.",
+      anchors: [
+        { dim: "verify-before-cut", anchor: "point to verifying the added context's quality contribution before reducing it", cost: "you cut load-bearing context and trade cost for a quality regression" },
+        { dim: "info-per-token", anchor: "point to 'maximize useful information per token' as the objective, not minimize tokens", cost: "token-minimizing optimizations quietly degrade answers" },
+      ],
+    },
+    {
+      id: "decide-report", title: "Stage 6 — Decide and report",
+      ask: "Would you immediately switch users to a cheaper model? And what's the final deliverable to leadership?",
+      attemptHint: "Two moves: how you make the call, and what leadership actually needs to see.",
+      model: "Not without evidence — I'd estimate the savings, run an A/B, and measure quality impact; sometimes reducing context saves more than swapping models with less user impact, so I optimize the largest cost driver first. The deliverable to leadership: a root-cause analysis — what changed, why cost rose, the financial impact, recommended fixes, expected savings, and the risks to product quality.",
+      heuristic: "Optimize the largest driver first, and never trade quality for cost without an A/B. Leadership needs cause + impact + fix + savings + risk, not a metrics dump.",
+      control: "",
+      trap: "Reflexively switching to a cheaper model 'to be safe' without measuring the quality hit or confirming it's the biggest driver.",
+      tell: "",
+      anchors: [
+        { dim: "evidence-before-model-swap", anchor: "point to A/B + quality measurement before any model downgrade", cost: "you cut cost and silently ship a quality regression" },
+        { dim: "leadership-rca", anchor: "point to a root-cause deliverable (what changed, impact, fix, savings, risk)", cost: "a metrics dump leadership can't act on" },
+      ],
+    },
+  ],
+  reference: { type: "solution", worked: `A staff answer treats this as a disciplined diagnosis, not a fix-list.
+
+1. Flat traffic ⇒ cost-per-request, not volume. Decompose into per-request drivers: input/output tokens, model mix, tool-calls, cache-hit, retrieval payload — month-over-month.
+2. Under a one-hour limit, hunt the biggest delta; one category usually dominates.
+3. Split any token growth into INPUT vs OUTPUT — different causes (prompt/history/retrieval/memory vs longer answers/reasoning/agent intermediate turns), different fixes. Resolve the fork before acting.
+4. Check the AI-native spike catalog a classic cost review misses: agent loops, retrieval over-fetch, post-deploy cache regression, a routing bug sending traffic to premium models, eval jobs in prod, prompt bloat. A routing bug can double spend overnight.
+5. For a 3k→9k retrieval bloat, verify the added context earns its quality before cutting; then rank/compress/dedup/dynamic-limit. Objective: useful info per token, not fewest tokens.
+6. Don't downgrade models without an A/B on quality; optimize the largest driver first. Deliver a leadership RCA: what changed, impact, fix, expected savings, quality risk.
+
+Frame: modern agentic pipelines (planner→router→retriever→generator→reviewer→guardrails, each multi-firing) make token inflation the default failure — the discipline is localizing the delta, not guessing a fix.` },
+  rubric: [
+    { dim: "per-request-framing", anchor: "did you switch to cost-per-request because traffic is flat, and decompose the drivers?", cost: "you chase volume/scale and never localize the 2x" },
+    { dim: "biggest-delta", anchor: "under time pressure, did you hunt the single dominant cost driver?", cost: "you spread thin and finish with no root cause" },
+    { dim: "input-vs-output", anchor: "did you split token growth into inputs vs outputs before choosing a fix?", cost: "you optimize the wrong side" },
+    { dim: "ai-native-causes", anchor: "did you name AI-specific spikes (loops, retrieval bloat, cache/routing regressions, eval-in-prod)?", cost: "a classic cost review misses the real driver" },
+    { dim: "evidence-driven-fix", anchor: "verify-context-before-cut and A/B-before-model-swap, optimizing the largest driver first?", cost: "blind cuts trade cost for silent quality loss" },
+    { dim: "leadership-rca", anchor: "a root-cause deliverable with impact, fix, savings, and quality risk?", cost: "a metrics dump leadership can't act on" },
+  ],
+  status: "authored",
+},
+{
+  id: "ds-agent-nontermination-root",
+  roleTrack: "AIE", domain: "agents", modality: "diagnose",
+  specLevel: "S1", withheld: [], flawMode: "silent", difficulty: "staff",
+  companies: ["Netflix"],
+  provenance: { tier: "G1", sources: ["LinkedIn: Mohit Kumar Dubey — Netflix infinite tool-calling interview (2026)"], companies: ["Netflix"], lastVerified: "2026-07" },
+  tags: ["agents", "termination", "state", "loops", "observability", "diagnosis", "root"],
+  isRoot: true,
+  title: "Agent won't stop — diagnosing non-termination",
+  prompt: "An autonomous agent keeps calling the same tool repeatedly and never completes the task. How would you approach it — resisting the interviewer's attempts to make you jump to a fix?",
+  context: "Grounded in a real Netflix agent interview. A diagnosis chain: the whole test is whether you assume 'loop bug → cap iterations' or actually localize WHY the agent doesn't recognize it's done. Staff bar: interrogate the agent's state and completion criteria before adding safeguards.",
+  produce: { artifact: "a diagnosis: verify progress before assuming a loop, interrogate the agent's state/completion beliefs, enumerate and localize root causes, then the targeted termination fix and production detection", format: "design-doc", workspace: "in-app-text" },
+  stages: [
+    {
+      id: "dont-assume-loop", title: "Stage 1 — Don't assume it's a loop bug",
+      ask: "An agent keeps calling the same tool and never finishes. How do you approach it?",
+      attemptHint: "The tempting move is to cap iterations. Why is looking first the staff move?",
+      model: "I'd start with a few execution traces before assuming it's a looping problem. The key question is whether the tool is actually returning useful results and how the agent reacts to them — because 'repeated calls' is a symptom that could mean the tool is failing, the agent isn't updating state, or the objective is unclear. Capping iterations first would mask the real cause and turn a diagnosable bug into a silent truncation.",
+      heuristic: "'Loops' are a symptom. First establish whether PROGRESS is being made; don't treat repetition as the diagnosis.",
+      control: "Pull execution traces: tool inputs/outputs and the agent's action after each response.",
+      trap: "Immediately adding a max-iteration cap. It stops the symptom but hides whether the tool is broken, the state isn't updating, or the goal is ambiguous.",
+      tell: "In production a hard iteration cap 'fixes' the loop but tasks now fail silently at the cap with no root cause found.",
+      anchors: [
+        { dim: "verify-before-cap", anchor: "point to inspecting traces / whether progress is being made before assuming a loop", cost: "you cap iterations, mask the bug, and convert loops into silent failures" },
+      ],
+    },
+    {
+      id: "interrogate-state", title: "Stage 2 — Interrogate the agent's state belief",
+      ask: "The tool is functioning correctly — valid responses — but the agent keeps calling it. Now what?",
+      attemptHint: "If the tool works, the problem moved. To where?",
+      model: "Then I'd interrogate what the agent believes its current state is. Is it failing to recognize that progress has been made, or does it think some required information is still missing? A working tool + repeated calls points at the agent's state/goal model, not the tool — it's not perceiving that it already has what it needs.",
+      heuristic: "Working tool + repeated calls ⇒ the fault is in the agent's state/goal representation, not the tool.",
+      control: "Diff the agent's stated/internal objective and its 'have I satisfied it?' judgment across steps.",
+      trap: "Continuing to debug the tool after establishing it returns valid results — the evidence has already moved the problem to the agent's state.",
+      tell: "The agent re-requests information it already has in context — a state-recognition failure, not a tool failure.",
+      anchors: [
+        { dim: "move-to-state", anchor: "point to shifting the investigation to the agent's state/goal belief once the tool is exonerated", cost: "you keep debugging a healthy tool and never reach the real cause" },
+      ],
+    },
+    {
+      id: "enumerate-causes", title: "Stage 3 — Enumerate the root causes",
+      ask: "What are common reasons an agent gets stuck like that?",
+      attemptHint: "List the distinct mechanisms — they have different fixes.",
+      model: "A few: the task objective is ambiguous; the planner has no clear completion criterion; the agent isn't updating its state correctly after each tool call; or it keeps seeking confirmation even after it already has enough to proceed. These are distinct failure modes with distinct fixes, so naming them separately is what makes the next step (localizing) possible.",
+      heuristic: "Non-termination has a small taxonomy — ambiguous goal, missing completion criterion, stale state, over-seeking confirmation. Separate them; they don't share a fix.",
+      control: "",
+      trap: "Collapsing them into 'the prompt is bad' — you lose the ability to target the actual mechanism.",
+      tell: "",
+      anchors: [
+        { dim: "distinct-causes", anchor: "point to naming the distinct causes (ambiguous goal / no completion criterion / stale state / over-seeking)", cost: "an undifferentiated 'bad prompt' can't be localized or fixed precisely" },
+      ],
+    },
+    {
+      id: "localize", title: "Stage 4 — Localize which one",
+      ask: "How would you determine which of those is happening?",
+      attemptHint: "What exactly do you read in the traces to tell these apart?",
+      model: "I'd inspect the reasoning traces and state transitions after each step: does the agent's internal state actually change after a tool response, and is the next action justified by NEW information or just repeating the previous one? If state doesn't change, it's a state-update bug; if state changes but it still re-acts, it's a completion-criterion or confirmation-seeking problem. The trace tells you which mechanism.",
+      heuristic: "State-change-after-response and 'is the next action justified by new info?' are the two probes that separate the causes.",
+      control: "Log state before/after each tool call and whether each action consumed new information.",
+      trap: "Guessing the cause from the symptom instead of reading the state transitions that distinguish them.",
+      tell: "No state delta after responses ⇒ state-update bug; state changes yet actions repeat ⇒ completion/confirmation bug.",
+      anchors: [
+        { dim: "trace-state-transitions", anchor: "point to inspecting state changes + action-justification per step to localize the cause", cost: "you can't tell a state-update bug from a completion-criterion bug and fix the wrong one" },
+      ],
+    },
+    {
+      id: "fix-termination", title: "Stage 5 — Fix the termination logic",
+      ask: "You find the agent isn't recognizing it already gathered the needed information. How do you address it?",
+      attemptHint: "Target the specific cause you localized — not a blanket cap.",
+      model: "I'd strengthen the termination logic: explicit completion criteria, progress tracking, state validation between steps, and requiring the planner to verify whether the current objective is already satisfied before issuing another tool call. The fix targets the localized cause (unrecognized completion), rather than a blunt iteration cap that would also kill legitimately long tasks.",
+      heuristic: "Fix the mechanism you localized. For unrecognized completion, the lever is an explicit, checked completion criterion — not a global cap.",
+      control: "Add a pre-action check: 'is the objective already satisfied given current state?'; track progress monotonically.",
+      trap: "Falling back to a max-iteration cap anyway — it also truncates valid long-running tasks and doesn't fix the recognition failure.",
+      tell: "With explicit completion checks, the agent exits when done; with only a cap, long valid tasks fail at the ceiling.",
+      anchors: [
+        { dim: "targeted-termination", anchor: "point to explicit completion criteria / planner objective-check tied to the localized cause", cost: "a blanket cap masks the real bug and kills valid long tasks" },
+      ],
+    },
+    {
+      id: "detect-prod", title: "Stage 6 — Detect in production + summarize",
+      ask: "How would you detect these loops automatically in production, and what's your takeaway?",
+      attemptHint: "What signals catch it live, and what's the one-line philosophy?",
+      model: "Detection: monitor action sequences for repetitive patterns — repeated calls to the same tool with identical or highly similar inputs are strong signals — plus iteration count, state-change frequency, and task-completion rate, with alerts when an agent exceeds expected execution boundaries. Takeaway: I wouldn't treat the loop as a tool problem by default. I'd first verify progress, state updates, and completion understanding, then add the appropriate safeguard — better planning, stronger state management, or clearer termination — so the agent reliably exits and completes.",
+      heuristic: "The production signal for non-termination is repetition + flat state-change frequency, not raw latency. Alert on execution-boundary breaches.",
+      control: "Metrics: same-tool/similar-input repetition, iteration count, state-change frequency, completion rate; alert on boundary breach.",
+      trap: "Defaulting to 'it's a tool problem' — the whole case is that it usually isn't.",
+      tell: "",
+      anchors: [
+        { dim: "prod-detection", anchor: "point to detecting repeated same-tool/similar-input calls + iteration/state-change/completion metrics", cost: "loops only surface via the cost/latency bill, after damage" },
+        { dim: "diagnosis-philosophy", anchor: "point to 'verify progress/state/completion before assuming a tool problem'", cost: "you default to blaming the tool and keep missing the real cause" },
+      ],
+    },
+  ],
+  reference: { type: "solution", worked: `A staff answer diagnoses before it caps.
+
+1. Don't assume a loop bug — pull traces, check whether the tool returns useful results and how the agent reacts. Capping iterations first masks the cause.
+2. If the tool works but the agent repeats, the fault moved to the agent's STATE/goal belief — it isn't recognizing it already has what it needs.
+3. Enumerate distinct causes: ambiguous objective, no completion criterion, stale state, over-seeking confirmation — different fixes each.
+4. Localize by reading state transitions: does state change after a response, and is the next action justified by NEW info? That separates a state-update bug from a completion-criterion bug.
+5. Fix the localized cause — explicit completion criteria, progress tracking, state validation, planner verifying the objective is satisfied before acting — not a blunt iteration cap that also kills valid long tasks.
+6. Detect in prod via repeated same-tool/similar-input calls plus iteration/state-change/completion metrics and boundary alerts. Philosophy: verify progress, state, and completion before ever blaming the tool.` },
+  rubric: [
+    { dim: "diagnose-before-cap", anchor: "did you inspect traces/progress before assuming a loop and capping iterations?", cost: "a cap masks the bug and turns loops into silent failures" },
+    { dim: "state-not-tool", anchor: "once the tool is exonerated, did you move to the agent's state/goal belief?", cost: "you keep debugging a healthy tool" },
+    { dim: "cause-taxonomy", anchor: "did you separate ambiguous-goal / no-completion-criterion / stale-state / over-seeking?", cost: "an undifferentiated 'bad prompt' can't be targeted" },
+    { dim: "localize-via-state", anchor: "did you use state-change + action-justification to localize the specific cause?", cost: "you fix the wrong mechanism" },
+    { dim: "targeted-fix", anchor: "explicit completion criteria / planner objective-check rather than a blanket cap?", cost: "a cap kills valid long tasks and leaves the recognition bug" },
+    { dim: "prod-detection", anchor: "repetition + iteration/state-change/completion metrics with alerts?", cost: "loops surface only via the bill, after damage" },
+  ],
+  status: "authored",
+},
 ];

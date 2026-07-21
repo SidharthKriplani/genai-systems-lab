@@ -162,6 +162,11 @@ export default function DesignStudio({ onExit }) {
                       <div className="flex-1">
                         <div className="text-[15px] font-semibold text-cyan-300 leading-snug">{nameOf(root)}</div>
                         <div className="text-[11px] text-zinc-500 mt-0.5">{root.domain} · {kids.length} variations{root.stages ? ` · ${root.stages.length}-stage` : ""}</div>
+                        {root.provenance && (
+                          <span className="mt-1 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/40 border border-emerald-800 text-emerald-300">
+                            ● Grounded · {(root.provenance.companies || root.companies || [])[0] || "real"}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -220,6 +225,11 @@ export default function DesignStudio({ onExit }) {
           {(sel.companies || []).map((c) => <span key={c} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">{c}</span>)}
         </div>
         <h1 className="text-xl font-semibold text-zinc-100">{nameOf(sel)}</h1>
+        {sel.provenance && (
+          <div className="mt-1.5 text-[11px] text-emerald-400/90">
+            ● Grounded ({sel.provenance.tier}) — {(sel.provenance.sources || []).join("; ")}
+          </div>
+        )}
         <p className="text-zinc-300 mt-2 leading-relaxed">{sel.prompt}</p>
         {sel.context && <p className="text-[13px] text-zinc-400 mt-2 leading-relaxed">{sel.context}</p>}
         {sel.produce?.artifact && (
