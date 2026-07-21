@@ -13,6 +13,13 @@
 // Scoped-not-vague: identity/dials/brief/produce/rubric-anchors PINNED; the reference prose + any
 // rubric expansion are DEFERRED via `_flesh`. A fleshing session writes the reference with zero re-scoping.
 
+//
+// [RECONCILED 2026-07-22 03:49 IST -- T1 doc reconciliation, EXECUTION-RUNBOOK] The "SKELETONS ONLY (2026-07-17)"
+// line above is stale. Enumerated this pass: 91 total briefs (grep -o 'id: "[a-z0-9_-]*"' | sort -u | wc -l),
+// 17 with authored `worked` reference prose (grep -c "worked:") -- includes a new staged process-model shape
+// (ds-reliability-429-root: ask/model/heuristic/control/tell per stage) not described by the header above.
+// Remaining briefs are still reference:{type:"..."}-only skeletons. See STATUS.md + DESIGN-STUDIO-SPEC.md
+// 2026-07-22 03:49 IST entries for the full reconciliation; this comment is a pointer, not the full record.
 export const DESIGN_STUDIO_GSL = [
   { id: "ds-payment-exception-agent", roleTrack: "AIE", domain: "agentic-ops", modality: "design",
     specLevel: "S1", withheld: [], flawMode: null, difficulty: "senior", companies: ["UBS"],
