@@ -208,8 +208,7 @@ export const DESIGN_STUDIO_GSL = [
     ],
     _flesh: "Reference (requirement) = the flaw graph + why the root masks the dependents. Render via the LiveIncident engine if a stateful reveal is wanted.",
     status: "skeleton" },
-  // ── Authored ROOT + variations: RAG pipeline (2026-07-21). First fully-authored root:
-  //    sharp anchored checklist + worked reference on the root; scaffold fades S1 -> S2 -> S3 -> S4.
+  // ── Authored ROOT + variations: RAG pipeline (2026-07-21). First fully-authored root.
   { id: "ds-rag-pipeline-root", roleTrack: "AIE", domain: "rag", modality: "design",
     specLevel: "S1", withheld: [], flawMode: null, difficulty: "senior", companies: ["Any"],
     tags: ["rag", "retrieval", "reranking", "grounding", "eval", "root"], isRoot: true,
@@ -240,8 +239,8 @@ Tradeoffs to state: reranking depth vs latency (a top-50 cross-encoder adds ms);
     status: "authored" },
 
   { id: "ds-rag-var-scale-acl", roleTrack: "AIE", domain: "rag", modality: "design",
-    specLevel: "S2", withheld: ["reference-prose"], flawMode: null, difficulty: "senior", companies: ["Any"],
-    tags: ["rag", "scale", "permissions", "cost", "variation"], parentRoot: "ds-rag-pipeline-root",
+    specLevel: "S2", withheld: ["reference-prose"], flawMode: null, difficulty: "senior", companies: ["Any"], parentRoot: "ds-rag-pipeline-root",
+    tags: ["rag", "scale", "permissions", "cost", "variation"],
     prompt: "Variation of the RAG root: 4M documents / ~40GB, per-document permissions (not everyone can see HR/legal), 30 QPS, <3s p95, and cost per answered question under ~$0.02. Design it.",
     context: "Scaffold (S2 — first stages given): (1) ingest + chunk + embed at scale; (2) ACL-aware retrieval — a user only ever sees chunks from docs they are authorized to read (a hard requirement, not a post-filter); (3) ...you complete rerank/generate/verify + the cost math.",
     produce: { artifact: "architecture + the ACL model at retrieval time + a per-query cost breakdown landing under $0.02 + the same 5-layer trustworthiness handling + tradeoffs", format: "design-doc", workspace: "in-app-text" },
@@ -256,8 +255,8 @@ Tradeoffs to state: reranking depth vs latency (a top-50 cross-encoder adds ms);
     status: "authored" },
 
   { id: "ds-rag-var-hallucinate", roleTrack: "AIE", domain: "rag", modality: "diagnose",
-    specLevel: "S3", withheld: ["reference-prose", "stage-skeleton"], flawMode: "silent", difficulty: "senior", companies: ["Any"],
-    tags: ["rag", "precision", "grounding", "hallucination", "variation"], parentRoot: "ds-rag-pipeline-root",
+    specLevel: "S3", withheld: ["reference-prose", "stage-skeleton"], flawMode: "silent", difficulty: "senior", companies: ["Any"], parentRoot: "ds-rag-pipeline-root",
+    tags: ["rag", "precision", "grounding", "hallucination", "variation"],
     prompt: "Variation of the RAG root: recall@8 is 0.93 but 39% of answers are wrong — and the correct chunk IS in context. Diagnose the leak and design the fix. (Minimal scaffold.)",
     context: "The model cites retrieved text but blends in an adjacent, wrong fact. Precision@8 is not measured; a spot audit finds ~3 of 8 chunks on-topic. No reranker yet. Latency budget 2.5s.",
     produce: { artifact: "the root cause (why high recall coexists with wrong answers) + the fix (staged retrieval) + how you would PROVE it worked + what you would NOT do, and why", format: "design-doc", workspace: "in-app-text" },
@@ -271,8 +270,8 @@ Tradeoffs to state: reranking depth vs latency (a top-50 cross-encoder adds ms);
     status: "authored" },
 
   { id: "ds-rag-var-temporal", roleTrack: "AIE", domain: "rag", modality: "design",
-    specLevel: "S4", withheld: ["reference-prose", "stage-skeleton", "hints"], flawMode: null, difficulty: "staff", companies: ["Any"],
-    tags: ["rag", "temporal", "versioning", "bitemporal", "variation"], parentRoot: "ds-rag-pipeline-root",
+    specLevel: "S4", withheld: ["reference-prose", "stage-skeleton", "hints"], flawMode: null, difficulty: "staff", companies: ["Any"], parentRoot: "ds-rag-pipeline-root",
+    tags: ["rag", "temporal", "versioning", "bitemporal", "variation"],
     prompt: "Variation of the RAG root (own it — no scaffold): time-sensitive questions ('current refund window') return confidently stale answers. Both the old 14-day and new 30-day chunks are indexed and near-identical semantically. Design the system so the current answer wins, without losing history.",
     context: "You get the problem only. Bring your own structure, metrics, and tradeoffs.",
     produce: { artifact: "full design: how retrieval/rerank become recency-aware, how history is preserved, the metric that catches staleness, and the tradeoffs", format: "design-doc", workspace: "in-app-text" },
@@ -283,6 +282,81 @@ Tradeoffs to state: reranking depth vs latency (a top-50 cross-encoder adds ms);
       { dim: "history-preserved", anchor: "do you KEEP old versions (not delete them), so 'what was the policy last quarter' still works?", cost: "deleting versions destroys the audit trail and breaks historical queries" },
       { dim: "temporal-metric", anchor: "what metric detects a confidently-stale answer, and on what sample?", cost: "staleness is invisible until a user is misinformed" },
       { dim: "tradeoff", anchor: "state the cost of recency-awareness (metadata pipeline, rerank complexity) vs the risk of staleness", cost: "reads as no real engineering decision" },
+    ],
+    status: "authored" },
+
+  // ── Authored ROOT + variations: Agentic tool-use (2026-07-21).
+  { id: "ds-agentic-tooluse-root", roleTrack: "AIE", domain: "agents", modality: "design",
+    specLevel: "S1", withheld: [], flawMode: null, difficulty: "senior", companies: ["Any"], isRoot: true,
+    tags: ["agents", "tool-use", "termination", "safety", "eval", "root"],
+    prompt: "Design a production tool-using agent that resolves a task end to end — diagnose, act via tools, then confirm or escalate — safely, cheaply, and reliably.",
+    context: "ReAct loop, ~14 tools (several overlapping), 128k context, side-effectful tools (refund / account mutation). Observed: task success 78% in eval but 54% in production, p95 latency blows the budget, token spend ~3x the estimate. Median 4-6 tool calls per resolved task.",
+    produce: { artifact: "architecture + tool-contract design + termination/step-budget policy + context/memory management + safety gates + eval plan (defined first) + single-vs-multi-agent justification + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution", worked: `A strong answer treats the tool interface, termination, context, and safety as first-class design — not the model.
+
+1. Tool interface is the first-order lever. Overlapping, thinly-described tools make routing a guess and under-specified schemas make argument construction a guess. Fix: distinct verbs, non-overlapping 'use this when' descriptions (say when NOT to use each), typed schemas with one concrete argument example per tool, and consolidation of redundant tools. Routing accuracy is an interface property first, a model property second — upgrading the model does not disambiguate two identically-described tools.
+
+2. Termination. With no step budget the agent re-plans forever and re-issues identical calls. Add a max-step budget, loop/duplicate-call detection (remember what you already tried), and a forced-final-answer fallback when the budget is hit.
+
+3. Context management. Replaying the full transcript every step blows context and cost. Summarize/compact the trajectory and scope memory to what the next decision needs.
+
+4. Safety. Irreversible tools (refund, account mutation) sit behind an approval gate plus a confidence bar below which the agent escalates rather than acts. Every automated action is reconstructable from a recorded trace.
+
+5. Eval-first. Define tool-selection accuracy, cost-per-task, and a false-action rate BEFORE the architecture, so you can prove it is safe and affordable to trust.
+
+Tradeoffs: single-agent vs multi-agent (reach for multi only when roles/authority genuinely separate); interface fixes vs a bigger model; autonomy vs approval latency.` },
+    rubric: [
+      { dim: "tool-contract", anchor: "point to how the agent disambiguates overlapping tools zero-shot (disjoint 'use this when' descriptions + typed args + one example each), not by a bigger model", cost: "wrong-tool / malformed-arg errors; you escalate model size and pay more for the same interface bug" },
+      { dim: "termination", anchor: "where is the step budget + duplicate-call/loop detection + forced-answer fallback?", cost: "the agent loops forever on hard tasks and blows the latency budget" },
+      { dim: "context-management", anchor: "do you compact/summarize the trajectory instead of replaying the full transcript every step?", cost: "context blowup and ~3x token spend; earlier context is lost" },
+      { dim: "safety-gates", anchor: "are irreversible tools behind an approval gate + a confidence bar to escalate rather than act?", cost: "a confident wrong irreversible action (bad refund / account mutation)" },
+      { dim: "eval-first", anchor: "did you define tool-selection accuracy, cost-per-task, and a false-action rate before the architecture?", cost: "no way to know it is safe or affordable to trust" },
+      { dim: "single-vs-multi", anchor: "did you justify single-agent vs multi-agent instead of reaching for multi by default?", cost: "needless orchestration complexity, or a monolith that should have been split" },
+    ],
+    status: "authored" },
+
+  { id: "ds-agentic-var-tool-routing", roleTrack: "AIE", domain: "agents", modality: "diagnose",
+    specLevel: "S2", withheld: ["reference-prose"], flawMode: "silent", difficulty: "senior", companies: ["Any"], parentRoot: "ds-agentic-tooluse-root",
+    tags: ["agents", "tool-routing", "schema", "variation"],
+    prompt: "Variation of the agentic root: first-action failures dominate — right intent, wrong tool (get_order vs search_orders vs lookup), or correct tool with malformed nested args. Diagnose and fix. (Scaffold: the tool list + descriptions are given for you to critique.)",
+    context: "Three tools named get_order / search_orders / lookup with near-identical one-line descriptions. Argument errors cluster on tools whose schema uses nested objects with no example.",
+    produce: { artifact: "the root cause (interface, not model) + the rewritten tool contract + what you would NOT do (and why)", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "interface-diagnosis", anchor: "do you locate the failure in the tool CONTRACT (naming, disjoint descriptions, arg schema+examples), not in model capability?", cost: "you escalate model size; the ambiguous menu remains and errors creep back" },
+      { dim: "disjoint-descriptions", anchor: "do you rewrite descriptions to say when NOT to use each tool and consolidate redundant ones?", cost: "routing stays a guess" },
+      { dim: "typed-arg-examples", anchor: "one concrete argument example per tool for nested schemas?", cost: "argument malformation persists" },
+      { dim: "anti-pattern", anchor: "do you explicitly reject 'upgrade the model to route better'?", cost: "masks a few cases at higher cost; the interface bug stays" },
+    ],
+    status: "authored" },
+
+  { id: "ds-agentic-var-nontermination", roleTrack: "AIE", domain: "agents", modality: "diagnose",
+    specLevel: "S3", withheld: ["reference-prose", "stage-skeleton"], flawMode: "silent", difficulty: "senior", companies: ["Any"], parentRoot: "ds-agentic-tooluse-root",
+    tags: ["agents", "termination", "loops", "variation"],
+    prompt: "Variation of the agentic root: routing is fixed, but hard tasks never terminate — the agent re-issues an identical call it already made, gets the same observation, 'reconsiders', and loops until a wall-clock timeout. Fix it. (Minimal scaffold.)",
+    context: "22 tool calls, no final answer, killed at 60s. The agent has no memory that it already tried the failing call.",
+    produce: { artifact: "why it loops + the termination design (budget, loop/duplicate detection, forced answer) + the metric that catches it", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "loop-root-cause", anchor: "do you name the missing step budget + no-memory-of-prior-attempts as the cause, not 'the model is bad at planning'?", cost: "you tweak the prompt; it still loops" },
+      { dim: "budget-and-detection", anchor: "point to a max-step budget AND duplicate-call/loop detection", cost: "unbounded re-planning; latency and cost blow up" },
+      { dim: "forced-answer", anchor: "is there a graceful forced-final-answer / escalate path at the budget?", cost: "the task dies at timeout with no result" },
+      { dim: "metric", anchor: "what metric (steps-per-task, repeat-call rate) surfaces this before users hit timeouts?", cost: "the loop is invisible until production p95 explodes" },
+    ],
+    status: "authored" },
+
+  { id: "ds-agentic-var-multiagent", roleTrack: "AIE", domain: "agents", modality: "design",
+    specLevel: "S4", withheld: ["reference-prose", "stage-skeleton", "hints"], flawMode: null, difficulty: "staff", companies: ["Any"], parentRoot: "ds-agentic-tooluse-root",
+    tags: ["agents", "multi-agent", "orchestration", "variation"],
+    prompt: "Variation of the agentic root (own it — no scaffold): when should this be MULTIPLE coordinated agents instead of one, and what breaks if you split it wrong? Design the multi-agent version and its failure modes.",
+    context: "You get the question only. Bring your own criteria, coordination design, and tradeoffs.",
+    produce: { artifact: "the single-vs-multi decision criteria + the coordination design (authority, hand-off, shared state) + what breaks when split wrong + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "when-to-split", anchor: "do you give a real criterion for multi-agent (separable authority/roles, independent tool domains) rather than 'it's more powerful'?", cost: "needless orchestration overhead and latency for a task one agent handles" },
+      { dim: "authority-per-agent", anchor: "is each agent's authority + what it must defer explicit (not a monolith in disguise)?", cost: "one failing agent corrupts the whole resolution path" },
+      { dim: "coordination-failure", anchor: "do you name the split-wrong failure modes (shared-state races, hand-off loss, conflicting actions)?", cost: "multi-agent deadlocks / double-acts and is harder to debug than one agent" },
+      { dim: "tradeoff", anchor: "single-agent simplicity vs multi-agent separation — stated with the deciding factor?", cost: "reads as cargo-culting the trend" },
     ],
     status: "authored" },
 
