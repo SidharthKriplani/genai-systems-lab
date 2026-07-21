@@ -510,4 +510,79 @@ Tradeoffs: batch size vs tail latency; quantization vs quality; cache TTL vs fre
     ],
     status: "authored" },
 
+  // ── Authored ROOT + variations: Adaptation decision — prompt vs RAG vs finetune vs SLM (2026-07-21).
+  { id: "ds-adaptation-root", roleTrack: "AIE", domain: "foundations", modality: "design",
+    specLevel: "S1", withheld: [], flawMode: null, difficulty: "senior", companies: ["Any"], isRoot: true,
+    tags: ["adaptation", "rag-vs-finetune", "lora", "small-models", "root"],
+    prompt: "Given a task, decide how to adapt an LLM — prompt engineering vs RAG vs fine-tuning vs a small/task-specific model — and justify the choice on cost, data, freshness, and maintenance.",
+    context: "The team reflexively wants to fine-tune 'to teach the model our docs'. The task: domain Q&A over facts that change often, limited labeled data, a tight latency/cost budget, and a real catastrophic-forgetting risk.",
+    produce: { artifact: "the decision (with the ladder you walked) + why the alternatives lose + the eval that proves it beat the baseline + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution", worked: `A strong answer walks a cost ladder and matches the method to the goal — it does not reach for fine-tuning first.
+
+1. Cheapest, most flexible first. Prompt / few-shot -> RAG -> fine-tune -> pretrain. Most 'we must fine-tune' is really a retrieval or prompting problem.
+
+2. RAG vs fine-tune is about WHAT you're changing. RAG for knowledge that changes, needs citations, or is large. Fine-tune for BEHAVIOR — format, style, tone, latency — not to inject facts. Fine-tuned facts go stale and are brittle; you would have to retrain to change a policy.
+
+3. Match the fine-tuning method. LoRA/QLoRA (cheap adapters) vs full fine-tune; instruction/SFT vs preference (DPO/RLHF) — pick by goal. Guard catastrophic forgetting (adapters, or mix general data back in).
+
+4. Consider a small / task-specific model. For a narrow, high-volume task a distilled small model is cheaper and faster than a frontier model — the direction the market is moving.
+
+5. Prove it. Fine-tuning needs quality labeled data AND an eval showing it beat the RAG/prompt baseline. Never fine-tune without that comparison.
+
+Tradeoffs: freshness/flexibility (RAG) vs latency/cost (fine-tune/SLM); data cost; and the permanent maintenance burden — a fine-tune is a model you now own and retrain forever.` },
+    rubric: [
+      { dim: "cheapest-first", anchor: "do you try prompt/RAG before reaching for fine-tuning?", cost: "you fine-tune (expensive, a model to maintain forever) for what prompting or retrieval already solves" },
+      { dim: "rag-vs-finetune", anchor: "do you use RAG for changing FACTS and fine-tune for BEHAVIOR/format — not fine-tune to inject facts?", cost: "fine-tuned facts go stale and brittle; you retrain just to update a policy" },
+      { dim: "method-match", anchor: "is the fine-tune method (LoRA vs full, SFT vs DPO) matched to the goal, with catastrophic forgetting guarded?", cost: "wrong method, or the model forgets its general ability" },
+      { dim: "small-model-option", anchor: "do you consider a distilled/small task-specific model for the high-volume narrow case?", cost: "you pay frontier cost and latency for a task a small model does better" },
+      { dim: "baseline-eval", anchor: "do you require an eval proving the adaptation beat the prompt/RAG baseline before committing?", cost: "you ship a costly fine-tune with no proof it helped" },
+      { dim: "tradeoff", anchor: "freshness vs latency/cost, and the maintenance burden, stated?", cost: "reads as no real decision" },
+    ],
+    status: "authored" },
+
+  { id: "ds-adaptation-var-finetune-reflex", roleTrack: "AIE", domain: "foundations", modality: "diagnose",
+    specLevel: "S2", withheld: ["reference-prose"], flawMode: null, difficulty: "senior", companies: ["Any"], parentRoot: "ds-adaptation-root",
+    tags: ["adaptation", "rag-vs-finetune", "variation"],
+    prompt: "Variation of the adaptation root: the team wants to fine-tune to 'teach the model our constantly-updated docs.' Make the call and defend it. (Scaffold: the RAG-vs-finetune decision tree is given.)",
+    context: "Docs change weekly. They have no labeled data. They want citations.",
+    produce: { artifact: "the recommendation + why fine-tuning is the wrong tool here + what you would do instead + when fine-tuning WOULD be right", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "facts-need-rag", anchor: "do you argue changing facts + citations = RAG, not fine-tuning?", cost: "you fine-tune weekly to chase doc updates — expensive and stale" },
+      { dim: "when-finetune-right", anchor: "do you state when fine-tuning WOULD be right (behavior/format/latency)?", cost: "a dogmatic 'never fine-tune' answer, equally wrong" },
+      { dim: "no-data", anchor: "do you note they lack the labeled data fine-tuning needs?", cost: "you recommend fine-tuning with nothing to fine-tune on" },
+      { dim: "citations", anchor: "does your choice preserve citations/grounding?", cost: "fine-tuning loses traceability to the source doc" },
+    ],
+    status: "authored" },
+
+  { id: "ds-adaptation-var-forgetting", roleTrack: "AIE", domain: "foundations", modality: "diagnose",
+    specLevel: "S3", withheld: ["reference-prose", "stage-skeleton"], flawMode: "silent", difficulty: "senior", companies: ["Any"], parentRoot: "ds-adaptation-root",
+    tags: ["adaptation", "catastrophic-forgetting", "lora", "variation"],
+    prompt: "Variation of the adaptation root: your fine-tuned model got great at the domain but forgot its general ability (catastrophic forgetting). Fix it. (Minimal scaffold.)",
+    context: "Full fine-tune on a narrow domain set. General benchmarks dropped sharply after tuning.",
+    produce: { artifact: "why it forgot + the fix (adapters, data mixing, method change) + how you'd catch it before shipping", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "forgetting-cause", anchor: "do you name full fine-tuning on a narrow set overwriting general weights?", cost: "you re-tune and forget again" },
+      { dim: "adapter-fix", anchor: "LoRA/adapters or mixing general data back in to preserve base ability?", cost: "the general regression persists" },
+      { dim: "eval-both", anchor: "do you eval BOTH domain gain and general retention before shipping?", cost: "you ship a domain win that broke everything else" },
+      { dim: "method-choice", anchor: "is the method matched so you don't over-write (PEFT vs full)?", cost: "wrong method guarantees recurrence" },
+    ],
+    status: "authored" },
+
+  { id: "ds-adaptation-var-slm", roleTrack: "AIE", domain: "foundations", modality: "design",
+    specLevel: "S4", withheld: ["reference-prose", "stage-skeleton", "hints"], flawMode: null, difficulty: "staff", companies: ["Any"], parentRoot: "ds-adaptation-root",
+    tags: ["adaptation", "small-models", "distillation", "variation"],
+    prompt: "Variation of the adaptation root (own it — no scaffold): a narrow, high-volume classification task runs on a frontier LLM at huge cost and latency. Design the cheaper small/task-specific model path.",
+    context: "You get the situation only. Bring your own distillation/training and rollout design.",
+    produce: { artifact: "the small-model path (distill from the frontier model, train, serve) + how you match quality + the cost/latency win + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "distillation", anchor: "do you distill/train a small model (labels from the frontier model) rather than keep paying for it?", cost: "you keep paying frontier price for a trivial narrow task" },
+      { dim: "quality-parity", anchor: "how do you prove the small model matches quality on THIS task?", cost: "you cut cost and silently cut accuracy" },
+      { dim: "cost-latency-win", anchor: "the concrete cost/latency improvement stated?", cost: "hand-waved savings; no case made" },
+      { dim: "fallback", anchor: "a fallback to the big model for hard/low-confidence cases?", cost: "the small model fails the tail with no recourse" },
+    ],
+    status: "authored" },
+
 ];
