@@ -208,4 +208,82 @@ export const DESIGN_STUDIO_GSL = [
     ],
     _flesh: "Reference (requirement) = the flaw graph + why the root masks the dependents. Render via the LiveIncident engine if a stateful reveal is wanted.",
     status: "skeleton" },
+  // ── Authored ROOT + variations: RAG pipeline (2026-07-21). First fully-authored root:
+  //    sharp anchored checklist + worked reference on the root; scaffold fades S1 -> S2 -> S3 -> S4.
+  { id: "ds-rag-pipeline-root", roleTrack: "AIE", domain: "rag", modality: "design",
+    specLevel: "S1", withheld: [], flawMode: null, difficulty: "senior", companies: ["Any"],
+    tags: ["rag", "retrieval", "reranking", "grounding", "eval", "root"], isRoot: true,
+    prompt: "Design a production RAG system that answers grounded, cited questions over a large, evolving corpus — and stays trustworthy across single-fact, multi-hop, time-sensitive, and unanswerable queries.",
+    context: "Enterprise support corpus, ~180k chunks, growing weekly. Query mix: single-fact lookups, multi-hop ('does X's policy also apply to Y'), time-sensitive ('current refund window'), and some the corpus genuinely cannot answer. Latency budget ~2.5s p95. Offline recall@8 already looks excellent (~0.93); human answer-quality is the real target.",
+    produce: { artifact: "architecture (ingest -> retrieve -> rerank -> generate -> verify) + the eval plan (metrics defined FIRST) + how each of the 5 failure layers is handled + explicit latency/cost tradeoffs + assumptions", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution", worked: `A strong answer builds RAG as an ORDERED STACK, not a single retriever, and defines the eval before the architecture.
+
+1. Recall is solved, precision is not. recall@8=0.93 only means the right chunk is usually present — it says nothing about the ~5 distractor chunks arriving with it. LLMs attend to distractors, so adjacent-but-wrong facts bleed in. Fix: a cross-encoder reranker over top-50 candidates -> curated top-4. Measure precision@k, not just recall.
+
+2. Multi-hop is a query-planning problem, not a top-k problem. A single dense vector averages a two-entity question and surfaces whichever entity dominates; an aggressive top-4 cut then drops the second entity entirely. Fix: decompose into per-entity sub-queries (or multi-vector retrieval) with a guaranteed per-entity chunk budget BEFORE reranking.
+
+3. Semantic relevance is version-blind. Two near-identical chunks (14-day vs 30-day refund) are equally about the query; the reranker ties and the stale one wins about half the time. Fix: treat the index as bitemporal — keep all versions, filter to effective ones (effective_date <= now), add a recency prior at rerank. Never delete old versions (breaks 'what was the policy last quarter').
+
+4. Abstention is a required output, not a failure. With no confidence gate, unanswerable queries still get the k least-bad chunks and a model always instructed to answer — producing fluent fabrication. Fix: a calibrated retrieval-confidence gate (abstain/escalate below threshold) PLUS a grounding/faithfulness check (claim-level entailment against context) before returning.
+
+5. Eval-first or you are blind. Define precision@k, per-hop coverage, temporal-correctness, and faithfulness up front and run them on a live sample — no single metric, least of all recall, reveals this layered failure. Each layer only becomes visible once the one above it is fixed.
+
+Tradeoffs to state: reranking depth vs latency (a top-50 cross-encoder adds ms); decomposition vs cost (extra LLM calls per multi-need query); abstention threshold vs coverage (a higher bar means more 'I don't know' but fewer fabrications).` },
+    rubric: [
+      { dim: "precision-not-recall", anchor: "point to the reranking/curation stage — does your design separate 'is the answer retrievable' (recall) from 'is it findable amid distractors' (precision)?", cost: "high recall hides distractor noise; the model synthesises confident-but-wrong answers" },
+      { dim: "multi-hop-coverage", anchor: "for 'does X's policy also apply to Y', show how BOTH entities are guaranteed into context (decomposition or per-entity budget), not left to one dense vector", cost: "single-shot retrieval keeps the dominant entity and silently drops the other" },
+      { dim: "recency-versioning", anchor: "point to the explicit signal that makes the CURRENT version win when two near-identical chunks disagree", cost: "semantic search is version-blind; stale answers served about half the time" },
+      { dim: "abstention-grounding", anchor: "where does the system say 'I don't know', and where does it verify the answer is grounded before returning?", cost: "fluent fabrication on queries the corpus cannot answer" },
+      { dim: "eval-first", anchor: "did you define precision@k, per-hop coverage, temporal-correctness, and faithfulness BEFORE drawing the architecture?", cost: "recall alone hides every downstream failure; you cannot tell which layer broke" },
+      { dim: "latency-cost-tradeoff", anchor: "state one place you traded retrieval breadth vs latency/cost and the number you targeted", cost: "reads as no real decision; silently blows the SLA or the budget" },
+    ],
+    status: "authored" },
+
+  { id: "ds-rag-var-scale-acl", roleTrack: "AIE", domain: "rag", modality: "design",
+    specLevel: "S2", withheld: ["reference-prose"], flawMode: null, difficulty: "senior", companies: ["Any"],
+    tags: ["rag", "scale", "permissions", "cost", "variation"], parentRoot: "ds-rag-pipeline-root",
+    prompt: "Variation of the RAG root: 4M documents / ~40GB, per-document permissions (not everyone can see HR/legal), 30 QPS, <3s p95, and cost per answered question under ~$0.02. Design it.",
+    context: "Scaffold (S2 — first stages given): (1) ingest + chunk + embed at scale; (2) ACL-aware retrieval — a user only ever sees chunks from docs they are authorized to read (a hard requirement, not a post-filter); (3) ...you complete rerank/generate/verify + the cost math.",
+    produce: { artifact: "architecture + the ACL model at retrieval time + a per-query cost breakdown landing under $0.02 + the same 5-layer trustworthiness handling + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "acl-at-retrieval", anchor: "is permission enforced INSIDE retrieval (filter before rank), so unauthorized chunks never enter context — not filtered from the answer afterward?", cost: "data leak: a user sees HR/legal content they cannot access" },
+      { dim: "cost-per-query-math", anchor: "show the actual per-query cost breakdown (embed + retrieve + rerank + generate) landing under $0.02", cost: "hand-waved cost; the $0.02 target is unmet and unprovable" },
+      { dim: "precision-not-recall", anchor: "is there a rerank/curation stage separating recall from precision (as in the root)?", cost: "distractor noise -> wrong answers" },
+      { dim: "freshness-sla", anchor: "how does a doc edited this morning become answerable within minutes (not a nightly batch) without a full reindex?", cost: "stale answers on fast-changing corpora (tickets, chat)" },
+      { dim: "abstention-grounding", anchor: "where does it abstain + verify grounding before returning?", cost: "fabrication at 30 QPS scales the blast radius" },
+    ],
+    status: "authored" },
+
+  { id: "ds-rag-var-hallucinate", roleTrack: "AIE", domain: "rag", modality: "diagnose",
+    specLevel: "S3", withheld: ["reference-prose", "stage-skeleton"], flawMode: "silent", difficulty: "senior", companies: ["Any"],
+    tags: ["rag", "precision", "grounding", "hallucination", "variation"], parentRoot: "ds-rag-pipeline-root",
+    prompt: "Variation of the RAG root: recall@8 is 0.93 but 39% of answers are wrong — and the correct chunk IS in context. Diagnose the leak and design the fix. (Minimal scaffold.)",
+    context: "The model cites retrieved text but blends in an adjacent, wrong fact. Precision@8 is not measured; a spot audit finds ~3 of 8 chunks on-topic. No reranker yet. Latency budget 2.5s.",
+    produce: { artifact: "the root cause (why high recall coexists with wrong answers) + the fix (staged retrieval) + how you would PROVE it worked + what you would NOT do, and why", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "diagnosis-precision", anchor: "do you name PRECISION / context-noise (not recall, not the embedder, not the LLM hallucinating independently) as the leak?", cost: "misdiagnosis -> you chase recall or swap models and it gets worse" },
+      { dim: "anti-pattern-named", anchor: "do you explicitly reject 'raise k / upgrade the embedder' as making distractor mass worse?", cost: "the most common junior move; adds noise, lowers quality" },
+      { dim: "reranker-fix", anchor: "point to a cross-encoder rerank (top-50 -> curated top-k) as the precision stage", cost: "no precision control; the leak persists" },
+      { dim: "proof", anchor: "how do you measure precision@k and answer-quality BEFORE and AFTER to prove the fix?", cost: "no evidence the change helped; you are guessing" },
+    ],
+    status: "authored" },
+
+  { id: "ds-rag-var-temporal", roleTrack: "AIE", domain: "rag", modality: "design",
+    specLevel: "S4", withheld: ["reference-prose", "stage-skeleton", "hints"], flawMode: null, difficulty: "staff", companies: ["Any"],
+    tags: ["rag", "temporal", "versioning", "bitemporal", "variation"], parentRoot: "ds-rag-pipeline-root",
+    prompt: "Variation of the RAG root (own it — no scaffold): time-sensitive questions ('current refund window') return confidently stale answers. Both the old 14-day and new 30-day chunks are indexed and near-identical semantically. Design the system so the current answer wins, without losing history.",
+    context: "You get the problem only. Bring your own structure, metrics, and tradeoffs.",
+    produce: { artifact: "full design: how retrieval/rerank become recency-aware, how history is preserved, the metric that catches staleness, and the tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "version-blindness-named", anchor: "do you state that semantic relevance is orthogonal to recency, so neither retrieval nor a plain reranker prefers the current version?", cost: "you 'fix' the embedder instead — the wrong lever" },
+      { dim: "bitemporal-signal", anchor: "point to the metadata signal (effective_date / version) applied at retrieval or rerank that breaks the tie toward current", cost: "the stale chunk keeps winning about half the time" },
+      { dim: "history-preserved", anchor: "do you KEEP old versions (not delete them), so 'what was the policy last quarter' still works?", cost: "deleting versions destroys the audit trail and breaks historical queries" },
+      { dim: "temporal-metric", anchor: "what metric detects a confidently-stale answer, and on what sample?", cost: "staleness is invisible until a user is misinformed" },
+      { dim: "tradeoff", anchor: "state the cost of recency-awareness (metadata pipeline, rerank complexity) vs the risk of staleness", cost: "reads as no real engineering decision" },
+    ],
+    status: "authored" },
+
 ];

@@ -17,7 +17,9 @@ function buildGradePack(brief, answer) {
   const checklist = rubric
     .map((r, i) => `${i + 1}. ${r.dim} | anchor: ${r.anchor} | cost if missed: ${r.cost}`)
     .join("\n");
-  const reference = brief.reference && brief.reference.type
+  const reference = brief.reference && brief.reference.worked
+    ? brief.reference.worked
+    : brief.reference && brief.reference.type
     ? `(reference type: ${brief.reference.type} — may be partial; anchor on the checklist)`
     : "(no reference provided — anchor strictly on the checklist)";
   return `You are a skeptical ${role} engineer at a top product company, grading a candidate's answer to the design problem below. Calibrate to that bar:
