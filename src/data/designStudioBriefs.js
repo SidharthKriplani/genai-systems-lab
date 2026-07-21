@@ -1102,4 +1102,144 @@ Tradeoffs: isolation strictness vs infra efficiency (shared vs dedicated); custo
     ],
     status: "authored" },
 
+
+  // ── Flagship process-model ROOT: LLM 429 reliability (compounding, JPMorgan-style) ──
+  {
+  id: "ds-reliability-429-root",
+  roleTrack: "AIE",
+  domain: "reliability",
+  modality: "design",
+  specLevel: "S1",
+  withheld: [],
+  flawMode: null,
+  difficulty: "staff",
+  companies: ["JPMorganChase", "Any"],
+  tags: ["reliability", "rate-limit", "429", "backoff", "resilience", "root"],
+  isRoot: true,
+  title: "LLM 429 storm — reliability under a rate-limited provider",
+  prompt: "A task-intensive system runs many parallel workers that call an LLM to generate insights. Suddenly a large fraction start failing with HTTP 429 (Too Many Requests). Design the system so it stays stable and keeps throughput high without exceeding the provider's limits — and hold up under an interviewer who keeps pushing.",
+  context: "Distributed worker fleet, shared provider API key(s), bursty load. Retries already exist. This is a compounding interview: each answer surfaces the next failure. The bar is staff — it is not enough to name backoff; you must reason about WHICH limit binds, why per-worker fixes don't compose, and how the fleet self-tunes.",
+  produce: {
+    artifact: "a layered resilience design: identify the binding limit, bound aggregate demand, tame the retry feedback loop, and degrade gracefully — with the production tells you'd watch at each layer",
+    format: "design-doc",
+    workspace: "in-app-text",
+  },
+  stages: [
+    {
+      id: "diagnose",
+      title: "Stage 1 — Diagnose before you throttle",
+      ask: "Many workers suddenly fail with 429. What do you do first?",
+      attemptHint: "Say what you check and why — before you change anything. Which signal tells you what's actually saturated?",
+      model: "A 429 means the provider's rate limit is exceeded by your fleet's AGGREGATE demand — not a bug in one worker. The first move is to identify WHICH limit binds: requests-per-minute (RPM) or tokens-per-minute (TPM). They fail identically (429) but have opposite fixes. If you're TPM-bound because each insight prompt ships huge context, cutting worker count barely helps — each remaining call still burns the token budget. So you confirm the limit from the provider's rate-limit response headers (remaining-requests vs remaining-tokens) and your own aggregate request-rate and token-rate across all workers, then decide. The naive move — 'reduce the request rate' blindly — can leave a TPM-bound system still failing while you've needlessly tanked throughput.",
+      heuristic: "The tell: 429 is almost always a fleet-coordination problem, read at the AGGREGATE, not a per-worker bug. And RPM-bound vs TPM-bound is the fork that decides every downstream fix.",
+      control: "Watch, per provider key: aggregate request-rate, aggregate token-rate, concurrency, 429-ratio, and the provider's remaining-requests / remaining-tokens headers. Whichever remaining-* hits zero first is your binding limit.",
+      trap: "Globally 'slow everything down' before knowing the limit. If you're TPM-bound, fewer requests with the same fat prompts don't fix it; and a blanket slowdown sacrifices throughput you didn't need to.",
+      tell: "In production this shows as 429-ratio spiking with fleet size or prompt size, while the provider dashboard shows one of TPM/RPM saturated and the other with headroom.",
+      anchors: [
+        { dim: "which-limit", anchor: "point to the line where you determine RPM-bound vs TPM-bound (from remaining-* headers), not just 'we're rate limited'", cost: "you fix the wrong lever — trim requests while TPM stays saturated — and the storm continues" },
+        { dim: "aggregate-not-per-worker", anchor: "point to where you measure demand across the whole fleet, not one worker", cost: "you reason about a single worker and miss that N workers sum past the quota" },
+      ],
+    },
+    {
+      id: "bound-demand",
+      title: "Stage 2 — Bound aggregate demand where it maps to the quota",
+      ask: "How would you reduce the request rate across a distributed fleet?",
+      attemptHint: "Where does the limiter live, and what is it sized to? Be specific about why your placement composes across N workers.",
+      model: "Enforce the limit at the ONE shared boundary that maps 1:1 to the provider quota — a distributed token bucket (e.g. Redis-backed) in front of the API, sized to BOTH the RPM and TPM quota with a safety margin (~80%). Every worker acquires budget before it calls; the bucket refills at the quota rate. Per-worker limits do not compose: N workers each under a local cap still sum to N× and overshoot. Centralizing the budget is the only thing that actually bounds the aggregate. A worker that can't acquire waits (backpressure) rather than firing and getting 429'd.",
+      heuristic: "Rate limits must be enforced at the shared boundary that is 1:1 with the provider quota. Anything per-worker doesn't compose and will overshoot.",
+      control: "Size refill to quota × ~0.8. Monitor bucket wait-time — rising wait is your early backpressure signal, long before 429s return.",
+      trap: "Reaching for batching/caching as the FIRST lever. They cut total calls but don't bound the instantaneous rate, and caching only pays off if prompts repeat — 'generate insights' tasks often don't. Necessary later, not the primary control.",
+      tell: "Without a shared limiter you see a sawtooth: fleet ramps, 429 storm, everyone backs off, ramps again — self-synchronized oscillation.",
+      anchors: [
+        { dim: "shared-not-per-worker", anchor: "point to the line where the limiter is centralized/shared, sized to the fleet, not a per-worker semaphore", cost: "N per-worker caps sum past the quota; the fleet overshoots and keeps getting 429'd" },
+        { dim: "both-rpm-and-tpm", anchor: "point to where the budget accounts for BOTH requests and tokens", cost: "a request-only limiter still blows the token budget on fat prompts" },
+      ],
+    },
+    {
+      id: "tame-retries",
+      title: "Stage 3 — Tame the retry feedback loop",
+      ask: "You already have retries. How do you keep them from overwhelming the model?",
+      attemptHint: "Why do retries make a 429 incident WORSE? Name the specific mechanism and the specific fixes.",
+      model: "Naive retries are a positive-feedback loop: one 429 triggers many synchronized retries that re-spike the rate — a retry storm / thundering herd that amplifies the incident it's responding to. Three fixes together: (1) exponential backoff WITH jitter so independent workers decorrelate instead of retrying in lockstep; (2) a retry budget — cap per-request attempts AND cap fleet-wide retry-rate as a fraction of total traffic; (3) honor the provider's Retry-After header instead of guessing the delay. And only retry retryable errors — retrying a 400 is pure waste. Backoff without jitter is the classic trap: the delays are equal, so the herd stays synchronized and re-collides on schedule.",
+      heuristic: "Retries are a control loop, not a safety net. Without jitter and a budget they amplify the very overload they react to.",
+      control: "Track retry-rate as a fraction of total requests. Past a threshold (say >20%) you are IN a storm — shed load rather than retry more.",
+      trap: "Saying 'exponential backoff' but omitting jitter — synchronized waves persist. Or retrying non-retryable errors, or an unbounded retry count that never gives up.",
+      tell: "retry-count spikes in lockstep with 429s; p99 latency balloons as queues fill with retry traffic rather than new work.",
+      anchors: [
+        { dim: "jitter", anchor: "point to jitter, not just exponential backoff", cost: "equal delays keep the fleet synchronized; retry waves re-collide and re-trigger 429s" },
+        { dim: "retry-after", anchor: "point to honoring the provider's Retry-After header", cost: "you guess a delay that fights the provider's own recovery signal" },
+        { dim: "retry-budget", anchor: "point to a cap on attempts and/or fleet-wide retry-rate", cost: "unbounded retries turn a blip into a self-sustaining storm" },
+      ],
+    },
+    {
+      id: "explain-backoff",
+      title: "Stage 4 — Explain backoff precisely",
+      ask: "Explain what exponential backoff is — and why jitter matters.",
+      attemptHint: "Give the formula and the real reason for jitter (it isn't 'wait longer').",
+      model: "Backoff delay grows as base × 2^attempt, capped at a ceiling: e.g. 1s, 2s, 4s, 8s… The point of jitter is NOT to wait longer — it's to DE-SYNCHRONIZE N independent clients so they don't re-collide at the same instant. Full jitter (sleep = random(0, base × 2^attempt)) spreads load better than a small fixed window, which still clusters. So the delay bounds recovery time; the randomness bounds correlation.",
+      heuristic: "The goal of jitter is decorrelation of many clients, not politeness of one client.",
+      control: "",
+      trap: "Adding jitter but over a tiny range, or only on the first attempt — the fleet still clusters.",
+      tell: "",
+      anchors: [
+        { dim: "formula", anchor: "point to the base × 2^attempt (capped) formula", cost: "vague 'wait a bit longer' reads as not actually understanding the mechanism" },
+        { dim: "decorrelation", anchor: "point to the line explaining jitter as de-synchronizing many clients", cost: "you present jitter as a nicety and miss that it's the thing that breaks retry waves" },
+      ],
+    },
+    {
+      id: "harden",
+      title: "Stage 5 — Harden beyond retries",
+      ask: "What other improvements would you make?",
+      attemptHint: "Beyond limiter + retries, what makes this resilient and self-tuning? Name the failure each addition prevents.",
+      model: "Layer in: (1) a circuit breaker — on sustained 429/5xx, open and fail fast, then half-open probe before closing, so you stop hammering a saturated provider and recover cleanly; (2) load-shedding by priority — a queue that defers or drops low-priority insight jobs to protect high-priority ones under pressure; (3) provider failover / multiple keys / regions to remove the single-provider SPOF; (4) request coalescing + a semantic cache for repeated prompts; (5) ADAPTIVE concurrency (AIMD): additively add workers while healthy, multiplicatively back off on 429 — so the fleet self-tunes to the true limit instead of a hand-set constant that's always wrong. Static concurrency is either wasting headroom or overshooting.",
+      heuristic: "Treat the provider as a metered, failure-prone dependency with a budget. Adaptive control (AIMD) beats any fixed concurrency number you'll pick.",
+      control: "Watch circuit state, queue depth, shed-rate, and per-priority latency. AIMD reads the 429 signal as its back-off trigger.",
+      trap: "A circuit breaker that opens but has no half-open probe — you fail fast forever and never notice the provider recovered.",
+      tell: "queue-depth and shed-rate dashboards; circuit-open events; concurrency that visibly settles near the real limit under AIMD instead of sawtoothing.",
+      anchors: [
+        { dim: "adaptive-concurrency", anchor: "point to adaptive (AIMD) concurrency rather than a fixed worker count", cost: "a hand-set concurrency is always wrong — either under-utilizing or re-triggering 429s" },
+        { dim: "graceful-degradation", anchor: "point to load-shedding by priority (protect the important work)", cost: "under pressure everything degrades equally; critical jobs die with the rest" },
+        { dim: "circuit-recovery", anchor: "point to the half-open probe in the circuit breaker", cost: "you fail fast forever and stay down after the provider recovers" },
+      ],
+    },
+    {
+      id: "synthesize",
+      title: "Stage 6 — Synthesize the layered defense",
+      ask: "Summarize your approach.",
+      attemptHint: "One coherent through-line, not a laundry list. What's the single frame that ties the layers together?",
+      model: "The through-line: the provider is a metered, unreliable dependency, so you control AGGREGATE demand and degrade gracefully — you never just 'retry harder.' The layers, outermost in: observability identifies the binding limit (RPM vs TPM) → a shared token bucket bounds aggregate demand to both quotas → adaptive (AIMD) concurrency self-tunes the fleet to the real limit → jittered, capped backoff that honors Retry-After tames the retry loop → a circuit breaker fails fast and probes for recovery → priority load-shedding protects critical work → caching/coalescing cuts avoidable calls. Each layer has an observable tell driving it. That's the difference between 'I'd add backoff' and a system that stays up.",
+      heuristic: "Frame first (metered failure-prone dependency), then the layers fall out as: bound demand, self-tune, tame retries, degrade gracefully.",
+      control: "",
+      trap: "Reciting the list without the frame — an interviewer hears memorized tactics, not judgment.",
+      tell: "",
+      anchors: [
+        { dim: "unifying-frame", anchor: "point to the line that frames the provider as a metered, failure-prone dependency", cost: "a tactic list without a frame reads as recall, not staff-level judgment" },
+        { dim: "degrade-over-retry", anchor: "point to 'control aggregate demand + degrade gracefully' over 'retry harder'", cost: "you optimize the retry path and still fall over, because demand was never bounded" },
+      ],
+    },
+  ],
+  reference: {
+    type: "solution",
+    worked: `A staff answer never stops at 'add exponential backoff.' It reasons in four moves and holds up as the interviewer compounds the pressure.
+
+1. Diagnose the binding limit first. 429 is an AGGREGATE fleet problem, and RPM-bound vs TPM-bound have opposite fixes. Read remaining-requests vs remaining-tokens from the provider headers before touching anything. If TPM-bound (fat insight prompts), cutting workers barely helps.
+
+2. Bound demand where it maps to the quota. A shared, distributed token bucket sized to BOTH RPM and TPM (~80% margin) in front of the API. Per-worker limits don't compose — N local caps sum past the quota. Workers acquire-or-wait (backpressure) instead of firing and getting 429'd.
+
+3. Tame the retry feedback loop. Naive retries are positive feedback — a retry storm. Fix with jitter (decorrelate the fleet), a retry budget (cap attempts and fleet-wide retry-rate), honoring Retry-After, and retrying only retryable errors. Backoff = base × 2^attempt capped; jitter's job is de-synchronizing many clients, not waiting longer.
+
+4. Degrade gracefully and self-tune. Circuit breaker (open on sustained 429/5xx, half-open probe to recover), priority load-shedding (protect critical jobs), provider failover, cache/coalesce, and ADAPTIVE concurrency (AIMD) so the fleet finds the real limit instead of a hand-set constant.
+
+The through-line an interviewer is listening for: the provider is a metered, failure-prone dependency — you control aggregate demand and degrade gracefully; you never just retry harder. Every layer has an observable tell (429-ratio, bucket wait, retry-rate, queue depth, circuit state) that drives it.`,
+  },
+  rubric: [
+    { dim: "binding-limit", anchor: "did you determine RPM-bound vs TPM-bound from the provider headers before choosing a fix?", cost: "you throttle the wrong dimension and the storm continues" },
+    { dim: "aggregate-bound-demand", anchor: "is the limiter shared/centralized and sized to the fleet (both RPM and TPM), not per-worker?", cost: "per-worker caps sum past the quota; the fleet overshoots" },
+    { dim: "retry-loop", anchor: "jitter + retry budget + Retry-After, not just 'exponential backoff'?", cost: "synchronized retry waves re-trigger the 429s you're recovering from" },
+    { dim: "graceful-degradation", anchor: "circuit breaker with half-open recovery + priority load-shedding?", cost: "you fail fast forever, or critical jobs die alongside low-priority ones" },
+    { dim: "self-tuning", anchor: "adaptive (AIMD) concurrency rather than a fixed worker count?", cost: "a hand-set concurrency is always either wasteful or overshooting" },
+    { dim: "unifying-frame", anchor: "did you frame the provider as a metered, failure-prone dependency and 'control demand + degrade' over 'retry harder'?", cost: "a tactic list without a frame reads as recall, not staff judgment" },
+  ],
+  status: "authored",
+},
 ];
