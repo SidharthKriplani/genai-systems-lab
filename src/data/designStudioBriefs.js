@@ -585,4 +585,79 @@ Tradeoffs: freshness/flexibility (RAG) vs latency/cost (fine-tune/SLM); data cos
     ],
     status: "authored" },
 
+  // ── Authored ROOT + variations: Multi-agent orchestration (2026-07-21).
+  { id: "ds-multiagent-root", roleTrack: "AIE", domain: "agents", modality: "design",
+    specLevel: "S1", withheld: [], flawMode: null, difficulty: "senior", companies: ["Any"], isRoot: true,
+    tags: ["multi-agent", "orchestration", "coordination", "control-plane", "root"],
+    prompt: "Design a multi-agent system where specialized agents coordinate to complete a complex task — orchestration, shared state, and failure handling — without the coordination becoming the bug.",
+    context: "A task needing several roles (planner, researcher, executor, critic). Risks: coordination overhead, conflicting side-effectful actions, shared-state races, cascading failure when one agent breaks, and 3-5x cost.",
+    produce: { artifact: "the single-vs-multi justification + the orchestration pattern + the shared-state/coordination design + failure isolation + cost/eval + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution", worked: `A strong answer earns the multi-agent split, separates control from reasoning, and contains failure.
+
+1. Justify multi over single FIRST. Only split when roles and authority genuinely separate. Multi-agent adds latency, cost, and a large failure surface; most tasks want one well-instrumented agent.
+
+2. Separate the control plane. An orchestrator owns flow, budgets, and enforcement; agents reason within those bounds. Choose supervisor / peer-to-peer / blackboard by the task — do not let agents self-coordinate ad hoc.
+
+3. Make shared state safe. One owner per side-effectful resource, explicit message contracts, and locking/ownership so two agents never act on the same thing. Conflicting actions (e.g. two agents issuing a refund) are the classic multi-agent failure.
+
+4. Isolate failure. When an agent errors or loops, the orchestrator detects it, retries or degrades gracefully, and per-agent budgets stop one agent from starving the run — a single agent's failure must not corrupt the whole task.
+
+5. Measure and justify. Track end-to-end success, per-agent contribution, and total cost/latency; multi-agent often costs 3-5x, so prove the split earns it.
+
+Tradeoffs: parallelism vs coordination overhead; agent autonomy vs orchestrator control; specialization vs cost.` },
+    rubric: [
+      { dim: "justify-multi", anchor: "do you justify multi-agent over a single agent (separable authority/roles), not default to it?", cost: "orchestration overhead and failure surface for a task one agent handles" },
+      { dim: "control-plane", anchor: "is there an orchestrator/control-plane separate from agent reasoning (enforcement vs reasoning)?", cost: "agents self-coordinate ad hoc; nobody enforces flow or budgets" },
+      { dim: "shared-state-safety", anchor: "how do you prevent races / conflicting side-effectful actions (ownership, locking, one owner per resource)?", cost: "two agents act on the same resource — double-acts / corruption" },
+      { dim: "failure-isolation", anchor: "does one agent's failure or loop get contained (detect, retry, degrade) without corrupting the run?", cost: "one failing agent cascades and the whole task dies" },
+      { dim: "cost-eval", anchor: "do you measure total cost/latency and per-agent contribution to justify the split?", cost: "3-5x cost with no proof the multi-agent design earns it" },
+      { dim: "tradeoff", anchor: "parallelism vs coordination overhead (or autonomy vs control) stated?", cost: "reads as no real decision" },
+    ],
+    status: "authored" },
+
+  { id: "ds-multiagent-var-coordination", roleTrack: "AIE", domain: "agents", modality: "diagnose",
+    specLevel: "S2", withheld: ["reference-prose"], flawMode: "silent", difficulty: "senior", companies: ["Any"], parentRoot: "ds-multiagent-root",
+    tags: ["multi-agent", "coordination", "shared-state", "variation"],
+    prompt: "Variation of the multi-agent root: two agents keep taking conflicting actions on the same resource (e.g. both issue a refund). Fix the coordination. (Scaffold: a resource-ownership model is available to design around.)",
+    context: "No ownership or locking. Both agents can call the same side-effectful tool concurrently.",
+    produce: { artifact: "the coordination fix (ownership/locking/single-writer) + idempotency + how you prove no double-acts", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "single-owner", anchor: "do you assign one owner/writer per side-effectful resource?", cost: "concurrent agents keep double-acting" },
+      { dim: "idempotency", anchor: "is the side-effectful action idempotent (dedupe key) so a repeat is a no-op?", cost: "retries and races produce duplicate effects" },
+      { dim: "coordination-mechanism", anchor: "locking / message contract / orchestrator arbitration to serialize conflicting actions?", cost: "ad hoc coordination lets conflicts through" },
+      { dim: "proof", anchor: "how do you test that no double-act can occur?", cost: "you assume it's fixed and it recurs under load" },
+    ],
+    status: "authored" },
+
+  { id: "ds-multiagent-var-cascade", roleTrack: "AIE", domain: "agents", modality: "diagnose",
+    specLevel: "S3", withheld: ["reference-prose", "stage-skeleton"], flawMode: "silent", difficulty: "senior", companies: ["Any"], parentRoot: "ds-multiagent-root",
+    tags: ["multi-agent", "failure-isolation", "resilience", "variation"],
+    prompt: "Variation of the multi-agent root: one agent fails and the entire multi-agent run collapses. Make it resilient. (Minimal scaffold.)",
+    context: "No timeouts, retries, or degradation. A single agent's exception propagates and kills the orchestration.",
+    produce: { artifact: "the failure-isolation design (detect, retry, degrade, budgets) + how the orchestrator contains a bad agent + what a degraded-but-complete result looks like", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "detect-contain", anchor: "does the orchestrator detect a failed/looping agent and contain it (timeout, circuit-break)?", cost: "one agent's failure propagates and kills the run" },
+      { dim: "retry-degrade", anchor: "retry or graceful degradation so the task still returns a partial/best-effort result?", cost: "all-or-nothing; any hiccup is total failure" },
+      { dim: "budgets", anchor: "per-agent step/time budgets so one agent can't starve the others?", cost: "a runaway agent consumes the whole budget" },
+      { dim: "no-single-corruptor", anchor: "is state isolated so a bad agent can't corrupt shared results?", cost: "one agent poisons the whole run's output" },
+    ],
+    status: "authored" },
+
+  { id: "ds-multiagent-var-when-single", roleTrack: "AIE", domain: "agents", modality: "design",
+    specLevel: "S4", withheld: ["reference-prose", "stage-skeleton", "hints"], flawMode: null, difficulty: "staff", companies: ["Any"], parentRoot: "ds-multiagent-root",
+    tags: ["multi-agent", "simplification", "variation"],
+    prompt: "Variation of the multi-agent root (own it — no scaffold): argue that a given 5-agent system should actually be ONE agent — where is the multi-agent complexity NOT paying off, and what do you collapse?",
+    context: "You get the 5-agent design only. Bring your own analysis of what to merge and why.",
+    produce: { artifact: "which agents to collapse and why + what genuinely needs separation + the simpler design + the cost/latency it saves", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "complexity-critique", anchor: "do you identify agents that don't have separable authority and should merge?", cost: "you keep orchestration overhead that buys nothing" },
+      { dim: "what-stays-split", anchor: "do you keep genuinely-separate roles split (not over-collapse)?", cost: "merging real boundaries recreates a tangled monolith" },
+      { dim: "savings", anchor: "the concrete cost/latency saved by collapsing?", cost: "hand-waved simplification with no case" },
+      { dim: "judgment", anchor: "is the collapse decision principled (authority separation), not aesthetic?", cost: "reads as taste, not engineering" },
+    ],
+    status: "authored" },
+
 ];
