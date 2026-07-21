@@ -360,4 +360,154 @@ Tradeoffs: single-agent vs multi-agent (reach for multi only when roles/authorit
     ],
     status: "authored" },
 
+  // ── Authored ROOT + variations: Eval & monitoring harness (2026-07-21).
+  { id: "ds-eval-harness-root", roleTrack: "AIE", domain: "eval", modality: "design",
+    specLevel: "S1", withheld: [], flawMode: null, difficulty: "senior", companies: ["Any"], isRoot: true,
+    tags: ["eval", "monitoring", "llm-judge", "silent-failures", "root"],
+    prompt: "Design an evaluation and monitoring system for an LLM feature in production — offline evals, online monitoring, and catching silent quality regressions WITHOUT ground-truth labels.",
+    context: "An LLM feature (RAG or agent) with no gold labels at scale. Quality drifts silently when prompts, models, or data change. You must catch regressions before users do, and prove quality to ship.",
+    produce: { artifact: "the eval architecture (offline eval set + CI gate + online monitors) + how you eval without ground truth + the failure-mode metrics + rollout/rollback + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution", worked: `A strong answer evaluates without ground truth and gates deploys — it does not trust vibes.
+
+1. LLM-as-judge, but calibrated. A strong model can grade, but validate the judge against human labels on a sample, control for position and verbosity bias, and prefer pairwise comparisons over absolute scores. An uncalibrated judge is confidently wrong.
+
+2. No ground truth -> reference-free signals. Faithfulness/groundedness (claim-level entailment against the retrieved context), self-consistency across samples, and a small human-in-the-loop sample. You can eval far more than the tiny slice you have gold labels for.
+
+3. Name and monitor the silent failure modes. Hallucination, refusal, format break, latency, and cost each get an explicit metric and an alert threshold, sampled from production daily.
+
+4. Regression gate. An eval set runs in CI on every prompt/model change and blocks deploy on a faithfulness/quality drop; ship behind a canary with automatic rollback.
+
+5. Curate the eval set. Build it from real production failures and edge cases, protect it from contamination, and refresh it as the product evolves — a stale eval is a gamed eval.
+
+Tradeoffs: judge cost vs coverage; sample rate vs catching rare failures; a strict gate vs release velocity.` },
+    rubric: [
+      { dim: "judge-calibration", anchor: "do you validate the LLM-judge against human labels and control its biases, not trust it blindly?", cost: "a miscalibrated judge greenlights regressions with confidence" },
+      { dim: "no-ground-truth", anchor: "what reference-free signals (faithfulness, self-consistency) catch quality without gold labels?", cost: "you can only eval the tiny slice you have labels for = almost nothing at scale" },
+      { dim: "silent-failure-monitors", anchor: "which failure modes get an explicit metric + alert (hallucination, refusal, format, latency, cost)?", cost: "quality rots silently until users complain" },
+      { dim: "regression-gate", anchor: "is there a CI eval that blocks deploy on a quality drop, plus canary + rollback?", cost: "a one-line prompt tweak ships a regression to everyone" },
+      { dim: "eval-set-curation", anchor: "is the eval set built from real failures and protected from contamination?", cost: "you pass a stale, gamed eval and fail in production" },
+      { dim: "tradeoff", anchor: "judge cost vs coverage, or sample-rate vs rare-failure catch — stated?", cost: "reads as no real decision" },
+    ],
+    status: "authored" },
+
+  { id: "ds-eval-var-no-ground-truth", roleTrack: "AIE", domain: "eval", modality: "diagnose",
+    specLevel: "S2", withheld: ["reference-prose"], flawMode: null, difficulty: "senior", companies: ["Any"], parentRoot: "ds-eval-harness-root",
+    tags: ["eval", "no-ground-truth", "faithfulness", "variation"],
+    prompt: "Variation of the eval root: you have no labeled correct answers at scale — how do you evaluate hallucination in production? (Scaffold: an LLM-judge is available; design around it.)",
+    context: "Millions of answers, a few hundred human labels at most. Faithfulness matters more than exact-match.",
+    produce: { artifact: "the reference-free eval design (faithfulness/grounding, self-consistency, sampled human) + how you trust the judge + the metric you report", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "reference-free-signal", anchor: "point to grounding/faithfulness (claim entailment vs context) as the primary label-free signal", cost: "you claim you cannot eval without labels and monitor nothing" },
+      { dim: "judge-trust", anchor: "how do you validate the judge on the human sample and control bias?", cost: "you trust an uncalibrated judge" },
+      { dim: "sampling", anchor: "a human-in-the-loop sample on a small % to anchor the automated signals?", cost: "no ground-truth anchor at all; drift undetectable" },
+      { dim: "metric", anchor: "what single production metric (faithfulness rate) do you alert on?", cost: "lots of dashboards, no decision signal" },
+    ],
+    status: "authored" },
+
+  { id: "ds-eval-var-silent-regression", roleTrack: "AIE", domain: "eval", modality: "diagnose",
+    specLevel: "S3", withheld: ["reference-prose", "stage-skeleton"], flawMode: "silent", difficulty: "senior", companies: ["Any"], parentRoot: "ds-eval-harness-root",
+    tags: ["eval", "regression", "ci-gate", "variation"],
+    prompt: "Variation of the eval root: a prompt change last week silently dropped answer quality and nobody noticed for days. Design the system that would have caught it within an hour. (Minimal scaffold.)",
+    context: "No CI eval on prompt changes. No production quality monitor. The change looked harmless in review.",
+    produce: { artifact: "the CI eval gate + the online monitor + the alert that fires in an hour + rollback", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "ci-gate", anchor: "does every prompt/model change run an eval set that blocks on a quality drop?", cost: "regressions ship because nothing checks them pre-deploy" },
+      { dim: "online-monitor", anchor: "what production signal (faithfulness/refusal rate) alerts within an hour of a drop?", cost: "days of degraded answers before anyone notices" },
+      { dim: "rollback", anchor: "canary + automatic rollback on the alert?", cost: "you detect it but the bad version is still serving everyone" },
+      { dim: "anti-pattern", anchor: "do you reject 'we'll eyeball it in review' as the safeguard?", cost: "human review misses subtle quality drops every time" },
+    ],
+    status: "authored" },
+
+  { id: "ds-eval-var-judge-bias", roleTrack: "AIE", domain: "eval", modality: "design",
+    specLevel: "S4", withheld: ["reference-prose", "stage-skeleton", "hints"], flawMode: null, difficulty: "staff", companies: ["Any"], parentRoot: "ds-eval-harness-root",
+    tags: ["eval", "judge-bias", "calibration", "variation"],
+    prompt: "Variation of the eval root (own it — no scaffold): your LLM-judge scores verbose answers higher and tends to agree with its own outputs; the eval is being gamed. Fix the eval.",
+    context: "You get the problem only. Bring your own debiasing and validation design.",
+    produce: { artifact: "why the judge is biased + the debiasing (pairwise, position swaps, length control, human anchor) + how you validate the fix", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "bias-named", anchor: "do you name verbosity + self-preference (and position) bias specifically?", cost: "you keep trusting a judge that rewards the wrong thing" },
+      { dim: "pairwise-and-swaps", anchor: "pairwise comparison with position swaps instead of absolute scoring?", cost: "absolute scores stay biased and gameable" },
+      { dim: "length-control", anchor: "how do you neutralize the length/verbosity advantage?", cost: "the model games the judge by padding" },
+      { dim: "human-anchor", anchor: "how do you re-validate the debiased judge against humans?", cost: "you assume the fix worked without proof" },
+    ],
+    status: "authored" },
+
+  // ── Authored ROOT + variations: Inference / serving optimization (2026-07-21).
+  { id: "ds-serving-root", roleTrack: "AIE", domain: "production", modality: "design",
+    specLevel: "S1", withheld: [], flawMode: null, difficulty: "senior", companies: ["Any"], isRoot: true,
+    tags: ["serving", "inference", "batching", "cost", "reliability", "root"],
+    prompt: "Design the serving / inference layer for an LLM product at scale — throughput, latency, and cost under bursty load and provider limits.",
+    context: "Traffic 100 -> 5000 req/s (bursty). p95 latency SLA. GPU / API spend is the top line item. Mixed short and long prompts. Provider rate limits and occasional outages.",
+    produce: { artifact: "the serving architecture (batching, caching, routing) + the cost/latency budget + the reliability design (rate limits, failover) + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution", worked: `A strong answer treats serving as a throughput/cost/reliability system, not 'call the API'.
+
+1. Batching. Continuous / dynamic batching (vLLM-style) raises GPU utilization; separate prefill from decode so long prompts do not stall short ones. Idle GPUs are the biggest silent cost.
+
+2. Caching. KV cache for in-flight sequences, prompt/prefix caching for shared system prompts, and a semantic cache for repeated queries — so you stop re-paying prefill for identical context.
+
+3. Route by complexity/cost. Cheap/small model for easy queries, the big model only when needed; a classifier or heuristic decides. You should not pay frontier prices for trivial queries.
+
+4. Quantization, measured. Quantize to cut cost and latency, but measure the accuracy drop on your eval — never quantize blind.
+
+5. Reliability. Handle rate limits with backpressure and queues, fail over across providers/models, and remove single points of failure so one provider blip is not a full outage.
+
+Tradeoffs: batch size vs tail latency; quantization vs quality; cache TTL vs freshness; routing complexity vs savings.` },
+    rubric: [
+      { dim: "batching", anchor: "point to continuous/dynamic batching + prefill/decode separation to raise GPU utilization", cost: "GPUs sit idle; you pay for capacity you do not use and miss throughput" },
+      { dim: "caching", anchor: "KV / prompt-prefix / semantic caching for shared prefixes and repeats?", cost: "you re-pay prefill for every identical system prompt and repeated query" },
+      { dim: "complexity-routing", anchor: "do you route easy queries to a cheap model and reserve the big model for hard ones?", cost: "you pay frontier prices for trivial queries" },
+      { dim: "quantization-measured", anchor: "do you quantize AND measure the accuracy drop, not blind?", cost: "silent quality loss from over-aggressive quantization" },
+      { dim: "reliability", anchor: "rate-limit backpressure + cross-provider failover so no single provider is a SPOF?", cost: "one provider outage is a full product outage" },
+      { dim: "tradeoff", anchor: "batch size vs tail latency (or quant vs quality) stated with the number?", cost: "reads as no real decision" },
+    ],
+    status: "authored" },
+
+  { id: "ds-serving-var-scale", roleTrack: "AIE", domain: "production", modality: "design",
+    specLevel: "S2", withheld: ["reference-prose"], flawMode: null, difficulty: "senior", companies: ["Any"], parentRoot: "ds-serving-root",
+    tags: ["serving", "scale", "latency", "variation"],
+    prompt: "Variation of the serving root: traffic jumps 100 -> 5000 req/s and both latency and cost blow up. Scale it. (Scaffold: continuous batching is given; design the rest.)",
+    context: "Bursty load, mixed prompt lengths, a hard p95 SLA.",
+    produce: { artifact: "the scale-out design (batching config, autoscaling, queueing/backpressure) + the latency budget + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "throughput", anchor: "how do batching + autoscaling raise req/s without breaking p95?", cost: "you scale replicas blindly and still miss the SLA" },
+      { dim: "backpressure", anchor: "queueing / backpressure for bursts instead of dropping or timing out?", cost: "bursts cause cascading timeouts" },
+      { dim: "prefill-decode", anchor: "do long prompts stall short ones, and how do you prevent it?", cost: "head-of-line blocking spikes tail latency" },
+      { dim: "cost-at-scale", anchor: "the $/1000-req number at 5000 req/s?", cost: "you scale into a runaway bill" },
+    ],
+    status: "authored" },
+
+  { id: "ds-serving-var-cost", roleTrack: "AIE", domain: "production", modality: "diagnose",
+    specLevel: "S3", withheld: ["reference-prose", "stage-skeleton"], flawMode: "silent", difficulty: "senior", companies: ["Any"], parentRoot: "ds-serving-root",
+    tags: ["serving", "cost", "routing", "quantization", "variation"],
+    prompt: "Variation of the serving root: inference cost is 40% over budget. Cut it without losing quality. (Minimal scaffold.)",
+    context: "Every query hits the frontier model. No caching. No quantization. Many queries are trivial or repeated.",
+    produce: { artifact: "the ordered cost-reduction plan (biggest ROI first) + the quality guardrail that proves no regression", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "biggest-roi-first", anchor: "do you order the levers by ROI (routing/caching before micro-optimizations)?", cost: "you optimize pennies while the big waste (frontier-for-everything) remains" },
+      { dim: "routing", anchor: "route trivial queries to a cheaper model?", cost: "you pay top price for easy queries" },
+      { dim: "caching", anchor: "semantic/prompt caching for repeats and shared prefixes?", cost: "you re-pay for identical work" },
+      { dim: "quality-guardrail", anchor: "how do you prove the cheaper path did not drop quality (eval gate)?", cost: "you cut cost and silently cut quality" },
+    ],
+    status: "authored" },
+
+  { id: "ds-serving-var-outage", roleTrack: "AIE", domain: "production", modality: "design",
+    specLevel: "S4", withheld: ["reference-prose", "stage-skeleton", "hints"], flawMode: null, difficulty: "staff", companies: ["Any"], parentRoot: "ds-serving-root",
+    tags: ["serving", "reliability", "failover", "spof", "variation"],
+    prompt: "Variation of the serving root (own it — no scaffold): a single LLM-provider outage took your entire product down. Eliminate the single point of failure.",
+    context: "You get the incident only. Bring your own failover and degradation design.",
+    produce: { artifact: "the multi-provider/model failover + graceful degradation + how you test it + tradeoffs", format: "design-doc", workspace: "in-app-text" },
+    reference: { type: "solution" },
+    rubric: [
+      { dim: "no-spof", anchor: "do you remove the single-provider dependency (multi-provider/model abstraction)?", cost: "the next provider blip is another full outage" },
+      { dim: "failover", anchor: "automatic failover with health checks, not manual?", cost: "downtime while a human notices and switches" },
+      { dim: "graceful-degradation", anchor: "a degraded mode (cached/smaller model) rather than hard-down?", cost: "all-or-nothing availability" },
+      { dim: "tested", anchor: "how do you regularly TEST failover (game-day / chaos)?", cost: "untested failover fails exactly when needed" },
+    ],
+    status: "authored" },
+
 ];
