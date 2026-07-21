@@ -4,6 +4,7 @@
 // reference -> self-critique) is a later build; this lets you SEE the briefs on the app now.
 import { useState } from "react";
 import { DESIGN_STUDIO_GSL } from "./data/designStudioBriefs.js";
+import GradePack from "./GradePack";
 
 const SPEC_LABEL = { S1: "S1 · full brief", S2: "S2 · derive half", S3: "S3 · derive most", S4: "S4 · own it" };
 
@@ -105,10 +106,11 @@ export default function DesignStudio({ onExit }) {
                 </div>
               </Section>
 
+              <GradePack brief={sel} />
+
               {sel.status === "skeleton" && (
                 <div className="text-[11px] text-zinc-600 border-t border-zinc-900 pt-3">
-                  Skeleton — the reference solution + rubric detail are still being authored. The full
-                  produce → reveal-reference → self-critique workspace is a later build.
+                  Reference prose is still being authored for some briefs — the grade pack anchors on the checklist, which is the bar.
                 </div>
               )}
             </div>
