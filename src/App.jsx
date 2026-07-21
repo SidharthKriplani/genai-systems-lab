@@ -49,6 +49,7 @@ const ReviewPage             = lazy(() => import("./Review"));
 const CompanyTracksPage      = lazy(() => import("./CompanyTracks"));
 const SystemDesignTrainerApp = lazy(() => import("./SystemDesignTrainer"));
 const DesignStudioApp        = lazy(() => import("./DesignStudio"));
+const DesignStudioHubApp     = lazy(() => import("./DesignStudioHub"));
 const AboutPage              = lazy(() => import("./About"));
 const MePage                 = lazy(() => import("./Me"));
 
@@ -330,7 +331,6 @@ const NAV_SECTIONS = [
   ]},
   { key: "prep", label: "INTERVIEW", icon: "clipboard", items: [
     { id: "preplab", label: "Question Bank" },
-    { id: "sysdesign", label: "System Design" },
     { id: "fluency", label: "Speaking & Mock" },
     { id: "company-tracks", label: "Company Tracks" },
   ]},
@@ -2129,12 +2129,12 @@ export default function App() {
           )}
           {topView === "sysdesign" && (
             <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
-              <SystemDesignTrainerApp onExit={() => navigate("preplab")} />
+              <DesignStudioHubApp onExit={() => navigate("preplab")} initialMode="sysdesign" />
             </Suspense>
           )}
           {topView === "designstudio" && (
             <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
-              <DesignStudioApp onExit={() => navigate("career")} />
+              <DesignStudioHubApp onExit={() => navigate("career")} initialMode="studio" />
             </Suspense>
           )}
           {topView === "progress"    && <ProgressPage visited={visited} visitedModules={visitedModules} leaderboard={leaderboard} onNavigate={navigate} bookmarks={bookmarks} toggleBookmark={toggleBookmark} user={user} />}
