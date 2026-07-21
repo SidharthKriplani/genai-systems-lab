@@ -692,4 +692,591 @@ export const DOJO_EXERCISES = [
     ],
     packages: [],
   },
+
+
+  // ── Verified expansion batch (2026-07-21): Eval + RAG + Sampling + Agents + Serving.
+  {
+    "id": "pass-at-k",
+    "title": "pass@k estimator (code-gen eval)",
+    "topic": "Eval",
+    "difficulty": "advanced",
+    "prompt": "Implement `pass_at_k(n, c, k)` \u2014 the **unbiased** pass@k estimator used to evaluate code-gen models (HumanEval-style).\n\nYou sampled `n` completions for a problem; `c` of them passed the unit tests. `pass@k` is the probability that **at least one** of a random size-`k` subset passes. The unbiased estimator is:\n\n`pass@k = 1 - C(n-c, k) / C(n, k)`\n\nReturn a float. If `n - c < k` (fewer failures than the draw size), every size-`k` subset must contain a passing sample, so return `1.0`. Assume `0 <= c <= n` and `1 <= k <= n`.",
+    "starter": "def pass_at_k(n, c, k):\n    # TODO: unbiased 1 - C(n-c,k)/C(n,k), with the n-c<k shortcut.\n    raise NotImplementedError\n",
+    "solution": "from math import comb\n\ndef pass_at_k(n, c, k):\n    if n - c < k:\n        return 1.0\n    return 1.0 - comb(n - c, k) / comb(n, k)\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 endpoints and a known value",
+        "tests": "assert pass_at_k(5, 0, 1) == 0.0, 'zero correct -> pass@1 is 0'\nassert pass_at_k(5, 5, 1) == 1.0, 'all correct -> pass@1 is 1'\nassert abs(pass_at_k(5, 1, 1) - 0.2) < 1e-9, 'one of five at k=1 -> 0.2'\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 few failures forces 1.0",
+        "tests": "assert pass_at_k(10, 8, 3) == 1.0, 'only 2 failures, draw 3 -> guaranteed a pass'\nassert pass_at_k(1, 1, 1) == 1.0\nassert pass_at_k(1, 0, 1) == 0.0\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 monotonicity in c and k",
+        "tests": "assert pass_at_k(100, 1, 10) < pass_at_k(100, 5, 10), 'more correct -> higher pass@k'\nassert pass_at_k(100, 5, 1) < pass_at_k(100, 5, 10), 'bigger k -> higher pass@k'\nv = pass_at_k(200, 4, 10)\nassert 0.0 < v < 1.0 and abs(v - (1 - __import__('math').comb(196,10)/__import__('math').comb(200,10))) < 1e-12\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "Teams sometimes report pass@k as `(#problems with >=1 pass in k samples) / #problems`, computed by drawing exactly k samples. Why is the C(n-c,k)/C(n,k) estimator preferred when you sampled n > k completions?",
+      "options": [
+        "It runs faster because it avoids re-running the unit tests.",
+        "It is unbiased and lower-variance: it uses all n samples to estimate the k-subset pass probability, instead of throwing away n-k samples and getting a noisy single draw.",
+        "It always produces a higher score, which looks better in papers.",
+        "The two are identical for any n and k."
+      ],
+      "correct": 1,
+      "explanation": "Drawing exactly k wastes the other n-k completions and gives a high-variance Bernoulli estimate per problem. The combinatorial form is the exact expectation over all size-k subsets given c passes out of n \u2014 unbiased and far tighter, which is why HumanEval samples n=200 to estimate pass@1/10/100."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 corpus rollup.** Real benchmarks report one number over a whole problem set. Implement `pass_at_k_corpus(results, k)` where `results` is a list of `(n_i, c_i)` per problem. Return the **mean** of the per-problem pass@k estimates (a float). Empty list -> `0.0`.",
+      "tests": "assert pass_at_k_corpus([], 1) == 0.0\nr = [(5,0),(5,5),(5,1)]\nassert abs(pass_at_k_corpus(r, 1) - (0.0+1.0+0.2)/3) < 1e-9\nassert abs(pass_at_k_corpus([(10,8),(10,8)], 3) - 1.0) < 1e-9\n",
+      "solution": "from math import comb\n\ndef pass_at_k(n, c, k):\n    if n - c < k:\n        return 1.0\n    return 1.0 - comb(n - c, k) / comb(n, k)\n\ndef pass_at_k_corpus(results, k):\n    if not results:\n        return 0.0\n    return sum(pass_at_k(n, c, k) for n, c in results) / len(results)\n"
+    },
+    "hints": [
+      "math.comb(n, k) is the exact binomial coefficient \u2014 no need for factorials.",
+      "The n-c<k branch prevents a C(negative, k) call and encodes 'a pass is guaranteed'.",
+      "pass@k rises with c and with k; use that to sanity-check before submitting."
+    ],
+    "packages": []
+  },
+  {
+    "id": "ndcg-at-k",
+    "title": "nDCG@k (ranking / retrieval eval)",
+    "topic": "Eval",
+    "difficulty": "advanced",
+    "prompt": "Implement `ndcg_at_k(relevances, k)` \u2014 normalized Discounted Cumulative Gain at k, the standard graded-relevance metric for ranked retrieval.\n\n`relevances` is a list of graded relevance scores (e.g. 0..3) **in the order your system ranked them**. Compute:\n\n- `DCG@k = sum over the first k of rel_i / log2(i + 2)` (i is 0-based).\n- `IDCG@k` = the same on the ideal ranking (relevances sorted descending).\n- `nDCG@k = DCG@k / IDCG@k`, or `0.0` when `IDCG@k == 0`.\n\nReturn a float in [0, 1].",
+    "starter": "def ndcg_at_k(relevances, k):\n    # TODO: DCG@k / IDCG@k with the log2(i+2) discount.\n    raise NotImplementedError\n",
+    "solution": "from math import log2\n\ndef ndcg_at_k(relevances, k):\n    def dcg(rels):\n        return sum(r / log2(i + 2) for i, r in enumerate(rels[:k]))\n    idcg = dcg(sorted(relevances, reverse=True))\n    if idcg == 0:\n        return 0.0\n    return dcg(relevances) / idcg\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 perfect vs reversed ranking",
+        "tests": "assert abs(ndcg_at_k([3,2,1,0], 4) - 1.0) < 1e-9, 'already-ideal ranking scores 1.0'\nassert ndcg_at_k([0,1,2,3], 4) < 1.0, 'reversed ranking scores below 1.0'\nassert ndcg_at_k([1,0,0], 3) == 1.0, 'single relevant doc at top is ideal'\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 no relevance, k beyond length",
+        "tests": "assert ndcg_at_k([0,0,0], 3) == 0.0, 'no relevant docs -> 0.0, not division error'\nassert abs(ndcg_at_k([3], 10) - 1.0) < 1e-9, 'k larger than the list is fine'\nassert ndcg_at_k([], 5) == 0.0\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 a relevant doc ranked below k earns nothing",
+        "tests": "from math import log2\nv = ndcg_at_k([0,0,3], 2)\nassert v == 0.0, 'the only relevant doc is at rank 3 but k=2 -> DCG@2 is 0'\n# cutting k must never raise nDCG here\nassert ndcg_at_k([0,0,3], 2) <= ndcg_at_k([0,0,3], 3)\nexp = (2/log2(2) + 1/log2(3)) / (2/log2(2) + 1/log2(3))\nassert abs(ndcg_at_k([2,1], 2) - 1.0) < 1e-9\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "Your offline nDCG@10 jumps from 0.62 to 0.71 after a reranker change, but online CTR is flat. What is the most likely explanation an interviewer wants to hear?",
+      "options": [
+        "nDCG is computed wrong; it must always track CTR.",
+        "Graded relevance labels (often from annotators or heuristics) can diverge from real user preference; nDCG measures agreement with the label set, not with live behavior \u2014 the labels or the discount model may not reflect what users actually click.",
+        "CTR is a lagging metric and will catch up within minutes.",
+        "You should switch to DCG (unnormalized) to see the real gain."
+      ],
+      "correct": 1,
+      "explanation": "nDCG grades the ranking against a fixed relevance judgment set. If those judgments (or the position-discount assumption) don't match live user utility, offline gains won't transfer. This offline/online gap is the central reason ranking teams keep an online A/B as the source of truth."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 corpus mean + binary fallback.** Implement `mean_ndcg(query_rels, k)` where `query_rels` is a list of per-query relevance lists. Return the mean nDCG@k across queries, **skipping queries whose IDCG is 0** (no relevant docs \u2014 undefined, must not drag the mean to 0). If every query is skipped, return `0.0`.",
+      "tests": "assert mean_ndcg([], 5) == 0.0\nassert mean_ndcg([[0,0,0]], 3) == 0.0, 'all-zero queries are skipped -> empty -> 0.0'\nm = mean_ndcg([[3,2,1,0],[0,0,0],[1,0,0]], 4)\nassert abs(m - 1.0) < 1e-9, 'two perfect queries; the no-relevance query is skipped'\n",
+      "solution": "from math import log2\n\ndef ndcg_at_k(relevances, k):\n    def dcg(rels):\n        return sum(r / log2(i + 2) for i, r in enumerate(rels[:k]))\n    idcg = dcg(sorted(relevances, reverse=True))\n    if idcg == 0:\n        return 0.0\n    return dcg(relevances) / idcg\n\ndef mean_ndcg(query_rels, k):\n    scored = []\n    for rels in query_rels:\n        if max(rels[:], default=0) <= 0:\n            continue\n        scored.append(ndcg_at_k(rels, k))\n    if not scored:\n        return 0.0\n    return sum(scored) / len(scored)\n"
+    },
+    "hints": [
+      "The discount is log2(i+2) so the first position (i=0) divides by log2(2)=1.",
+      "IDCG is just DCG on sorted(relevances, reverse=True) \u2014 reuse one helper.",
+      "Slice to k BEFORE summing; a relevant doc past position k must contribute nothing."
+    ],
+    "packages": []
+  },
+  {
+    "id": "token-f1",
+    "title": "Token-level F1 (QA / extraction eval)",
+    "topic": "Eval",
+    "difficulty": "core",
+    "prompt": "Implement `token_f1(pred, gold)` \u2014 the SQuAD-style token-overlap F1 used to grade extractive QA and structured-extraction outputs.\n\nLowercase both strings and split on whitespace into token bags. Let `same` be the **multiset** overlap count (so repeated tokens only count as often as they appear in both). Then `precision = same/len(pred_tokens)`, `recall = same/len(gold_tokens)`, `F1 = 2PR/(P+R)`.\n\nEdge cases: if **both** are empty return `1.0`; if exactly one is empty return `0.0`; if `same == 0` return `0.0`.",
+    "starter": "def token_f1(pred, gold):\n    # TODO: multiset token overlap -> precision/recall -> F1, with the empty-string rules.\n    raise NotImplementedError\n",
+    "solution": "from collections import Counter\n\ndef token_f1(pred, gold):\n    p = pred.lower().split()\n    g = gold.lower().split()\n    if not p and not g:\n        return 1.0\n    if not p or not g:\n        return 0.0\n    same = sum((Counter(p) & Counter(g)).values())\n    if same == 0:\n        return 0.0\n    precision = same / len(p)\n    recall = same / len(g)\n    return 2 * precision * recall / (precision + recall)\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 exact, disjoint, partial",
+        "tests": "assert token_f1('the fox', 'the fox') == 1.0\nassert token_f1('cat', 'dog') == 0.0\nassert abs(token_f1('the quick fox', 'the fox') - (2*(2/3)*1.0)/((2/3)+1.0)) < 1e-9\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 empty strings, case, bag-of-words",
+        "tests": "assert token_f1('', '') == 1.0\nassert token_f1('', 'anything') == 0.0\nassert token_f1('The Cat', 'cat the') == 1.0, 'case-insensitive, order-insensitive'\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 multiset overlap, not set",
+        "tests": "# pred has 'a' twice, gold once -> overlap of 'a' is 1, not 2\nv = token_f1('a a b', 'a b')\nassert abs(v - 0.8) < 1e-9, 'multiset overlap: same=2, P=2/3, R=1 -> F1=0.8'\nassert token_f1('x x x', 'y') == 0.0\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "An interviewer asks why extractive-QA leaderboards report token-F1 alongside exact-match (EM). What does token-F1 buy you over EM?",
+      "options": [
+        "Token-F1 is cheaper to compute than EM.",
+        "Token-F1 gives partial credit for answers that overlap the gold span but differ in boundary (extra/missing words), so near-misses are distinguished from total misses \u2014 EM is all-or-nothing.",
+        "Token-F1 is invariant to the reference answer, so you don't need labels.",
+        "They are the same metric expressed differently."
+      ],
+      "correct": 1,
+      "explanation": "EM only fires on a character-perfect match, which punishes 'in 1998' vs '1998' as harshly as a wrong answer. Token-F1 rewards the overlap, so models that get the right content with slightly different span boundaries are scored above models that are simply wrong."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 multiple references.** SQuAD gives several acceptable gold answers per question. Implement `token_f1_multi(pred, golds)` where `golds` is a non-empty list of reference strings; return the **maximum** token_f1 over the references (the standard rule). This rewards matching any acceptable answer.",
+      "tests": "assert token_f1_multi('paris', ['london', 'paris', 'berlin']) == 1.0\nassert token_f1_multi('the paris', ['paris']) == token_f1('the paris', 'paris')\nassert token_f1_multi('zzz', ['a','b']) == 0.0\n",
+      "solution": "from collections import Counter\n\ndef token_f1(pred, gold):\n    p = pred.lower().split()\n    g = gold.lower().split()\n    if not p and not g:\n        return 1.0\n    if not p or not g:\n        return 0.0\n    same = sum((Counter(p) & Counter(g)).values())\n    if same == 0:\n        return 0.0\n    precision = same / len(p)\n    recall = same / len(g)\n    return 2 * precision * recall / (precision + recall)\n\ndef token_f1_multi(pred, golds):\n    return max(token_f1(pred, g) for g in golds)\n"
+    },
+    "hints": [
+      "collections.Counter(p) & Counter(g) is the multiset intersection; sum its values for the overlap count.",
+      "Handle the empty cases before dividing, or you'll hit ZeroDivisionError.",
+      "Multiset, not set: 'a a' vs 'a' overlaps on only one 'a'."
+    ],
+    "packages": []
+  },
+  {
+    "id": "ece-calibration",
+    "title": "Expected Calibration Error",
+    "topic": "Eval",
+    "difficulty": "advanced",
+    "prompt": "Implement `expected_calibration_error(confidences, correct, n_bins=10)` \u2014 ECE, the standard measure of whether a model's confidence matches its accuracy.\n\n`confidences[i]` in [0,1] is the model's predicted probability for example i; `correct[i]` is truthy iff that prediction was right. Partition examples into `n_bins` equal-width bins by confidence (example with confidence c goes to bin `min(int(c*n_bins), n_bins-1)`). For each non-empty bin compute `avg_conf` and `accuracy`; ECE is the sample-weighted average of `|avg_conf - accuracy|`:\n\n`ECE = sum_b (|B_b|/N) * |conf(B_b) - acc(B_b)|`\n\nEmpty input -> `0.0`.",
+    "starter": "def expected_calibration_error(confidences, correct, n_bins=10):\n    # TODO: bin by confidence, weight each bin's |conf-acc| by its share.\n    raise NotImplementedError\n",
+    "solution": "def expected_calibration_error(confidences, correct, n_bins=10):\n    n = len(confidences)\n    if n == 0:\n        return 0.0\n    bins = [[] for _ in range(n_bins)]\n    for c, y in zip(confidences, correct):\n        b = min(int(c * n_bins), n_bins - 1)\n        bins[b].append((c, bool(y)))\n    ece = 0.0\n    for group in bins:\n        if not group:\n            continue\n        avg_conf = sum(c for c, _ in group) / len(group)\n        acc = sum(1 for _, y in group if y) / len(group)\n        ece += (len(group) / n) * abs(avg_conf - acc)\n    return ece\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 perfect and worst calibration",
+        "tests": "assert expected_calibration_error([1.0,1.0], [True,True]) == 0.0, 'confident and right -> 0'\nassert abs(expected_calibration_error([0.9,0.9], [False,False]) - 0.9) < 1e-9, 'confident and always wrong -> gap 0.9'\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 empty, confidence at the 1.0 boundary",
+        "tests": "assert expected_calibration_error([], []) == 0.0\n# c=1.0 must land in the last bin, not crash on index n_bins\nassert abs(expected_calibration_error([1.0], [False]) - 1.0) < 1e-9\nassert expected_calibration_error([0.0], [False]) == 0.0\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 sample-weighted across bins",
+        "tests": "c = [0.2,0.2,0.8,0.8]\ny = [False,False,True,True]\n# bin(0.2): conf .2 acc 0 gap .2 weight 1/2; bin(0.8): conf .8 acc 1 gap .2 weight 1/2\nassert abs(expected_calibration_error(c, y) - 0.2) < 1e-9\n# unequal bin sizes must weight by count, not by bin\nc2 = [0.1,0.1,0.1,0.9]\ny2 = [True,True,True,True]\n# bin(0.1): conf .1 acc 1 gap .9 w 3/4 -> .675; bin(0.9): conf .9 acc 1 gap .1 w 1/4 -> .025\nassert abs(expected_calibration_error(c2, y2) - 0.7) < 1e-9\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "Your classifier has strong AUC but a downstream team thresholds its probability at 0.8 to auto-approve, and too many approvals are wrong. Which metric surfaces the problem AUC hides?",
+      "options": [
+        "Accuracy at 0.5 threshold.",
+        "Calibration error (ECE/reliability): AUC only cares about ranking order, so a model can rank perfectly yet output probabilities far from true frequencies \u2014 calibration measures whether '0.8' really means 80% right.",
+        "Precision, which is the same thing as calibration.",
+        "Nothing; AUC already captures calibration."
+      ],
+      "correct": 1,
+      "explanation": "AUC is threshold- and calibration-free: it only measures whether positives rank above negatives. A model can have AUC 0.95 and still be badly miscalibrated (e.g. everything squashed near 0.8). When a business rule keys off the probability value, calibration is the metric that matters."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 worst bin (MCE).** ECE can hide a single catastrophic bin behind a good average. Implement `max_calibration_error(confidences, correct, n_bins=10)` returning the **maximum** (not weighted-average) `|conf - acc|` over non-empty bins. Empty input -> `0.0`.",
+      "tests": "assert max_calibration_error([], []) == 0.0\n# ECE averages, MCE takes the worst bin -> they differ here\nc = [0.1, 0.9]; y = [False, False]\nimport math\nassert abs(max_calibration_error(c, y, 10) - 0.9) < 1e-9\nassert max_calibration_error(c, y, 10) > 0.5\n",
+      "solution": "def max_calibration_error(confidences, correct, n_bins=10):\n    n = len(confidences)\n    if n == 0:\n        return 0.0\n    bins = [[] for _ in range(n_bins)]\n    for c, y in zip(confidences, correct):\n        b = min(int(c * n_bins), n_bins - 1)\n        bins[b].append((c, bool(y)))\n    gaps = []\n    for group in bins:\n        if not group:\n            continue\n        avg_conf = sum(c for c, _ in group) / len(group)\n        acc = sum(1 for _, y in group if y) / len(group)\n        gaps.append(abs(avg_conf - acc))\n    return max(gaps) if gaps else 0.0\n"
+    },
+    "hints": [
+      "min(int(c*n_bins), n_bins-1) keeps confidence exactly 1.0 out of an off-by-one crash.",
+      "Weight each bin by |B_b|/N, not by 1/n_bins \u2014 bins have different counts.",
+      "A bin's 'accuracy' is the fraction of correct in that bin; its 'confidence' is the mean predicted prob."
+    ],
+    "packages": []
+  },
+  {
+    "id": "bootstrap-ci",
+    "title": "Bootstrap confidence interval",
+    "topic": "Eval",
+    "difficulty": "advanced",
+    "prompt": "Implement `bootstrap_ci(values, n_boot=1000, alpha=0.05, seed=0)` \u2014 a percentile bootstrap CI for the **mean**, the workhorse for putting error bars on an offline eval metric.\n\nResample `values` with replacement `n_boot` times (each resample the same length as `values`), take the mean of each resample, and return `(lo, hi)` = the `100*alpha/2` and `100*(1-alpha/2)` percentiles of those bootstrap means, as a `(float, float)` tuple.\n\nUse `numpy.random.default_rng(seed)` for reproducibility. Assume `values` is non-empty.",
+    "starter": "import numpy as np\n\ndef bootstrap_ci(values, n_boot=1000, alpha=0.05, seed=0):\n    # TODO: resample means with a seeded rng -> percentile interval.\n    raise NotImplementedError\n",
+    "solution": "import numpy as np\n\ndef bootstrap_ci(values, n_boot=1000, alpha=0.05, seed=0):\n    rng = np.random.default_rng(seed)\n    values = np.asarray(values, dtype=float)\n    n = len(values)\n    means = np.empty(n_boot)\n    for b in range(n_boot):\n        idx = rng.integers(0, n, n)\n        means[b] = values[idx].mean()\n    lo = float(np.percentile(means, 100 * alpha / 2))\n    hi = float(np.percentile(means, 100 * (1 - alpha / 2)))\n    return lo, hi\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 constant data has a degenerate CI",
+        "tests": "lo, hi = bootstrap_ci([5.0,5.0,5.0,5.0])\nassert lo == 5.0 and hi == 5.0, 'every resample of a constant is 5 -> CI is a point'\nlo2, hi2 = bootstrap_ci([1.0,2.0,3.0,4.0,5.0])\nassert lo2 <= 3.0 <= hi2, 'the CI must bracket the sample mean'\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 reproducibility and interval width",
+        "tests": "a = bootstrap_ci([1.0,2.0,3.0,4.0,5.0], seed=7)\nb = bootstrap_ci([1.0,2.0,3.0,4.0,5.0], seed=7)\nassert a == b, 'same seed -> identical interval'\nwide = bootstrap_ci([1.0,2,3,4,5,100], alpha=0.01)\nnarrow = bootstrap_ci([1.0,2,3,4,5,100], alpha=0.5)\nassert (wide[1]-wide[0]) >= (narrow[1]-narrow[0]), 'smaller alpha -> wider interval'\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 ordered lo<=hi, skew handled",
+        "tests": "lo, hi = bootstrap_ci([0.0]*90 + [1.0]*10, n_boot=500, seed=1)\nassert lo <= hi\nassert 0.0 <= lo <= 0.2 and 0.0 <= hi <= 0.25, 'mean ~0.1, CI stays near it'\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "Why reach for a bootstrap CI on your eval metric instead of the textbook normal-approximation interval (mean +/- 1.96*se)?",
+      "options": [
+        "The bootstrap is always more accurate for every metric and sample size.",
+        "The bootstrap makes no normality assumption and works for statistics with no closed-form standard error (median, nDCG, F1), where the normal approximation can be badly off on small or skewed samples.",
+        "The bootstrap needs fewer samples than the normal approximation.",
+        "They give identical intervals, so it's just style."
+      ],
+      "correct": 1,
+      "explanation": "The normal interval assumes the sampling distribution of the statistic is roughly Gaussian and needs a formula for the SE. For skewed metrics or ones without a tidy SE (ranking metrics, ratios, medians), resampling estimates the sampling distribution directly \u2014 at the cost of compute and its own small-sample caveats."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 any statistic.** Metrics like the median or nDCG have no simple SE. Generalize to `bootstrap_ci_stat(values, statfn, n_boot=1000, alpha=0.05, seed=0)` that bootstraps an arbitrary `statfn(list_of_values) -> float` instead of the mean. Keep the same seeded resampling and percentile logic.",
+      "tests": "import numpy as np\nlo, hi = bootstrap_ci_stat([5.0,5.0,5.0], np.median)\nassert lo == 5.0 and hi == 5.0\nlo2, hi2 = bootstrap_ci_stat([1.0,2,3,4,100], np.median, seed=3)\nassert lo2 <= 3.0 <= hi2, 'median CI brackets the sample median'\n# mean via statfn should behave like the Act I mean CI shape\nlo3, hi3 = bootstrap_ci_stat([1.0,2,3,4,5], np.mean, seed=7)\nassert lo3 <= 3.0 <= hi3\n",
+      "solution": "import numpy as np\n\ndef bootstrap_ci_stat(values, statfn, n_boot=1000, alpha=0.05, seed=0):\n    rng = np.random.default_rng(seed)\n    values = np.asarray(values, dtype=float)\n    n = len(values)\n    stats = np.empty(n_boot)\n    for b in range(n_boot):\n        idx = rng.integers(0, n, n)\n        stats[b] = statfn(values[idx])\n    lo = float(np.percentile(stats, 100 * alpha / 2))\n    hi = float(np.percentile(stats, 100 * (1 - alpha / 2)))\n    return lo, hi\n"
+    },
+    "hints": [
+      "np.random.default_rng(seed).integers(0, n, n) draws one resample of indices.",
+      "Collect n_boot resample means, then np.percentile at alpha/2 and 1-alpha/2 (in percent).",
+      "Cast the percentile outputs to float so the tuple is plain Python floats."
+    ],
+    "packages": [
+      "numpy"
+    ]
+  },
+  {
+    "id": "cosine-topk",
+    "title": "Cosine top-k retrieval",
+    "topic": "RAG",
+    "difficulty": "core",
+    "prompt": "Implement `cosine_topk(query, docs, k)` \u2014 the dense-retrieval primitive behind RAG.\n\n`query` is a vector; `docs` is a list of vectors (same dimension). Return the top-`k` documents by **cosine similarity** as a list of `(index, score)` tuples, sorted by score descending, ties broken by **lower index**. A zero-norm vector has cosine `0.0` with everything (never divide by zero). If `k` exceeds the number of docs, return all of them.",
+    "starter": "import numpy as np\n\ndef cosine_topk(query, docs, k):\n    # TODO: cosine sim per doc -> sort desc (ties: lower index) -> top k.\n    raise NotImplementedError\n",
+    "solution": "import numpy as np\n\ndef cosine_topk(query, docs, k):\n    q = np.asarray(query, float)\n    qn = np.linalg.norm(q)\n    scored = []\n    for i, d in enumerate(docs):\n        d = np.asarray(d, float)\n        dn = np.linalg.norm(d)\n        sim = 0.0 if qn == 0 or dn == 0 else float(q @ d / (qn * dn))\n        scored.append((i, sim))\n    scored.sort(key=lambda t: (-t[1], t[0]))\n    return scored[:max(0, k)]\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 identical vector wins",
+        "tests": "import numpy as np\ndocs = [[1,0],[0,1],[1,1]]\nr = cosine_topk([1,0], docs, 2)\nassert r[0][0] == 0 and abs(r[0][1]-1.0) < 1e-9, 'the identical vector is rank 1 with sim 1.0'\nassert abs(dict(cosine_topk([1,0], docs, 3))[1] - 0.0) < 1e-9, 'orthogonal doc has sim 0'\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 k too big, zero vector, k<=0",
+        "tests": "r = cosine_topk([1,0], [[1,0],[2,0]], 10)\nassert len(r) == 2, 'k beyond corpus returns all'\nz = dict(cosine_topk([1,0], [[0,0]], 1))\nassert z[0] == 0.0, 'zero-norm doc -> sim 0, no divide-by-zero'\nassert cosine_topk([1,0], [[1,0]], 0) == []\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 magnitude invariance + tie-break",
+        "tests": "import numpy as np\n# cosine ignores magnitude: [2,0] and [5,0] both align perfectly with [1,0]\nr = cosine_topk([1,0], [[2,0],[5,0]], 2)\nassert abs(r[0][1]-1.0) < 1e-9 and abs(r[1][1]-1.0) < 1e-9\nassert r[0][0] == 0, 'perfect ties break toward the lower index'\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "You store raw dot-product scores instead of cosine because 'it's one fewer normalization'. When does that silently corrupt retrieval?",
+      "options": [
+        "Never \u2014 dot product and cosine always rank identically.",
+        "When document vectors vary in norm: dot product rewards longer vectors, so high-magnitude (often longer or more frequent) docs dominate regardless of directional relevance \u2014 cosine removes that length bias.",
+        "Only when the query vector is zero.",
+        "Dot product is always better, so it never corrupts anything."
+      ],
+      "correct": 1,
+      "explanation": "Dot product = cosine * ||q|| * ||d||. If document norms differ, ranking by dot product favors big-norm vectors even when a smaller-norm doc points in a more relevant direction. Cosine (or normalizing embeddings once at index time) removes that confound; many stacks L2-normalize so dot product == cosine."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 score floor.** Returning k results even when nothing is relevant feeds garbage to the generator. Implement `cosine_topk_thresh(query, docs, k, min_score)` that returns at most k results, keeping only those with cosine `>= min_score` (so it may return fewer than k, or an empty list). Same sorting/tie rules.",
+      "tests": "import numpy as np\ndocs = [[1,0],[0,1],[-1,0]]\nr = cosine_topk_thresh([1,0], docs, 3, 0.5)\nassert r == [(0, 1.0)], 'only the aligned doc clears 0.5'\nassert cosine_topk_thresh([1,0], docs, 3, 0.99) == [(0,1.0)]\nassert cosine_topk_thresh([1,0], [[-1,0]], 3, 0.0) == [], 'anti-aligned (sim -1) fails a 0.0 floor'\n",
+      "solution": "import numpy as np\n\ndef cosine_topk_thresh(query, docs, k, min_score):\n    q = np.asarray(query, float)\n    qn = np.linalg.norm(q)\n    scored = []\n    for i, d in enumerate(docs):\n        d = np.asarray(d, float)\n        dn = np.linalg.norm(d)\n        sim = 0.0 if qn == 0 or dn == 0 else float(q @ d / (qn * dn))\n        if sim >= min_score:\n            scored.append((i, sim))\n    scored.sort(key=lambda t: (-t[1], t[0]))\n    return scored[:max(0, k)]\n"
+    },
+    "hints": [
+      "cosine = q.d / (||q|| ||d||); guard both norms against zero before dividing.",
+      "Sort with key=lambda t: (-t[1], t[0]) to get score-desc, index-asc.",
+      "float(...) the numpy scalar so the tuples are plain Python floats."
+    ],
+    "packages": [
+      "numpy"
+    ]
+  },
+  {
+    "id": "jaccard-dedupe",
+    "title": "Near-duplicate chunk dedup",
+    "topic": "RAG",
+    "difficulty": "core",
+    "prompt": "Implement `jaccard_dedupe(chunks, threshold)` \u2014 drop near-duplicate passages before they crowd out the context window.\n\n`chunks` is a list of strings. Tokenize each by `lower().split()` into a **set**. Walk left to right keeping a chunk only if its token-set **Jaccard similarity** (`|A\u2229B| / |A\u222aB|`) with **every already-kept** chunk is `< threshold`. Return the list of **kept indices** in original order. Treat two empty-token chunks as Jaccard `1.0` (identical).",
+    "starter": "def jaccard_dedupe(chunks, threshold):\n    # TODO: keep a chunk only if it's < threshold similar to all kept ones.\n    raise NotImplementedError\n",
+    "solution": "def jaccard_dedupe(chunks, threshold):\n    def toks(s):\n        return set(s.lower().split())\n    kept, kept_sets = [], []\n    for i, c in enumerate(chunks):\n        t = toks(c)\n        dup = False\n        for ks in kept_sets:\n            union = t | ks\n            j = 1.0 if not union else len(t & ks) / len(union)\n            if j >= threshold:\n                dup = True\n                break\n        if not dup:\n            kept.append(i)\n            kept_sets.append(t)\n    return kept\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 exact dups dropped, distinct kept",
+        "tests": "assert jaccard_dedupe(['the cat sat','the cat sat','a dog ran'], 0.9) == [0, 2]\nassert jaccard_dedupe(['a b c','d e f'], 0.5) == [0, 1], 'disjoint chunks all survive'\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 empty list, single, empty strings",
+        "tests": "assert jaccard_dedupe([], 0.5) == []\nassert jaccard_dedupe(['only one'], 0.5) == [0]\nassert jaccard_dedupe(['', ''], 0.5) == [0], 'two empty chunks are identical -> keep the first only'\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 first-wins, compares to kept only",
+        "tests": "# B is a near-dup of A (3/4 overlap); C shares little with A but is compared only to KEPT (A)\nchunks = ['a b c d', 'a b c e', 'a x y z']\nk = jaccard_dedupe(chunks, 0.5)\nassert k == [0, 2], 'B dropped vs A; C kept (only compared against kept A)'\nassert jaccard_dedupe(['w x','w x','w x'], 1.0) == [0], 'threshold 1.0 still drops exact-set dups'\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "Exact-set Jaccard dedup misses many real duplicates at scale. What's the standard next step and its cost?",
+      "options": [
+        "Lower the threshold to 0.0 so everything is deduped.",
+        "MinHash + LSH: approximate Jaccard with hashed signatures so you avoid the O(n^2) all-pairs comparison, trading exactness (false near-misses/collisions) for near-linear scalability.",
+        "Compare full embeddings pairwise, which is cheaper than token sets.",
+        "There is no scalable alternative; O(n^2) is required."
+      ],
+      "correct": 1,
+      "explanation": "This O(n^2) set-comparison is fine for hundreds of chunks but explodes on millions. MinHash signatures estimate Jaccard cheaply and LSH buckets likely-similar items so you only compare candidates \u2014 near-linear, at the cost of approximate recall/precision on the dedup itself."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 keep the cluster map.** Downstream wants to know what each survivor absorbed. Implement `dedupe_clusters(chunks, threshold)` returning a dict `{kept_index: [all member indices incl. itself]}`. Each dropped chunk joins the cluster of the **first** kept chunk it was `>= threshold` similar to.",
+      "tests": "chunks = ['a b c d', 'a b c e', 'a x y z']\nc = dedupe_clusters(chunks, 0.5)\nassert c == {0: [0, 1], 2: [2]}, 'chunk 1 clusters under 0; chunk 2 is its own cluster'\nassert dedupe_clusters([], 0.5) == {}\nassert dedupe_clusters(['w x','w x'], 1.0) == {0: [0, 1]}\n",
+      "solution": "def dedupe_clusters(chunks, threshold):\n    def toks(s):\n        return set(s.lower().split())\n    reps = []  # (index, tokenset)\n    clusters = {}\n    for i, c in enumerate(chunks):\n        t = toks(c)\n        home = None\n        for idx, ks in reps:\n            union = t | ks\n            j = 1.0 if not union else len(t & ks) / len(union)\n            if j >= threshold:\n                home = idx\n                break\n        if home is None:\n            reps.append((i, t))\n            clusters[i] = [i]\n        else:\n            clusters[home].append(i)\n    return clusters\n"
+    },
+    "hints": [
+      "Jaccard = |A&B| / |A|B|; the union in the denominator is what makes short/long chunks comparable.",
+      "Compare each new chunk only to the chunks you have KEPT, not to all previous chunks.",
+      "Guard the empty-union case so '' vs '' doesn't ZeroDivisionError."
+    ],
+    "packages": []
+  },
+  {
+    "id": "top-k-filter",
+    "title": "Top-k logit filtering",
+    "topic": "Sampling",
+    "difficulty": "core",
+    "prompt": "Implement `top_k_filter(probs, k)` \u2014 keep only the `k` highest-probability tokens.\n\n`probs` is a 1-D numpy array (non-negative; may not sum to 1 \u2014 **renormalize first**). Keep the `k` largest, zero the rest, and renormalize the kept mass to sum to 1. Keep **positions aligned** with the input (do not sort the output). Clamp `k` to `[1, len(probs)]`. On ties at the boundary, prefer higher probability then lower index (stable).",
+    "starter": "import numpy as np\n\ndef top_k_filter(probs, k):\n    # TODO: renormalize, keep k largest, zero rest, renormalize kept mass.\n    raise NotImplementedError\n",
+    "solution": "import numpy as np\n\ndef top_k_filter(probs, k):\n    probs = np.asarray(probs, float)\n    probs = probs / probs.sum()\n    k = max(1, min(int(k), len(probs)))\n    order = np.argsort(-probs, kind='stable')\n    keep = order[:k]\n    out = np.zeros_like(probs)\n    out[keep] = probs[keep]\n    return out / out.sum()\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 keep k, zero the rest",
+        "tests": "import numpy as np\nv = top_k_filter(np.array([0.5,0.3,0.15,0.05]), 2)\nassert v[2] == 0 and v[3] == 0, 'only the top 2 survive'\nassert np.isclose(v[0], 0.5/0.8) and np.isclose(v[1], 0.3/0.8), 'kept mass renormalized'\nassert np.isclose(v.sum(), 1.0)\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 k>=len keeps all, k<=0 keeps argmax",
+        "tests": "import numpy as np\na = np.array([0.4,0.35,0.25])\nassert np.allclose(top_k_filter(a, 9), a), 'k beyond length keeps the whole (already-normalized) dist'\nw = top_k_filter(a, 0)\nassert np.isclose(w[0], 1.0) and w[1] == 0 and w[2] == 0, 'k clamped to 1 keeps the argmax'\nassert np.isclose(top_k_filter(np.array([2.0]), 1)[0], 1.0)\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 unnormalized, unsorted input",
+        "tests": "import numpy as np\n# counts, not probs, and not sorted\nv = top_k_filter(np.array([3.0,10.0,6.0,1.0]), 2)\nassert v[0] == 0 and v[3] == 0, 'top 2 are the 10 and 6 positions'\nassert v[1] > v[2] > 0 and np.isclose(v.sum(), 1.0), 'positions stay aligned to input'\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "Top-k and top-p (nucleus) both truncate the tail before sampling. Why do production stacks often prefer top-p, or combine the two?",
+      "options": [
+        "Top-p is deterministic and top-k is not.",
+        "A fixed k is blind to the distribution's shape: it keeps k tokens even when the model is very confident (k-1 are junk) or very unsure (k too few). Top-p adapts the cutoff to the cumulative mass; combining them bounds both mass and count.",
+        "Top-k cannot be implemented efficiently on GPUs.",
+        "They produce identical outputs, so it doesn't matter."
+      ],
+      "correct": 1,
+      "explanation": "Top-k's cutoff is constant regardless of how peaked the distribution is; on a confident step it admits low-probability filler, on a flat step it may cut real candidates. Top-p sizes the candidate set to the probability mass. Many samplers apply top-k then top-p to cap both the count and the tail mass."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 banned tokens.** Decoding constraints often forbid specific token ids (stop tokens, blocked words). Implement `top_k_filter_masked(probs, k, banned)` that zeros the `banned` indices BEFORE selecting the top k, then renormalizes. `banned` is a list of indices (possibly empty).",
+      "tests": "import numpy as np\nv = top_k_filter_masked(np.array([0.5,0.3,0.15,0.05]), 2, banned=[0])\n# index 0 banned -> top 2 of the rest are indices 1 and 2\nassert v[0] == 0 and v[3] == 0 and v[1] > 0 and v[2] > 0\nassert np.isclose(v.sum(), 1.0)\nu = top_k_filter_masked(np.array([0.5,0.3,0.2]), 2, banned=[])\nassert np.isclose(u.sum(), 1.0)\n",
+      "solution": "import numpy as np\n\ndef top_k_filter_masked(probs, k, banned):\n    probs = np.asarray(probs, float).copy()\n    if banned:\n        probs[np.asarray(banned, int)] = 0.0\n    s = probs.sum()\n    if s == 0:\n        raise ValueError('all mass banned')\n    probs = probs / s\n    k = max(1, min(int(k), len(probs)))\n    order = np.argsort(-probs, kind='stable')\n    keep = order[:k]\n    out = np.zeros_like(probs)\n    out[keep] = probs[keep]\n    return out / out.sum()\n"
+    },
+    "hints": [
+      "np.argsort(-probs, kind='stable') gives descending order with stable tie-handling.",
+      "Clamp k with max(1, min(k, len)) so k=0 or k>len never crash.",
+      "Build the output by zeroing a copy and filling kept positions \u2014 never return sorted order."
+    ],
+    "packages": [
+      "numpy"
+    ]
+  },
+  {
+    "id": "repetition-penalty",
+    "title": "Repetition penalty on logits",
+    "topic": "Sampling",
+    "difficulty": "core",
+    "prompt": "Implement `apply_repetition_penalty(logits, generated, penalty)` \u2014 the CTRL/HF repetition penalty that discourages loops.\n\n`logits` is a 1-D numpy array; `generated` is a list of token ids already produced. For each **distinct** id in `generated`, if its logit is `> 0` divide by `penalty`, else multiply by `penalty` (`penalty > 1` always pushes the logit toward lower probability, correctly handling both signs). Return a **new** array; do not mutate the input. `penalty == 1.0` is a no-op.",
+    "starter": "import numpy as np\n\ndef apply_repetition_penalty(logits, generated, penalty):\n    # TODO: for each distinct prior token, >0 -> /penalty, else *penalty.\n    raise NotImplementedError\n",
+    "solution": "import numpy as np\n\ndef apply_repetition_penalty(logits, generated, penalty):\n    out = np.asarray(logits, float).copy()\n    for tid in set(generated):\n        if out[tid] > 0:\n            out[tid] /= penalty\n        else:\n            out[tid] *= penalty\n    return out\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 positive shrinks, negative deepens",
+        "tests": "import numpy as np\nl = np.array([2.0, -2.0, 0.5])\nout = apply_repetition_penalty(l, [0, 1], 2.0)\nassert np.isclose(out[0], 1.0), 'positive logit divided'\nassert np.isclose(out[1], -4.0), 'negative logit multiplied (more negative)'\nassert np.isclose(out[2], 0.5), 'untouched token unchanged'\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 no-op penalty, empty history, no mutation",
+        "tests": "import numpy as np\nl = np.array([1.0, 2.0])\nassert np.allclose(apply_repetition_penalty(l, [0,1], 1.0), l), 'penalty 1.0 is a no-op'\nassert np.allclose(apply_repetition_penalty(l, [], 2.0), l), 'empty history changes nothing'\nl0 = np.array([3.0, 4.0]); _ = apply_repetition_penalty(l0, [0], 2.0)\nassert np.allclose(l0, [3.0, 4.0]), 'input must not be mutated'\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 repeats counted once, prob drops",
+        "tests": "import numpy as np\nl = np.array([2.0, 2.0])\n# token 0 repeated 5x should be penalized the SAME as once (distinct set)\na = apply_repetition_penalty(l, [0], 3.0)\nb = apply_repetition_penalty(l, [0,0,0,0,0], 3.0)\nassert np.allclose(a, b), 'penalty keys off presence, not count'\nassert a[0] < l[0], 'penalized token has lower logit -> lower softmax prob'\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "A teammate implements the penalty as 'subtract a constant from repeated tokens' logits' instead of the divide/multiply rule. What breaks?",
+      "options": [
+        "Nothing; subtraction and the divide/multiply rule are equivalent.",
+        "A flat subtraction can flip a token's rank inconsistently across scales and doesn't respect logit sign \u2014 the multiplicative rule scales the penalty to the logit's magnitude and always moves probability down for both positive and negative logits.",
+        "Subtraction is slower to compute.",
+        "Subtraction only works for greedy decoding."
+      ],
+      "correct": 1,
+      "explanation": "The HF rule multiplies/divides by penalty so the adjustment is proportional and sign-correct: positive logits shrink toward 0, negative logits grow more negative. A constant subtraction ignores magnitude and sign, so its effect on the post-softmax distribution is inconsistent \u2014 that's why frequency/presence penalties (additive) are defined separately and tuned differently."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 frequency penalty.** OpenAI-style `frequency_penalty` scales with how OFTEN a token appeared. Implement `apply_frequency_penalty(logits, generated, alpha)` returning `logit[t] - alpha * count(t in generated)` for every token (0 subtracted for unseen tokens). Return a new array; don't mutate.",
+      "tests": "import numpy as np\nl = np.array([5.0, 5.0, 5.0])\nout = apply_frequency_penalty(l, [0,0,1], 1.0)\nassert np.isclose(out[0], 3.0), 'token 0 seen twice -> minus 2'\nassert np.isclose(out[1], 4.0), 'token 1 seen once -> minus 1'\nassert np.isclose(out[2], 5.0), 'token 2 unseen -> unchanged'\n",
+      "solution": "import numpy as np\nfrom collections import Counter\n\ndef apply_frequency_penalty(logits, generated, alpha):\n    out = np.asarray(logits, float).copy()\n    counts = Counter(generated)\n    for tid, c in counts.items():\n        out[tid] -= alpha * c\n    return out\n"
+    },
+    "hints": [
+      "set(generated) gives the distinct prior tokens \u2014 the presence penalty ignores repeat count.",
+      "The sign branch is the whole trick: >0 divides, <=0 multiplies, both lowering probability for penalty>1.",
+      "np.asarray(...).copy() so you return a new array and leave the caller's logits intact."
+    ],
+    "packages": [
+      "numpy"
+    ]
+  },
+  {
+    "id": "extract-json",
+    "title": "Extract JSON from noisy LLM output",
+    "topic": "Agents",
+    "difficulty": "advanced",
+    "prompt": "Implement `extract_json(text)` \u2014 pull the first valid JSON **object** out of messy model output (prose, ```json fences, trailing tokens).\n\nScan for the first `{`, track brace depth **ignoring braces inside string literals** (respect `\\\"` escapes), and when depth returns to 0 try `json.loads` on that substring. If it parses, return the object. If not, continue searching from the next `{`. If no valid object exists, raise `ValueError`.",
+    "starter": "import json\n\ndef extract_json(text):\n    # TODO: brace-match (string-aware) the first parseable {...} and json.loads it.\n    raise NotImplementedError\n",
+    "solution": "import json\n\ndef extract_json(text):\n    start = text.find('{')\n    while start != -1:\n        depth = 0\n        in_str = False\n        esc = False\n        for i in range(start, len(text)):\n            ch = text[i]\n            if in_str:\n                if esc:\n                    esc = False\n                elif ch == '\\\\':\n                    esc = True\n                elif ch == '\"':\n                    in_str = False\n            else:\n                if ch == '\"':\n                    in_str = True\n                elif ch == '{':\n                    depth += 1\n                elif ch == '}':\n                    depth -= 1\n                    if depth == 0:\n                        try:\n                            return json.loads(text[start:i+1])\n                        except json.JSONDecodeError:\n                            break\n        start = text.find('{', start + 1)\n    raise ValueError('no valid JSON object found')\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 fenced object with prose around it",
+        "tests": "assert extract_json('Sure! ```json\\n{\"tool\": \"search\", \"n\": 3}\\n``` done') == {'tool':'search','n':3}\nassert extract_json('{\"a\": 1}') == {'a': 1}\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 nested objects, braces inside strings, none",
+        "tests": "assert extract_json('x {\"a\": {\"b\": 2}} y') == {'a': {'b': 2}}\nassert extract_json('{\"msg\": \"use {} sparingly\"}') == {'msg': 'use {} sparingly'}\ntry:\n    extract_json('no json here')\n    assert False, 'should have raised'\nexcept ValueError:\n    pass\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 skip malformed, take next valid",
+        "tests": "# first braces are not valid JSON; must skip and return the second\nassert extract_json('junk {not: valid} then {\"ok\": true}') == {'ok': True}\n# escaped quote inside string must not end the string early\nassert extract_json('{\"q\": \"she said \\\\\"hi\\\\\"\"}') == {'q': 'she said \"hi\"'}\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "You harden JSON extraction to salvage more tool calls. What's the real risk of aggressive repair (auto-closing braces, stripping trailing commas, regex fixes)?",
+      "options": [
+        "Repair is free; there is no downside to salvaging more calls.",
+        "You can silently 'fix' a truncated or malformed call into a DIFFERENT valid call and execute the wrong action \u2014 for side-effecting tools, a strict parse-or-reject is safer than guessing intent.",
+        "Repair only affects latency, never correctness.",
+        "The model will always emit valid JSON, so repair never triggers."
+      ],
+      "correct": 1,
+      "explanation": "Extraction is fine for reading; repair is dangerous for acting. Reconstructing a broken '{\"transfer\": 100' into some valid object can invent arguments the model never committed to. For tools with side effects, prefer strict parsing plus a re-ask/repair loop over silently executing a guessed call."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 all of them.** An agent turn may emit several tool calls. Implement `extract_all_json(text)` returning a list of **every** top-level valid JSON object, in order (empty list if none). Nested objects count once, as part of their parent.",
+      "tests": "r = extract_all_json('a {\"i\": 1} b {\"j\": 2} c')\nassert r == [{'i': 1}, {'j': 2}]\nassert extract_all_json('nothing') == []\nassert extract_all_json('{\"outer\": {\"inner\": 1}}') == [{'outer': {'inner': 1}}]\n",
+      "solution": "import json\n\ndef extract_all_json(text):\n    out = []\n    i = 0\n    n = len(text)\n    while i < n:\n        if text[i] != '{':\n            i += 1\n            continue\n        depth = 0\n        in_str = False\n        esc = False\n        j = i\n        found = False\n        while j < n:\n            ch = text[j]\n            if in_str:\n                if esc:\n                    esc = False\n                elif ch == '\\\\':\n                    esc = True\n                elif ch == '\"':\n                    in_str = False\n            else:\n                if ch == '\"':\n                    in_str = True\n                elif ch == '{':\n                    depth += 1\n                elif ch == '}':\n                    depth -= 1\n                    if depth == 0:\n                        try:\n                            out.append(json.loads(text[i:j+1]))\n                        except json.JSONDecodeError:\n                            j = i\n                        i = j + 1\n                        found = True\n                        break\n            j += 1\n        if not found:\n            i += 1\n    return out\n"
+    },
+    "hints": [
+      "Track an in_string flag and an escape flag so braces and quotes inside string values don't affect depth.",
+      "When depth hits 0, attempt json.loads; on failure, restart the search from the next '{'.",
+      "find('{', start+1) advances the search after a failed candidate."
+    ],
+    "packages": []
+  },
+  {
+    "id": "tool-dag-toposort",
+    "title": "Tool-dependency topological sort",
+    "topic": "Agents",
+    "difficulty": "advanced",
+    "prompt": "Implement `toposort(deps)` \u2014 order agent tool/subtask execution so every prerequisite runs first.\n\n`deps` is a dict mapping each node to a list of its **prerequisites** (nodes that must run before it). A node may appear only inside a prerequisite list; include it too. Return one valid topological order as a list. Break ties **lexicographically** (deterministic output). If a cycle exists, raise `ValueError`.",
+    "starter": "def toposort(deps):\n    # TODO: Kahn's algorithm, lexicographic tie-break, cycle -> ValueError.\n    raise NotImplementedError\n",
+    "solution": "import heapq\n\ndef toposort(deps):\n    nodes = set(deps)\n    for prereqs in deps.values():\n        nodes.update(prereqs)\n    indeg = {n: 0 for n in nodes}\n    adj = {n: [] for n in nodes}\n    for n, prereqs in deps.items():\n        for p in prereqs:\n            adj[p].append(n)\n            indeg[n] += 1\n    q = [n for n in nodes if indeg[n] == 0]\n    heapq.heapify(q)\n    order = []\n    while q:\n        n = heapq.heappop(q)\n        order.append(n)\n        for m in sorted(adj[n]):\n            indeg[m] -= 1\n            if indeg[m] == 0:\n                heapq.heappush(q, m)\n    if len(order) != len(nodes):\n        raise ValueError('cycle detected')\n    return order\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 chain respects prerequisites",
+        "tests": "o = toposort({'c': ['b'], 'b': ['a'], 'a': []})\nassert o.index('a') < o.index('b') < o.index('c')\no2 = toposort({'deploy': ['build','test'], 'test': ['build'], 'build': []})\nassert o2.index('build') < o2.index('test') < o2.index('deploy')\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 implicit nodes, all-independent lexicographic",
+        "tests": "# 'a' only appears as a prerequisite; must still be included\no = toposort({'b': ['a']})\nassert set(o) == {'a','b'} and o.index('a') < o.index('b')\nassert toposort({'x': [], 'y': [], 'z': []}) == ['x','y','z'], 'no deps -> lexicographic'\nassert toposort({}) == []\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 cycle raises, deterministic ties",
+        "tests": "try:\n    toposort({'a': ['b'], 'b': ['a']})\n    assert False, 'cycle must raise'\nexcept ValueError:\n    pass\n# two independent roots feeding one node -> lexicographic among ready set\no = toposort({'m': ['a','b'], 'a': [], 'b': []})\nassert o[:2] == ['a','b'] and o[2] == 'm'\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "Your agent planner topologically sorts tool calls, then executes them strictly one-by-one in that order. What throughput opportunity is it leaving on the table?",
+      "options": [
+        "None; a topological order is already the fastest execution.",
+        "Independent nodes at the same 'level' (no path between them) can run in PARALLEL; a flat order serializes calls that have no dependency, inflating wall-clock latency for I/O-bound tools.",
+        "Topological sort is wrong for tool calls; you should run them in random order.",
+        "Parallelism is impossible once you've sorted."
+      ],
+      "correct": 1,
+      "explanation": "A topological order is a valid serialization, but many nodes are mutually independent. Grouping the DAG into dependency 'waves' (all nodes whose prerequisites are done) lets you fire each wave concurrently \u2014 a big win when tool calls are network-bound. That's the Act II generalization."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 parallel waves.** Implement `toposort_levels(deps)` returning a list of lists: level 0 is every node with no prerequisites, level 1 is every node whose prerequisites are all in levels < 1, and so on. Sort each level lexicographically. Cycle -> `ValueError`. This is the parallel schedule.",
+      "tests": "assert toposort_levels({'deploy': ['build','test'], 'test': ['build'], 'build': []}) == [['build'], ['test'], ['deploy']]\nassert toposort_levels({'m': ['a','b'], 'a': [], 'b': []}) == [['a','b'], ['m']]\nassert toposort_levels({}) == []\ntry:\n    toposort_levels({'a': ['b'], 'b': ['a']})\n    assert False\nexcept ValueError:\n    pass\n",
+      "solution": "def toposort_levels(deps):\n    nodes = set(deps)\n    for prereqs in deps.values():\n        nodes.update(prereqs)\n    indeg = {n: 0 for n in nodes}\n    adj = {n: [] for n in nodes}\n    for n, prereqs in deps.items():\n        for p in prereqs:\n            adj[p].append(n)\n            indeg[n] += 1\n    ready = sorted(n for n in nodes if indeg[n] == 0)\n    levels = []\n    seen = 0\n    while ready:\n        levels.append(ready)\n        seen += len(ready)\n        nxt = []\n        for n in ready:\n            for m in adj[n]:\n                indeg[m] -= 1\n                if indeg[m] == 0:\n                    nxt.append(m)\n        ready = sorted(nxt)\n    if seen != len(nodes):\n        raise ValueError('cycle detected')\n    return levels\n"
+    },
+    "hints": [
+      "Collect nodes from both the keys and every prerequisite list, or implicit leaves go missing.",
+      "Kahn's algorithm: repeatedly emit in-degree-0 nodes; a heap gives lexicographic ties.",
+      "If you emit fewer nodes than exist, the remainder is a cycle -> raise."
+    ],
+    "packages": []
+  },
+  {
+    "id": "welford-stats",
+    "title": "Streaming mean/variance (Welford)",
+    "topic": "Serving",
+    "difficulty": "advanced",
+    "prompt": "Implement class `RunningStats` \u2014 online mean and variance for a metric stream (latency, tokens/sec) you can't hold in memory.\n\n- `push(x)` \u2014 add one observation.\n- `mean()` \u2014 current mean (`0.0` before any push).\n- `var()` \u2014 **sample** variance (ddof=1); `0.0` when fewer than 2 observations.\n- `__len__` \u2014 number of observations.\n\nUse **Welford's** single-pass update (no storing all values, no sum-of-squares blow-up).",
+    "starter": "class RunningStats:\n    def __init__(self):\n        # TODO: track count, running mean, running M2.\n        raise NotImplementedError\n    def push(self, x):\n        raise NotImplementedError\n    def mean(self):\n        raise NotImplementedError\n    def var(self):\n        raise NotImplementedError\n    def __len__(self):\n        raise NotImplementedError\n",
+    "solution": "class RunningStats:\n    def __init__(self):\n        self.n = 0\n        self._mean = 0.0\n        self._M2 = 0.0\n    def push(self, x):\n        self.n += 1\n        d = x - self._mean\n        self._mean += d / self.n\n        self._M2 += d * (x - self._mean)\n    def mean(self):\n        return self._mean\n    def var(self):\n        return self._M2 / (self.n - 1) if self.n >= 2 else 0.0\n    def __len__(self):\n        return self.n\n",
+    "testTiers": [
+      {
+        "name": "correctness",
+        "label": "Correctness \u2014 matches the textbook example",
+        "tests": "s = RunningStats()\nfor x in [2,4,4,4,5,5,7,9]:\n    s.push(x)\nassert abs(s.mean() - 5.0) < 1e-9\nassert abs(s.var() - 32/7) < 1e-9, 'sample variance (ddof=1) of the classic set'\nassert len(s) == 8\n"
+      },
+      {
+        "name": "edges",
+        "label": "Edges \u2014 under two samples",
+        "tests": "s = RunningStats()\nassert s.mean() == 0.0 and s.var() == 0.0 and len(s) == 0\ns.push(42)\nassert s.mean() == 42.0 and s.var() == 0.0, 'variance undefined for n<2 -> 0.0'\n"
+      },
+      {
+        "name": "adversarial",
+        "label": "Adversarial \u2014 numerically stable at large offsets",
+        "tests": "s = RunningStats()\nfor x in [1e9 + 1, 1e9 + 2, 1e9 + 3]:\n    s.push(x)\nassert abs(s.var() - 1.0) < 1e-6, 'Welford stays accurate where naive sum-of-squares loses precision'\nassert abs(s.mean() - (1e9 + 2)) < 1e-3\n"
+      }
+    ],
+    "tradeoff": {
+      "q": "Why choose Welford's method over the algebraically-equivalent 'keep sum(x) and sum(x^2), variance = E[x^2]-E[x]^2'?",
+      "options": [
+        "Welford uses less code.",
+        "The sum-of-squares form subtracts two large, nearly-equal numbers when the mean is large relative to the variance, causing catastrophic floating-point cancellation; Welford updates the deviation incrementally and stays numerically stable.",
+        "sum(x^2) cannot be computed in a single pass.",
+        "They have identical numerical behavior; it's purely stylistic."
+      ],
+      "correct": 1,
+      "explanation": "E[x^2]-E[x]^2 is exact in real arithmetic but in floating point subtracts two big close values (e.g. metrics offset by 1e9), losing most significant digits and even yielding negative variances. Welford accumulates the corrected deviation `d*(x-new_mean)`, avoiding that cancellation."
+    },
+    "actTwo": {
+      "prompt": "**Act II \u2014 merge shards.** Metrics are aggregated per worker, then combined. Add a `merge(self, other)` method that folds another `RunningStats` into `self` using the parallel (Chan) formula, so sharded-then-merged stats equal single-pass stats. Merging an empty stats is a no-op.",
+      "tests": "data = [3.0, 1, 4, 1, 5, 9, 2, 6]\nwhole = RunningStats()\nfor x in data: whole.push(x)\na = RunningStats()\nfor x in data[:3]: a.push(x)\nb = RunningStats()\nfor x in data[3:]: b.push(x)\na.merge(b)\nassert abs(a.mean() - whole.mean()) < 1e-9\nassert abs(a.var() - whole.var()) < 1e-9\nassert len(a) == len(whole)\nc = RunningStats(); c.push(7.0); c.merge(RunningStats())\nassert len(c) == 1 and c.mean() == 7.0\n",
+      "solution": "class RunningStats:\n    def __init__(self):\n        self.n = 0\n        self._mean = 0.0\n        self._M2 = 0.0\n    def push(self, x):\n        self.n += 1\n        d = x - self._mean\n        self._mean += d / self.n\n        self._M2 += d * (x - self._mean)\n    def mean(self):\n        return self._mean\n    def var(self):\n        return self._M2 / (self.n - 1) if self.n >= 2 else 0.0\n    def merge(self, other):\n        if other.n == 0:\n            return\n        if self.n == 0:\n            self.n, self._mean, self._M2 = other.n, other._mean, other._M2\n            return\n        delta = other._mean - self._mean\n        tot = self.n + other.n\n        self._M2 += other._M2 + delta * delta * self.n * other.n / tot\n        self._mean += delta * other.n / tot\n        self.n = tot\n    def __len__(self):\n        return self.n\n"
+    },
+    "hints": [
+      "Welford: d = x-mean; mean += d/n; M2 += d*(x-mean_new). var = M2/(n-1).",
+      "Guard var() for n<2 to avoid dividing by zero.",
+      "The parallel merge needs the count-weighted mean delta plus a delta^2 * nA*nB/nAB correction to M2."
+    ],
+    "packages": []
+  },
 ];
