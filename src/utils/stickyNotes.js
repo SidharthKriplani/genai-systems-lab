@@ -29,6 +29,13 @@ export function deleteSticky(pageKey, id) {
 
 const BLOCK_SEL = 'p,li,pre,blockquote,h1,h2,h3,h4,h5,h6,td'
 
+// The page's primary heading (module title). Used to fence container-anchored
+// notes: they only render when the SAME primary heading is on screen (v1.5).
+function pageHeading(container) {
+  const h = container.querySelector('h1') || container.querySelector('h2')
+  return h ? (h.textContent || '').trim().slice(0, 60) : ''
+}
+
 function snippetOf(el) { return (el.textContent || '').trim().slice(0, 80) }
 
 // The heading nearest ABOVE a block (module title, section header) -- stored in
@@ -45,33 +52,48 @@ function nearestHeading(container, block) {
 
 // Build an anchor from a click at (clientX, clientY) on element `el`.
 export function blockAnchorFromPoint(container, el, clientX, clientY) {
+  // v1.5: three anchor kinds, NO kind can bleed across modules.
+  //  k='b' semantic block; k='d' smallest text-bearing <div> ancestor (markup
+  //  without <p>s, e.g. card headers); k='c' container itself, fenced by the
+  //  page's primary heading. Every kind stores ctx and resolve REQUIRES it.
   let block = el && el.closest ? el.closest(BLOCK_SEL) : null
-  if (!block || !container.contains(block)) block = container
-  const snippet = block === container ? '' : snippetOf(block)
-  const ctx = block === container ? '' : nearestHeading(container, block)
+  if (block && !container.contains(block)) block = null
+  let k = 'b'
+  if (!block) {
+    const d = el && el.closest ? el.closest('div') : null
+    if (d && container.contains(d) && d !== container && (d.textContent || '').trim()) { block = d; k = 'd' }
+  }
+  if (!block) { block = container; k = 'c' }
+  const snippet = k === 'c' ? '' : snippetOf(block)
+  const ctx = k === 'c' ? pageHeading(container) : nearestHeading(container, block)
   let n = 0
-  if (snippet) {
-    for (const b of container.querySelectorAll(BLOCK_SEL)) {
+  if (k !== 'c' && snippet) {
+    const sel = k === 'd' ? 'div' : BLOCK_SEL
+    for (const b of container.querySelectorAll(sel)) {
       if (snippetOf(b) === snippet && nearestHeading(container, b) === ctx) { if (b === block) break; n++ }
     }
   }
   const r = block.getBoundingClientRect()
-  return { snippet, n, ctx, dx: Math.round(clientX - r.left), dy: Math.round(clientY - r.top) }
+  return { k, snippet, n, ctx, dx: Math.round(clientX - r.left), dy: Math.round(clientY - r.top) }
 }
 
 // Resolve an anchor to document coordinates, or null if the block is gone.
 export function resolveAnchor(container, a) {
   if (!a) return null
+  const k = a.k || (a.snippet ? 'b' : 'c')
+  const want = a.ctx == null ? '' : a.ctx
   let block = null
-  if (!a.snippet) block = container
-  else {
+  if (k === 'c') {
+    if (pageHeading(container) !== want) return null // wrong module -> orphan tray
+    block = container
+  } else {
+    const sel = k === 'd' ? 'div' : BLOCK_SEL
     let count = 0
-    for (const b of container.querySelectorAll(BLOCK_SEL)) {
+    for (const b of container.querySelectorAll(sel)) {
       if (snippetOf(b) !== a.snippet) continue
-      // Strict ctx match (v1.4.1): legacy anchors without ctx are treated as
-      // ctx:'' -- they orphan into the tray rather than bleed across modules.
-      if (nearestHeading(container, b) !== (a.ctx == null ? '' : a.ctx)) continue
-      if (count === a.n) { block = b; break } count++
+      if (nearestHeading(container, b) !== want) continue
+      if (count === a.n) { block = b; break }
+      count++
     }
   }
   if (!block) return null
