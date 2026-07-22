@@ -1673,27 +1673,35 @@ export default function App() {
     if (user) pushProgress(user.id);
   }, [topView, user]);
 
-  // Annotations live-sync (2026-07-23): local sticky/highlight writes push to
-  // the cloud after a 4s debounce; returning to the tab (e.g. unlocking your
-  // phone) pulls the annotation keys and per-item-merges them — the fix for
-  // "highlighted on my Mac, phone shows nothing" (pull used to run ONLY at
-  // sign-in, push only on nav changes).
+  // Annotations live-sync v2 (2026-07-23): every previously-observed sync gap
+  // closed. (1) pending pushes FLUSH the instant the tab hides or unloads --
+  // no more lost 4s-debounce windows on laptop close; (2) 45s heartbeat pull
+  // while visible -- a foreground phone converges without focus tricks;
+  // (3) push-back after every merge -- the cloud holds the union immediately
+  // instead of waiting for the next edit.
   useEffect(() => {
     if (!user) return;
     let t = null;
     let lastPull = 0;
-    const onChanged = () => { clearTimeout(t); t = setTimeout(() => pushProgress(user.id), 4000); };
-    const onVis = () => {
-      if (document.visibilityState !== "visible") return;
+    const doPush = () => { clearTimeout(t); t = null; pushProgress(user.id); };
+    const schedulePush = () => { clearTimeout(t); t = setTimeout(doPush, 4000); };
+    const doPull = (force) => {
       const now = Date.now();
-      if (now - lastPull < 20000) return; // throttle
+      if (!force && now - lastPull < 20000) return;
       lastPull = now;
-      pullAnnotationsOnly(user.id);
+      Promise.resolve(pullAnnotationsOnly(user.id)).then(() => schedulePush()).catch(() => {});
     };
-    onVis(); // also pull once on mount-with-user
-    window.addEventListener("annotations-changed", onChanged);
-    document.addEventListener("visibilitychange", onVis);
-    return () => { clearTimeout(t); window.removeEventListener("annotations-changed", onChanged); document.removeEventListener("visibilitychange", onVis); };
+    const onChanged = () => schedulePush();
+    const onVis = () => {
+      if (document.visibilityState === 'visible') doPull(false);
+      else if (t) doPush();
+    };
+    doPull(true);
+    const hb = setInterval(() => { if (document.visibilityState === 'visible') doPull(true); }, 45000);
+    window.addEventListener('annotations-changed', onChanged);
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pagehide', doPush);
+    return () => { clearTimeout(t); clearInterval(hb); window.removeEventListener('annotations-changed', onChanged); document.removeEventListener('visibilitychange', onVis); window.removeEventListener('pagehide', doPush); };
   }, [user]);
 
 
