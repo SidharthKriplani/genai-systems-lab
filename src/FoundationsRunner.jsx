@@ -61,24 +61,50 @@ export default function FoundationsRunner({
 
   const [answers, setAnswers]     = useState(() => Array(mcqList.length).fill(null));
   const [submitted, setSubmitted] = useState(() => Array(mcqList.length).fill(false));
-  const [recapMode, setRecapMode] = useState(false);
+  // ── View deep-link v1 (2026-07-23): optional 4th hash segment
+  //    #concepts/<gymId>/<moduleId>/<view>, view ∈ academic|recap|min|qna.
+  //    Read ONCE per mount into the useState initializers below — safe because
+  //    Concepts.jsx renders <FoundationsRunner key={active}/>, so every module
+  //    open is a fresh mount (no stale-view carryover, no read/write effect race).
+  //    qna honors the completion gate; academic/min require the module to carry
+  //    the content, else fall back to Full silently.
+  const initialHashView = (() => {
+    try {
+      const parts = (window.location.hash || "").replace(/^#\/?/, "").split("/").filter(Boolean);
+      return parts[0] === "concepts" && parts[2] === moduleId ? (parts[3] || "") : "";
+    } catch { return ""; }
+  })();
+  const [recapMode, setRecapMode] = useState(initialHashView === "recap");
   // ── Interview QnA view (QNA-INTERVIEW-STANDARD.md) — completion-gated tab ──
-  const [qnaMode, setQnaMode] = useState(false);
+  const [qnaMode, setQnaMode] = useState(initialHashView === "qna" && !!mastery?.has(moduleId));
   // ── 20:80 Interview-Minimum mini-tab (T8, 2026-07-23) ──
-  const [minMode, setMinMode] = useState(false);
+  const [minMode, setMinMode] = useState(initialHashView === "min" && (runnerData?.interviewMin?.length > 0));
+  // ── Academic view (T6, promoted from collapsed panel to tab 2026-07-23) ──
+  const [academicMode, setAcademicMode] = useState(initialHashView === "academic" && (runnerData?.deeperMath?.length > 0));
   const [qnaLockMsg, setQnaLockMsg] = useState(false);   // tap/hover feedback on the locked tab
   // 2026-07-23 fix: this scroll-reset effect MUST sit below the qnaMode
   // declaration -- its dependency array evaluates at render time, and
   // referencing qnaMode above its const line threw a TDZ ("Cannot access 'T'
   // before initialization") that crashed every module open. (Fable bug,
   // introduced by widening the deps of an effect inserted above the binding.)
-  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode, minMode]);
-  // minMode is per-module opt-in content; a module without interviewMin would
-  // strand a stale minMode=true (Full content shown, no tab active) — reset on nav.
-  useEffect(() => { setMinMode(false); }, [moduleId]);
+  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode, minMode, academicMode]);
+  // View deep-link v1, write half: mirror the active view into the 4th hash
+  // segment via replaceState (never pushState — view flips shouldn't mint
+  // history entries, so Back still walks module → gym untouched). Guarded to
+  // fire only when the hash ALREADY addresses this exact module, so it can
+  // never fight Concepts.jsx's syncConceptsHash pushes or non-concepts views.
+  useEffect(() => {
+    try {
+      const h = window.location.hash || "";
+      const parts = h.replace(/^#\/?/, "").split("/").filter(Boolean);
+      if (parts[0] !== "concepts" || parts[1] !== gymId || parts[2] !== moduleId) return;
+      const view = qnaMode ? "qna" : academicMode ? "academic" : recapMode ? "recap" : minMode ? "min" : "";
+      const target = "#concepts/" + gymId + "/" + moduleId + (view ? "/" + view : "");
+      if (h !== target) window.history.replaceState(null, "", target);
+    } catch {}
+  }, [recapMode, qnaMode, minMode, academicMode, gymId, moduleId]);
   const [qnaPulse, setQnaPulse] = useState(false);       // one-shot nudge when completion unlocks it
   const [tab, setTab]             = useState("lesson"); // "lesson" | "code"
-  const [deeperOpen, setDeeperOpen] = useState(false);
 
   const { scenario, groundUp, explanation, takeaway, keyPoints, recap, deeperMath, interviewMin } = runnerData;
 
@@ -167,7 +193,7 @@ export default function FoundationsRunner({
   return (
     <div className="max-w-3xl mx-auto px-6 py-8" ref={contentRef} data-own-highlighter="1">
       {/* v1.6: sticky notes on this view are bucketed per module (structural bleed fix) */}
-      <StickyScope id={"m:" + moduleId + (qnaMode ? ":qna" : recapMode ? ":recap" : minMode ? ":min" : "")} />
+      <StickyScope id={"m:" + moduleId + (qnaMode ? ":qna" : academicMode ? ":academic" : recapMode ? ":recap" : minMode ? ":min" : "")} />
       <HighlightPopover
         containerRef={contentRef}
         moduleId={moduleId}
@@ -202,16 +228,26 @@ export default function FoundationsRunner({
 
         <div className="mt-4 relative inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
           <button
-            onClick={() => { setRecapMode(false); setQnaMode(false); setMinMode(false); }}
+            onClick={() => { setRecapMode(false); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
             className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
-              !recapMode && !qnaMode && !minMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              !recapMode && !qnaMode && !minMode && !academicMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             Full
           </button>
+          {deeperMath?.length > 0 && (
+            <button
+              onClick={() => { setAcademicMode(true); setRecapMode(false); setQnaMode(false); setMinMode(false); }}
+              className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
+                academicMode ? "bg-amber-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Academic
+            </button>
+          )}
           {recap && (
             <button
-              onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); }}
+              onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
                 recapMode && !qnaMode ? "bg-violet-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
@@ -221,7 +257,7 @@ export default function FoundationsRunner({
           )}
           {interviewMin?.length > 0 && (
             <button
-              onClick={() => { setMinMode(true); setRecapMode(false); setQnaMode(false); }}
+              onClick={() => { setMinMode(true); setRecapMode(false); setQnaMode(false); setAcademicMode(false); }}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
                 minMode ? "bg-emerald-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
@@ -236,7 +272,7 @@ export default function FoundationsRunner({
                 setTimeout(() => setQnaLockMsg(false), 2400);
                 return;
               }
-              setQnaMode(true); setRecapMode(false); setMinMode(false);
+              setQnaMode(true); setRecapMode(false); setMinMode(false); setAcademicMode(false);
             }}
             onMouseEnter={() => { if (!alreadyDone) setQnaLockMsg(true); }}
             onMouseLeave={() => setQnaLockMsg(false)}
@@ -260,7 +296,7 @@ export default function FoundationsRunner({
         </div>
 
         {/* ── Lesson / Code tab bar (only when the module carries code) ── */}
-        {hasCode && !recapMode && !qnaMode && !minMode && (
+        {hasCode && !recapMode && !qnaMode && !minMode && !academicMode && (
           <div className="mt-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
             <button
               onClick={() => setTab("lesson")}
@@ -285,6 +321,33 @@ export default function FoundationsRunner({
       {/* ── Interview QnA view (completion-gated; tab above enforces the gate) ── */}
       {qnaMode ? (
         <QnAPanel moduleId={moduleId} unlocked={alreadyDone} />
+      ) : academicMode && deeperMath?.length > 0 ? (
+        <section className="space-y-4">
+          <SectionRule label="Academic — formal setup & derivations" />
+          <div className="mt-4 space-y-4 rounded-xl border border-amber-900/40 bg-amber-950/10 p-5">
+            {deeperMath.map((item, i) => {
+              if (typeof item === "string") {
+                return <p key={i} className="text-sm text-zinc-200 leading-relaxed"><InlineMd text={item} /></p>;
+              }
+              if (item?.type === "illustration") {
+                return (
+                  <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 mt-2">
+                    {item.label && (
+                      <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">{item.label}</p>
+                    )}
+                    <pre className="text-xs font-mono text-zinc-300 leading-relaxed overflow-x-auto whitespace-pre">{item.content}</pre>
+                  </div>
+                );
+              }
+              if (item?.type === "scene") {
+                const Scene = FOUNDATION_SCENES[`${moduleId}/${item.sceneId}`];
+                return Scene ? <div key={i} className="my-2"><Scene /></div> : null;
+              }
+              return null;
+            })}
+          </div>
+          <p className="text-[11px] text-zinc-600">Derivation-grade tier — the Full view teaches the intuition this formalizes.</p>
+        </section>
       ) : minMode && interviewMin?.length > 0 ? (
         <section className="space-y-4">
           <SectionRule label="Interview Minimum — the 20% that carries 80%" />
@@ -391,48 +454,6 @@ export default function FoundationsRunner({
             })}
           </div>
         </section>
-
-        {/* ── Go Deeper — Academic (skeleton, added 2026-07-08): optional formal/derivation-grade
-             tier above Explanation. Collapsed by default so it never slows down the default reader;
-             only renders at all when a module supplies `deeperMath` (array, same item shapes as
-             `explanation`: string | {type:"illustration",...} | {type:"scene",...}). No module
-             populates this yet — `rope` is the planned pilot. ──────────────────────────────────── */}
-        {deeperMath?.length > 0 && (
-          <section>
-            <button
-              type="button"
-              onClick={() => setDeeperOpen(v => !v)}
-              className="w-full flex items-center gap-2 text-left text-xs font-mono uppercase tracking-widest text-amber-400/80 hover:text-amber-300 transition-colors"
-            >
-              <span>{deeperOpen ? "▾" : "▸"}</span>
-              <span>Go Deeper — Academic</span>
-            </button>
-            {deeperOpen && (
-              <div className="mt-4 space-y-4 rounded-xl border border-amber-900/40 bg-amber-950/10 p-5">
-                {deeperMath.map((item, i) => {
-                  if (typeof item === "string") {
-                    return <p key={i} className="text-sm text-zinc-200 leading-relaxed"><InlineMd text={item} /></p>;
-                  }
-                  if (item?.type === "illustration") {
-                    return (
-                      <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 mt-2">
-                        {item.label && (
-                          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">{item.label}</p>
-                        )}
-                        <pre className="text-xs font-mono text-zinc-300 leading-relaxed overflow-x-auto whitespace-pre">{item.content}</pre>
-                      </div>
-                    );
-                  }
-                  if (item?.type === "scene") {
-                    const Scene = FOUNDATION_SCENES[`${moduleId}/${item.sceneId}`];
-                    return Scene ? <div key={i} className="my-2"><Scene /></div> : null;
-                  }
-                  return null;
-                })}
-              </div>
-            )}
-          </section>
-        )}
 
         {/* ── Key points ───────────────────────────────────────────────────── */}
         {keyPoints?.length > 0 && (
