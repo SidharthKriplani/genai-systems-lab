@@ -1,4 +1,5 @@
-// StickyNotes v2.0 — floating margin-pin sticky notes (2026-07-22).
+// StickyNotes v2.1 — floating margin-pin sticky notes (2026-07-22).
+// v2.1: two-step delete confirmation (deletes tombstone across all devices).
 // v2.0: hashless bucket keys + legacy-bucket migration (cross-device sync fix).
 // v1.9: instant repaint when a cross-device pull-merge lands (annotations-merged).
 // v1.8: last-edited datetime stamp in the card footer (editedTs on text saves).
@@ -61,6 +62,7 @@ export function StickyNotes({ getContainer, pageKey }) {
   const [ctxSig, setCtxSig] = useState('')
   const [scope, setScope] = useState('')   // v1.6: current data-sticky-scope value
   const [syncNonce, setSyncNonce] = useState(0) // v1.9: bumped when a cloud pull-merge lands
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null) // v2.1: two-step delete arm
 
   // v1.4: bucket = pageKey + hash (heading-based scoping now lives in the
   // ANCHOR itself -- see stickyNotes.js nearestHeading). The body observer
@@ -95,6 +97,7 @@ export function StickyNotes({ getContainer, pageKey }) {
 
   useEffect(() => {
     setOpenId(null); setEditId(null); setRepinId(null); setPreviewId(null)
+    setConfirmDeleteId(null)
     // v1.5.2: auto-purge pre-v1.5 debris. Anchors without a `k` kind predate
     // module fencing, can never render correctly again, and haunt the tray --
     // delete them from storage outright.
@@ -299,7 +302,21 @@ export function StickyNotes({ getContainer, pageKey }) {
           ))}
           <span style={{ flex: 1 }} />
           {!pos && <button onClick={() => setRepinId(n.id)} title="Then Option+click (or drop) a new spot" style={{ background: 'transparent', border: 'none', color: '#cfcfcf', cursor: 'pointer', fontSize: '0.7rem' }}>re-pin</button>}
-          {iconBtn('trash-2', () => remove(n.id), 'Delete note')}
+          {confirmDeleteId === n.id ? (
+            <button
+              onClick={() => { setConfirmDeleteId(null); remove(n.id) }}
+              title="Click again to permanently delete (removes on ALL devices)"
+              style={{ background: 'rgba(224,80,80,0.22)', border: '1px solid #e05050', color: '#ff9a9a', borderRadius: 6, padding: '1px 7px', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+              Delete?
+            </button>
+          ) : (
+            iconBtn('trash-2', () => {
+              // v2.1: deletion is tombstoned (propagates to every device), so a
+              // misclick is destructive -- arm first, confirm within 3s.
+              setConfirmDeleteId(n.id)
+              setTimeout(() => setConfirmDeleteId(c => (c === n.id ? null : c)), 3000)
+            }, 'Delete note (click twice to confirm)')
+          )}
           {iconBtn('x', () => { setOpenId(null); setEditId(null) }, 'Close')}
         </div>
         {editId === n.id ? (
