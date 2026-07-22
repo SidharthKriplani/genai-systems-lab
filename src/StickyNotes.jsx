@@ -72,7 +72,13 @@ export function StickyNotes({ getContainer, pageKey }) {
 
   useEffect(() => {
     setOpenId(null); setEditId(null); setRepinId(null); setPreviewId(null)
-    setNotes(listStickies(fullKey))
+    // v1.5.2: auto-purge pre-v1.5 debris. Anchors without a `k` kind predate
+    // module fencing, can never render correctly again, and haunt the tray --
+    // delete them from storage outright.
+    const all = listStickies(fullKey)
+    const keep = all.filter(n => n.anchor && n.anchor.k)
+    for (const n of all) { if (!(n.anchor && n.anchor.k)) deleteSticky(fullKey, n.id) }
+    setNotes(keep)
     const t1 = setTimeout(() => setTick(t => t + 1), 120)
     const t2 = setTimeout(() => setTick(t => t + 1), 800)
     return () => { clearTimeout(t1); clearTimeout(t2) }
