@@ -73,6 +73,7 @@ export const SYNC_KEYS = [
   "gsl-streak",            // Streak count
   "gsl-last-visit",        // Last visit date
   "gsl-last-touched-v1",  // Continue-strip: last Foundations module opened
+  "gsl-review-schedule",  // Review.jsx spaced-repetition schedule (all 3 sources)
   // Annotations (2026-07-22): sticky notes + in-place highlights + their
   // delete-tombstones. Pull side MERGES these (per-item newest-wins) instead
   // of local-wins — see pullProgress + utils/annotationsSync.js.
