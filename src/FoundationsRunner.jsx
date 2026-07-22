@@ -64,18 +64,23 @@ export default function FoundationsRunner({
   const [recapMode, setRecapMode] = useState(false);
   // ── Interview QnA view (QNA-INTERVIEW-STANDARD.md) — completion-gated tab ──
   const [qnaMode, setQnaMode] = useState(false);
+  // ── 20:80 Interview-Minimum mini-tab (T8, 2026-07-23) ──
+  const [minMode, setMinMode] = useState(false);
   const [qnaLockMsg, setQnaLockMsg] = useState(false);   // tap/hover feedback on the locked tab
   // 2026-07-23 fix: this scroll-reset effect MUST sit below the qnaMode
   // declaration -- its dependency array evaluates at render time, and
   // referencing qnaMode above its const line threw a TDZ ("Cannot access 'T'
   // before initialization") that crashed every module open. (Fable bug,
   // introduced by widening the deps of an effect inserted above the binding.)
-  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode]);
+  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode, minMode]);
+  // minMode is per-module opt-in content; a module without interviewMin would
+  // strand a stale minMode=true (Full content shown, no tab active) — reset on nav.
+  useEffect(() => { setMinMode(false); }, [moduleId]);
   const [qnaPulse, setQnaPulse] = useState(false);       // one-shot nudge when completion unlocks it
   const [tab, setTab]             = useState("lesson"); // "lesson" | "code"
   const [deeperOpen, setDeeperOpen] = useState(false);
 
-  const { scenario, groundUp, explanation, takeaway, keyPoints, recap, deeperMath } = runnerData;
+  const { scenario, groundUp, explanation, takeaway, keyPoints, recap, deeperMath, interviewMin } = runnerData;
 
   // ── "Your takeaway" (Q3 Wave A item 2, 2026-07-23) — user-writable box
   // shown atop the recap tab. Same pageKey formula as HighlightPopover.jsx /
@@ -162,7 +167,7 @@ export default function FoundationsRunner({
   return (
     <div className="max-w-3xl mx-auto px-6 py-8" ref={contentRef} data-own-highlighter="1">
       {/* v1.6: sticky notes on this view are bucketed per module (structural bleed fix) */}
-      <StickyScope id={"m:" + moduleId + (qnaMode ? ":qna" : recapMode ? ":recap" : "")} />
+      <StickyScope id={"m:" + moduleId + (qnaMode ? ":qna" : recapMode ? ":recap" : minMode ? ":min" : "")} />
       <HighlightPopover
         containerRef={contentRef}
         moduleId={moduleId}
@@ -197,21 +202,31 @@ export default function FoundationsRunner({
 
         <div className="mt-4 relative inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
           <button
-            onClick={() => { setRecapMode(false); setQnaMode(false); }}
+            onClick={() => { setRecapMode(false); setQnaMode(false); setMinMode(false); }}
             className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
-              !recapMode && !qnaMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              !recapMode && !qnaMode && !minMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             Full
           </button>
           {recap && (
             <button
-              onClick={() => { setRecapMode(true); setQnaMode(false); }}
+              onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); }}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
                 recapMode && !qnaMode ? "bg-violet-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
               ⚡ Quick recap
+            </button>
+          )}
+          {interviewMin?.length > 0 && (
+            <button
+              onClick={() => { setMinMode(true); setRecapMode(false); setQnaMode(false); }}
+              className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
+                minMode ? "bg-emerald-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              20:80
             </button>
           )}
           <button
@@ -221,7 +236,7 @@ export default function FoundationsRunner({
                 setTimeout(() => setQnaLockMsg(false), 2400);
                 return;
               }
-              setQnaMode(true); setRecapMode(false);
+              setQnaMode(true); setRecapMode(false); setMinMode(false);
             }}
             onMouseEnter={() => { if (!alreadyDone) setQnaLockMsg(true); }}
             onMouseLeave={() => setQnaLockMsg(false)}
@@ -245,7 +260,7 @@ export default function FoundationsRunner({
         </div>
 
         {/* ── Lesson / Code tab bar (only when the module carries code) ── */}
-        {hasCode && !recapMode && !qnaMode && (
+        {hasCode && !recapMode && !qnaMode && !minMode && (
           <div className="mt-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
             <button
               onClick={() => setTab("lesson")}
@@ -270,6 +285,18 @@ export default function FoundationsRunner({
       {/* ── Interview QnA view (completion-gated; tab above enforces the gate) ── */}
       {qnaMode ? (
         <QnAPanel moduleId={moduleId} unlocked={alreadyDone} />
+      ) : minMode && interviewMin?.length > 0 ? (
+        <section className="space-y-4">
+          <SectionRule label="Interview Minimum — the 20% that carries 80%" />
+          <div className="mt-4 space-y-4 rounded-xl border border-emerald-900/40 bg-emerald-950/10 p-5">
+            {interviewMin.map((item, i) =>
+              typeof item === "string"
+                ? <p key={i} className="text-sm text-zinc-200 leading-relaxed"><InlineMd text={item} /></p>
+                : null
+            )}
+          </div>
+          <p className="text-[11px] text-zinc-600">This is the floor, not the ceiling — the Full view and Interview QnA carry the rest.</p>
+        </section>
       ) : hasCode && tab === "code" && !recapMode ? (
         <section className="space-y-6">
           <SectionRule label={`Code${codeBlocks.length > 1 ? ` · ${codeBlocks.length} blocks` : ""}`} />
