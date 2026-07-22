@@ -1,4 +1,5 @@
-// StickyNotes v1.6 — floating margin-pin sticky notes (2026-07-22).
+// StickyNotes v1.7 — floating margin-pin sticky notes (2026-07-22).
+// v1.7: sticky-create-at event -> note from text selection (popover Note button).
 // v1.6: per-module storage buckets via <StickyScope/> (structural bleed fix).
 // Create: drag the sticky-note button from the header bar and drop anywhere on
 // content (or Option/Alt+click). Pins: hover = preview, click = open, click
@@ -120,7 +121,7 @@ export function StickyNotes({ getContainer, pageKey }) {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  const createAt = useCallback((clientX, clientY, target) => {
+  const createAt = useCallback((clientX, clientY, target, initialText) => {
     const el = getContainer(); if (!el) return false
     const t = target || document.elementFromPoint(clientX, clientY)
     if (!(t instanceof Element) || !el.contains(t)) return false
@@ -129,7 +130,7 @@ export function StickyNotes({ getContainer, pageKey }) {
       setNotes(ns => { const upd = ns.map(n => n.id === repinId ? { ...n, anchor } : n); const n = upd.find(x => x.id === repinId); if (n) saveSticky(fullKey, n); return upd })
       setOpenId(repinId); setRepinId(null)
     } else {
-      const note = { id: genId(), color: 'gold', text: '', anchor, ts: Date.now() }
+      const note = { id: genId(), color: 'gold', text: initialText || '', anchor, ts: Date.now() }
       const liveScope = scopeOf(el)  // v1.6: never trust debounced state at drop time
       const liveKey = pageKey + '|' + ctxSig + (liveScope ? '|s:' + liveScope : '')
       saveSticky(liveKey, note)
@@ -139,6 +140,18 @@ export function StickyNotes({ getContainer, pageKey }) {
     }
     return true
   }, [getContainer, fullKey, repinId, pageKey, ctxSig])
+
+  // v1.7: external create request — the highlight popover's "Note" button
+  // dispatches sticky-create-at with the selection midpoint + quoted text, so
+  // a note can be dropped without dragging from the bar (works on touch too).
+  useEffect(() => {
+    const onCreate = (e) => {
+      const d = (e && e.detail) || {}
+      if (typeof d.x === 'number' && typeof d.y === 'number') createAt(d.x, d.y, null, d.text || '')
+    }
+    window.addEventListener('sticky-create-at', onCreate)
+    return () => window.removeEventListener('sticky-create-at', onCreate)
+  }, [createAt])
 
   // Bar-button drag session: ghost follows pointer, drop creates the note.
   useEffect(() => {

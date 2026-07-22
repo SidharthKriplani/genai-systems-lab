@@ -27,6 +27,11 @@ import { addHighlight, occurrenceOfSelection, applyAll, removeHighlight, unpaint
 export default function HighlightPopover({ containerRef, moduleId, gymId, sourceLabel }) {
   const [sel, setSel]             = useState(null); // { text, rect }
   const [color, setColor]         = useState(null);
+  // Marker mode (2026-07-22): pick a color once, every subsequent selection
+  // paints instantly -- no toolbar round-trip. Persisted so it survives
+  // module switches; exit via the floating chip or Esc.
+  const [marker, setMarker]       = useState(() => { try { return localStorage.getItem("gsl-marker-mode-v1") || ""; } catch { return ""; } });
+  const setMarkerMode = (cid) => { setMarker(cid); try { cid ? localStorage.setItem("gsl-marker-mode-v1", cid) : localStorage.removeItem("gsl-marker-mode-v1"); } catch {} };
   const [pickerFor, setPickerFor] = useState(null); // pending {id,label,meta} while the track picker is open
   const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
   const pageKey = `fnd::${gymId || ""}::${moduleId || ""}`;
@@ -73,9 +78,20 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
     }
     const rect = s.getRangeAt(0).getBoundingClientRect();
     if (!rect || (rect.width === 0 && rect.height === 0)) { setSel(null); return; }
+    if (marker) {
+      // Marker mode: paint immediately, keep no toolbar, collapse selection.
+      if (container.textContent && container.textContent.includes(text)) {
+        const n = occurrenceOfSelection(container, text);
+        addHighlight(pageKey, { id: paintGenId(), text, n, color: marker });
+        applyAll(container, pageKey);
+      }
+      try { s.removeAllRanges(); } catch { /* ignore */ }
+      setSel(null);
+      return;
+    }
     setSel({ text, rect });
     setColor(null); // a fresh selection clears any previously-picked color
-  }, [containerRef]);
+  }, [containerRef, marker, pageKey]);
 
   useEffect(() => {
     function onMouseUp(e) {
@@ -106,6 +122,13 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
     window.addEventListener("scroll", onScroll, true);
     return () => window.removeEventListener("scroll", onScroll, true);
   }, []);
+
+  useEffect(() => {
+    if (!marker) return;
+    const onKey = (e) => { if (e.key === "Escape") setMarkerMode(""); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [marker]);
 
   function reset() {
     setSel(null);
@@ -162,7 +185,20 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
         boxShadow: "0 10px 28px rgba(0,0,0,0.55)" }}
     >Remove highlight</button>, document.body) : null;
 
-  if (!sel && !pickerFor && !flash) return removePill;
+  const markerChip = marker ? createPortal(
+    <button
+      onClick={() => setMarkerMode("")}
+      title="Marker mode is on: every selection highlights instantly. Click (or press Esc) to exit."
+      style={{ position: "fixed", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 250,
+        display: "inline-flex", alignItems: "center", gap: 8,
+        background: "rgba(24,24,27,0.97)", color: "#e8e8e8", border: "1px solid rgba(63,63,70,0.8)",
+        borderRadius: 20, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.45)" }}>
+      <span style={{ width: 10, height: 10, borderRadius: "50%", background: (HIGHLIGHT_COLORS.find(c => c.id === marker) || HIGHLIGHT_COLORS[2]).hex, flexShrink: 0 }} />
+      Marker on — click to exit
+    </button>, document.body) : null;
+
+  if (!sel && !pickerFor && !flash) return <>{removePill}{markerChip}</>;
 
   return (
     <>
@@ -173,9 +209,9 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
           style={{
             position: "fixed",
             top: Math.max(8, sel.rect.top - 54),
-            left: Math.min(Math.max(8, sel.rect.left + sel.rect.width / 2 - 90), Math.max(8, window.innerWidth - 188)),
+            left: Math.min(Math.max(8, sel.rect.left + sel.rect.width / 2 - 130), Math.max(8, window.innerWidth - 268)),
             zIndex: 9999,
-            width: 180,
+            width: 260,
             display: "flex",
             alignItems: "center",
             gap: "0.4rem",
@@ -209,6 +245,24 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
               }}
             />
           ))}
+          <button
+            onClick={() => { setMarkerMode(color || "amber"); reset(); }}
+            title="Marker mode: keep highlighting with this color on every selection (Esc to exit)"
+            style={{ background: "transparent", color: "#cfcfcf", border: "1px solid rgba(255,255,255,0.16)",
+              borderRadius: "6px", padding: "0.28rem 0.45rem", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+          >Marker</button>
+          <button
+            onClick={() => {
+              if (!sel) return;
+              const r = sel.rect;
+              const q = sel.text.length > 140 ? sel.text.slice(0, 140).trim() + "…" : sel.text;
+              window.dispatchEvent(new CustomEvent("sticky-create-at", { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2, text: '"' + q + '"\n' } }));
+              reset();
+            }}
+            title="Drop a sticky note anchored to this text"
+            style={{ background: "transparent", color: "#cfcfcf", border: "1px solid rgba(255,255,255,0.16)",
+              borderRadius: "6px", padding: "0.28rem 0.45rem", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+          >Note</button>
           <button
             onClick={handleSave}
             title="Save highlight to a track (color optional)"
@@ -244,6 +298,7 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
         document.body
       )}
     {removePill}
+    {markerChip}
       </>
   );
 }

@@ -7,11 +7,18 @@
 
 const KEY = 'gsl_page_highlights_v1'
 
+// 2026-07-22 fix: ids now match the swatch palette (highlightColors.js uses
+// violet/emerald/amber/red -- the old gold/teal/green keys matched NOTHING, so
+// every color fell back to gold). Alphas raised ~0.26 -> ~0.42: the old marks
+// sank into the dark background. Legacy ids kept resolvable.
 const FAINT = {
-  gold:  'rgba(232,160,48,0.28)',
-  teal:  'rgba(64,190,190,0.26)',
-  green: 'rgba(52,211,153,0.24)',
-  red:   'rgba(224,80,80,0.26)',
+  violet:  'rgba(167,139,250,0.42)',
+  emerald: 'rgba(52,211,153,0.40)',
+  amber:   'rgba(251,191,36,0.44)',
+  red:     'rgba(248,113,113,0.40)',
+  gold:    'rgba(251,191,36,0.44)',
+  teal:    'rgba(64,190,190,0.40)',
+  green:   'rgba(52,211,153,0.40)',
 }
 
 function readAll() {
@@ -31,7 +38,13 @@ export function addHighlight(pageKey, hl) {
 }
 export function removeHighlight(pageKey, id) {
   const all = readAll()
-  all[pageKey] = (all[pageKey] || []).filter(h => h.id !== id)
+  const arr = all[pageKey] || []
+  // 2026-07-22 fix: repeated swatch clicks used to accrete DUPLICATE entries
+  // for the same (text, n) -- only one ever painted, so "Remove" killed the
+  // painted one and a hidden twin resurrected it on the next repaint. Removing
+  // by id now also removes every entry anchored to the same (text, n).
+  const target = arr.find(h => h.id === id)
+  all[pageKey] = arr.filter(h => h.id !== id && !(target && h.text === target.text && h.n === target.n))
   if (!all[pageKey].length) delete all[pageKey]
   writeAll(all)
 }
@@ -95,7 +108,7 @@ function paintOne(container, hl) {
     const mark = document.createElement('mark')
     mark.setAttribute('data-hl-id', hl.id)
     mark.className = 'gsl-hl'
-    mark.style.background = FAINT[hl.color] || FAINT.gold
+    mark.style.background = FAINT[hl.color] || FAINT.amber
     mark.style.color = 'inherit'
     mark.style.borderRadius = '3px'
     mark.style.cursor = 'pointer'
@@ -107,6 +120,18 @@ function paintOne(container, hl) {
 // Idempotent full repaint for a page's container.
 export function applyAll(container, pageKey) {
   if (!container) return
+  // 2026-07-22 dedupe migration: collapse (text, n) duplicates accreted by the
+  // old add-per-swatch-click behavior -- LAST one wins (newest color pick),
+  // and the cleanup is persisted so old debris can never resurrect a deleted
+  // highlight again. Idempotent.
+  const arr = listHighlights(pageKey)
+  const seen = new Map()
+  for (const h of arr) seen.set(h.text + '\u0000' + h.n, h)
+  if (seen.size !== arr.length) {
+    const all = readAll()
+    all[pageKey] = [...seen.values()]
+    writeAll(all)
+  }
   clearPainted(container)
   for (const hl of listHighlights(pageKey)) paintOne(container, hl)
 }
