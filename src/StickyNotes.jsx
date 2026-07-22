@@ -47,30 +47,26 @@ export function StickyNotes({ getContainer, pageKey }) {
   const [dropGhost, setDropGhost] = useState(null) // { x, y } while dragging from the bar
   const [ctxSig, setCtxSig] = useState('')
 
-  // Context signature (v1.3 fix): SPA views can swap the rendered module WITHOUT
-  // changing tab or hash (e.g. MSL foundation tabs keep selection in internal
-  // state) -- so notes are bucketed by pageKey + hash + the first heading's text
-  // inside the container. A body-level MutationObserver (debounced) re-derives
-  // the signature whenever content swaps.
+  // v1.4: bucket = pageKey + hash (heading-based scoping now lives in the
+  // ANCHOR itself -- see stickyNotes.js nearestHeading). The body observer
+  // re-derives the hash and bumps a repaint tick on real content swaps,
+  // ignoring mutations caused by our own portal (else: render loop).
   useEffect(() => {
     let t = null
-    const derive = () => {
-      let hash = ''
-      try { hash = window.location.hash || '' } catch {}
-      const el = getContainer()
-      const h = el ? el.querySelector('h1,h2') : null
-      const sig = ((h && h.textContent) || '').trim().slice(0, 60)
-      setCtxSig(hash + '|' + sig)
-    }
-    derive()
-    window.addEventListener('hashchange', derive)
+    const onHash = () => { try { setCtxSig(window.location.hash || '') } catch { setCtxSig('') } }
+    onHash()
+    window.addEventListener('hashchange', onHash)
     let mo = null
     if (typeof MutationObserver !== 'undefined') {
-      mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(derive, 200) })
+      mo = new MutationObserver((muts) => {
+        const relevant = muts.some(m => !(m.target instanceof Element && m.target.closest && m.target.closest('[data-sticky-ui]')))
+        if (!relevant) return
+        clearTimeout(t); t = setTimeout(() => { onHash(); setTick(x => x + 1) }, 250)
+      })
       mo.observe(document.body, { childList: true, subtree: true })
     }
-    return () => { window.removeEventListener('hashchange', derive); if (mo) mo.disconnect(); clearTimeout(t) }
-  }, [pageKey, getContainer])
+    return () => { window.removeEventListener('hashchange', onHash); if (mo) mo.disconnect(); clearTimeout(t) }
+  }, [pageKey])
 
   const fullKey = pageKey + '|' + ctxSig
 

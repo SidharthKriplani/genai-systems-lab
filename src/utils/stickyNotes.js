@@ -31,19 +31,32 @@ const BLOCK_SEL = 'p,li,pre,blockquote,h1,h2,h3,h4,h5,h6,td'
 
 function snippetOf(el) { return (el.textContent || '').trim().slice(0, 80) }
 
+// The heading nearest ABOVE a block (module title, section header) -- stored in
+// the anchor and REQUIRED to match at resolve time. This is what stops a note
+// anchored to a module-agnostic block (tab buttons, "START HERE" strip) from
+// bleeding onto sibling modules that share the same page/tab (v1.4 fix).
+function nearestHeading(container, block) {
+  let best = null
+  for (const h of container.querySelectorAll('h1,h2,h3')) {
+    if (h.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING) best = h
+  }
+  return best ? (best.textContent || '').trim().slice(0, 60) : ''
+}
+
 // Build an anchor from a click at (clientX, clientY) on element `el`.
 export function blockAnchorFromPoint(container, el, clientX, clientY) {
   let block = el && el.closest ? el.closest(BLOCK_SEL) : null
   if (!block || !container.contains(block)) block = container
   const snippet = block === container ? '' : snippetOf(block)
+  const ctx = block === container ? '' : nearestHeading(container, block)
   let n = 0
   if (snippet) {
     for (const b of container.querySelectorAll(BLOCK_SEL)) {
-      if (snippetOf(b) === snippet) { if (b === block) break; n++ }
+      if (snippetOf(b) === snippet && nearestHeading(container, b) === ctx) { if (b === block) break; n++ }
     }
   }
   const r = block.getBoundingClientRect()
-  return { snippet, n, dx: Math.round(clientX - r.left), dy: Math.round(clientY - r.top) }
+  return { snippet, n, ctx, dx: Math.round(clientX - r.left), dy: Math.round(clientY - r.top) }
 }
 
 // Resolve an anchor to document coordinates, or null if the block is gone.
@@ -54,7 +67,9 @@ export function resolveAnchor(container, a) {
   else {
     let count = 0
     for (const b of container.querySelectorAll(BLOCK_SEL)) {
-      if (snippetOf(b) === a.snippet) { if (count === a.n) { block = b; break } count++ }
+      if (snippetOf(b) !== a.snippet) continue
+      if (a.ctx != null && nearestHeading(container, b) !== a.ctx) continue
+      if (count === a.n) { block = b; break } count++
     }
   }
   if (!block) return null
