@@ -82,6 +82,7 @@ export default function FoundationsRunner({
   // ── Academic view (T6, promoted from collapsed panel to tab 2026-07-23) ──
   const [academicMode, setAcademicMode] = useState(initialHashView === "academic" && (runnerData?.deeperMath?.length > 0));
   const [qnaLockMsg, setQnaLockMsg] = useState(false);   // tap/hover feedback on the locked tab
+  const [tabTip, setTabTip] = useState(null);            // instant hover description under the view switcher
   // 2026-07-23 fix: this scroll-reset effect MUST sit below the qnaMode
   // declaration -- its dependency array evaluates at render time, and
   // referencing qnaMode above its const line threw a TDZ ("Cannot access 'T'
@@ -230,6 +231,8 @@ export default function FoundationsRunner({
           <button
             onClick={() => { setRecapMode(false); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
             title="The complete lesson: teaching, worked examples, key points"
+            onMouseEnter={() => setTabTip("Full — the complete lesson: teaching, worked examples, key points")}
+            onMouseLeave={() => setTabTip(null)}
             className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
               !recapMode && !qnaMode && !minMode && !academicMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
             }`}
@@ -240,6 +243,8 @@ export default function FoundationsRunner({
             <button
               onClick={() => { setAcademicMode(true); setRecapMode(false); setQnaMode(false); setMinMode(false); }}
               title="Formal setup and derivations: the math behind the lesson, with primary sources"
+              onMouseEnter={() => setTabTip("Academic — formal setup and derivations: the math behind the lesson, with primary sources")}
+              onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
                 academicMode ? "bg-amber-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
@@ -251,6 +256,8 @@ export default function FoundationsRunner({
             <button
               onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
               title="Compressed refresher of what this module taught"
+              onMouseEnter={() => setTabTip("Quick recap — compressed refresher of what this module taught")}
+              onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
                 recapMode && !qnaMode ? "bg-violet-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
@@ -262,6 +269,8 @@ export default function FoundationsRunner({
             <button
               onClick={() => { setMinMode(true); setRecapMode(false); setQnaMode(false); setAcademicMode(false); }}
               title="Interview minimum: the 20% of this module that carries 80% of interview asks"
+              onMouseEnter={() => setTabTip("20:80 — the interview minimum: the 20% of this module that carries 80% of interview asks")}
+              onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
                 minMode ? "bg-emerald-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
@@ -279,8 +288,8 @@ export default function FoundationsRunner({
               setQnaMode(true); setRecapMode(false); setMinMode(false); setAcademicMode(false);
             }}
             title={alreadyDone ? "Interview questions with answers for this module" : "Interview QnA: unlocks when you mark the module complete"}
-            onMouseEnter={() => { if (!alreadyDone) setQnaLockMsg(true); }}
-            onMouseLeave={() => setQnaLockMsg(false)}
+            onMouseEnter={() => { if (!alreadyDone) setQnaLockMsg(true); else setTabTip("Interview QnA — real interview questions with graded answers for this module"); }}
+            onMouseLeave={() => { setQnaLockMsg(false); setTabTip(null); }}
             aria-disabled={!alreadyDone}
             className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors inline-flex items-center gap-1.5 ${
               qnaMode
@@ -293,6 +302,11 @@ export default function FoundationsRunner({
             {!alreadyDone && <LockIcon size={10} />}
             Interview QnA
           </button>
+          {tabTip && !qnaLockMsg && (
+            <span className="absolute left-0 top-full mt-1.5 whitespace-nowrap text-[10px] font-mono px-2.5 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-300 z-20 shadow-lg">
+              {tabTip}
+            </span>
+          )}
           {qnaLockMsg && !alreadyDone && (
             <span className="absolute left-0 top-full mt-1.5 whitespace-nowrap text-[10px] font-mono px-2.5 py-1.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-300 z-20 shadow-lg">
               Mark the module complete to unlock Interview QnA

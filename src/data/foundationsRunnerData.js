@@ -421,9 +421,11 @@ RMSNorm    = x / RMS(x) * g               drops mean-centering + bias   → ~sam
     ],
     takeaway: "Depth isn't free: each Transformer layer adds sequential latency, memory, and training compute. Residual connections make depth trainable. In production, model depth directly determines cost-per-token — 'add more layers' needs a compute budget attached to be a real proposal.",
     deeperMath: [
+      `The Full view teaches the transformer by intuition \u2014 blending, highways, regulators. This tab replays the same block with nothing left vague: exact shapes, exact parameter counts, and the two derivations interviewers and paper-readers actually lean on. Nothing here contradicts the lesson; it sharpens it until you can compute with it.`,
       { h: "1 \u00b7 Formal setup \u2014 the block, exactly" },
       `Fix model width d and context length n. The residual stream is a matrix X \u2208 \u211d^{n\u00d7d}, one row per position. A modern (pre-LN) decoder block computes:`,
       { eq: "H = X + MHA(LN\u2081(X))\nY = H + FFN(LN\u2082(H))" },
+      `Read these two lines the way you'd read code: each sublayer takes the current stream, normalizes a COPY of it, computes something from that copy, and adds the result back. X itself is never overwritten \u2014 that "+" is the single most consequential character in the architecture, and Derivation B below is entirely about it.`,
       `where LN is LayerNorm applied row-wise (per position), with learned \u03b3, \u03b2 \u2208 \u211d^d:`,
       { eq: "LN(x) = \u03b3 \u2299 (x \u2212 \u03bc(x))/\u03c3(x) + \u03b2" },
       `MHA is multi-head causal attention: h heads, each with W^Q, W^K, W^V \u2208 \u211d^{d\u00d7d\u2096}, d\u2096 = d/h, plus one shared W^O \u2208 \u211d^{d\u00d7d}; the causal mask sets scores at j > i to \u2212\u221e before softmax. FFN is position-wise, \u03c6 a GELU-class nonlinearity, inner width 4d the classic configuration:`,
@@ -431,8 +433,9 @@ RMSNorm    = x / RMS(x) * g               drops mean-centering + bias   → ~sam
       `Note what the residual form makes literal: the lesson's "highway" is the identity term X + (...) \u2014 every sublayer computes a *correction* to the stream, not a replacement of it.`,
 
       { h: "2 \u00b7 Derivation A \u2014 parameter & compute accounting, to the number" },
+      `Two quantities decide what a transformer costs: parameters (memory, checkpoint size, download time) and FLOPs (latency, training bill). Both reduce to counting matrix shapes. Do the count once, slowly, and every scaling conversation \u2014 "can we afford 70B?", "why is long context expensive?" \u2014 becomes arithmetic instead of vibes.`,
       { list: [
-        `**Attention params/block:** h\u00b73\u00b7d\u00b7d\u2096 + d\u00b2 = 3d\u00b2 + d\u00b2 = 4d\u00b2 (independent of h, since h\u00b7d\u2096 = d).`,
+        `**Attention params/block:** three projections (Q, K, V) of size d\u00d7d\u2096 per head, across h heads, plus the shared output merge W^O of size d\u00d7d: h\u00b73\u00b7d\u00b7d\u2096 + d\u00b2 = 3d\u00b2 + d\u00b2 = 4d\u00b2. Note it is independent of h \u2014 since h\u00b7d\u2096 = d, adding heads re-slices the same matrices; it never adds parameters.`,
         `**FFN params/block:** d\u00b74d + 4d\u00b7d = 8d\u00b2.`,
         `**Total per block \u2248 12d\u00b2** \u2014 LayerNorm's 2d and biases are negligible.`,
       ] },
@@ -445,15 +448,17 @@ RMSNorm    = x / RMS(x) * g               drops mean-centering + bias   → ~sam
       `\u2014 the rule scaling-law work builds on [verify: Kaplan et al. 2020 use C\u22486ND as the compute accounting].`,
 
       { h: "3 \u00b7 Derivation B \u2014 why the highway makes depth trainable" },
+      `The lesson calls the residual path a "highway" and asks you to trust that it matters. Here is the exact sense in which the metaphor is load-bearing \u2014 a two-line computation that predicts, before you train anything, which deep stacks are trainable and which collapse. Start from the failure case:`,
       `Stack L sublayers WITHOUT residuals: X\u2097\u208a\u2081 = f\u2097(X\u2097). Write F\u2097 for the Jacobian \u2202f\u2097/\u2202X\u2097; the chain rule gives a product of L Jacobians:`,
       { eq: "\u2202L/\u2202X\u207d\u2070\u207e = (\u220f\u2097 F\u2097) \u00b7 \u2202L/\u2202X\u207d\u1d38\u207e" },
       `If the typical singular value of each F\u2097 sits at s, the gradient magnitude scales like s^L: for s = 0.9, L = 48, s^L \u2248 0.006 \u2014 attenuation is exponential in depth, the same disease recurrence has in time, transplanted into depth.`,
       `WITH residuals, X\u2097\u208a\u2081 = X\u2097 + f\u2097(X\u2097), so each factor becomes I + F\u2097:`,
       { eq: "\u2202L/\u2202X\u207d\u2070\u207e = (\u220f\u2097 (I + F\u2097)) \u00b7 \u2202L/\u2202X\u207d\u1d38\u207e" },
-      `Expanding the product yields 2^L terms, one of which is exactly I \u2014 an unattenuated, identity path from loss to every layer, existing at every depth, regardless of what the f\u2097 learn. Gradient flow no longer *requires* well-conditioned sublayers; it survives them.`,
+      `Expanding the product yields 2^L terms, one of which is exactly I \u2014 an unattenuated identity path from loss to every layer, existing at every depth, regardless of what the f\u2097 learn. Gradient flow no longer *requires* well-conditioned sublayers; it survives them. This is why the same trick recurs across architectures (ResNets, LSTM cell states, highway networks): whenever you need signal to cross many multiplicative stages, you buy safety by making one path additive.`,
       `Where LayerNorm sits relative to this highway decides trainability at scale: the original post-LN placement (LN *after* the residual add) normalizes the highway itself, and its output-layer gradients at initialization scale adversely with depth \u2014 which is why the original recipe needed a learning-rate warmup stage; pre-LN (LN inside the branch, highway untouched) yields well-behaved gradients at init and trains without warmup. The lesson's "regulator" has a load-bearing address, not just a job.`,
 
       { h: "4 \u00b7 Where the lesson's simplifications break" },
+      `A formal treatment should also say where it stops being true. Three of the lesson's simplifications have precise, published correction terms:`,
       { list: [
         `"Stacked attention collapses into one layer of mixing" is exact for the value pathway with frozen attention weights \u2014 attention output is a linear combination of value vectors, and compositions of linear maps are linear. With input-dependent weights the full map is not linear; the honest statement is the circuits-formalism one: attention-only transformers are analyzable as compositions of low-rank "read-write" operations on the residual stream and are provably limited to a restricted class of computations (skip-trigram-like patterns for one layer, induction-head compositions at two) \u2014 the FFN is what breaks this regime.`,
         `"The FFN is where knowledge lives" has a concrete mechanistic reading: FFN layers behave as key-value memories \u2014 W\u2081's rows act as pattern detectors ("keys") over the stream, W\u2082's columns as stored distributional updates ("values") \u2014 with human-interpretable patterns recoverable per neuron.`,
@@ -461,6 +466,7 @@ RMSNorm    = x / RMS(x) * g               drops mean-centering + bias   → ~sam
       ] },
 
       { h: "5 \u00b7 Primary sources" },
+      `Four papers, in reading order \u2014 each grounds one section above:`,
       { list: [
         `Vaswani et al., "Attention Is All You Need" (NeurIPS 2017) \u2014 introduced the architecture; a pure attention+FFN+residual+LN stack, no recurrence or convolution, set state of the art on WMT'14 translation at a fraction of prior training cost.`,
         `Xiong et al., "On Layer Normalization in the Transformer Architecture" (ICML 2020) \u2014 proved via mean-field analysis that post-LN Transformers have large output-layer gradients at initialization (necessitating warmup) while pre-LN yields well-behaved gradients, allowing warmup-free training.`,
@@ -476,6 +482,7 @@ RMSNorm    = x / RMS(x) * g               drops mean-centering + bias   → ~sam
         `For d = 4096, L = 32, vocab 128k: derive the non-embedding parameter count, the FLOPs per generated token, and the KV-cache size per token at fp16 \u2014 then say which of compute or memory bandwidth bounds single-stream decoding latency, and why batch size changes the answer.`,
         `Defend pre-LN over post-LN from the gradient-propagation argument alone, then predict \u2014 before training it \u2014 what a 48-layer post-LN model does in the first 500 steps without warmup, and which single hyperparameter rescues it.`,
       ] },
+      `If you can reproduce Derivations A and B unprompted, every "how big / how expensive / why does it train" question stops being trivia and becomes arithmetic. That is the bar this tab is calibrated to.`,
     ],
     interviewMin: [
       { h: "If you only remember five things" },
@@ -499,6 +506,14 @@ RMSNorm    = x / RMS(x) * g               drops mean-centering + bias   → ~sam
         `LayerNorm normalizes across the FEATURE dimension of each token independently \u2014 saying "across the batch" describes BatchNorm and is an instant flag.`,
         `Parameter count does NOT grow with context length \u2014 n never appears in 12d\u00b2; what grows with n is activation memory and the KV cache at inference.`,
         `"Attention is O(n\u00b2)" needs scoping: the score MATRIX is n\u00b2 in compute and memory, but the projections stay linear \u2014 blanket "transformers are quadratic" without that split invites a follow-up you don't want.`,
+      ] },
+      { h: "Rapid-fire follow-ups \u2014 one line each" },
+      { list: [
+        `**"Why divide by \u221ad\u2096?"** Dot products of d\u2096-dimensional vectors grow in magnitude with d\u2096; unscaled, the softmax saturates and its gradients vanish \u2014 \u221ad\u2096 keeps logits in a workable range.`,
+        `**"Why the FFN if attention already mixes?"** Attention only ever BLENDS existing vectors (a weighted average of values); the FFN is the block's only position-wise nonlinear transformation \u2014 remove it and stacked attention stays essentially linear mixing.`,
+        `**"Why multiple heads?"** h independent attention patterns over d/h-sized slices at the same total cost \u2014 the block can attend to several relations simultaneously, and params stay 4d\u00b2 regardless of h.`,
+        `**"Why the causal mask?"** Training predicts every next token in parallel; the mask stops position i from seeing j > i, so the training-time task matches generation-time reality.`,
+        `**"Pre-LN vs post-LN in one line?"** Pre-LN keeps the residual highway un-normalized \u2014 stable gradients at depth, no warmup needed; post-LN normalizes the highway and needs warmup to survive early training.`,
       ] },
       { h: "Whiteboard minimum" },
       `Be able to write, unprompted:`,
