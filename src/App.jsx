@@ -733,8 +733,34 @@ function CorpusPanel({ scenario }) {
 // ─── ERROR BOUNDARY ──────────────────────────────────────────────────────────
 
 class TabErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; this._heals = 0; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  // 2026-07-23 auto-heal: the in-place highlighter wraps text nodes in <mark>
+  // elements (and normalize() merges text nodes on unwrap) — DOM React didn't
+  // author. If React then reconciles that subtree structurally, it can throw
+  // insertBefore/removeChild "not a child" errors (seen live on seq-parallel).
+  // Catching the boundary already unmounts the subtree, so a retry mounts a
+  // FRESH tree and recovers — exactly what the manual "Try again" button did.
+  // For this specific error family we do that retry automatically (capped at
+  // 2 per 15s so a genuinely broken render still surfaces), after stripping
+  // any surviving mark wrappers so the repaint starts from clean text.
+  componentDidCatch(error) {
+    const msg = String(error?.message || "");
+    const domCorruption = /insertBefore|removeChild|not a child of this node|NotFoundError/i.test(msg);
+    if (domCorruption && this._heals < 2) {
+      this._heals += 1;
+      try {
+        document.querySelectorAll("mark[data-hl-id]").forEach(m => {
+          const parent = m.parentNode; if (!parent) return;
+          while (m.firstChild) parent.insertBefore(m.firstChild, m);
+          parent.removeChild(m);
+          parent.normalize();
+        });
+      } catch { /* best-effort */ }
+      setTimeout(() => this.setState({ hasError: false, error: null }), 0);
+      setTimeout(() => { this._heals = 0; }, 15000);
+    }
+  }
   render() {
     if (this.state.hasError) return (
       <div className="flex-1 flex items-center justify-center p-12 text-center">
