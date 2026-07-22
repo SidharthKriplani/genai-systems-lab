@@ -113,7 +113,7 @@ export default function FoundationsRunner({
   const allSubmitted = mcqList.length === 0 || submitted.every(Boolean);
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8" ref={contentRef}>
+    <div className="max-w-3xl mx-auto px-6 py-8" ref={contentRef} data-own-highlighter="1">
       <HighlightPopover
         containerRef={contentRef}
         moduleId={moduleId}

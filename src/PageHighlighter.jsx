@@ -43,6 +43,9 @@ export function PageHighlighter({ getContainer, pageKey }) {
     const el = getContainer()
     const node = sel.anchorNode
     if (!el || !node || !el.contains(node)) { setToolbar(null); return }
+    // Defer to a container's own richer highlighter (foundations' highlight-to-track popover)
+    const host = node.nodeType === 3 ? node.parentElement : node
+    if (host && host.closest && host.closest('[data-own-highlighter]')) { setToolbar(null); return }
     const rect = sel.getRangeAt(0).getBoundingClientRect()
     if (!rect || (rect.width === 0 && rect.height === 0)) { setToolbar(null); return }
     setToolbar({ top: rect.top, left: rect.left + rect.width / 2, text })

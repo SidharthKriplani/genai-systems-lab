@@ -8,6 +8,7 @@ export const RECAP_PATCH_A = {
       "**Cosine similarity measures the angle, not magnitude.** It scores meaning overlap between two vectors — near 1 for semantically similar text regardless of norm.",
       "**Contextual encoders handle polysemy.** ada-002 gives 'bank' different vectors in 'river bank' vs 'bank account'; static models assign one fixed vector.",
       "**Geometry reflects the training distribution.** ada-002 learned from general web text, where clinical phrasing and everyday phrasing rarely keep the same company — so domain synonym pairs can land farther apart than retrieval needs.",
+      "**Re-embedding is required when the encoder changes.** A new encoder version produces geometrically incomparable coordinates to the old one — old and new embeddings can't be compared or mixed in the same index, so a model upgrade means re-embedding the whole corpus and re-evaluating retrieval quality on your own domain, not just trusting the vendor's benchmark.",
     ],
     recap: [
       // DS T4a (2026-07-22) rewrite -- see labs/_plan/T4A-RECAP-EXEMPLAR-2026-07-22.md
