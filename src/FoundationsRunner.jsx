@@ -62,13 +62,15 @@ export default function FoundationsRunner({
   const [answers, setAnswers]     = useState(() => Array(mcqList.length).fill(null));
   const [submitted, setSubmitted] = useState(() => Array(mcqList.length).fill(false));
   const [recapMode, setRecapMode] = useState(false);
-  // 2026-07-23: mode switches (Full <-> Recap <-> QnA) re-render much shorter
-  // content -- reset scroll so the reader lands at the top of the new view
-  // instead of stranded past its end.
-  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode]);
   // ── Interview QnA view (QNA-INTERVIEW-STANDARD.md) — completion-gated tab ──
   const [qnaMode, setQnaMode] = useState(false);
   const [qnaLockMsg, setQnaLockMsg] = useState(false);   // tap/hover feedback on the locked tab
+  // 2026-07-23 fix: this scroll-reset effect MUST sit below the qnaMode
+  // declaration -- its dependency array evaluates at render time, and
+  // referencing qnaMode above its const line threw a TDZ ("Cannot access 'T'
+  // before initialization") that crashed every module open. (Fable bug,
+  // introduced by widening the deps of an effect inserted above the binding.)
+  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode]);
   const [qnaPulse, setQnaPulse] = useState(false);       // one-shot nudge when completion unlocks it
   const [tab, setTab]             = useState("lesson"); // "lesson" | "code"
   const [deeperOpen, setDeeperOpen] = useState(false);
