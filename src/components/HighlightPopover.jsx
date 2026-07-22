@@ -249,7 +249,7 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
             onClick={() => { setMarkerMode(color || "amber"); reset(); }}
             title="Marker mode: keep highlighting with this color on every selection (Esc to exit)"
             style={{ background: "transparent", color: "#cfcfcf", border: "1px solid rgba(255,255,255,0.16)",
-              borderRadius: "6px", padding: "0.28rem 0.45rem", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+              borderRadius: "6px", padding: "0.3rem 0.55rem", fontSize: "0.7rem", fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
           >Marker</button>
           <button
             onClick={() => {
@@ -261,20 +261,20 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
             }}
             title="Drop a sticky note anchored to this text"
             style={{ background: "transparent", color: "#cfcfcf", border: "1px solid rgba(255,255,255,0.16)",
-              borderRadius: "6px", padding: "0.28rem 0.45rem", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+              borderRadius: "6px", padding: "0.3rem 0.55rem", fontSize: "0.7rem", fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
           >Note</button>
           <button
             onClick={handleSave}
             title="Save highlight to a track (color optional)"
             style={{
               marginLeft: "auto",
-              background: "#7c3aed",
-              color: "#fff",
-              border: "none", borderRadius: "6px",
-              padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontWeight: 700,
+              background: "transparent",
+              color: "#c4b5fd",
+              border: "1px solid rgba(139,92,246,0.55)", borderRadius: "6px",
+              padding: "0.3rem 0.55rem", fontSize: "0.7rem", fontWeight: 700,
               cursor: "pointer", flexShrink: 0,
             }}
-          >Save</button>
+          >&rarr; Track</button>
         </div>,
         document.body
       )}
