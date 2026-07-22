@@ -1947,7 +1947,7 @@ export default function App() {
       {/* ── MAIN COLUMN ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
 
-      <header role="banner" className="border-b" style={{ borderBottomColor: "var(--border)" }}>
+      <header role="banner" className="border-b sticky top-0 z-40" style={{ borderBottomColor: "var(--border)", background: "var(--bg)" }}>
         {/* Row 1: Logo + Search + Utilities */}
         <div className="px-4 py-2 flex items-center gap-3 max-w-7xl mx-auto">
           {/* Mobile: hamburger opens left drawer */}
