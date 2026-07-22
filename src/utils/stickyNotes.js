@@ -68,7 +68,9 @@ export function resolveAnchor(container, a) {
     let count = 0
     for (const b of container.querySelectorAll(BLOCK_SEL)) {
       if (snippetOf(b) !== a.snippet) continue
-      if (a.ctx != null && nearestHeading(container, b) !== a.ctx) continue
+      // Strict ctx match (v1.4.1): legacy anchors without ctx are treated as
+      // ctx:'' -- they orphan into the tray rather than bleed across modules.
+      if (nearestHeading(container, b) !== (a.ctx == null ? '' : a.ctx)) continue
       if (count === a.n) { block = b; break } count++
     }
   }
