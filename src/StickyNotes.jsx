@@ -1,4 +1,5 @@
-// StickyNotes v1.9 — floating margin-pin sticky notes (2026-07-22).
+// StickyNotes v2.0 — floating margin-pin sticky notes (2026-07-22).
+// v2.0: hashless bucket keys + legacy-bucket migration (cross-device sync fix).
 // v1.9: instant repaint when a cross-device pull-merge lands (annotations-merged).
 // v1.8: last-edited datetime stamp in the card footer (editedTs on text saves).
 // v1.7: sticky-create-at event -> note from text selection (popover Note button).
@@ -11,7 +12,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from './Icon.jsx'
-import { listStickies, saveSticky, deleteSticky, blockAnchorFromPoint, resolveAnchor, mdLite, scopeOf } from './utils/stickyNotes.js'
+import { listStickies, saveSticky, deleteSticky, blockAnchorFromPoint, resolveAnchor, mdLite, scopeOf, takeBucket, allBucketKeys } from './utils/stickyNotes.js'
 
 const COLORS = [
   { id: 'gold',  rim: '#e8a030', bg: '#2e2410' },
@@ -85,13 +86,29 @@ export function StickyNotes({ getContainer, pageKey }) {
     return () => { window.removeEventListener('hashchange', onHash); if (mo) mo.disconnect(); clearTimeout(t) }
   }, [pageKey])
 
-  const fullKey = pageKey + '|' + ctxSig + (scope ? '|s:' + scope : '')
+  // v2.0: bucket key = pageKey + scope ONLY. location.hash (ctxSig) used to be
+  // part of the key -- but the hash is navigation-path-dependent, so the SAME
+  // module produced DIFFERENT buckets on different devices/routes: synced
+  // notes arrived but were filed where the other device never looked (the
+  // "stickies don't sync" bug). ctxSig remains as a repaint trigger only.
+  const fullKey = pageKey + (scope ? '|s:' + scope : '')
 
   useEffect(() => {
     setOpenId(null); setEditId(null); setRepinId(null); setPreviewId(null)
     // v1.5.2: auto-purge pre-v1.5 debris. Anchors without a `k` kind predate
     // module fencing, can never render correctly again, and haunt the tray --
     // delete them from storage outright.
+    // v2.0 migration: re-home every legacy hash-keyed bucket for this
+    // page+scope into the canonical hashless key. Raw moves, no tombstones.
+    try {
+      for (const k of allBucketKeys()) {
+        if (k === fullKey || !k.startsWith(pageKey + '|')) continue
+        const hasScope = k.includes('|s:')
+        if (scope ? k.endsWith('|s:' + scope) : !hasScope) {
+          for (const n of takeBucket(k)) saveSticky(fullKey, n)
+        }
+      }
+    } catch { /* ignore */ }
     const all = listStickies(fullKey)
     const keep = all.filter(n => n.anchor && n.anchor.k)
     for (const n of all) { if (!(n.anchor && n.anchor.k)) deleteSticky(fullKey, n.id) }
@@ -143,7 +160,7 @@ export function StickyNotes({ getContainer, pageKey }) {
     } else {
       const note = { id: genId(), color: 'gold', text: initialText || '', anchor, ts: Date.now() }
       const liveScope = scopeOf(el)  // v1.6: never trust debounced state at drop time
-      const liveKey = pageKey + '|' + ctxSig + (liveScope ? '|s:' + liveScope : '')
+      const liveKey = pageKey + (liveScope ? '|s:' + liveScope : '')
       saveSticky(liveKey, note)
       if (liveKey !== fullKey) { setScope(liveScope); return true }  // reload picks it up
       setNotes(ns => [...ns, note])

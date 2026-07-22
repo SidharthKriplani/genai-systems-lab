@@ -37,6 +37,17 @@ export function saveSticky(pageKey, note) {
   m[pageKey] = arr; writeAll(m)
 }
 
+// v2.0 bucket-key migration support: relocate a bucket WITHOUT tombstoning
+// (this is relocation, not deletion -- a tombstone here would kill the moved
+// notes on every other device at the next merge).
+export function takeBucket(pageKey) {
+  const m = readAll()
+  const arr = m[pageKey] || []
+  if (m[pageKey]) { delete m[pageKey]; writeAll(m) }
+  return arr
+}
+export function allBucketKeys() { return Object.keys(readAll()) }
+
 export function deleteSticky(pageKey, id) {
   writeTombstone(pageKey, id)
   const m = readAll()

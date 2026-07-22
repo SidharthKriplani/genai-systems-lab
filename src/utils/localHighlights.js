@@ -145,9 +145,17 @@ export function applyAll(container, pageKey) {
   const seen = new Map()
   for (const h of arr) seen.set(h.text + '\u0000' + h.n, h)
   if (seen.size !== arr.length) {
-    const all = readAll()
-    all[pageKey] = [...seen.values()]
-    writeAll(all)
+    // 2026-07-23 flicker fix: this persist used to clobber a concurrent
+    // cross-device pull-merge write (classic lost update -- highlights
+    // vanished until the next pull restored them). Optimistic lock: only
+    // persist if the bucket still matches what we read; otherwise skip --
+    // the dedupe re-runs on the next applyAll, and painting below re-reads
+    // fresh either way.
+    const fresh = readAll()
+    if (JSON.stringify(fresh[pageKey] || []) === JSON.stringify(arr)) {
+      fresh[pageKey] = [...seen.values()]
+      writeAll(fresh)
+    }
   }
   clearPainted(container)
   for (const hl of listHighlights(pageKey)) paintOne(container, hl)
