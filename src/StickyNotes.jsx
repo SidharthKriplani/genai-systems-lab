@@ -173,9 +173,18 @@ export function StickyNotes({ getContainer, pageKey }) {
 
   const el = getContainer()
   const placed = [], orphans = []
+  // Headings currently on screen -- a note whose stored module-heading is NOT
+  // among them belongs to a different module: hide it entirely (it renders on
+  // its own module). The tray is ONLY for notes whose module IS on screen but
+  // whose anchor block vanished (content edited) -- true orphans (v1.5.1).
+  const onScreen = new Set()
+  if (el) for (const h of el.querySelectorAll('h1,h2,h3')) onScreen.add((h.textContent || '').trim().slice(0, 60))
   for (const n of notes) {
     const pos = el ? resolveAnchor(el, n.anchor) : null
-    if (pos) placed.push({ n, pos }); else orphans.push(n)
+    if (pos) { placed.push({ n, pos }); continue }
+    const ctx = n.anchor && n.anchor.ctx
+    if (ctx && !onScreen.has(ctx)) continue // lives on another module -- not our business here
+    orphans.push(n)
   }
   void tick
 
