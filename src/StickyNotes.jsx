@@ -1,4 +1,5 @@
-// StickyNotes v1.1 — floating margin-pin sticky notes (2026-07-22).
+// StickyNotes v1.6 — floating margin-pin sticky notes (2026-07-22).
+// v1.6: per-module storage buckets via <StickyScope/> (structural bleed fix).
 // Create: drag the sticky-note button from the header bar and drop anywhere on
 // content (or Option/Alt+click). Pins: hover = preview, click = open, click
 // again (or X) = close, drag = move. Markdown-lite; 4 colors; block-anchored;
@@ -7,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from './Icon.jsx'
-import { listStickies, saveSticky, deleteSticky, blockAnchorFromPoint, resolveAnchor, mdLite } from './utils/stickyNotes.js'
+import { listStickies, saveSticky, deleteSticky, blockAnchorFromPoint, resolveAnchor, mdLite, scopeOf } from './utils/stickyNotes.js'
 
 const COLORS = [
   { id: 'gold',  rim: '#e8a030', bg: '#2e2410' },
@@ -35,6 +36,14 @@ export function StickyBarButton() {
   )
 }
 
+// v1.6: invisible scope marker. A module renderer mounts <StickyScope id="m:xyz"/>
+// inside the sticky container; the id becomes part of the storage bucket key.
+// Notes created while it's mounted belong to that module ONLY -- structural
+// isolation, independent of heading/snippet text.
+export function StickyScope({ id }) {
+  return id ? <span data-sticky-scope={id} hidden aria-hidden="true" /> : null
+}
+
 export function StickyNotes({ getContainer, pageKey }) {
   const [notes, setNotes] = useState([])
   const [openId, setOpenId] = useState(null)
@@ -46,6 +55,7 @@ export function StickyNotes({ getContainer, pageKey }) {
   const [pending, setPending] = useState(null)  // pointerdown on a pin, not yet a drag (4px threshold; tap toggles open)
   const [dropGhost, setDropGhost] = useState(null) // { x, y } while dragging from the bar
   const [ctxSig, setCtxSig] = useState('')
+  const [scope, setScope] = useState('')   // v1.6: current data-sticky-scope value
 
   // v1.4: bucket = pageKey + hash (heading-based scoping now lives in the
   // ANCHOR itself -- see stickyNotes.js nearestHeading). The body observer
@@ -53,7 +63,10 @@ export function StickyNotes({ getContainer, pageKey }) {
   // ignoring mutations caused by our own portal (else: render loop).
   useEffect(() => {
     let t = null
-    const onHash = () => { try { setCtxSig(window.location.hash || '') } catch { setCtxSig('') } }
+    const onHash = () => {
+      try { setCtxSig(window.location.hash || '') } catch { setCtxSig('') }
+      try { setScope(scopeOf(getContainer())) } catch { setScope('') }
+    }
     onHash()
     window.addEventListener('hashchange', onHash)
     let mo = null
@@ -68,7 +81,7 @@ export function StickyNotes({ getContainer, pageKey }) {
     return () => { window.removeEventListener('hashchange', onHash); if (mo) mo.disconnect(); clearTimeout(t) }
   }, [pageKey])
 
-  const fullKey = pageKey + '|' + ctxSig
+  const fullKey = pageKey + '|' + ctxSig + (scope ? '|s:' + scope : '')
 
   useEffect(() => {
     setOpenId(null); setEditId(null); setRepinId(null); setPreviewId(null)
@@ -79,8 +92,25 @@ export function StickyNotes({ getContainer, pageKey }) {
     const keep = all.filter(n => n.anchor && n.anchor.k)
     for (const n of all) { if (!(n.anchor && n.anchor.k)) deleteSticky(fullKey, n.id) }
     setNotes(keep)
-    const t1 = setTimeout(() => setTick(t => t + 1), 120)
-    const t2 = setTimeout(() => setTick(t => t + 1), 800)
+    // v1.6 migration: pre-scope notes live in the unscoped bucket. When a scoped
+    // surface is open, any legacy note that RESOLVES in the current DOM belongs
+    // to this module -- re-home it into the scoped bucket. Unresolvable ones
+    // stay put and re-home when their own module is opened. Idempotent.
+    const migrate = () => {
+      if (!scope) return
+      const el = getContainer(); if (!el) return
+      const oldKey = pageKey + '|' + ctxSig
+      const legacy = listStickies(oldKey)
+      if (!legacy.length) return
+      let moved = false
+      for (const n of legacy) {
+        if (!(n.anchor && n.anchor.k)) continue
+        if (resolveAnchor(el, n.anchor)) { saveSticky(fullKey, n); deleteSticky(oldKey, n.id); moved = true }
+      }
+      if (moved) setNotes(listStickies(fullKey))
+    }
+    const t1 = setTimeout(() => { migrate(); setTick(t => t + 1) }, 120)
+    const t2 = setTimeout(() => { migrate(); setTick(t => t + 1) }, 800)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [fullKey])
 
@@ -100,12 +130,15 @@ export function StickyNotes({ getContainer, pageKey }) {
       setOpenId(repinId); setRepinId(null)
     } else {
       const note = { id: genId(), color: 'gold', text: '', anchor, ts: Date.now() }
-      saveSticky(fullKey, note)
+      const liveScope = scopeOf(el)  // v1.6: never trust debounced state at drop time
+      const liveKey = pageKey + '|' + ctxSig + (liveScope ? '|s:' + liveScope : '')
+      saveSticky(liveKey, note)
+      if (liveKey !== fullKey) { setScope(liveScope); return true }  // reload picks it up
       setNotes(ns => [...ns, note])
       setOpenId(note.id); setEditId(note.id)
     }
     return true
-  }, [getContainer, fullKey, repinId])
+  }, [getContainer, fullKey, repinId, pageKey, ctxSig])
 
   // Bar-button drag session: ghost follows pointer, drop creates the note.
   useEffect(() => {

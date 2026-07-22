@@ -27,6 +27,19 @@ export function deleteSticky(pageKey, id) {
   writeAll(m)
 }
 
+// v1.6: module-scope read from the DOM. A renderer that knows which module is
+// open drops <StickyScope id="m:..."/> (or sets data-sticky-scope on/inside the
+// container); the value becomes part of the storage bucket key, so notes can
+// NEVER resolve across modules regardless of heading/snippet collisions.
+export function scopeOf(container) {
+  if (!container) return ''
+  if (container.getAttribute && container.hasAttribute && container.hasAttribute('data-sticky-scope')) {
+    return container.getAttribute('data-sticky-scope') || ''
+  }
+  const el = container.querySelector ? container.querySelector('[data-sticky-scope]') : null
+  return el ? (el.getAttribute('data-sticky-scope') || '') : ''
+}
+
 const BLOCK_SEL = 'p,li,pre,blockquote,h1,h2,h3,h4,h5,h6,td'
 
 // The page's primary heading (module title). Used to fence container-anchored

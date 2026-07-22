@@ -1,12 +1,14 @@
 // src/FoundationsRunner.jsx — single-scroll layout, no step nav, no unlock buttons (sprint 93s)
 // Schema: runnerData.mcqs (array) preferred; runnerData.mcq (object) supported for compat.
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FOUNDATION_SCENES } from "./components/nicheViz/foundationScenes.jsx";
 import HighlightPopover from "./components/HighlightPopover.jsx";
 import QnAPanel, { LockIcon } from "./components/QnAPanel.jsx";
 import GlossaryTerm from "./components/GlossaryTerm.jsx";
 import { GLOSSARY } from "./data/glossary.js";
+import { writeLastTouched } from "./utils/lastTouched.js";
+import { StickyScope } from "./StickyNotes.jsx";
 
 export default function FoundationsRunner({
   moduleId,
@@ -42,6 +44,13 @@ export default function FoundationsRunner({
     prevGlossaryModuleId.current = moduleId;
   }
   _glossaryCtx = { moduleId, onNavigate, shown: shownGlossaryRef.current };
+
+  // Continue-strip: remember this module as "last touched" for Progress's
+  // resume card (see utils/lastTouched.js). Fires whenever the rendered
+  // module changes.
+  useEffect(() => {
+    if (moduleId) writeLastTouched({ gymId, moduleId, title: module?.title });
+  }, [moduleId, gymId, module?.title]);
 
   const mcqList = runnerData.mcqs
     ? runnerData.mcqs
@@ -114,6 +123,8 @@ export default function FoundationsRunner({
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8" ref={contentRef} data-own-highlighter="1">
+      {/* v1.6: sticky notes on this view are bucketed per module (structural bleed fix) */}
+      <StickyScope id={"m:" + moduleId} />
       <HighlightPopover
         containerRef={contentRef}
         moduleId={moduleId}

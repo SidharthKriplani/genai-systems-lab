@@ -10,6 +10,7 @@ import { ALL_SCENARIOS, SCORE_TIERS } from "./ragScenarios";
 import { computeBreakdown, computeTotalScore, fetchLeaderboard } from "./leaderboardUtils";
 import ReadinessWidget from "./ReadinessWidget";
 import DailyDrill from "./components/DailyDrill.jsx";
+import ContinueStrip from "./components/ContinueStrip.jsx";
 
 // ── Tier badge (local copy — original in App.jsx used by LeaderboardView) ──────
 function TierBadge({ tier }) {
@@ -276,6 +277,8 @@ export default function ProgressView({ visited, visitedModules, leaderboard, onN
       {/* Daily Drill — Progress is the signed-in landing view (home redirects
           here), so the daily loop must live HERE to be seen. Home.jsx keeps its
           copy for signed-out visitors; the card is idempotent (same storage key). */}
+      <ContinueStrip onNavigate={onNavigate} />
+
       <DailyDrill onTrain={() => onNavigate("preplab")} />
 
       {/* ── First-time banner ── */}

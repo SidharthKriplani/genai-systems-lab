@@ -71,6 +71,7 @@ export const SYNC_KEYS = [
   "gsl-bookmarks",         // GT post bookmarks
   "gsl-streak",            // Streak count
   "gsl-last-visit",        // Last visit date
+  "gsl-last-touched-v1",  // Continue-strip: last Foundations module opened
 ];
 
 // Pull cloud → merge with localStorage (cloud wins for keys not in localStorage)
