@@ -45,14 +45,42 @@ export function StickyNotes({ getContainer, pageKey }) {
   const [drag, setDrag] = useState(null)       // moving an existing note
   const [pending, setPending] = useState(null)  // pointerdown on a pin, not yet a drag (4px threshold; tap toggles open)
   const [dropGhost, setDropGhost] = useState(null) // { x, y } while dragging from the bar
+  const [ctxSig, setCtxSig] = useState('')
+
+  // Context signature (v1.3 fix): SPA views can swap the rendered module WITHOUT
+  // changing tab or hash (e.g. MSL foundation tabs keep selection in internal
+  // state) -- so notes are bucketed by pageKey + hash + the first heading's text
+  // inside the container. A body-level MutationObserver (debounced) re-derives
+  // the signature whenever content swaps.
+  useEffect(() => {
+    let t = null
+    const derive = () => {
+      let hash = ''
+      try { hash = window.location.hash || '' } catch {}
+      const el = getContainer()
+      const h = el ? el.querySelector('h1,h2') : null
+      const sig = ((h && h.textContent) || '').trim().slice(0, 60)
+      setCtxSig(hash + '|' + sig)
+    }
+    derive()
+    window.addEventListener('hashchange', derive)
+    let mo = null
+    if (typeof MutationObserver !== 'undefined') {
+      mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(derive, 200) })
+      mo.observe(document.body, { childList: true, subtree: true })
+    }
+    return () => { window.removeEventListener('hashchange', derive); if (mo) mo.disconnect(); clearTimeout(t) }
+  }, [pageKey, getContainer])
+
+  const fullKey = pageKey + '|' + ctxSig
 
   useEffect(() => {
     setOpenId(null); setEditId(null); setRepinId(null); setPreviewId(null)
-    setNotes(listStickies(pageKey))
+    setNotes(listStickies(fullKey))
     const t1 = setTimeout(() => setTick(t => t + 1), 120)
     const t2 = setTimeout(() => setTick(t => t + 1), 800)
     return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [pageKey])
+  }, [fullKey])
 
   useEffect(() => {
     const onResize = () => setTick(t => t + 1)
@@ -66,16 +94,16 @@ export function StickyNotes({ getContainer, pageKey }) {
     if (!(t instanceof Element) || !el.contains(t)) return false
     const anchor = blockAnchorFromPoint(el, t, clientX, clientY)
     if (repinId) {
-      setNotes(ns => { const upd = ns.map(n => n.id === repinId ? { ...n, anchor } : n); const n = upd.find(x => x.id === repinId); if (n) saveSticky(pageKey, n); return upd })
+      setNotes(ns => { const upd = ns.map(n => n.id === repinId ? { ...n, anchor } : n); const n = upd.find(x => x.id === repinId); if (n) saveSticky(fullKey, n); return upd })
       setOpenId(repinId); setRepinId(null)
     } else {
       const note = { id: genId(), color: 'gold', text: '', anchor, ts: Date.now() }
-      saveSticky(pageKey, note)
+      saveSticky(fullKey, note)
       setNotes(ns => [...ns, note])
       setOpenId(note.id); setEditId(note.id)
     }
     return true
-  }, [getContainer, pageKey, repinId])
+  }, [getContainer, fullKey, repinId])
 
   // Bar-button drag session: ghost follows pointer, drop creates the note.
   useEffect(() => {
@@ -133,19 +161,19 @@ export function StickyNotes({ getContainer, pageKey }) {
         : n))
     }
     const onUp = () => {
-      setNotes(ns => { const n = ns.find(x => x.id === drag.id); if (n) saveSticky(pageKey, n); return ns })
+      setNotes(ns => { const n = ns.find(x => x.id === drag.id); if (n) saveSticky(fullKey, n); return ns })
       setDrag(null)
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
     return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
-  }, [drag, pageKey])
+  }, [drag, fullKey])
 
   const update = useCallback((id, patch) => {
-    setNotes(ns => { const upd = ns.map(n => n.id === id ? { ...n, ...patch } : n); const n = upd.find(x => x.id === id); if (n) saveSticky(pageKey, n); return upd })
-  }, [pageKey])
+    setNotes(ns => { const upd = ns.map(n => n.id === id ? { ...n, ...patch } : n); const n = upd.find(x => x.id === id); if (n) saveSticky(fullKey, n); return upd })
+  }, [fullKey])
 
-  const remove = (id) => { deleteSticky(pageKey, id); setNotes(ns => ns.filter(n => n.id !== id)); if (openId === id) setOpenId(null) }
+  const remove = (id) => { deleteSticky(fullKey, id); setNotes(ns => ns.filter(n => n.id !== id)); if (openId === id) setOpenId(null) }
 
   const el = getContainer()
   const placed = [], orphans = []
