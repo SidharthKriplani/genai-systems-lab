@@ -296,7 +296,7 @@ export function StickyNotes({ getContainer, pageKey }) {
           onMouseEnter={() => setPreviewId(n.id)}
           onMouseLeave={() => setPreviewId(p => (p === n.id ? null : p))}
           onPointerDown={(e) => { if (e.altKey) return; e.preventDefault(); setPending({ id: n.id, startX: e.clientX, startY: e.clientY, dx0: n.anchor.dx, dy0: n.anchor.dy }) }}
-          style={{ position: 'absolute', top: pos.y - 7, left: pos.x - 7, width: 15, height: 15, borderRadius: '50%', background: colorOf(n.color).rim, border: '2px solid rgba(0,0,0,0.55)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', cursor: 'pointer', zIndex: 250, touchAction: 'none' }} />
+          style={{ position: 'absolute', top: pos.y - 7, left: pos.x - 7, width: 15, height: 15, borderRadius: '50%', background: colorOf(n.color).rim, border: '2px solid rgba(0,0,0,0.55)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', cursor: 'pointer', zIndex: 30 /* below every lab's sticky top bar (z40/50/90): pins slide UNDER it on scroll */, touchAction: 'none' }} />
       ))}
       {preview()}
       {notes.filter(n => n.id === openId).map(n => { const p = placed.find(x => x.n.id === n.id); return card(n, p ? p.pos : null) })}
