@@ -38,14 +38,15 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
     const t2 = setTimeout(() => applyAll(el, pageKey), 450);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [containerRef, pageKey]);
-  // Click a painted mark -> remove it (same contract as the global marker pen).
+  // Click a painted mark -> "Remove highlight" pill (MSL pattern, no confirm dialog).
+  const [removePop, setRemovePop] = useState(null); // { id, top, left }
   useEffect(() => {
     const el = containerRef?.current; if (!el) return;
     const onClick = (e) => {
       const m = e.target instanceof Element ? e.target.closest("mark[data-hl-id]") : null;
-      if (!m || !el.contains(m)) return;
-      const id = m.getAttribute("data-hl-id");
-      if (id && window.confirm("Remove this highlight?")) { removeHighlight(pageKey, id); unpaint(el, id); }
+      if (!m || !el.contains(m)) { setRemovePop(null); return; }
+      const r = m.getBoundingClientRect();
+      setRemovePop({ id: m.getAttribute("data-hl-id"), top: r.bottom + 8, left: r.left + r.width / 2 });
     };
     el.addEventListener("click", onClick);
     return () => el.removeEventListener("click", onClick);
@@ -152,7 +153,16 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
     setSel(null); // hide the swatch toolbar; the picker takes over
   }
 
-  if (!sel && !pickerFor && !flash) return null;
+  const removePill = removePop ? createPortal(
+    <button
+      onClick={() => { const el = containerRef?.current; if (el && removePop.id) { removeHighlight(pageKey, removePop.id); unpaint(el, removePop.id); } setRemovePop(null); }}
+      style={{ position: "fixed", top: removePop.top, left: removePop.left, transform: "translateX(-50%)", zIndex: 260,
+        background: "#1f1f24", color: "#e8e8e8", border: "1px solid #3f3f46", borderRadius: "10px",
+        padding: "0.55rem 1.1rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer",
+        boxShadow: "0 10px 28px rgba(0,0,0,0.55)" }}
+    >Remove highlight</button>, document.body) : null;
+
+  if (!sel && !pickerFor && !flash) return removePill;
 
   return (
     <>
@@ -233,6 +243,7 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
         </div>,
         document.body
       )}
-    </>
+    {removePill}
+      </>
   );
 }

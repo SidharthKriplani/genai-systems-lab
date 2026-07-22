@@ -29,7 +29,7 @@ export function StickyBarButton() {
         e.preventDefault()
         window.dispatchEvent(new CustomEvent('sticky-drag-start', { detail: { x: e.clientX, y: e.clientY } }))
       }}
-      style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, width: 30, height: 30, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab', color: '#cfcfcf', padding: 0 }}>
+      style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, width: 30, height: 30, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab', color: '#cfcfcf', padding: 0, touchAction: 'none' }}>
       <Icon name="sticky-note" size={15} />
     </button>
   )
@@ -43,6 +43,7 @@ export function StickyNotes({ getContainer, pageKey }) {
   const [repinId, setRepinId] = useState(null)
   const [tick, setTick] = useState(0)
   const [drag, setDrag] = useState(null)       // moving an existing note
+  const [pending, setPending] = useState(null)  // pointerdown on a pin, not yet a drag (4px threshold; tap toggles open)
   const [dropGhost, setDropGhost] = useState(null) // { x, y } while dragging from the bar
 
   useEffect(() => {
@@ -104,6 +105,25 @@ export function StickyNotes({ getContainer, pageKey }) {
     return () => document.removeEventListener('click', onClick, true)
   }, [createAt])
 
+  // Pending pin press: >4px movement = drag; clean release = tap (toggle open).
+  useEffect(() => {
+    if (!pending) return
+    const onMove = (e) => {
+      if (Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY) > 4) {
+        setDrag({ id: pending.id, startX: pending.startX, startY: pending.startY, dx0: pending.dx0, dy0: pending.dy0 })
+        setPending(null)
+      }
+    }
+    const onUp = () => {
+      setOpenId(o => (o === pending.id ? null : pending.id))
+      setPreviewId(null)
+      setPending(null)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
+  }, [pending])
+
   // Move an existing pin/card.
   useEffect(() => {
     if (!drag) return
@@ -150,7 +170,7 @@ export function StickyNotes({ getContainer, pageKey }) {
       <div key={'card' + n.id} data-sticky-ui="1" style={{ ...style, zIndex: 260, background: c.bg, border: `1px solid ${c.rim}55`, borderLeft: `3px solid ${c.rim}`, borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', fontSize: '0.82rem', color: '#e6e6e6' }}>
         <div
           onPointerDown={pos ? (e) => { if (e.target instanceof Element && e.target.closest('button,span[data-swatch]')) return; e.preventDefault(); setDrag({ id: n.id, startX: e.clientX, startY: e.clientY, dx0: n.anchor.dx, dy0: n.anchor.dy }) } : undefined}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', cursor: pos ? 'grab' : 'default', borderBottom: `1px solid ${c.rim}33` }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', cursor: pos ? 'grab' : 'default', borderBottom: `1px solid ${c.rim}33`, touchAction: 'none' }}>
           {COLORS.map(cc => (
             <span key={cc.id} data-swatch="1" onClick={(e) => { e.stopPropagation(); update(n.id, { color: cc.id }) }}
               style={{ width: 13, height: 13, borderRadius: '50%', background: cc.rim, cursor: 'pointer', outline: n.color === cc.id ? '2px solid #fff' : 'none', outlineOffset: 1 }} />
@@ -188,11 +208,10 @@ export function StickyNotes({ getContainer, pageKey }) {
     <div data-sticky-ui="1">
       {placed.map(({ n, pos }) => (
         <span key={n.id}
-          onClick={() => { setOpenId(openId === n.id ? null : n.id); setPreviewId(null) }}
           onMouseEnter={() => setPreviewId(n.id)}
           onMouseLeave={() => setPreviewId(p => (p === n.id ? null : p))}
-          onPointerDown={(e) => { if (e.altKey) return; e.preventDefault(); setDrag({ id: n.id, startX: e.clientX, startY: e.clientY, dx0: n.anchor.dx, dy0: n.anchor.dy }) }}
-          style={{ position: 'absolute', top: pos.y - 7, left: pos.x - 7, width: 15, height: 15, borderRadius: '50%', background: colorOf(n.color).rim, border: '2px solid rgba(0,0,0,0.55)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', cursor: 'pointer', zIndex: 250 }} />
+          onPointerDown={(e) => { if (e.altKey) return; e.preventDefault(); setPending({ id: n.id, startX: e.clientX, startY: e.clientY, dx0: n.anchor.dx, dy0: n.anchor.dy }) }}
+          style={{ position: 'absolute', top: pos.y - 7, left: pos.x - 7, width: 15, height: 15, borderRadius: '50%', background: colorOf(n.color).rim, border: '2px solid rgba(0,0,0,0.55)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', cursor: 'pointer', zIndex: 250, touchAction: 'none' }} />
       ))}
       {preview()}
       {notes.filter(n => n.id === openId).map(n => { const p = placed.find(x => x.n.id === n.id); return card(n, p ? p.pos : null) })}
