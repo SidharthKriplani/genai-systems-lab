@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   getTracks, createTrack, renameTrack, deleteTrack,
   createNote, updateItemMeta, removeItem, reorderItems, moveItem, seedTierTracks,
+  toggleItemDone, addTask,
 } from "./utils/tracks.js";
 import { MODULE_SEARCH_INDEX } from "./data/moduleSearchIndex";
 import { highlightColorHex } from "./utils/highlightColors.js";
@@ -66,7 +67,7 @@ const TYPE_LABELS = {
   cheatsheet: "Quick Reference", sd_scenario: "System Design",
   code_exercise: "Code Exercises", code_lab: "Code Labs",
   company_track: "Company Tracks", judgment: "Judgment",
-  highlight: "Highlights",
+  highlight: "Highlights", task: "Tasks",
 };
 
 // Group items by category (meta.category) or a readable type label, keeping
@@ -83,6 +84,23 @@ function groupItems(items) {
     byKey[key].entries.push({ item, idx });
   });
   return groups;
+}
+
+// ── Plan layer (2026-07-22): checkable items ────────────────────────────────
+// Auto-done: a concept item whose module the lab already marks complete
+// ("gsl-concepts-mastery") counts as done without a manual tick. An explicit
+// item.done ALWAYS overrides the derived state (so you can un-tick).
+const GSL_MASTERY_KEY = "gsl-concepts-mastery";
+function completedModuleSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(GSL_MASTERY_KEY) || "[]")); } catch { return new Set(); }
+}
+function itemAutoDone(item, doneSet) {
+  if (item.type !== "concept") return false;
+  const id = item.meta?.moduleId || item.itemId;
+  return id ? doneSet.has(id) : false;
+}
+function itemEffectiveDone(item, doneSet) {
+  return item.done != null ? !!item.done.checked : itemAutoDone(item, doneSet);
 }
 
 function TopicBadge({ topic }) {
@@ -270,15 +288,49 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
               style={{ background: "none", border: "none", cursor: "pointer" }}>✎</button>
           </>
         )}
-        <span className="ml-auto text-xs text-zinc-600">
-          {track.items.length} item{track.items.length !== 1 ? "s" : ""}
-        </span>
+        {(() => {
+          const doneSet = completedModuleSet();
+          const doneCount = track.items.filter(it => itemEffectiveDone(it, doneSet)).length;
+          const nextUp = track.items.find(it => !itemEffectiveDone(it, doneSet) && it.type === "concept");
+          return (
+            <span className="ml-auto flex items-center gap-2 text-xs text-zinc-600">
+              {track.items.length > 0 && (
+                <>
+                  <span className="font-mono">{doneCount}/{track.items.length}</span>
+                  <span style={{ width: 64, height: 4, borderRadius: 2, background: "rgba(63,63,70,0.6)", overflow: "hidden", display: "inline-block" }}>
+                    <span style={{ display: "block", height: "100%", width: `${track.items.length ? Math.round(100 * doneCount / track.items.length) : 0}%`, background: "#34d399", transition: "width 0.2s" }} />
+                  </span>
+                </>
+              )}
+              {nextUp && (
+                <button
+                  onClick={() => (onNavigateTo
+                    ? onNavigateTo({ tab: "concepts", gymId: nextUp.meta?.gymId || GYMID_BY_MODULE[nextUp.meta?.moduleId || nextUp.itemId], moduleId: nextUp.meta?.moduleId || nextUp.itemId })
+                    : onNavigate?.("concepts"))}
+                  title={`Next up: ${nextUp.label || nextUp.meta?.moduleId}`}
+                  className="shrink-0 text-xs px-2.5 py-1 rounded-lg border text-emerald-400 border-emerald-800 hover:border-emerald-500 transition-all"
+                  style={{ background: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                >Resume →</button>
+              )}
+            </span>
+          );
+        })()}
         <button
           onClick={onNewNote}
           className="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg text-white transition-opacity hover:opacity-90"
           style={{ background: "#7c3aed", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
         >+ New Note</button>
       </div>
+
+      {/* Plan layer: add a free-text task (any element, incl. plain to-dos) */}
+      <form
+        onSubmit={(e) => { e.preventDefault(); const v = e.target.elements.newtask.value; if (v.trim()) { addTask(track.id, v); e.target.reset(); } }}
+        className="flex items-center gap-2 mb-4"
+      >
+        <input name="newtask" placeholder="+ Add a task (press Enter)" autoComplete="off"
+          className="flex-1 text-sm px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 focus:border-violet-600 text-zinc-200 outline-none transition-colors"
+        />
+      </form>
 
       {/* Items */}
       {track.items.length === 0 ? (
@@ -317,6 +369,21 @@ function TrackDetail({ track, onNavigate, onNavigateTo, onBack, onRename, onAddN
                 cursor: "grab",
               }}
             >
+              {(() => {
+                const doneSet = completedModuleSet();
+                const eff = itemEffectiveDone(item, doneSet);
+                return (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleItemDone(track.id, item.uid, !eff); }}
+                    title={eff ? "Mark not done" : "Mark done"}
+                    className="shrink-0 mt-0.5"
+                    style={{ width: 16, height: 16, borderRadius: 4, cursor: "pointer", padding: 0,
+                      border: eff ? "1px solid #34d399" : "1px solid rgba(113,113,122,0.7)",
+                      background: eff ? "rgba(52,211,153,0.25)" : "transparent",
+                      color: "#34d399", fontSize: 11, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                  >{eff ? "✓" : ""}</button>
+                );
+              })()}
               <span className="text-zinc-700 text-xs mt-0.5 shrink-0 select-none">⠿</span>
 
               {item.type === "highlight" ? (

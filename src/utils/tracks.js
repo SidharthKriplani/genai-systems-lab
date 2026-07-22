@@ -125,6 +125,28 @@ export function addQuestion(trackId, questionId, title, topic, difficulty) {
   setLastTrackId(trackId)
 }
 
+// ── Plan layer (2026-07-22): tracks double as living study checklists ────────
+// Every item is checkable: item.done = { checked, ts } (absent = derive from
+// the lab's own completion state where possible — see MyTracks itemAutoDone).
+// Toggling bumps updatedAt so the change rides item-level sync merge (newest
+// wins, tracksSync.js). Free-text tasks are first-class items: type 'task'.
+export function toggleItemDone(trackId, itemUid, checked) {
+  save(getTracks().map(t => {
+    if (t.id !== trackId) return t
+    return { ...t, items: t.items.map(it => it.uid === itemUid
+      ? { ...it, done: { checked: !!checked, ts: Date.now() }, updatedAt: Date.now() }
+      : it) }
+  }))
+}
+
+export function addTask(trackId, title) {
+  const text = String(title || '').trim()
+  if (!text) return
+  save(getTracks().map(t => t.id !== trackId ? t : {
+    ...t, items: [...t.items, { type: 'task', title: text, label: text, addedAt: Date.now(), updatedAt: Date.now(), uid: uid() }]
+  }))
+}
+
 // ── Note CRUD (rich, block-based) ─────────────────────────────────────────────
 
 // Create a new rich note. `seedText` (optional) becomes the first text block —
