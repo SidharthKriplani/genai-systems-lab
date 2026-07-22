@@ -80,6 +80,12 @@ export const SYNC_KEYS = [
   "lab-stickies-tomb-v1",
   "gsl_page_highlights_v1",
   "gsl_page_highlights_v1-tomb-v1",
+  // Q3 Wave A (2026-07-23): "Add to review" cloze cards + per-module "my
+  // takeaway" boxes. Same annotation shape + per-item merge as the pairs above.
+  "gsl-review-cards-v1",
+  "gsl-review-cards-v1-tomb-v1",
+  "gsl-takeaway-v1",
+  "gsl-takeaway-v1-tomb-v1",
 ];
 
 // Pull cloud → merge with localStorage (cloud wins for keys not in localStorage)
@@ -89,6 +95,8 @@ export const SYNC_KEYS = [
 const ANNOT_PAIRS = {
   "lab-stickies-v1": "lab-stickies-tomb-v1",
   "gsl_page_highlights_v1": "gsl_page_highlights_v1-tomb-v1",
+  "gsl-review-cards-v1": "gsl-review-cards-v1-tomb-v1",
+  "gsl-takeaway-v1": "gsl-takeaway-v1-tomb-v1",
 };
 const TOMB_TO_STORE = Object.fromEntries(Object.entries(ANNOT_PAIRS).map(([st, t]) => [t, st]));
 

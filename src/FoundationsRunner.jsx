@@ -9,6 +9,7 @@ import GlossaryTerm from "./components/GlossaryTerm.jsx";
 import { GLOSSARY } from "./data/glossary.js";
 import { writeLastTouched } from "./utils/lastTouched.js";
 import { StickyScope } from "./StickyNotes.jsx";
+import { getTakeaway, setTakeaway } from "./utils/takeaway.js";
 
 export default function FoundationsRunner({
   moduleId,
@@ -74,6 +75,37 @@ export default function FoundationsRunner({
 
   const { scenario, groundUp, explanation, takeaway, keyPoints, recap, deeperMath } = runnerData;
 
+  // ── "Your takeaway" (Q3 Wave A item 2, 2026-07-23) — user-writable box
+  // shown atop the recap tab. Same pageKey formula as HighlightPopover.jsx /
+  // reviewCards.js (`fnd::${gymId}::${moduleId}`) so it rides the same sync
+  // bucket. The component doesn't remount on module switch (see the
+  // shownGlossaryRef pattern above for the same problem), so pageKey
+  // changing mid-life needs an explicit reset — done here as "adjust state
+  // during render" (React's documented pattern for state derived from a
+  // prop-like value that can change without a remount) rather than an
+  // effect, so the box never flashes the PREVIOUS module's text for a frame.
+  const takeawayPageKey = `fnd::${gymId || ""}::${moduleId || ""}`;
+  const [loadedTakeawayKey, setLoadedTakeawayKey] = useState(takeawayPageKey);
+  const [takeawayText, setTakeawayText] = useState(() => getTakeaway(takeawayPageKey));
+  const takeawayLoadedRef = useRef(takeawayText);
+  if (takeawayPageKey !== loadedTakeawayKey) {
+    const fresh = getTakeaway(takeawayPageKey);
+    setLoadedTakeawayKey(takeawayPageKey);
+    setTakeawayText(fresh);
+    takeawayLoadedRef.current = fresh;
+  }
+  // Debounced write-through — only fires when the text actually differs from
+  // what's persisted, so merely viewing a module (no edit) never bumps its
+  // stored editedTs / never dispatches a spurious sync push.
+  useEffect(() => {
+    if (takeawayText === takeawayLoadedRef.current) return;
+    const t = setTimeout(() => {
+      setTakeaway(takeawayPageKey, takeawayText);
+      takeawayLoadedRef.current = takeawayText;
+    }, 700);
+    return () => clearTimeout(t);
+  }, [takeawayPageKey, takeawayText]);
+
   // ── Code tab (2026-07-03, amended 2026-07-08): the tab exists ONLY when the module carries an
   //    explicit runnerData.code field. Illustrations JOIN an existing Code tab (they're often
   //    traces/snippets), but illustrations ALONE no longer create one — ASCII tables are teaching
@@ -128,7 +160,7 @@ export default function FoundationsRunner({
   return (
     <div className="max-w-3xl mx-auto px-6 py-8" ref={contentRef} data-own-highlighter="1">
       {/* v1.6: sticky notes on this view are bucketed per module (structural bleed fix) */}
-      <StickyScope id={"m:" + moduleId} />
+      <StickyScope id={"m:" + moduleId + (qnaMode ? ":qna" : recapMode ? ":recap" : "")} />
       <HighlightPopover
         containerRef={contentRef}
         moduleId={moduleId}
@@ -253,6 +285,25 @@ export default function FoundationsRunner({
         </section>
       ) : recapMode && recap ? (
         <div className="space-y-6">
+          {/* ── Your takeaway (Q3 Wave A item 2, 2026-07-23) — user-writable,
+               distinct from the authored "Takeaway" section below. Shown
+               atop the recap tab per spec; local edits debounce-save so
+               typing doesn't hammer localStorage/sync on every keystroke. */}
+          <section>
+            <SectionRule label="Your Takeaway" />
+            <textarea
+              value={takeawayText}
+              onChange={(e) => setTakeawayText(e.target.value)}
+              placeholder="Write your own one-line takeaway for this module…"
+              rows={2}
+              className="mt-4 w-full text-sm text-zinc-200 leading-relaxed rounded-xl p-4 resize-y"
+              style={{
+                background: "rgba(139,92,246,0.06)",
+                border: "1px solid rgba(139,92,246,0.35)",
+                outline: "none",
+              }}
+            />
+          </section>
           <section>
             <SectionRule label="Quick Recap" />
             <ul className="mt-4 space-y-3">

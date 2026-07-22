@@ -24,6 +24,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { MODULES, GYMS } from "./Concepts";
 import { ALL_CASE_CHAINS } from "./data/caseChains.js";
+import { listAllCards } from "./utils/reviewCards.js";
 
 // ── Spaced-repetition schedule (reused from MSL) ─────────────────────────────
 const REVIEW_KEY = "gsl-review-schedule"; // { [itemKey]: { reviews, lastReviewed, firstSeen } }
@@ -123,6 +124,33 @@ function collectCandidates(now = Date.now()) {
         recall: chain.diagnosis || "",
         // seed the learned anchor from the chain's own completion timestamp
         learnedAtSeed: typeof val.at === "number" ? val.at : undefined,
+        schedule,
+        now,
+      })
+    );
+  }
+
+  // ── Source 3: cloze cards from "+ Add to review" on a painted highlight
+  // (Q3 Wave A item 1, 2026-07-23) ────────────────────────────────────────
+  // Same buildItem/schedule path as the two sources above — no special-
+  // casing needed, this architecture was already fully generic over source.
+  // prompt = the passage with the term left out (the recall question);
+  // recall = the term itself (revealed on "Reveal the key point").
+  for (const c of listAllCards()) {
+    const gym = GYM_FOR_MODULE[c.moduleId];
+    const key = itemKey("hlcard", c.id);
+    const blank = "▁▁▁▁▁";
+    const prompt = [c.prefix, blank, c.suffix].filter(Boolean).join(" ").trim() || blank;
+    items.push(
+      buildItem({
+        key,
+        source: "hlcard",
+        id: c.id,
+        room: (gym && gym.label) || c.moduleTitle || "Highlights",
+        color: (gym && gym.color) || "var(--gal-build)",
+        prompt,
+        recall: c.term,
+        learnedAtSeed: c.ts,
         schedule,
         now,
       })
@@ -366,6 +394,11 @@ export default function Review({ onNavigate }) {
     if (!onNavigate) return;
     if (item.source === "concept") onNavigate("concepts");
     else if (item.source === "chain") onNavigate("retrieval");
+    // hlcard: same simple tab-level nav as "concept" — this Review page's
+    // onNavigate only takes a tab id (no deep-link to a specific module,
+    // same limitation the "concept" source already has), so no new prop
+    // threading was needed to add this source.
+    else if (item.source === "hlcard") onNavigate("concepts");
   }
 
   const current = due[0] || null;

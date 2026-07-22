@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { AddToTrackPopover } from "../AddToTrackPopover.jsx";
 import { quickAddItem, getQuickAdd } from "../utils/tracks.js";
 import { HIGHLIGHT_COLORS } from "../utils/highlightColors.js";
-import { addHighlight, occurrenceOfSelection, applyAll, removeHighlight, unpaint } from "../utils/localHighlights.js";
+import { addHighlight, occurrenceOfSelection, applyAll, removeHighlight, listHighlights, unpaint } from "../utils/localHighlights.js";
+import { addCard } from "../utils/reviewCards.js";
 
 /**
  * Highlight-to-track MVP (2026-07-08).
@@ -176,14 +177,64 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
     setSel(null); // hide the swatch toolbar; the picker takes over
   }
 
+  // "+ Add to review" (Q3 Wave A item 1, 2026-07-23): build a cloze card from
+  // the clicked mark's own text (the answer) + its surrounding block text
+  // (context), hand it to reviewCards.js. Never guesses: bails silently if
+  // the mark isn't findable in the live DOM anymore.
+  function handleAddToReview() {
+    if (!removePop || !containerRef?.current) return;
+    const el = containerRef.current;
+    const markEl = el.querySelector(`mark[data-hl-id="${removePop.id}"]`);
+    if (!markEl) { setRemovePop(null); return; }
+    const term = (markEl.textContent || "").trim();
+    if (!term) { setRemovePop(null); return; }
+
+    const hl = listHighlights(pageKey).find(h => h.id === removePop.id);
+    const block = markEl.closest("p, li, blockquote, dd, dt, td, th, div") || markEl.parentElement;
+    const blockText = (block && block.textContent) || term;
+    const idx = blockText.indexOf(term);
+    let prefix = "", suffix = "";
+    if (idx !== -1) {
+      const rawPrefix = blockText.slice(Math.max(0, idx - 90), idx);
+      const rawSuffix = blockText.slice(idx + term.length, idx + term.length + 90);
+      prefix = idx - 90 > 0 ? rawPrefix.replace(/^\S*\s/, "") : rawPrefix;
+      suffix = idx + term.length + 90 < blockText.length ? rawSuffix.replace(/\s\S*$/, "") : rawSuffix;
+    }
+
+    addCard(pageKey, {
+      id: `card_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      term,
+      prefix: prefix.trim(),
+      suffix: suffix.trim(),
+      color: (hl && hl.color) || "amber",
+      gymId: gymId || null,
+      moduleId: moduleId || null,
+      moduleTitle: sourceLabel || "",
+    });
+
+    const r = markEl.getBoundingClientRect();
+    showFlash("review queue", r);
+    setRemovePop(null);
+  }
+
   const removePill = removePop ? createPortal(
-    <button
-      onClick={() => { const el = containerRef?.current; if (el && removePop.id) { removeHighlight(pageKey, removePop.id); unpaint(el, removePop.id); } setRemovePop(null); }}
+    <div
       style={{ position: "fixed", top: removePop.top, left: removePop.left, transform: "translateX(-50%)", zIndex: 260,
-        background: "#1f1f24", color: "#e8e8e8", border: "1px solid #3f3f46", borderRadius: "10px",
-        padding: "0.55rem 1.1rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer",
-        boxShadow: "0 10px 28px rgba(0,0,0,0.55)" }}
-    >Remove highlight</button>, document.body) : null;
+        display: "flex", alignItems: "center", gap: "0.4rem" }}
+    >
+      <button
+        onClick={handleAddToReview}
+        style={{ background: "var(--gal-build, #8b5cf6)", color: "#111", border: "none", borderRadius: "10px",
+          padding: "0.55rem 1.1rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.55)" }}
+      >+ Add to review</button>
+      <button
+        onClick={() => { const el = containerRef?.current; if (el && removePop.id) { removeHighlight(pageKey, removePop.id); unpaint(el, removePop.id); } setRemovePop(null); }}
+        style={{ background: "#1f1f24", color: "#e8e8e8", border: "1px solid #3f3f46", borderRadius: "10px",
+          padding: "0.55rem 1.1rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.55)" }}
+      >Remove highlight</button>
+    </div>, document.body) : null;
 
   const markerChip = marker ? createPortal(
     <button
