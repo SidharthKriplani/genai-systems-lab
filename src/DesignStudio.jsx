@@ -162,11 +162,15 @@ export default function DesignStudio({ onExit }) {
                       <div className="flex-1">
                         <div className="text-[15px] font-semibold text-cyan-300 leading-snug">{nameOf(root)}</div>
                         <div className="text-[11px] text-zinc-500 mt-0.5">{root.domain} · {kids.length} variations{root.stages ? ` · ${root.stages.length}-stage` : ""}</div>
-                        {root.provenance && (
+                        {root.provenance && (root.provenance.tier === "G1" ? (
                           <span className="mt-1 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/40 border border-emerald-800 text-emerald-300">
                             ● Grounded · {(root.provenance.companies || root.companies || [])[0] || "real"}
                           </span>
-                        )}
+                        ) : (
+                          <span className="mt-1 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-sky-950/40 border border-sky-800 text-sky-300">
+                            ◇ Commonly asked
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </button>
@@ -189,19 +193,8 @@ export default function DesignStudio({ onExit }) {
             })}
           </div>
 
-          {legacy.length > 0 && (
-            <details className="mt-6">
-              <summary className="text-sm text-zinc-400 cursor-pointer hover:text-zinc-200">More scenarios ({legacy.length})</summary>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
-                {legacy.map((b) => (
-                  <button key={b.id} onClick={() => open(b.id)} className="text-left border border-zinc-800 rounded-lg px-3 py-2 hover:border-zinc-700">
-                    <div className="text-sm text-zinc-200">{nameOf(b)}</div>
-                    <div className="text-[11px] text-zinc-500 mt-0.5">{b.domain} · {SPEC_LABEL[b.specLevel] || b.specLevel}</div>
-                  </button>
-                ))}
-              </div>
-            </details>
-          )}
+          {/* Legacy pre-roots skeletons retired from the surface (kept in data). Every
+              rendered item is now a staged root or a staged variation — uniform. */}
         </div>
       </div>
     );
@@ -209,6 +202,9 @@ export default function DesignStudio({ onExit }) {
 
   // ── DETAIL VIEW ──────────────────────────────────────────────────────────────────────
   const staged = Array.isArray(sel.stages) && sel.stages.length > 0;
+  const parentRoot = sel.parentRoot ? briefs.find((b) => b.id === sel.parentRoot) : null;
+  const workedRef = (sel.reference && sel.reference.worked) || (parentRoot && parentRoot.reference && parentRoot.reference.worked);
+  const workedFromParent = !(sel.reference && sel.reference.worked) && !!workedRef;
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-200">
       <div className="max-w-3xl mx-auto px-4 py-6">
@@ -226,8 +222,10 @@ export default function DesignStudio({ onExit }) {
         </div>
         <h1 className="text-xl font-semibold text-zinc-100">{nameOf(sel)}</h1>
         {sel.provenance && (
-          <div className="mt-1.5 text-[11px] text-emerald-400/90">
-            ● Grounded ({sel.provenance.tier}) — {(sel.provenance.sources || []).join("; ")}
+          <div className={`mt-1.5 text-[11px] ${sel.provenance.tier === "G1" ? "text-emerald-400/90" : "text-sky-400/90"}`}>
+            {sel.provenance.tier === "G1" ? "● Grounded" : "◇ Commonly asked"} ({sel.provenance.tier})
+            {sel.provenance.companies && sel.provenance.companies.length ? ` — reported at ${sel.provenance.companies.join(", ")}` : ""}
+            {sel.provenance.sources && sel.provenance.sources.length ? ` · ${sel.provenance.sources.join("; ")}` : ""}
           </div>
         )}
         <p className="text-zinc-300 mt-2 leading-relaxed">{sel.prompt}</p>
@@ -253,17 +251,18 @@ export default function DesignStudio({ onExit }) {
         )}
 
         {/* Capstone — worked reference (gated) + grade pack export */}
-        {sel.reference?.worked && (
+        {workedRef && (
           <div className="mt-5">
             <button
               onClick={() => setShowRef(!showRef)}
               className="text-sm px-3 py-1.5 rounded-lg border border-cyan-800 text-cyan-300 hover:bg-cyan-950/30"
             >
-              {showRef ? "Hide worked reference" : "Reveal full worked reference (attempt everything first)"}
+              {showRef ? "Hide worked reference" : (workedFromParent ? "Reveal the canonical reference for this problem family" : "Reveal full worked reference (attempt everything first)")}
             </button>
             {showRef && (
               <div className="mt-2 border border-zinc-800 rounded-lg p-3 whitespace-pre-wrap text-sm text-zinc-300 leading-relaxed">
-                {sel.reference.worked}
+                {workedFromParent && <div className="text-[11px] text-zinc-500 mb-2">Canonical solution for the root problem — adapt it to this variation's twist.</div>}
+                {workedRef}
               </div>
             )}
           </div>
