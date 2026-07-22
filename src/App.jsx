@@ -10,7 +10,7 @@ import HomePage from "./Home";
 import HowTo from "./HowTo"; // small, used inside RAG Lab — not lazy
 import { POSTS as GT_POSTS } from "./groundTruthIndex"; // lightweight metadata — no content bodies
 import { getAllAreasReadiness, AREA_CONFIG } from "./readiness";
-import { supabase, signInWithGoogle, signInWithGitHub, signOut, onAuthChange, getUser, pullProgress, pushProgress, pushKey } from "./supabase";
+import { supabase, signInWithGoogle, signInWithGitHub, signOut, onAuthChange, getUser, pullProgress, pushProgress, pushKey, pullAnnotationsOnly } from "./supabase";
 import { upsertLeaderboardRow } from "./leaderboardUtils";
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
 import { RAG_CORPUS } from "./ragCorpus";
@@ -1672,6 +1672,30 @@ export default function App() {
     // Push progress to Supabase on every nav change (sync checkpoint)
     if (user) pushProgress(user.id);
   }, [topView, user]);
+
+  // Annotations live-sync (2026-07-23): local sticky/highlight writes push to
+  // the cloud after a 4s debounce; returning to the tab (e.g. unlocking your
+  // phone) pulls the annotation keys and per-item-merges them — the fix for
+  // "highlighted on my Mac, phone shows nothing" (pull used to run ONLY at
+  // sign-in, push only on nav changes).
+  useEffect(() => {
+    if (!user) return;
+    let t = null;
+    let lastPull = 0;
+    const onChanged = () => { clearTimeout(t); t = setTimeout(() => pushProgress(user.id), 4000); };
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastPull < 20000) return; // throttle
+      lastPull = now;
+      pullAnnotationsOnly(user.id);
+    };
+    onVis(); // also pull once on mount-with-user
+    window.addEventListener("annotations-changed", onChanged);
+    document.addEventListener("visibilitychange", onVis);
+    return () => { clearTimeout(t); window.removeEventListener("annotations-changed", onChanged); document.removeEventListener("visibilitychange", onVis); };
+  }, [user]);
+
 
   const scenario = ALL_SCENARIOS[scenarioIdx];
   const lookup = useMemo(() => lookupResult(scenario, config), [scenario, config]);

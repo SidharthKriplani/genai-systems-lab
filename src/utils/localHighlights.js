@@ -17,6 +17,7 @@ function writeHlTombstones(pageKey, ids) {
     const now = Date.now()
     for (const id of ids) arr.push({ k: pageKey, id, ts: now })
     localStorage.setItem(HL_TOMB_KEY, JSON.stringify(arr.slice(-800)))
+    try { window.dispatchEvent(new CustomEvent('annotations-changed')) } catch { /* SSR */ }
   } catch { /* ignore */ }
 }
 
@@ -39,6 +40,7 @@ function readAll() {
 }
 function writeAll(all) {
   try { localStorage.setItem(KEY, JSON.stringify(all)) } catch { /* ignore */ }
+  try { window.dispatchEvent(new CustomEvent('annotations-changed')) } catch { /* SSR */ }
 }
 
 export function listHighlights(pageKey) {

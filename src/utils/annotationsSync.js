@@ -52,4 +52,7 @@ export function applyAnnotationMerge(storeKey, tombKey, remoteMapVal, remoteTomb
     localStorage.setItem(storeKey, JSON.stringify(map))
     localStorage.setItem(tombKey, JSON.stringify(tombs))
   } catch { /* quota — best effort */ }
+  // Live-sync (2026-07-23): let mounted components know a pull-merge landed
+  // so they can repaint without waiting for a module switch.
+  try { window.dispatchEvent(new CustomEvent('annotations-merged')) } catch { /* SSR */ }
 }

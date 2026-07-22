@@ -83,6 +83,34 @@ export const SYNC_KEYS = [
 ];
 
 // Pull cloud → merge with localStorage (cloud wins for keys not in localStorage)
+// Annotation stores (stickies/highlights) and their delete-tombstones. These
+// get a per-item merge on pull (annotationsSync.js) — module-scope so both
+// full pulls and the annotations-only pull share ONE definition (no drift).
+const ANNOT_PAIRS = {
+  "lab-stickies-v1": "lab-stickies-tomb-v1",
+  "gsl_page_highlights_v1": "gsl_page_highlights_v1-tomb-v1",
+};
+const TOMB_TO_STORE = Object.fromEntries(Object.entries(ANNOT_PAIRS).map(([st, t]) => [t, st]));
+
+// Annotations-only pull: cheap + side-effect-safe (per-item merge, idempotent,
+// touches NO other keys' semantics) — safe to call on every tab-visible.
+export async function pullAnnotationsOnly(userId) {
+  if (!supabase || !userId) return;
+  try {
+    const keys = [...Object.keys(ANNOT_PAIRS), ...Object.keys(TOMB_TO_STORE)];
+    const { data, error } = await supabase
+      .from("user_progress")
+      .select("key, value")
+      .eq("user_id", userId)
+      .in("key", keys);
+    if (error || !data) return;
+    for (const { key, value } of data) {
+      if (ANNOT_PAIRS[key]) applyAnnotationMerge(key, ANNOT_PAIRS[key], value, null);
+      else if (TOMB_TO_STORE[key]) applyAnnotationMerge(TOMB_TO_STORE[key], key, null, value);
+    }
+  } catch { /* best effort */ }
+}
+
 export async function pullProgress(userId) {
   if (!supabase || !userId) return;
   try {
@@ -94,11 +122,6 @@ export async function pullProgress(userId) {
     // Annotation blobs (stickies/highlights) get a REAL merge — per-item
     // newest-wins with delete tombstones — instead of the local-wins rule,
     // which would either clobber or resurrect notes across devices.
-    const ANNOT_PAIRS = {
-      "lab-stickies-v1": "lab-stickies-tomb-v1",
-      "gsl_page_highlights_v1": "gsl_page_highlights_v1-tomb-v1",
-    };
-    const TOMB_TO_STORE = Object.fromEntries(Object.entries(ANNOT_PAIRS).map(([st, t]) => [t, st]));
     data.forEach(({ key, value }) => {
       if (ANNOT_PAIRS[key]) { applyAnnotationMerge(key, ANNOT_PAIRS[key], value, null); return; }
       if (TOMB_TO_STORE[key]) { applyAnnotationMerge(TOMB_TO_STORE[key], key, null, value); return; }

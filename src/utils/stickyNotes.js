@@ -18,11 +18,15 @@ function writeTombstone(pageKey, id) {
     const arr = JSON.parse(localStorage.getItem(STICKY_TOMB_KEY) || '[]')
     arr.push({ k: pageKey, id, ts: Date.now() })
     localStorage.setItem(STICKY_TOMB_KEY, JSON.stringify(arr.slice(-800)))
+    try { window.dispatchEvent(new CustomEvent('annotations-changed')) } catch { /* SSR */ }
   } catch { /* ignore */ }
 }
 
 function readAll() { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } }
-function writeAll(m) { try { localStorage.setItem(KEY, JSON.stringify(m)) } catch { /* full/blocked */ } }
+function writeAll(m) {
+  try { localStorage.setItem(KEY, JSON.stringify(m)) } catch { /* full/blocked */ }
+  try { window.dispatchEvent(new CustomEvent('annotations-changed')) } catch { /* SSR */ }
+}
 
 export function listStickies(pageKey) { return readAll()[pageKey] || [] }
 

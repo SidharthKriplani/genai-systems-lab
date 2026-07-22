@@ -1,4 +1,5 @@
-// StickyNotes v1.8 — floating margin-pin sticky notes (2026-07-22).
+// StickyNotes v1.9 — floating margin-pin sticky notes (2026-07-22).
+// v1.9: instant repaint when a cross-device pull-merge lands (annotations-merged).
 // v1.8: last-edited datetime stamp in the card footer (editedTs on text saves).
 // v1.7: sticky-create-at event -> note from text selection (popover Note button).
 // v1.6: per-module storage buckets via <StickyScope/> (structural bleed fix).
@@ -58,6 +59,7 @@ export function StickyNotes({ getContainer, pageKey }) {
   const [dropGhost, setDropGhost] = useState(null) // { x, y } while dragging from the bar
   const [ctxSig, setCtxSig] = useState('')
   const [scope, setScope] = useState('')   // v1.6: current data-sticky-scope value
+  const [syncNonce, setSyncNonce] = useState(0) // v1.9: bumped when a cloud pull-merge lands
 
   // v1.4: bucket = pageKey + hash (heading-based scoping now lives in the
   // ANCHOR itself -- see stickyNotes.js nearestHeading). The body observer
@@ -114,7 +116,15 @@ export function StickyNotes({ getContainer, pageKey }) {
     const t1 = setTimeout(() => { migrate(); setTick(t => t + 1) }, 120)
     const t2 = setTimeout(() => { migrate(); setTick(t => t + 1) }, 800)
     return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [fullKey])
+  }, [fullKey, syncNonce])
+
+  // v1.9: a cross-device pull-merge just rewrote the store — reload this
+  // bucket immediately instead of waiting for a module switch.
+  useEffect(() => {
+    const onMerged = () => setSyncNonce(n => n + 1)
+    window.addEventListener('annotations-merged', onMerged)
+    return () => window.removeEventListener('annotations-merged', onMerged)
+  }, [])
 
   useEffect(() => {
     const onResize = () => setTick(t => t + 1)
