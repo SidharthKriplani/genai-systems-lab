@@ -7,6 +7,19 @@
 // localHighlights. Markdown-lite: **bold**, *italic*, `code`, "- " bullets.
 
 const KEY = 'lab-stickies-v1'
+export const STICKY_STORE_KEY = KEY
+export const STICKY_TOMB_KEY = 'lab-stickies-tomb-v1'
+
+// Cross-device sync (2026-07-22): every delete leaves a tombstone {k, id, ts}
+// so annotationsSync's merge can tell "deleted here" from "never seen here" --
+// without it, a pull would resurrect every note deleted on another device.
+function writeTombstone(pageKey, id) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(STICKY_TOMB_KEY) || '[]')
+    arr.push({ k: pageKey, id, ts: Date.now() })
+    localStorage.setItem(STICKY_TOMB_KEY, JSON.stringify(arr.slice(-800)))
+  } catch { /* ignore */ }
+}
 
 function readAll() { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } }
 function writeAll(m) { try { localStorage.setItem(KEY, JSON.stringify(m)) } catch { /* full/blocked */ } }
@@ -21,6 +34,7 @@ export function saveSticky(pageKey, note) {
 }
 
 export function deleteSticky(pageKey, id) {
+  writeTombstone(pageKey, id)
   const m = readAll()
   m[pageKey] = (m[pageKey] || []).filter(n => n.id !== id)
   if (m[pageKey].length === 0) delete m[pageKey]

@@ -1,6 +1,7 @@
 // src/supabase.js — Supabase client + auth helpers
 // VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in Vercel env vars.
 
+import { applyAnnotationMerge } from "./utils/annotationsSync.js";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || "";
@@ -72,6 +73,13 @@ export const SYNC_KEYS = [
   "gsl-streak",            // Streak count
   "gsl-last-visit",        // Last visit date
   "gsl-last-touched-v1",  // Continue-strip: last Foundations module opened
+  // Annotations (2026-07-22): sticky notes + in-place highlights + their
+  // delete-tombstones. Pull side MERGES these (per-item newest-wins) instead
+  // of local-wins — see pullProgress + utils/annotationsSync.js.
+  "lab-stickies-v1",
+  "lab-stickies-tomb-v1",
+  "gsl_page_highlights_v1",
+  "gsl_page_highlights_v1-tomb-v1",
 ];
 
 // Pull cloud → merge with localStorage (cloud wins for keys not in localStorage)
@@ -83,7 +91,17 @@ export async function pullProgress(userId) {
       .select("key, value")
       .eq("user_id", userId);
     if (error || !data) return;
+    // Annotation blobs (stickies/highlights) get a REAL merge — per-item
+    // newest-wins with delete tombstones — instead of the local-wins rule,
+    // which would either clobber or resurrect notes across devices.
+    const ANNOT_PAIRS = {
+      "lab-stickies-v1": "lab-stickies-tomb-v1",
+      "gsl_page_highlights_v1": "gsl_page_highlights_v1-tomb-v1",
+    };
+    const TOMB_TO_STORE = Object.fromEntries(Object.entries(ANNOT_PAIRS).map(([st, t]) => [t, st]));
     data.forEach(({ key, value }) => {
+      if (ANNOT_PAIRS[key]) { applyAnnotationMerge(key, ANNOT_PAIRS[key], value, null); return; }
+      if (TOMB_TO_STORE[key]) { applyAnnotationMerge(TOMB_TO_STORE[key], key, null, value); return; }
       const local = localStorage.getItem(key);
       if (!local) {
         // Nothing local — write cloud value

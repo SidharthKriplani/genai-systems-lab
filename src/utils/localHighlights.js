@@ -6,6 +6,19 @@
 // TEXT NODES only; callers re-apply via applyAll after content settles.
 
 const KEY = 'gsl_page_highlights_v1'
+export const HL_STORE_KEY = KEY
+export const HL_TOMB_KEY = 'gsl_page_highlights_v1-tomb-v1'
+
+// Cross-device sync (2026-07-22): deletes leave tombstones so a pull-merge
+// never resurrects a highlight removed on another device.
+function writeHlTombstones(pageKey, ids) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(HL_TOMB_KEY) || '[]')
+    const now = Date.now()
+    for (const id of ids) arr.push({ k: pageKey, id, ts: now })
+    localStorage.setItem(HL_TOMB_KEY, JSON.stringify(arr.slice(-800)))
+  } catch { /* ignore */ }
+}
 
 // 2026-07-22 fix: ids now match the swatch palette (highlightColors.js uses
 // violet/emerald/amber/red -- the old gold/teal/green keys matched NOTHING, so
@@ -33,7 +46,7 @@ export function listHighlights(pageKey) {
 }
 export function addHighlight(pageKey, hl) {
   const all = readAll()
-  all[pageKey] = [...(all[pageKey] || []), hl]
+  all[pageKey] = [...(all[pageKey] || []), hl.ts ? hl : { ...hl, ts: Date.now() }]
   writeAll(all)
 }
 export function removeHighlight(pageKey, id) {
@@ -44,6 +57,8 @@ export function removeHighlight(pageKey, id) {
   // painted one and a hidden twin resurrected it on the next repaint. Removing
   // by id now also removes every entry anchored to the same (text, n).
   const target = arr.find(h => h.id === id)
+  const removed = arr.filter(h => h.id === id || (target && h.text === target.text && h.n === target.n))
+  writeHlTombstones(pageKey, removed.map(h => h.id))
   all[pageKey] = arr.filter(h => h.id !== id && !(target && h.text === target.text && h.n === target.n))
   if (!all[pageKey].length) delete all[pageKey]
   writeAll(all)
