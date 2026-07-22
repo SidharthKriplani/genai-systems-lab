@@ -1,4 +1,5 @@
-// StickyNotes v1.7 — floating margin-pin sticky notes (2026-07-22).
+// StickyNotes v1.8 — floating margin-pin sticky notes (2026-07-22).
+// v1.8: last-edited datetime stamp in the card footer (editedTs on text saves).
 // v1.7: sticky-create-at event -> note from text selection (popover Note button).
 // v1.6: per-module storage buckets via <StickyScope/> (structural bleed fix).
 // Create: drag the sticky-note button from the header bar and drop anywhere on
@@ -246,6 +247,15 @@ export function StickyNotes({ getContainer, pageKey }) {
     </button>
   )
 
+  // v1.8: last-edit timestamp shown in the card footer. editedTs is stamped
+  // on text saves; created ts is the fallback for never-edited notes.
+  const fmtTs = (ms) => {
+    if (!ms) return ''
+    const d = new Date(ms)
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' \u00b7 ' +
+      d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
+  }
+
   const card = (n, pos) => {
     const c = colorOf(n.color)
     const style = pos
@@ -267,13 +277,18 @@ export function StickyNotes({ getContainer, pageKey }) {
         </div>
         {editId === n.id ? (
           <textarea autoFocus defaultValue={n.text}
-            onBlur={(e) => { update(n.id, { text: e.target.value }); setEditId(null) }}
+            onBlur={(e) => { update(n.id, { text: e.target.value, editedTs: Date.now() }); setEditId(null) }}
             placeholder={'Your note…  **bold** *italic* `code`\n- bullet'}
             style={{ width: '100%', minHeight: 96, boxSizing: 'border-box', background: 'transparent', color: '#eee', border: 'none', outline: 'none', resize: 'vertical', padding: '8px 10px', font: 'inherit', lineHeight: 1.45 }} />
         ) : (
           <div onClick={() => setEditId(n.id)} title="Click to edit"
             style={{ padding: '8px 10px', minHeight: 34, maxHeight: 300, overflowY: 'auto', cursor: 'text', lineHeight: 1.45 }}
             dangerouslySetInnerHTML={{ __html: n.text ? mdLite(n.text) : '<span style="opacity:0.45">empty — click to write</span>' }} />
+        )}
+        {(n.editedTs || n.ts) && (
+          <div style={{ padding: '3px 10px 6px', fontSize: '0.64rem', color: '#9a9a9a', opacity: 0.85, textAlign: 'right', userSelect: 'none' }}>
+            {n.editedTs ? 'edited ' : ''}{fmtTs(n.editedTs || n.ts)}
+          </div>
         )}
       </div>
     )
