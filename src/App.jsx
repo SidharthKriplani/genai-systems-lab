@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { PageHighlighter } from "./PageHighlighter.jsx";
-import { StickyNotes } from "./StickyNotes.jsx";
+import { StickyNotes, StickyBarButton } from "./StickyNotes.jsx";
 import { initAnalytics, track, checkPreviewUnlock } from "./analytics";
 import { FidelityBadge } from "./shared";
 import { BrandMark } from "./BrandMark";
@@ -2000,6 +2000,8 @@ export default function App() {
                 : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
               }
             </button>
+            {/* Sticky-note drag source: drag onto the page to drop a note (2026-07-22) */}
+            <StickyBarButton />
             <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
             {/* ── Auth button ── */}
             {supabase && (
