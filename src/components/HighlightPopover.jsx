@@ -260,9 +260,10 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
           style={{
             position: "fixed",
             top: Math.max(8, sel.rect.top - 54),
-            left: Math.min(Math.max(8, sel.rect.left + sel.rect.width / 2 - 130), Math.max(8, window.innerWidth - 268)),
+            left: Math.min(Math.max(8, sel.rect.left + sel.rect.width / 2 - 150), Math.max(8, window.innerWidth - 318)),
             zIndex: 9999,
-            width: 260,
+            width: "max-content",
+            maxWidth: "calc(100vw - 16px)",
             display: "flex",
             alignItems: "center",
             gap: "0.4rem",
@@ -323,7 +324,7 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
               color: "#c4b5fd",
               border: "1px solid rgba(139,92,246,0.55)", borderRadius: "6px",
               padding: "0.3rem 0.55rem", fontSize: "0.7rem", fontWeight: 700,
-              cursor: "pointer", flexShrink: 0,
+              cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap",
             }}
           >&rarr; Track</button>
         </div>,

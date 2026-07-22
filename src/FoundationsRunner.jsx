@@ -230,7 +230,6 @@ export default function FoundationsRunner({
         <div className="mt-4 relative inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
           <button
             onClick={() => { setRecapMode(false); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
-            title="The complete lesson: teaching, worked examples, key points"
             onMouseEnter={() => setTabTip("Full — the complete lesson: teaching, worked examples, key points")}
             onMouseLeave={() => setTabTip(null)}
             className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
@@ -242,7 +241,6 @@ export default function FoundationsRunner({
           {deeperMath?.length > 0 && (
             <button
               onClick={() => { setAcademicMode(true); setRecapMode(false); setQnaMode(false); setMinMode(false); }}
-              title="Formal setup and derivations: the math behind the lesson, with primary sources"
               onMouseEnter={() => setTabTip("Academic — formal setup and derivations: the math behind the lesson, with primary sources")}
               onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
@@ -255,7 +253,6 @@ export default function FoundationsRunner({
           {recap && (
             <button
               onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
-              title="Compressed refresher of what this module taught"
               onMouseEnter={() => setTabTip("Quick recap — compressed refresher of what this module taught")}
               onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
@@ -268,7 +265,6 @@ export default function FoundationsRunner({
           {interviewMin?.length > 0 && (
             <button
               onClick={() => { setMinMode(true); setRecapMode(false); setQnaMode(false); setAcademicMode(false); }}
-              title="Interview minimum: the 20% of this module that carries 80% of interview asks"
               onMouseEnter={() => setTabTip("20:80 — the interview minimum: the 20% of this module that carries 80% of interview asks")}
               onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
@@ -287,7 +283,6 @@ export default function FoundationsRunner({
               }
               setQnaMode(true); setRecapMode(false); setMinMode(false); setAcademicMode(false);
             }}
-            title={alreadyDone ? "Interview questions with answers for this module" : "Interview QnA: unlocks when you mark the module complete"}
             onMouseEnter={() => { if (!alreadyDone) setQnaLockMsg(true); else setTabTip("Interview QnA — real interview questions with graded answers for this module"); }}
             onMouseLeave={() => { setQnaLockMsg(false); setTabTip(null); }}
             aria-disabled={!alreadyDone}

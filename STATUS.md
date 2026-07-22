@@ -1,5 +1,36 @@
 # STATUS.md — Cold-start view
 
+> **23 Jul 2026 — Study-loop + view-tier session (Fable orchestration; MAJOR).** GSL got the
+> full annotation/study stack + the new per-module view tiers. (1) **Cross-device sync v2**:
+> `utils/annotationsSync.js` (mergeAnnotationBlobs newest-wins + tombstones, unit-tested 7/7),
+> ANNOT_PAIRS in supabase.js for stickies / gsl_page_highlights_v1 / gsl-review-cards-v1 /
+> gsl-takeaway-v1; App.jsx live-sync v2 effect: 4s debounced push on 'annotations-changed',
+> flush on visibilitychange/pagehide, 20s-throttled pull + 45s heartbeat + push-back after
+> merge. (2) **Stickies v2.1**: hashless bucket keys + legacy-bucket migration, StickyScope
+> per module+view (incl. new ':academic'/':min'), two-step delete confirm, editedTs footer.
+> (3) **Highlights**: FAINT map fixed to real swatch ids, delete-tombstones, applyAll
+> optimistic-lock (flicker race), PageHighlighter click-defer inside [data-own-highlighter],
+> marker mode (gsl-marker-mode-v1) + Note-from-selection, popover toolbar now width:max-content
+> (fixed clipped "→ Track"). (4) **View tiers on FoundationsRunner**: tab row is now Full |
+> Academic | ⚡Quick recap | 20:80 | Interview QnA, with instant custom hover chips (native
+> title attrs removed — they double-tooltipped); Academic renders `deeperMath`, 20:80 renders
+> `interviewMin`, both via new AnnexBlocks structured renderer ({h}/{eq}/{list} blocks);
+> **deep links**: 4th hash segment #concepts/<gym>/<module>/<view> (read once per mount,
+> replaceState on tab change). Transformer module carries BOTH approved exemplars (T6
+> academic w/ adversarial-verified numbers — exact GPT-2 124,439,808 receipt; T8 20:80 incl.
+> rapid-fire follow-ups). (5) **Review cards B1**: gsl-review-cards-v1 + hlcard source in
+> Review.jsx SM-2 queue. (6) **Takeaway box** (gsl-takeaway-v1) atop recap view. (7)
+> **Tracks-as-plans v1**: item.done checkboxes + addTask + progress bar + Resume deep-link.
+> (8) **Glossary G0** (worker): hover-grace/pin/see-also across module text. (9) **DS-HARVEST**:
+> designStudioBriefs 64→75 AIE briefs (Gemini-harvested, mechanics-only screening). (10)
+> **TabErrorBoundary auto-heal** for highlight-DOM insertBefore crashes (strip marks + auto
+> retry, capped 2/15s) — live crash on seq-parallel not reproduced in 5 Playwright campaigns,
+> mitigated instead. Also: TDZ crash postmortem (scroll-reset effect above qnaMode decl —
+> fixed + FABLE BUILD GATE rule added), recap white-void fix (html/body bg + scroll reset),
+> stacked-popover fix. All pushed through 23 Jul cells. **Next**: T6 exemplar 2 (embeddings),
+> academic/20:80 rollout to more modules, WO-3 cost-attribution expansion (Sonnet D8, in
+> flight), PL parity wave.
+
 > **18 Jul 2026 — Tracker note persistence hardened.** My Tracks notes now survive tab
 > close/refresh and multi-tab editing. Two fixes (editor already keyed by `liveNote.id`, so
 > no key change needed here — unlike MSL): (1) **close-flush** — `NoteEditor` flushes the
