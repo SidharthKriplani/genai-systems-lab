@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { PageHighlighter } from "./PageHighlighter.jsx";
+import { StickyNotes } from "./StickyNotes.jsx";
 import { initAnalytics, track, checkPreviewUnlock } from "./analytics";
 import { FidelityBadge } from "./shared";
 import { BrandMark } from "./BrandMark";
@@ -2055,6 +2056,8 @@ export default function App() {
 
       {/* In-place marker-pen highlights over the whole content surface (2026-07-16) */}
       <PageHighlighter getContainer={() => document.getElementById("main-content")} pageKey={"v:" + topView} />
+      {/* Floating margin-pin sticky notes: Alt+click content to drop one (2026-07-22) */}
+      <StickyNotes getContainer={() => document.getElementById("main-content")} pageKey={"v:" + topView} />
 
       <main role="main" id="main-content" key={topView} className="tab-enter">
       <TabErrorBoundary>
