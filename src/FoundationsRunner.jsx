@@ -61,6 +61,10 @@ export default function FoundationsRunner({
   const [answers, setAnswers]     = useState(() => Array(mcqList.length).fill(null));
   const [submitted, setSubmitted] = useState(() => Array(mcqList.length).fill(false));
   const [recapMode, setRecapMode] = useState(false);
+  // 2026-07-23: mode switches (Full <-> Recap <-> QnA) re-render much shorter
+  // content -- reset scroll so the reader lands at the top of the new view
+  // instead of stranded past its end.
+  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode]);
   // ── Interview QnA view (QNA-INTERVIEW-STANDARD.md) — completion-gated tab ──
   const [qnaMode, setQnaMode] = useState(false);
   const [qnaLockMsg, setQnaLockMsg] = useState(false);   // tap/hover feedback on the locked tab

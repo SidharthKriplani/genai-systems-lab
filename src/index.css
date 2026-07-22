@@ -521,3 +521,14 @@ html:not([data-theme="light"])[data-palette="luna"] .border-violet-500 {
   /* GSL's extra 📝 NOTE chip: decorative — costs header room on phones. */
   .nb-editor .nb-note-chip { display: none !important; }
 }
+
+
+/* 2026-07-23 fix: switching a long module to Recap shrinks the document; any
+   overhang (stale scroll, absolutely-positioned annotation portals) used to
+   expose the browser's default WHITE body below the app root. The root div
+   already paints var(--bg) to min-h-screen -- html/body must match so nothing
+   outside it can ever flash white. */
+html,
+body {
+  background: var(--bg, #0b0b0d);
+}
