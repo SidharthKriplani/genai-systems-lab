@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AddToTrackPopover } from "../AddToTrackPopover.jsx";
 import { quickAddItem, getQuickAdd } from "../utils/tracks.js";
 import { HIGHLIGHT_COLORS } from "../utils/highlightColors.js";
+import { addHighlight, occurrenceOfSelection, applyAll, removeHighlight, unpaint } from "../utils/localHighlights.js";
 
 /**
  * Highlight-to-track MVP (2026-07-08).
@@ -28,6 +29,28 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
   const [color, setColor]         = useState(null);
   const [pickerFor, setPickerFor] = useState(null); // pending {id,label,meta} while the track picker is open
   const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
+  const pageKey = `fnd::${gymId || ""}::${moduleId || ""}`;
+  // In-place persistence (MSL parity, 2026-07-22): repaint saved marks after the
+  // module content settles; applyAll is idempotent so two passes are safe.
+  useEffect(() => {
+    const el = containerRef?.current; if (!el) return;
+    const t1 = setTimeout(() => applyAll(el, pageKey), 0);
+    const t2 = setTimeout(() => applyAll(el, pageKey), 450);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [containerRef, pageKey]);
+  // Click a painted mark -> remove it (same contract as the global marker pen).
+  useEffect(() => {
+    const el = containerRef?.current; if (!el) return;
+    const onClick = (e) => {
+      const m = e.target instanceof Element ? e.target.closest("mark[data-hl-id]") : null;
+      if (!m || !el.contains(m)) return;
+      const id = m.getAttribute("data-hl-id");
+      if (id && window.confirm("Remove this highlight?")) { removeHighlight(pageKey, id); unpaint(el, id); }
+    };
+    el.addEventListener("click", onClick);
+    return () => el.removeEventListener("click", onClick);
+  }, [containerRef, pageKey]);
+  function paintGenId() { return `hl_${Date.now()}_${Math.random().toString(36).slice(2)}`; }
   const [flash, setFlash]         = useState(null);
   const [toastPos, setToastPos]   = useState({ top: 80, right: 24 });
   const flashTimer = useRef(null);
@@ -97,7 +120,7 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
   }
 
   function handleSave(e) {
-    if (!sel || !color) return;
+    if (!sel) return; // color optional (MSL parity): save without color = plain capture
     const id = `hl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const label = sel.text.length > 80 ? sel.text.slice(0, 80).trim() + "…" : sel.text;
     const meta = {
@@ -157,7 +180,16 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
           {HIGHLIGHT_COLORS.map(c => (
             <button
               key={c.id}
-              onClick={() => setColor(c.id)}
+              onClick={() => {
+                setColor(c.id);
+                // MSL-parity: paint + persist in place immediately; Save (track) stays optional.
+                const el = containerRef?.current;
+                if (el && sel?.text && (el.textContent || "").includes(sel.text)) {
+                  const n = occurrenceOfSelection(el, sel.text);
+                  addHighlight(pageKey, { id: paintGenId(), text: sel.text, n, color: c.id });
+                  applyAll(el, pageKey);
+                }
+              }}
               title={c.label}
               style={{
                 width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
@@ -169,15 +201,14 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
           ))}
           <button
             onClick={handleSave}
-            disabled={!color}
-            title={color ? "Save highlight to a track" : "Pick a color first"}
+            title="Save highlight to a track (color optional)"
             style={{
               marginLeft: "auto",
-              background: color ? "#7c3aed" : "rgba(63,63,70,0.6)",
-              color: color ? "#fff" : "#71717a",
+              background: "#7c3aed",
+              color: "#fff",
               border: "none", borderRadius: "6px",
               padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontWeight: 700,
-              cursor: color ? "pointer" : "not-allowed", flexShrink: 0,
+              cursor: "pointer", flexShrink: 0,
             }}
           >Save</button>
         </div>,
