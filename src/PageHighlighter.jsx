@@ -75,6 +75,11 @@ export function PageHighlighter({ getContainer, pageKey }) {
       if (sel && !sel.isCollapsed) return
       const el = getContainer()
       const mark = e.target && e.target.closest && e.target.closest('mark[data-hl-id]')
+      // 2026-07-23 fix: defer the CLICK handler inside [data-own-highlighter]
+      // containers too, mirroring the paint defer rule -- without this, a mark
+      // click spawned BOTH this remove pill AND the module popover's own
+      // remove/add-to-review row, stacked on top of each other.
+      if (mark && mark.closest && mark.closest('[data-own-highlighter]')) { setRemovePop(null); return }
       if (mark && el && el.contains(mark)) {
         const r = mark.getBoundingClientRect()
         setRemovePop({ id: mark.getAttribute('data-hl-id'), top: r.bottom + 6, left: r.left + r.width / 2 })
