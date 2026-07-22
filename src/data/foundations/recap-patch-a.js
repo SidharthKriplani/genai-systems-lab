@@ -10,10 +10,16 @@ export const RECAP_PATCH_A = {
       "**Geometry reflects the training distribution.** ada-002 learned from general web text, where clinical phrasing and everyday phrasing rarely keep the same company — so domain synonym pairs can land farther apart than retrieval needs.",
     ],
     recap: [
-      "**Embeddings** = semantic similarity → geometric proximity; cosine similarity scores the angle, not token-ID distance.",
-      "**Geometry is bounded by training distribution** — a general-web model may never have seen a domain's synonyms sharing contexts, so the neighbor relationship never forms.",
-      "**Exact-heading hits + natural-language misses** → info is indexed, model just lacks the synonym link.",
-      "**Fix:** swap in an encoder pretrained on the target domain, or fine-tune on domain query-doc pairs — re-embed the whole index on model switch.",
+      // DS T4a (2026-07-22) rewrite -- see labs/_plan/T4A-RECAP-EXEMPLAR-2026-07-22.md
+      // for the full critique + section-anchor mapping this patch is based on.
+      "**Embedding**: token IDs → vectors, meaning becomes proximity.",
+      "**One-hot vectors**: fixes ordering → but every token equidistant, no similarity.",
+      "**Distributional hypothesis**: predict-neighbors training → close vectors (a few hundred to ~1,500 numbers).",
+      // src: "a dense vector (anywhere from a few hundred to about 1,500 numbers)"
+      "**Cosine similarity**: angle between vectors, not token distance or magnitude.",
+      "**Contextual encoders**: same word → different vectors by context (polysemy).",
+      "**Geometry mirrors training data**: synonyms that never co-occurred stay far apart, whatever the encoder.",
+      "**Re-embed on switch**: new encoder version → incomparable coordinates; evaluate on your own domain.",
     ],
   },
 

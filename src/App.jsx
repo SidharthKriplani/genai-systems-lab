@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { PageHighlighter } from "./PageHighlighter.jsx";
 import { initAnalytics, track, checkPreviewUnlock } from "./analytics";
-import { ALL_TABS, GROUP_COLORS } from "./config/nav";
 import { FidelityBadge } from "./shared";
 import { BrandMark } from "./BrandMark";
 import GateOverlay from "./GateOverlay";
