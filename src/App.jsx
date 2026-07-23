@@ -46,6 +46,7 @@ const StudyRoom              = lazy(() => import("./StudyRoom"));
 const GlobalLeaderboard      = lazy(() => import("./Leaderboard"));
 const ProgressPage           = lazy(() => import("./Progress"));
 const MyTracksPage           = lazy(() => import("./MyTracks"));
+const MyTasksPage            = lazy(() => import("./MyTasks"));
 const ReviewPage             = lazy(() => import("./Review"));
 const CompanyTracksPage      = lazy(() => import("./CompanyTracks"));
 const SystemDesignTrainerApp = lazy(() => import("./SystemDesignTrainer"));
@@ -284,6 +285,8 @@ function MobileFrameNav({ topView, onNavigate, onClose, user }) {
           {sec.items.map(Row)}
         </div>
       ))}
+      {/* My Tasks — own row, under the content frames (D24). */}
+      <div>{NAV_AFTER_FRAMES.map(Row)}</div>
       {/* BY DOMAIN dissolved into Practice / Domain Labs (2026-07-03, GSL fix #3). */}
     </div>
   );
@@ -305,6 +308,14 @@ const NAV_TRACK = [
   { id: "plans", label: "Plans & Access" },
   { id: "resources", label: "Resources" },
   { id: "about", label: "About" },
+];
+
+// D24 (2026-07-23): My Tasks — first-class to-do system, NOT a Tracks sub-feature. Own
+// left-nav row, physically placed AFTER the NAV_SECTIONS accordion (per dispatch: "left-nav
+// item under the content frames"). Unfiltered by sign-in (same convention as NAV_SECTIONS
+// items below — only the flat NAV_TRACK cluster above gates on `user`).
+const NAV_AFTER_FRAMES = [
+  { id: "my-tasks", label: "My Tasks" },
 ];
 
 // Three content frames (accordion): Learn · Build · Interview. (Rev-2 R1: Practice frame
@@ -1156,7 +1167,7 @@ function SearchModal({ onClose, onSelect }) {
 // 2026-07-03 MIGRATION: agents/agentlab/evallab/llmlab and retrieval/evaluation/agentshub/
 // production are NO LONGER standalone views (removed from VALID_VIEWS). Their old hashes are
 // caught by HASH_GYM_REDIRECTS and redirected into #concepts (opening the destination gym).
-const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","promptlab","foundationlab","systems","explore","fluency","aipm","career","codelabs","preplab","sysdesign","groundtruth","progress","profile","plans","qa","paths","foundations","leaderboard","my-tracks","review","company-tracks","about","me"];
+const VALID_VIEWS = ["home","starthere","resources","concepts","flows","lab","promptlab","foundationlab","systems","explore","fluency","aipm","career","codelabs","preplab","sysdesign","groundtruth","progress","profile","plans","qa","paths","foundations","leaderboard","my-tracks","my-tasks","review","company-tracks","about","me"];
 
 // Tabs accessible without a free account (guest mode).
 // Foundations + its labs are fully free. GT and PrepLab accessible but limited (see GroundTruth + PrepLab for per-component limits).
@@ -1680,6 +1691,7 @@ export default function App() {
       career: "Career — GenAI Systems Lab",
       preplab: "Prep Lab — GenAI Systems Lab",
       "my-tracks": "My Tracks — GenAI Systems Lab",
+      "my-tasks": "My Tasks — GenAI Systems Lab",
       review: "Review — GenAI Systems Lab",
       about: "About — GenAI Systems Lab",
       groundtruth: "Ground Truth — GenAI Systems Lab",
@@ -2004,6 +2016,12 @@ export default function App() {
               </div>
             );
           })}
+          {/* My Tasks — own row, under the content frames (D24). */}
+          <div className="space-y-0.5 mt-2 pt-2" style={{ borderTop: "1px solid rgba(63,63,70,0.5)" }}>
+            {NAV_AFTER_FRAMES.map(it => (
+              <SidebarRow key={it.id} item={it} active={topView === it.id} onNavigate={navigate} />
+            ))}
+          </div>
           {/* BY DOMAIN dissolved into Practice / Domain Labs (2026-07-03, GSL fix #3). */}
         </nav>
         {/* Bottom utilities */}
@@ -2129,6 +2147,11 @@ export default function App() {
           {topView === "my-tracks" && (
             <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
               <MyTracksPage onNavigate={navigate} onNavigateTo={navigateTo} />
+            </Suspense>
+          )}
+          {topView === "my-tasks" && (
+            <Suspense fallback={<div className="flex items-center justify-center h-screen text-zinc-500 text-sm">Loading…</div>}>
+              <MyTasksPage onNavigate={navigate} onNavigateTo={navigateTo} />
             </Suspense>
           )}
           {topView === "review" && (

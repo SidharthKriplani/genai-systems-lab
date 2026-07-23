@@ -87,6 +87,12 @@ export const SYNC_KEYS = [
   "gsl-review-cards-v1-tomb-v1",
   "gsl-takeaway-v1",
   "gsl-takeaway-v1-tomb-v1",
+  // D24 (2026-07-23): My Tasks — lists+tasks store + delete-tombstones
+  // (per-item merge, same annotation pattern as review-cards above) plus
+  // the myDay daily-target scalar (plain key, local-wins is fine here).
+  "gsl_tasks_v1",
+  "gsl_tasks_v1-tomb-v1",
+  "gsl-tasks-myday-target-v1",
 ];
 
 // Pull cloud → merge with localStorage (cloud wins for keys not in localStorage)
@@ -98,6 +104,7 @@ const ANNOT_PAIRS = {
   "gsl_page_highlights_v1": "gsl_page_highlights_v1-tomb-v1",
   "gsl-review-cards-v1": "gsl-review-cards-v1-tomb-v1",
   "gsl-takeaway-v1": "gsl-takeaway-v1-tomb-v1",
+  "gsl_tasks_v1": "gsl_tasks_v1-tomb-v1",
 };
 const TOMB_TO_STORE = Object.fromEntries(Object.entries(ANNOT_PAIRS).map(([st, t]) => [t, st]));
 
