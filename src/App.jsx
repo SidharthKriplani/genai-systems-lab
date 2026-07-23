@@ -1974,7 +1974,12 @@ export default function App() {
         <nav className="flex-1 px-2 pb-4 space-y-0.5">
           {/* TRACK — flat, always visible. Home hidden signed-in (see MobileFrameNav comment). */}
           <div className="space-y-0.5 mb-2">
-            {NAV_TRACK.filter(it => it.id !== "home" || !user).map(it => (
+            {/* D19 Part B: profile/progress/review/my-tracks/leaderboard moved into the
+                BreaklabsChrome profile-chip dropdown (signed-in only). home/starthere/resources/
+                about/plans stay here for signed-out users, since the profile chip (and its
+                dropdown) doesn't render at all when signed out — chrome shows sign-in buttons
+                instead, so those public pages would otherwise be unreachable on desktop. */}
+            {NAV_TRACK.filter(it => !user && !["profile", "progress", "review", "my-tracks", "leaderboard"].includes(it.id)).map(it => (
               <SidebarRow key={it.id} item={it} active={topView === it.id} onNavigate={navigate} />
             ))}
           </div>
@@ -2041,6 +2046,12 @@ export default function App() {
             onSignInGitHub={signInWithGitHub}
             onNavigateProfile={() => navigate("profile")}
             onNavigateProgress={() => navigate("progress")}
+            onNavigateReview={() => navigate("review")}
+            onNavigateMyTracks={() => navigate("my-tracks")}
+            onNavigateLeaderboard={() => navigate("leaderboard")}
+            onNavigateStartHere={() => navigate("starthere")}
+            onNavigateResources={() => navigate("resources")}
+            onNavigateAbout={() => navigate("about")}
             onNavigatePlans={() => navigate("plans")}
             isOwner={user?.email === "claudesubscription12@gmail.com"}
             masteryActive={topView === "study"}

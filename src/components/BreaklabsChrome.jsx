@@ -103,7 +103,7 @@ function StreakBadge({ days }) {
 }
 
 // ─── Profile chip + dropdown ───────────────────────────────────────────────────────────────
-function ProfileChip({ user, onNavigateProfile, onNavigateProgress, onNavigatePlans, isOwner, masteryActive, onOpenMastery }) {
+function ProfileChip({ user, onNavigateProfile, onNavigateProgress, onNavigateReview, onNavigateMyTracks, onNavigateLeaderboard, onNavigateStartHere, onNavigateResources, onNavigateAbout, onNavigatePlans, isOwner, masteryActive, onOpenMastery }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -141,6 +141,14 @@ function ProfileChip({ user, onNavigateProfile, onNavigateProgress, onNavigatePl
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           {item("Profile", onNavigateProfile)}
           {item("My Progress", onNavigateProgress)}
+          {item("Review", onNavigateReview)}
+          {item("My Tracks", onNavigateMyTracks)}
+          {item("Leaderboard", onNavigateLeaderboard)}
+          <div className="h-px my-1" style={{ background: "var(--border)" }} />
+          {item("Start Here", onNavigateStartHere)}
+          {item("Resources", onNavigateResources)}
+          {item("About", onNavigateAbout)}
+          <div className="h-px my-1" style={{ background: "var(--border)" }} />
           {item("Plans & Access", onNavigatePlans)}
           {isOwner && item("Mastery Room", onOpenMastery, masteryActive ? <span className="ml-1.5 text-[9px] text-emerald-400">●</span> : null)}
           <div className="h-px my-1" style={{ background: "var(--border)" }} />
@@ -158,7 +166,8 @@ export default function BreaklabsChrome({
   streak,
   theme, onToggleTheme,
   user, supabaseEnabled, onSignInGoogle, onSignInGitHub,
-  onNavigateProfile, onNavigateProgress, onNavigatePlans,
+  onNavigateProfile, onNavigateProgress, onNavigateReview, onNavigateMyTracks, onNavigateLeaderboard,
+  onNavigateStartHere, onNavigateResources, onNavigateAbout, onNavigatePlans,
   isOwner, masteryActive, onOpenMastery,
   stickyTrayButton, // ReactNode — e.g. <StickyBarButton/>; passed in so this component stays
                      // decoupled from any one app's sticky-notes module (portable across R2-R4).
@@ -194,7 +203,10 @@ export default function BreaklabsChrome({
           user ? (
             <div className="hidden lg:flex items-center">
               <ProfileChip user={user}
-                onNavigateProfile={onNavigateProfile} onNavigateProgress={onNavigateProgress} onNavigatePlans={onNavigatePlans}
+                onNavigateProfile={onNavigateProfile} onNavigateProgress={onNavigateProgress}
+                onNavigateReview={onNavigateReview} onNavigateMyTracks={onNavigateMyTracks} onNavigateLeaderboard={onNavigateLeaderboard}
+                onNavigateStartHere={onNavigateStartHere} onNavigateResources={onNavigateResources} onNavigateAbout={onNavigateAbout}
+                onNavigatePlans={onNavigatePlans}
                 isOwner={isOwner} masteryActive={masteryActive} onOpenMastery={onOpenMastery} />
             </div>
           ) : (
