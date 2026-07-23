@@ -328,7 +328,10 @@ export function StickyNotes({ getContainer, pageKey }) {
           ) : (
             <span data-swatch="1" title="Change color"
               onClick={(e) => { e.stopPropagation(); setPaletteId(n.id) }}
-              style={{ width: 22, height: 3, borderRadius: 2, background: c.rim, cursor: 'pointer', boxShadow: `0 0 8px ${c.rim}cc, 0 0 2px ${c.rim}`, transition: 'background 0.15s, box-shadow 0.15s' }} />
+              onPointerDown={(e) => e.stopPropagation()}
+              style={{ display: 'inline-flex', alignItems: 'center', padding: '7px 5px', margin: '-7px -5px', cursor: 'pointer' }}>
+              <span style={{ width: 22, height: 3, borderRadius: 2, background: c.rim, boxShadow: `0 0 8px ${c.rim}cc, 0 0 2px ${c.rim}`, transition: 'background 0.15s, box-shadow 0.15s', pointerEvents: 'none' }} />
+            </span>
           )}
           <span style={{ flex: 1 }} />
           {!pos && <button onClick={() => setRepinId(n.id)} title="Then Option+click (or drop) a new spot" style={{ background: 'transparent', border: 'none', color: '#cfcfcf', cursor: 'pointer', fontSize: '0.7rem' }}>re-pin</button>}
