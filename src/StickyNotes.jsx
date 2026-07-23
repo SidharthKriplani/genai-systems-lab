@@ -96,9 +96,7 @@ export function StickyNotes({ getContainer, pageKey }) {
   const fullKey = pageKey + (scope ? '|s:' + scope : '')
 
   // v2.2: navigation resets ONLY on a real page/scope change — never on a sync
-  // reload. (The old combined effect closed the active editor every time a
-  // cross-device merge landed, which with 20s-heartbeat + realtime sync meant
-  // constant edit-mode ejections + lost unsaved text. User-reported.)
+  // reload (the old combined effect closed the active editor on every merge).
   useEffect(() => {
     setOpenId(null); setEditId(null); setRepinId(null); setPreviewId(null)
     setConfirmDeleteId(null)
@@ -313,14 +311,14 @@ export function StickyNotes({ getContainer, pageKey }) {
       ? { position: 'absolute', top: pos.y + 14, left: Math.max(8, Math.min(pos.x, window.innerWidth - 260 + window.scrollX)), width: 244 }
       : { position: 'fixed', bottom: 70, right: 16, width: 244 }
     return (
-      <div key={'card' + n.id} data-sticky-ui="1" style={{ ...style, zIndex: 260, background: 'rgba(22,22,27,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderLeft: `2px solid ${c.rim}`, borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,0.55)', fontSize: '0.8rem', color: '#e8e8ea', lineHeight: 1.5 }}>
+      <div key={'card' + n.id} data-sticky-ui="1" style={{ ...style, zIndex: 260, background: 'rgba(22,22,27,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,0.55)', fontSize: '0.8rem', color: '#e8e8ea', lineHeight: 1.5 }}>
         <div
           onPointerDown={pos ? (e) => { if (e.target instanceof Element && e.target.closest('button,span[data-swatch]')) return; e.preventDefault(); setDrag({ id: n.id, startX: e.clientX, startY: e.clientY, dx0: n.anchor.dx, dy0: n.anchor.dy }) } : undefined}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', cursor: pos ? 'grab' : 'default', borderBottom: '1px solid rgba(255,255,255,0.06)', touchAction: 'none' }}>
-          {COLORS.map(cc => (
-            <span key={cc.id} data-swatch="1" onClick={(e) => { e.stopPropagation(); update(n.id, { color: cc.id }) }}
-              style={{ width: 9, height: 9, borderRadius: '50%', background: cc.rim, cursor: 'pointer', opacity: n.color === cc.id ? 1 : 0.45, transform: n.color === cc.id ? 'scale(1.25)' : 'none', transition: 'opacity 0.15s, transform 0.15s' }} />
-          ))}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 9px 2px', cursor: pos ? 'grab' : 'default', touchAction: 'none' }}>
+          {/* v2.3: ONE dot, not a traffic-light row — click cycles the accent color */}
+          <span data-swatch="1" title="Change color"
+            onClick={(e) => { e.stopPropagation(); const i = COLORS.findIndex(cc => cc.id === n.color); update(n.id, { color: COLORS[(i + 1) % COLORS.length].id }) }}
+            style={{ width: 22, height: 3, borderRadius: 2, background: c.rim, cursor: 'pointer', boxShadow: `0 0 8px ${c.rim}cc, 0 0 2px ${c.rim}`, transition: 'background 0.15s, box-shadow 0.15s' }} />
           <span style={{ flex: 1 }} />
           {!pos && <button onClick={() => setRepinId(n.id)} title="Then Option+click (or drop) a new spot" style={{ background: 'transparent', border: 'none', color: '#cfcfcf', cursor: 'pointer', fontSize: '0.7rem' }}>re-pin</button>}
           {confirmDeleteId === n.id ? (
@@ -343,7 +341,7 @@ export function StickyNotes({ getContainer, pageKey }) {
         {editId === n.id ? (
           <textarea autoFocus defaultValue={n.text}
             onBlur={(e) => { update(n.id, { text: e.target.value, editedTs: Date.now() }); setEditId(null) }}
-            placeholder={'Your note…  **bold** *italic* `code`\n- bullet'}
+            placeholder={'Write a note…'} title={'Markdown: **bold** *italic* `code`  - bullet'}
             style={{ width: '100%', minHeight: 96, boxSizing: 'border-box', background: 'transparent', color: '#eee', border: 'none', outline: 'none', resize: 'vertical', padding: '8px 10px', font: 'inherit', lineHeight: 1.45 }} />
         ) : (
           <div onClick={() => setEditId(n.id)} title="Click to edit"
@@ -364,7 +362,7 @@ export function StickyNotes({ getContainer, pageKey }) {
     if (!p || openId === previewId) return null
     const c = colorOf(p.n.color)
     return (
-      <div style={{ position: 'absolute', top: p.pos.y + 14, left: Math.max(8, Math.min(p.pos.x, window.innerWidth - 240 + window.scrollX)), width: 224, zIndex: 258, pointerEvents: 'none', background: 'rgba(22,22,27,0.94)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderLeft: `2px solid ${c.rim}`, borderRadius: 10, padding: '7px 10px', fontSize: '0.78rem', color: '#ddd', lineHeight: 1.4, maxHeight: 150, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}
+      <div style={{ position: 'absolute', top: p.pos.y + 14, left: Math.max(8, Math.min(p.pos.x, window.innerWidth - 240 + window.scrollX)), width: 224, zIndex: 258, pointerEvents: 'none', background: 'rgba(22,22,27,0.94)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '7px 10px', fontSize: '0.78rem', color: '#ddd', lineHeight: 1.4, maxHeight: 150, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}
         dangerouslySetInnerHTML={{ __html: p.n.text ? mdLite(p.n.text) : '<span style="opacity:0.45">empty note</span>' }} />
     )
   }
