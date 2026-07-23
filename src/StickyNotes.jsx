@@ -62,7 +62,8 @@ export function StickyNotes({ getContainer, pageKey }) {
   const [ctxSig, setCtxSig] = useState('')
   const [scope, setScope] = useState('')   // v1.6: current data-sticky-scope value
   const [syncNonce, setSyncNonce] = useState(0) // v1.9: bumped when a cloud pull-merge lands
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null) // v2.1: two-step delete arm
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [paletteId, setPaletteId] = useState(null) // v2.4: which note's color palette is bloomed open // v2.1: two-step delete arm
 
   // v1.4: bucket = pageKey + hash (heading-based scoping now lives in the
   // ANCHOR itself -- see stickyNotes.js nearestHeading). The body observer
@@ -99,7 +100,7 @@ export function StickyNotes({ getContainer, pageKey }) {
   // reload (the old combined effect closed the active editor on every merge).
   useEffect(() => {
     setOpenId(null); setEditId(null); setRepinId(null); setPreviewId(null)
-    setConfirmDeleteId(null)
+    setConfirmDeleteId(null); setPaletteId(null)
   }, [fullKey])
 
   useEffect(() => {
@@ -315,10 +316,20 @@ export function StickyNotes({ getContainer, pageKey }) {
         <div
           onPointerDown={pos ? (e) => { if (e.target instanceof Element && e.target.closest('button,span[data-swatch]')) return; e.preventDefault(); setDrag({ id: n.id, startX: e.clientX, startY: e.clientY, dx0: n.anchor.dx, dy0: n.anchor.dy }) } : undefined}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 9px 2px', cursor: pos ? 'grab' : 'default', touchAction: 'none' }}>
-          {/* v2.3: ONE dot, not a traffic-light row — click cycles the accent color */}
-          <span data-swatch="1" title="Change color"
-            onClick={(e) => { e.stopPropagation(); const i = COLORS.findIndex(cc => cc.id === n.color); update(n.id, { color: COLORS[(i + 1) % COLORS.length].id }) }}
-            style={{ width: 22, height: 3, borderRadius: 2, background: c.rim, cursor: 'pointer', boxShadow: `0 0 8px ${c.rim}cc, 0 0 2px ${c.rim}`, transition: 'background 0.15s, box-shadow 0.15s' }} />
+          {/* v2.4: resting state = glow line; click blooms a transient row of plain
+              borderless color circles (current one glows), pick -> collapse. */}
+          {paletteId === n.id ? (
+            <span data-swatch="1" style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
+              {COLORS.map(cc => (
+                <span key={cc.id} onClick={(e) => { e.stopPropagation(); update(n.id, { color: cc.id }); setPaletteId(null) }}
+                  style={{ width: 11, height: 11, borderRadius: '50%', background: cc.rim, cursor: 'pointer', opacity: cc.id === n.color ? 1 : 0.85, boxShadow: cc.id === n.color ? `0 0 7px ${cc.rim}` : 'none', transition: 'box-shadow 0.15s' }} />
+              ))}
+            </span>
+          ) : (
+            <span data-swatch="1" title="Change color"
+              onClick={(e) => { e.stopPropagation(); setPaletteId(n.id) }}
+              style={{ width: 22, height: 3, borderRadius: 2, background: c.rim, cursor: 'pointer', boxShadow: `0 0 8px ${c.rim}cc, 0 0 2px ${c.rim}`, transition: 'background 0.15s, box-shadow 0.15s' }} />
+          )}
           <span style={{ flex: 1 }} />
           {!pos && <button onClick={() => setRepinId(n.id)} title="Then Option+click (or drop) a new spot" style={{ background: 'transparent', border: 'none', color: '#cfcfcf', cursor: 'pointer', fontSize: '0.7rem' }}>re-pin</button>}
           {confirmDeleteId === n.id ? (
