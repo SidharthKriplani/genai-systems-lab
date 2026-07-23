@@ -5,7 +5,7 @@
 // on revisit. Click a painted mark -> Remove popover. No track/save involved.
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { addHighlight, removeHighlight, occurrenceOfSelection, applyAll, unpaint } from './utils/localHighlights.js'
+import { addHighlight, removeHighlight, occurrenceOfSelection, applyAll, unpaint, hitHighlight } from './utils/localHighlights.js'
 
 const SWATCHES = [
   { id: 'gold',  dot: '#e8a030' },
@@ -78,15 +78,16 @@ export function PageHighlighter({ getContainer, pageKey }) {
       const sel = window.getSelection()
       if (sel && !sel.isCollapsed) return
       const el = getContainer()
-      const mark = e.target && e.target.closest && e.target.closest('mark[data-hl-id]')
-      // 2026-07-23 fix: defer the CLICK handler inside [data-own-highlighter]
-      // containers too, mirroring the paint defer rule -- without this, a mark
-      // click spawned BOTH this remove pill AND the module popover's own
-      // remove/add-to-review row, stacked on top of each other.
-      if (mark && mark.closest && mark.closest('[data-own-highlighter]')) { setRemovePop(null); return }
-      if (mark && el && el.contains(mark)) {
-        const r = mark.getBoundingClientRect()
-        setRemovePop({ id: mark.getAttribute('data-hl-id'), top: r.bottom + 6, left: r.left + r.width / 2 })
+      // Defer clicks inside [data-own-highlighter] containers (the foundations
+      // popover owns those) -- mirrors the paint defer rule.
+      const host = e.target instanceof Element ? e.target : null
+      if (host && host.closest && host.closest('[data-own-highlighter]')) { setRemovePop(null); return }
+      // F4 (2026-07-23): highlights are native ::highlight() ranges now (no
+      // <mark> nodes), so clicks resolve by hit-testing the painted ranges'
+      // client rects instead of DOM closest().
+      const hit = el ? hitHighlight(el, e.clientX, e.clientY) : null
+      if (hit) {
+        setRemovePop({ id: hit.id, top: hit.rect.bottom + 6, left: hit.rect.left + hit.rect.width / 2 })
       } else {
         setRemovePop(null)
       }

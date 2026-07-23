@@ -1,9 +1,19 @@
-// localHighlights — in-place marker-pen highlights over lab content.
-// Ported from MSL (2026-07-16). A highlight = { id, text, n, color } where
-// n = which occurrence of `text` inside the container's text stream. Robust to
-// re-renders of the SAME content; if the content changes so the nth occurrence
-// no longer exists, it silently doesn't paint (never guesses). Wrapping touches
-// TEXT NODES only; callers re-apply via applyAll after content settles.
+// localHighlights — marker-pen highlights over lab content.
+// v3 (2026-07-23, F4): CSS Custom Highlight API port. Highlights paint as
+// browser-native ::highlight() ranges registered in CSS.highlights — ZERO DOM
+// mutation. The old <mark>-wrapping path (v2) mutated text nodes under
+// React's feet; when React reconciled over the mutated tree it threw
+// insertBefore/removeChild "not a child of this node" and the tab crashed
+// (the auto-heal boundary family existed to contain exactly this). With
+// native ranges the crash class is impossible: React re-renders freely, our
+// ranges just go stale and a MutationObserver rebuilds them ~180ms later.
+// The legacy <mark> path is retained ONLY as a fallback for engines without
+// the API; 2026 Chrome/Safari/Firefox all take the native path.
+//
+// A highlight = { id, text, n, color } where n = which occurrence of text
+// inside the container's text stream. Robust to re-renders of the SAME
+// content; if content changes so the nth occurrence no longer exists, it
+// silently doesn't paint (never guesses).
 
 const KEY = 'gsl_page_highlights_v1'
 export const HL_STORE_KEY = KEY
@@ -21,10 +31,7 @@ function writeHlTombstones(pageKey, ids) {
   } catch { /* ignore */ }
 }
 
-// 2026-07-22 fix: ids now match the swatch palette (highlightColors.js uses
-// violet/emerald/amber/red -- the old gold/teal/green keys matched NOTHING, so
-// every color fell back to gold). Alphas raised ~0.26 -> ~0.42: the old marks
-// sank into the dark background. Legacy ids kept resolvable.
+// Ids match the swatch palette (highlightColors.js); legacy ids resolvable.
 const FAINT = {
   sky:     'rgba(56,189,248,0.38)',
   pink:    'rgba(244,114,182,0.38)',
@@ -58,10 +65,8 @@ export function addHighlight(pageKey, hl) {
 export function removeHighlight(pageKey, id) {
   const all = readAll()
   const arr = all[pageKey] || []
-  // 2026-07-22 fix: repeated swatch clicks used to accrete DUPLICATE entries
-  // for the same (text, n) -- only one ever painted, so "Remove" killed the
-  // painted one and a hidden twin resurrected it on the next repaint. Removing
-  // by id now also removes every entry anchored to the same (text, n).
+  // Removing by id also removes every entry anchored to the same (text, n)
+  // (2026-07-22 duplicate-accretion fix).
   const target = arr.find(h => h.id === id)
   const removed = arr.filter(h => h.id === id || (target && h.text === target.text && h.n === target.n))
   writeHlTombstones(pageKey, removed.map(h => h.id))
@@ -88,6 +93,152 @@ export function occurrenceOfSelection(container, text) {
   return n
 }
 
+// ── Native path (CSS Custom Highlight API) ──────────────────────────────────
+const NATIVE = typeof CSS !== 'undefined' && typeof Highlight !== 'undefined' && 'highlights' in CSS
+
+const paintedByContainer = new Map() // Element -> Map<id, { color, range }>
+const observers = new Map()          // Element -> { obs, pageKey, timer }
+
+let stylesInjected = false
+function ensureStyles() {
+  if (!NATIVE || stylesInjected || typeof document === 'undefined') return
+  const s = document.createElement('style')
+  s.id = 'gsl-hl-native-styles'
+  s.textContent = Object.keys(FAINT)
+    .map(function (k) { return '::highlight(gsl-hl-' + k + ') { background-color: ' + FAINT[k] + '; }' })
+    .join('\n')
+  document.head.appendChild(s)
+  stylesInjected = true
+}
+
+// Rebuild the global CSS.highlights registry from every container's painted
+// ranges. One Highlight object per color name; disconnected containers are
+// pruned here.
+function rebuildRegistry() {
+  if (!NATIVE) return
+  const byColor = {}
+  for (const [el, m] of paintedByContainer) {
+    if (!el.isConnected) { paintedByContainer.delete(el); continue }
+    for (const entry of m.values()) {
+      if (entry.range.collapsed) continue
+      const key = FAINT[entry.color] ? entry.color : 'amber'
+      if (!byColor[key]) byColor[key] = []
+      byColor[key].push(entry.range)
+    }
+  }
+  for (const name of Object.keys(FAINT)) {
+    const ranges = byColor[name]
+    if (ranges && ranges.length) CSS.highlights.set('gsl-hl-' + name, new Highlight(...ranges))
+    else CSS.highlights.delete('gsl-hl-' + name)
+  }
+}
+
+// Build a live Range for a stored highlight: locate the nth occurrence of
+// hl.text in the container's text stream, then map absolute offsets onto the
+// current text nodes. Same walker discipline the legacy paintOne uses.
+function buildRange(container, hl) {
+  const full = container.textContent || ''
+  let start = -1
+  for (let k = 0, i = -1; k <= hl.n; k++) {
+    i = full.indexOf(hl.text, i + 1)
+    if (i === -1) return null // content changed; skip silently
+    start = i
+  }
+  const end = start + hl.text.length
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
+  let abs = 0, node, startNode = null, startOff = 0, endNode = null, endOff = 0
+  while ((node = walker.nextNode())) {
+    const len = node.textContent.length
+    if (!startNode && abs + len > start) { startNode = node; startOff = start - abs }
+    if (abs + len >= end) { endNode = node; endOff = end - abs; break }
+    abs += len
+  }
+  if (!startNode || !endNode) return null
+  const r = document.createRange()
+  try { r.setStart(startNode, startOff); r.setEnd(endNode, endOff) } catch { return null }
+  return r
+}
+
+function schedule(container, entry) {
+  if (entry.timer) clearTimeout(entry.timer)
+  entry.timer = setTimeout(function () {
+    entry.timer = null
+    if (!container.isConnected) {
+      if (entry.obs) entry.obs.disconnect()
+      observers.delete(container)
+      paintedByContainer.delete(container)
+      rebuildRegistry()
+      return
+    }
+    applyAll(container, entry.pageKey)
+  }, 180)
+}
+
+let syncListenerOn = false
+function ensureSyncListener() {
+  if (syncListenerOn || typeof window === 'undefined') return
+  syncListenerOn = true
+  // Cross-device pull-merges and local add/removes dispatch this; repaint
+  // every observed container so remote highlights appear without a nav.
+  window.addEventListener('annotations-changed', function () {
+    for (const [el, entry] of observers) schedule(el, entry)
+  })
+}
+
+// React re-renders replace text nodes, which silently kills our ranges (no
+// crash — that is the whole point). The observer rebuilds them. Our own
+// painting never mutates the DOM, so this cannot feed back into itself.
+function ensureObserver(container, pageKey) {
+  if (!NATIVE) return
+  ensureSyncListener()
+  const existing = observers.get(container)
+  if (existing) { existing.pageKey = pageKey; return }
+  const entry = { obs: null, pageKey: pageKey, timer: null }
+  const obs = new MutationObserver(function () { schedule(container, entry) })
+  obs.observe(container, { childList: true, subtree: true, characterData: true })
+  entry.obs = obs
+  observers.set(container, entry)
+}
+
+// Painted-range lookups for click handling (no <mark> nodes to closest() on).
+export function hitHighlight(container, x, y) {
+  if (!NATIVE) {
+    const el = typeof document !== 'undefined' ? document.elementFromPoint(x, y) : null
+    const m = el && el.closest ? el.closest('mark[data-hl-id]') : null
+    if (m && container.contains(m)) {
+      return { id: m.getAttribute('data-hl-id'), rect: m.getBoundingClientRect() }
+    }
+    return null
+  }
+  const m = paintedByContainer.get(container)
+  if (!m) return null
+  for (const [id, entry] of m) {
+    const rects = entry.range.getClientRects()
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i]
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+        return { id: id, rect: entry.range.getBoundingClientRect() }
+      }
+    }
+  }
+  return null
+}
+
+export function getPaintedRange(container, id) {
+  if (!NATIVE) {
+    const marks = container.querySelectorAll('mark[data-hl-id="' + id + '"]')
+    if (!marks.length) return null
+    const r = document.createRange()
+    r.setStartBefore(marks[0])
+    r.setEndAfter(marks[marks.length - 1])
+    return r
+  }
+  const m = paintedByContainer.get(container)
+  const entry = m ? m.get(id) : null
+  return entry ? entry.range : null
+}
+
+// ── Legacy <mark> path (non-supporting engines only) ────────────────────────
 function clearPainted(container) {
   container.querySelectorAll('mark[data-hl-id]').forEach(m => {
     const parent = m.parentNode
@@ -141,25 +292,30 @@ function paintOne(container, hl) {
 // Idempotent full repaint for a page's container.
 export function applyAll(container, pageKey) {
   if (!container) return
-  // 2026-07-22 dedupe migration: collapse (text, n) duplicates accreted by the
-  // old add-per-swatch-click behavior -- LAST one wins (newest color pick),
-  // and the cleanup is persisted so old debris can never resurrect a deleted
-  // highlight again. Idempotent.
+  // Dedupe migration (2026-07-22) + optimistic lock (2026-07-23 flicker fix:
+  // only persist if the bucket still matches what we read, so a concurrent
+  // cross-device pull-merge write is never clobbered).
   const arr = listHighlights(pageKey)
   const seen = new Map()
-  for (const h of arr) seen.set(h.text + '\u0000' + h.n, h)
+  for (const h of arr) seen.set(h.text + ' ' + h.n, h)
   if (seen.size !== arr.length) {
-    // 2026-07-23 flicker fix: this persist used to clobber a concurrent
-    // cross-device pull-merge write (classic lost update -- highlights
-    // vanished until the next pull restored them). Optimistic lock: only
-    // persist if the bucket still matches what we read; otherwise skip --
-    // the dedupe re-runs on the next applyAll, and painting below re-reads
-    // fresh either way.
     const fresh = readAll()
     if (JSON.stringify(fresh[pageKey] || []) === JSON.stringify(arr)) {
       fresh[pageKey] = [...seen.values()]
       writeAll(fresh)
     }
+  }
+  if (NATIVE) {
+    ensureStyles()
+    const m = new Map()
+    paintedByContainer.set(container, m)
+    for (const hl of listHighlights(pageKey)) {
+      const range = buildRange(container, hl)
+      if (range) m.set(hl.id, { color: hl.color, range })
+    }
+    rebuildRegistry()
+    ensureObserver(container, pageKey)
+    return
   }
   clearPainted(container)
   for (const hl of listHighlights(pageKey)) paintOne(container, hl)
@@ -167,7 +323,12 @@ export function applyAll(container, pageKey) {
 
 export function unpaint(container, id) {
   if (!container) return
-  container.querySelectorAll(`mark[data-hl-id="${id}"]`).forEach(m => {
+  if (NATIVE) {
+    const m = paintedByContainer.get(container)
+    if (m) { m.delete(id); rebuildRegistry() }
+    return
+  }
+  container.querySelectorAll('mark[data-hl-id="' + id + '"]').forEach(m => {
     const parent = m.parentNode
     while (m.firstChild) parent.insertBefore(m.firstChild, m)
     parent.removeChild(m)

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { AddToTrackPopover } from "../AddToTrackPopover.jsx";
 import { quickAddItem, getQuickAdd } from "../utils/tracks.js";
 import { HIGHLIGHT_COLORS } from "../utils/highlightColors.js";
-import { addHighlight, occurrenceOfSelection, applyAll, removeHighlight, listHighlights, unpaint } from "../utils/localHighlights.js";
+import { addHighlight, occurrenceOfSelection, applyAll, removeHighlight, listHighlights, unpaint, hitHighlight, getPaintedRange } from "../utils/localHighlights.js";
 import { addCard } from "../utils/reviewCards.js";
 
 /**
@@ -50,10 +50,11 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
   useEffect(() => {
     const el = containerRef?.current; if (!el) return;
     const onClick = (e) => {
-      const m = e.target instanceof Element ? e.target.closest("mark[data-hl-id]") : null;
-      if (!m || !el.contains(m)) { setRemovePop(null); return; }
-      const r = m.getBoundingClientRect();
-      setRemovePop({ id: m.getAttribute("data-hl-id"), top: r.bottom + 8, left: r.left + r.width / 2 });
+      // F4 (2026-07-23): native ::highlight() ranges -- hit-test the painted
+      // ranges' client rects instead of closest("mark").
+      const hit = hitHighlight(el, e.clientX, e.clientY);
+      if (!hit) { setRemovePop(null); return; }
+      setRemovePop({ id: hit.id, top: hit.rect.bottom + 8, left: hit.rect.left + hit.rect.width / 2 });
     };
     el.addEventListener("click", onClick);
     return () => el.removeEventListener("click", onClick);
@@ -185,13 +186,17 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
   function handleAddToReview() {
     if (!removePop || !containerRef?.current) return;
     const el = containerRef.current;
-    const markEl = el.querySelector(`mark[data-hl-id="${removePop.id}"]`);
-    if (!markEl) { setRemovePop(null); return; }
-    const term = (markEl.textContent || "").trim();
+    // F4 (2026-07-23): no <mark> nodes anymore -- resolve the clicked
+    // highlight via its stored entry + painted native range. Still never
+    // guesses: bails silently if the range is gone from the live DOM.
+    const hl = listHighlights(pageKey).find(h => h.id === removePop.id);
+    const range = getPaintedRange(el, removePop.id);
+    if (!hl || !range) { setRemovePop(null); return; }
+    const term = (hl.text || "").trim();
     if (!term) { setRemovePop(null); return; }
 
-    const hl = listHighlights(pageKey).find(h => h.id === removePop.id);
-    const block = markEl.closest("p, li, blockquote, dd, dt, td, th, div") || markEl.parentElement;
+    const startEl = range.startContainer && range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+    const block = (startEl && startEl.closest && startEl.closest("p, li, blockquote, dd, dt, td, th, div")) || startEl;
     const blockText = (block && block.textContent) || term;
     const idx = blockText.indexOf(term);
     let prefix = "", suffix = "";
@@ -213,7 +218,7 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
       moduleTitle: sourceLabel || "",
     });
 
-    const r = markEl.getBoundingClientRect();
+    const r = range.getBoundingClientRect();
     showFlash("review queue", r);
     setRemovePop(null);
   }
