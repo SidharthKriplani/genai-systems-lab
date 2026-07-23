@@ -165,7 +165,10 @@ export default function BreaklabsChrome({
   onSearchOpen, searchPlaceholder = "Search…",
   streak,
   theme, onToggleTheme,
-  user, supabaseEnabled, onSignInGoogle, onSignInGitHub,
+  user, supabaseEnabled, onSignInGoogle, onSignInGitHub, onShowAuth,
+  // onShowAuth (optional, D21): when provided, the signed-out slot renders ONE "Sign in" button
+  // that calls it (for labs whose auth entry point is a modal, e.g. PAL/MSL), instead of the
+  // two direct-OAuth buttons below. Backward-compatible — omit it and behavior is unchanged.
   onNavigateProfile, onNavigateProgress, onNavigateReview, onNavigateMyTracks, onNavigateLeaderboard,
   onNavigateStartHere, onNavigateResources, onNavigateAbout, onNavigatePlans,
   isOwner, masteryActive, onOpenMastery,
@@ -208,6 +211,15 @@ export default function BreaklabsChrome({
                 onNavigateStartHere={onNavigateStartHere} onNavigateResources={onNavigateResources} onNavigateAbout={onNavigateAbout}
                 onNavigatePlans={onNavigatePlans}
                 isOwner={isOwner} masteryActive={masteryActive} onOpenMastery={onOpenMastery} />
+            </div>
+          ) : onShowAuth ? (
+            <div className="hidden lg:flex items-center">
+              <button onClick={onShowAuth}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.35)", color: "#a5b4fc" }}
+                title="Sign in">
+                Sign in
+              </button>
             </div>
           ) : (
             <div className="hidden lg:flex items-center gap-1.5">
