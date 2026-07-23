@@ -12820,7 +12820,11 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule, ini
 
   // ── Shared sidebar (used in both runner and standard view) ──
   const SidebarContent = (
-    <div className="w-52 shrink-0 overflow-y-auto py-4 hidden sm:block" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
+    <div className="w-52 shrink-0 hidden sm:block" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
+      {/* 2026-07-23: module list pins while the lesson scrolls -- sticky inner
+          wrapper (self-scrolling below the 56px chrome bar); outer column keeps
+          the full-height border/background. */}
+      <div className="sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto py-4">
       <div className="px-3 mb-3 space-y-2">
         <button
           onClick={() => currentGym ? handleBack() : (setActiveGym(null), syncConceptsHash(null, null))}
@@ -12886,6 +12890,7 @@ export default function ConceptsApp({ onNavigate, initialGym, initialModule, ini
           </div>
         );
       })}
+      </div>
     </div>
   );
 
