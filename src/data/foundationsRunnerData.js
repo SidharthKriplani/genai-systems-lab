@@ -3271,35 +3271,48 @@ itself).` },
     ],
     takeaway: "Default to pgvector when you already run Postgres and need relational JOINs with your vectors. The JOIN superpower — WHERE user_id = $1 in the same query — is something dedicated DBs cannot replicate natively. Migrate when you exceed the 10M–50M vector range (hardware-dependent) or when ANN latency becomes the bottleneck. Dedicated vector DBs win at massive scale and pure ANN performance. Many production systems run hybrid: pgvector for small-to-mid workloads with JOIN requirements, dedicated DB for high-scale pure vector routes.",
     cloudMap: [
-      `This module's decision — pgvector inside the Postgres you already run, versus a dedicated managed vector service — exists identically on every cloud. What changes is only the NAMES and one or two service-shaped quirks. Learn the decision tree once from the lesson; this tab teaches you to say it in whichever vendor's vocabulary the interviewer runs.`,
+      `Recruiters in India screen hard on single-cloud fluency — "we're an AWS shop," "we want Azure only." What they're actually testing is rarely console knowledge; it's whether you can make THIS module's decision — pgvector inside the Postgres you already run, versus a dedicated vector service — in their vendor's vocabulary, with costs attached. This tab translates the lesson three ways. Every acronym is expanded on first use; nothing here assumes you've touched a cloud console before.`,
 
-      { h: "The primitive you are shopping for" },
-      `Approximate-nearest-neighbor search over embedding vectors, plus the ability to filter/join results against your relational data. Every option below is one of two shapes the lesson already named: "extension inside your existing database" or "dedicated vector service."`,
+      { h: "First, the primitive — in plain terms" },
+      `What you are shopping for is approximate-nearest-neighbor search (ANN — "find me the stored vectors most similar to this one, fast, without checking every single one") over your embeddings, plus the ability to filter results against your regular business data. Every product on every cloud is one of two shapes the lesson already taught: an EXTENSION bolted into a database you already run, or a SEPARATE dedicated service.`,
+      `A borrowed picture that survives every vendor: pgvector is adding a bookshelf to the apartment you already rent — marginal cost near zero, everything in one place, and you can cross-reference the books with everything else you own. A dedicated vector service is renting a specialized library across town — purpose-built and faster at scale, but you pay its rent even on days nobody visits, and every lookup is a commute (a network hop) away from the rest of your data.`,
 
       { h: "The trilingual name map" },
+      { table: { head: ["Shape", "AWS", "GCP", "Azure"], rows: [
+        ["pgvector in managed Postgres *(the lesson's default)*", "RDS for PostgreSQL / Aurora PostgreSQL", "Cloud SQL for PostgreSQL / AlloyDB", "Azure Database for PostgreSQL (Flexible Server)"],
+        ["Cloud-native dedicated vector service", "OpenSearch Service (vector / k-NN engine)", "Vertex AI Vector Search (formerly Matching Engine)", "Azure AI Search (vector search)"],
+        ["Cloud-agnostic managed *(the module's Pinecone class)*", "Pinecone / Weaviate Cloud / Qdrant Cloud — run ON these clouds, billed separately", "same", "same"],
+      ] } },
+      `All three managed-Postgres options ship pgvector as a supported extension — the module's JOIN superpower ports verbatim: same SQL, three consoles. That one sentence answers a surprising number of "but do you know OUR cloud?" screens.`,
+
+      { h: "If cloud is new to you — what 'managed' buys and bills" },
       { list: [
-        `**pgvector in managed Postgres (the lesson's default):** AWS — RDS for PostgreSQL / Aurora PostgreSQL. GCP — Cloud SQL for PostgreSQL / AlloyDB. Azure — Azure Database for PostgreSQL (Flexible Server). All three ship pgvector as a supported extension, so the module's JOIN superpower ports verbatim — same SQL, three consoles.`,
-        `**Cloud-native vector service:** AWS — OpenSearch Service (vector/k-NN engine). GCP — Vertex AI Vector Search (formerly Matching Engine). Azure — Azure AI Search (vector search). These are each vendor's "dedicated vector DB" answer.`,
-        `**Cloud-agnostic managed (this module's Pinecone class):** Pinecone, Weaviate Cloud, Qdrant Cloud — they RUN on the big three but bill separately; interviewers count them as "managed vector DB" in exactly the module's sense.`,
+        `**What a managed database actually is:** the vendor runs the machines, patching, backups, and failover; you get an endpoint and a bill. You are paying to delete a category of 3 a.m. problems, not for different SQL.`,
+        `**What the bill is made of:** an always-on instance fee (sized by CPU/RAM), storage per GB, and — the one beginners forget — data-transfer charges when services in different places talk to each other.`,
+        `**Why interviewers care:** because "which service?" is really "which failure modes and which bill shape did you just sign up for?" — the lesson's tradeoff, wearing a price tag.`,
       ] },
 
-      { h: "Deltas that actually matter in interviews" },
+      { h: "The senior cut — deltas that decide real designs" },
       { list: [
-        `**AWS's dedicated route drags in a search cluster.** OpenSearch gives you vectors PLUS BM25 — the strongest answer when the interviewer wants hybrid keyword+vector retrieval — but you inherit cluster sizing/ops the module's "managed means less ops" framing does not fully cover.`,
-        `**GCP's Vertex AI Vector Search is the purest ANN service** — excellent recall/latency at scale, but metadata filtering is restrictive compared to SQL: the module's WHERE-clause JOIN pattern does not translate; you pre-filter with allow-lists instead. If the interviewer's workload is filter-heavy, that is your argument for AlloyDB + pgvector on GCP.`,
-        `**Azure AI Search is the enterprise-RAG default** — tightest integration with the Azure OpenAI stack that Indian enterprises and GCCs disproportionately run; if the JD says "Azure," the expected answer is Azure AI Search for RAG retrieval, pgvector on Flexible Server when relational filters dominate.`,
+        `**AWS's dedicated route drags in a search cluster.** OpenSearch gives you vectors PLUS BM25 keyword search — the strongest answer when the interviewer wants hybrid retrieval — but you inherit cluster sizing and ops that "managed means less ops" quietly undersells.`,
+        `**GCP's Vertex AI Vector Search is the purest ANN engine** — excellent recall/latency at scale, but metadata filtering is restrictive compared to SQL: the module's WHERE-clause JOIN pattern does not translate; you pre-filter with allow-lists. Filter-heavy workload on GCP? That is your argument for AlloyDB + pgvector instead.`,
+        `**Azure AI Search is the enterprise-RAG default** — tightest integration with the Azure OpenAI stack that Indian enterprises and GCCs disproportionately run. If the JD says Azure, the expected answer is Azure AI Search for RAG retrieval, pgvector on Flexible Server when relational filters dominate.`,
+        `**Inside pgvector itself, the senior follow-up is index choice:** HNSW (a graph-based index — better recall and query latency, more memory, slower to build) versus IVFFlat (a clustering-based index — cheap to build, needs list-count tuning, recall degrades as data grows). A real screening question currently making the rounds: "you're on pgvector on RDS, similarity queries are slowing at 10 million vectors — HNSW or IVFFlat, and at what point do you migrate to a dedicated cluster?" The lesson's 10M–50M crossover range IS the answer's spine; the index swap buys you room before the migration does.`,
       ] },
 
       { h: "Cost shape — reason in magnitudes, not menu prices" },
-      `1M embeddings at 768-dim fp32 = 1M × 768 × 4 bytes ≈ 3.1 GB raw — small enough to live in the RAM class of a modest Postgres instance you are ALREADY paying for, which is the arithmetic behind the module's "pgvector is near-free at small scale" position. Dedicated services invert the shape: a per-hour minimum footprint plus per-GB index cost that starts billing before your first query. The crossover argument is therefore structural, not a price-sheet fact. [verify: exact instance and per-GB prices drift quarterly — recompute at decision time, never quote remembered prices in an interview]`,
+      `1M embeddings at 768 dimensions in fp32 = 1M × 768 × 4 bytes ≈ 3.1 GB raw — small enough to live in the RAM class of a modest Postgres instance you are ALREADY paying for. That arithmetic is the whole "pgvector is near-free at small scale" position. Dedicated services invert the bill's shape: a per-hour minimum footprint plus per-GB index cost that starts charging before your first query arrives. The crossover argument is structural — it survives every price change. [verify: exact instance and per-GB prices drift quarterly — recompute at decision time; never quote remembered prices in an interview]`,
 
-      { h: "The vendor-lock answer (for the 'we are AWS-only' recruiter)" },
+      { h: "The decision tree — say it in 20 seconds" },
+      { eq: "already running Postgres AND vectors < ~10M AND filters/JOINs matter\n    -> pgvector where you are (RDS/Aurora | Cloud SQL/AlloyDB | Flexible Server)\nhybrid keyword+vector retrieval required\n    -> the search-engine route (OpenSearch | — | Azure AI Search)\npure ANN latency at 10M+ scale, simple filters\n    -> dedicated engine (OpenSearch vector | Vertex AI Vector Search | AI Search)\nno cloud preference, want zero infra thought\n    -> Pinecone-class managed, accept the separate bill" },
+
+      { h: "The vendor-lock answer — for the 'we are AWS-only' recruiter" },
       { list: [
-        `**AWS-only:** "pgvector on RDS or Aurora Postgres by default; graduate to OpenSearch's vector engine when I need hybrid BM25+vector or cross the ~10M-vector range the lesson flags."`,
-        `**GCP-only:** "pgvector on Cloud SQL or AlloyDB by default; Vertex AI Vector Search when pure-ANN latency at scale dominates and my filters are simple enough for allow-lists."`,
+        `**AWS-only:** "pgvector on RDS or Aurora by default; HNSW index as scale grows; graduate to OpenSearch's vector engine when I need hybrid BM25+vector or cross the lesson's ~10M-vector range."`,
+        `**GCP-only:** "pgvector on Cloud SQL or AlloyDB by default; Vertex AI Vector Search when pure-ANN latency dominates and my filters are simple enough for allow-lists."`,
         `**Azure-only:** "pgvector on Azure Database for PostgreSQL when JOINs dominate; Azure AI Search when I am already inside the Azure OpenAI RAG stack."`,
       ] },
-      `Same decision tree, three vocabularies. Interviewers testing "do you know OUR cloud" are almost always testing whether you can rename this tree — not whether you have memorized their console.`,
+      `Same tree, three vocabularies. A recruiter testing "do you know OUR cloud" is almost always testing whether you can rename this tree without stumbling — not whether you have memorized their console.`,
     ],
   },
 

@@ -622,6 +622,32 @@ function AnnexBlocks({ items, moduleId, accent = "amber" }) {
             </div>
           );
         }
+        if (item?.table) {
+          return (
+            <div key={i} className="rounded-lg border border-zinc-800 overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-800 bg-zinc-950/60">
+                    {item.table.head.map((hcell, j) => (
+                      <th key={j} className={`px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-widest ${headColor}`}>{hcell}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {item.table.rows.map((row, r) => (
+                    <tr key={r} className={r < item.table.rows.length - 1 ? "border-b border-zinc-800/60" : ""}>
+                      {row.map((cell, c) => (
+                        <td key={c} className={`px-3 py-2.5 text-[13px] leading-relaxed align-top ${c === 0 ? "text-zinc-400 font-medium whitespace-nowrap" : "text-zinc-200"}`}>
+                          <InlineMd text={cell} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
         if (item?.list) {
           return (
             <ul key={i} className="space-y-2.5">
