@@ -10,7 +10,7 @@
 // again (or X) = close, drag = move. Markdown-lite; 4 colors; block-anchored;
 // unresolvable anchors surface in the bottom-right tray (re-pin supported).
 // Icons: shared Icon.jsx (ICON-SYSTEM), no emojis.
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from './Icon.jsx'
 import { listStickies, saveSticky, deleteSticky, blockAnchorFromPoint, resolveAnchor, mdLite, scopeOf, takeBucket, allBucketKeys } from './utils/stickyNotes.js'
@@ -95,9 +95,16 @@ export function StickyNotes({ getContainer, pageKey }) {
   // "stickies don't sync" bug). ctxSig remains as a repaint trigger only.
   const fullKey = pageKey + (scope ? '|s:' + scope : '')
 
+  // v2.2: navigation resets ONLY on a real page/scope change — never on a sync
+  // reload. (The old combined effect closed the active editor every time a
+  // cross-device merge landed, which with 20s-heartbeat + realtime sync meant
+  // constant edit-mode ejections + lost unsaved text. User-reported.)
   useEffect(() => {
     setOpenId(null); setEditId(null); setRepinId(null); setPreviewId(null)
     setConfirmDeleteId(null)
+  }, [fullKey])
+
+  useEffect(() => {
     // v1.5.2: auto-purge pre-v1.5 debris. Anchors without a `k` kind predate
     // module fencing, can never render correctly again, and haunt the tray --
     // delete them from storage outright.
@@ -140,8 +147,22 @@ export function StickyNotes({ getContainer, pageKey }) {
 
   // v1.9: a cross-device pull-merge just rewrote the store — reload this
   // bucket immediately instead of waiting for a module switch.
+  // v2.2: while a note editor is focused, defer merge-triggered reloads to the
+  // editor's close — the merge already landed in storage; only the repaint waits.
+  const editIdRef = useRef(null)
+  const pendingMergeRef = useRef(false)
   useEffect(() => {
-    const onMerged = () => setSyncNonce(n => n + 1)
+    editIdRef.current = editId
+    if (editId == null && pendingMergeRef.current) {
+      pendingMergeRef.current = false
+      setSyncNonce(n => n + 1)
+    }
+  }, [editId])
+  useEffect(() => {
+    const onMerged = () => {
+      if (editIdRef.current != null) { pendingMergeRef.current = true; return }
+      setSyncNonce(n => n + 1)
+    }
     window.addEventListener('annotations-merged', onMerged)
     return () => window.removeEventListener('annotations-merged', onMerged)
   }, [])
@@ -292,13 +313,13 @@ export function StickyNotes({ getContainer, pageKey }) {
       ? { position: 'absolute', top: pos.y + 14, left: Math.max(8, Math.min(pos.x, window.innerWidth - 260 + window.scrollX)), width: 244 }
       : { position: 'fixed', bottom: 70, right: 16, width: 244 }
     return (
-      <div key={'card' + n.id} data-sticky-ui="1" style={{ ...style, zIndex: 260, background: c.bg, border: `1px solid ${c.rim}55`, borderLeft: `3px solid ${c.rim}`, borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', fontSize: '0.82rem', color: '#e6e6e6' }}>
+      <div key={'card' + n.id} data-sticky-ui="1" style={{ ...style, zIndex: 260, background: 'rgba(22,22,27,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderLeft: `2px solid ${c.rim}`, borderRadius: 12, boxShadow: '0 14px 36px rgba(0,0,0,0.55)', fontSize: '0.8rem', color: '#e8e8ea', lineHeight: 1.5 }}>
         <div
           onPointerDown={pos ? (e) => { if (e.target instanceof Element && e.target.closest('button,span[data-swatch]')) return; e.preventDefault(); setDrag({ id: n.id, startX: e.clientX, startY: e.clientY, dx0: n.anchor.dx, dy0: n.anchor.dy }) } : undefined}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', cursor: pos ? 'grab' : 'default', borderBottom: `1px solid ${c.rim}33`, touchAction: 'none' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', cursor: pos ? 'grab' : 'default', borderBottom: '1px solid rgba(255,255,255,0.06)', touchAction: 'none' }}>
           {COLORS.map(cc => (
             <span key={cc.id} data-swatch="1" onClick={(e) => { e.stopPropagation(); update(n.id, { color: cc.id }) }}
-              style={{ width: 13, height: 13, borderRadius: '50%', background: cc.rim, cursor: 'pointer', outline: n.color === cc.id ? '2px solid #fff' : 'none', outlineOffset: 1 }} />
+              style={{ width: 9, height: 9, borderRadius: '50%', background: cc.rim, cursor: 'pointer', opacity: n.color === cc.id ? 1 : 0.45, transform: n.color === cc.id ? 'scale(1.25)' : 'none', transition: 'opacity 0.15s, transform 0.15s' }} />
           ))}
           <span style={{ flex: 1 }} />
           {!pos && <button onClick={() => setRepinId(n.id)} title="Then Option+click (or drop) a new spot" style={{ background: 'transparent', border: 'none', color: '#cfcfcf', cursor: 'pointer', fontSize: '0.7rem' }}>re-pin</button>}
@@ -343,7 +364,7 @@ export function StickyNotes({ getContainer, pageKey }) {
     if (!p || openId === previewId) return null
     const c = colorOf(p.n.color)
     return (
-      <div style={{ position: 'absolute', top: p.pos.y + 14, left: Math.max(8, Math.min(p.pos.x, window.innerWidth - 240 + window.scrollX)), width: 224, zIndex: 258, pointerEvents: 'none', background: c.bg, border: `1px solid ${c.rim}44`, borderLeft: `3px solid ${c.rim}`, borderRadius: 8, padding: '7px 10px', fontSize: '0.78rem', color: '#ddd', lineHeight: 1.4, maxHeight: 150, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}
+      <div style={{ position: 'absolute', top: p.pos.y + 14, left: Math.max(8, Math.min(p.pos.x, window.innerWidth - 240 + window.scrollX)), width: 224, zIndex: 258, pointerEvents: 'none', background: 'rgba(22,22,27,0.94)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderLeft: `2px solid ${c.rim}`, borderRadius: 10, padding: '7px 10px', fontSize: '0.78rem', color: '#ddd', lineHeight: 1.4, maxHeight: 150, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}
         dangerouslySetInnerHTML={{ __html: p.n.text ? mdLite(p.n.text) : '<span style="opacity:0.45">empty note</span>' }} />
     )
   }
