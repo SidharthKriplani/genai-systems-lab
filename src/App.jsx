@@ -757,6 +757,7 @@ class TabErrorBoundary extends React.Component {
           parent.normalize();
         });
       } catch { /* best-effort */ }
+      try { window.dispatchEvent(new PopStateEvent('popstate')); } catch { /* non-browser */ }
       setTimeout(() => this.setState({ hasError: false, error: null }), 0);
       setTimeout(() => { this._heals = 0; }, 15000);
     }
