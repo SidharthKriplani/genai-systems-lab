@@ -9,6 +9,10 @@ export const HIGHLIGHT_COLORS = [
   { id: 'emerald', hex: '#34d399', label: 'Emerald' },
   { id: 'amber',   hex: '#fbbf24', label: 'Amber'   },
   { id: 'red',     hex: '#f87171', label: 'Red'     },
+  { id: 'sky',    hex: '#38bdf8', label: 'Sky'    },
+  { id: 'pink',   hex: '#f472b6', label: 'Pink'   },
+  { id: 'lime',   hex: '#a3e635', label: 'Lime'   },
+  { id: 'orange', hex: '#fb923c', label: 'Orange' },
 ]
 
 export function highlightColorHex(id) {

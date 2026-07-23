@@ -12,6 +12,10 @@ const SWATCHES = [
   { id: 'teal',  dot: '#40bebe' },
   { id: 'green', dot: '#34d399' },
   { id: 'red',   dot: '#e05050' },
+  { id: 'sky',    dot: '#38bdf8' },
+  { id: 'pink',   dot: '#f472b6' },
+  { id: 'lime',   dot: '#a3e635' },
+  { id: 'orange', dot: '#fb923c' },
 ]
 
 function genId() {

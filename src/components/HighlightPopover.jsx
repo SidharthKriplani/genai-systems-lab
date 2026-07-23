@@ -33,7 +33,8 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
   // module switches; exit via the floating chip or Esc.
   const [marker, setMarker]       = useState(() => { try { return localStorage.getItem("gsl-marker-mode-v1") || ""; } catch { return ""; } });
   const setMarkerMode = (cid) => { setMarker(cid); try { cid ? localStorage.setItem("gsl-marker-mode-v1", cid) : localStorage.removeItem("gsl-marker-mode-v1"); } catch {} };
-  const [pickerFor, setPickerFor] = useState(null); // pending {id,label,meta} while the track picker is open
+  const [pickerFor, setPickerFor] = useState(null);
+  const [markerPalette, setMarkerPalette] = useState(false); // marker chip's bloomed color picker // pending {id,label,meta} while the track picker is open
   const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
   const pageKey = `fnd::${gymId || ""}::${moduleId || ""}`;
   // In-place persistence (MSL parity, 2026-07-22): repaint saved marks after the
@@ -236,18 +237,34 @@ export default function HighlightPopover({ containerRef, moduleId, gymId, source
       >Remove highlight</button>
     </div>, document.body) : null;
 
+  // v2: the chip is now also the marker's color CONTROL — glow line shows the
+  // current color; clicking it blooms the 8-dot palette (same pattern as the
+  // sticky cards); picking keeps marker mode ON with the new color persisted.
+  const markerHex = (HIGHLIGHT_COLORS.find(c => c.id === marker) || HIGHLIGHT_COLORS[2]).hex;
   const markerChip = marker ? createPortal(
-    <button
-      onClick={() => setMarkerMode("")}
-      title="Marker mode is on: every selection highlights instantly. Click (or press Esc) to exit."
+    <div
       style={{ position: "fixed", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 250,
-        display: "inline-flex", alignItems: "center", gap: 8,
+        display: "inline-flex", alignItems: "center", gap: 10,
         background: "rgba(24,24,27,0.97)", color: "#e8e8e8", border: "1px solid rgba(63,63,70,0.8)",
-        borderRadius: 20, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
+        borderRadius: 20, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600,
         boxShadow: "0 6px 18px rgba(0,0,0,0.45)" }}>
-      <span style={{ width: 10, height: 10, borderRadius: "50%", background: (HIGHLIGHT_COLORS.find(c => c.id === marker) || HIGHLIGHT_COLORS[2]).hex, flexShrink: 0 }} />
-      Marker on — click to exit
-    </button>, document.body) : null;
+      {markerPalette ? (
+        <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
+          {HIGHLIGHT_COLORS.map(c => (
+            <span key={c.id} onClick={() => { setMarkerMode(c.id); setMarkerPalette(false); }}
+              style={{ width: 11, height: 11, borderRadius: "50%", background: c.hex, cursor: "pointer", opacity: c.id === marker ? 1 : 0.85, boxShadow: c.id === marker ? `0 0 7px ${c.hex}` : "none" }} />
+          ))}
+        </span>
+      ) : (
+        <span title="Change marker color" onClick={() => setMarkerPalette(true)}
+          style={{ display: "inline-flex", alignItems: "center", padding: "7px 4px", margin: "-7px -4px", cursor: "pointer" }}>
+          <span style={{ width: 22, height: 3, borderRadius: 2, background: markerHex, boxShadow: `0 0 8px ${markerHex}cc, 0 0 2px ${markerHex}`, pointerEvents: "none" }} />
+        </span>
+      )}
+      <span onClick={() => { setMarkerMode(""); setMarkerPalette(false); }} title="Exit marker mode (or press Esc)" style={{ cursor: "pointer" }}>
+        Marker on — click to exit
+      </span>
+    </div>, document.body) : null;
 
   if (!sel && !pickerFor && !flash) return <>{removePill}{markerChip}</>;
 
