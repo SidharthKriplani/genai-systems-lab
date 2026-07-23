@@ -81,6 +81,8 @@ export default function FoundationsRunner({
   const [minMode, setMinMode] = useState(initialHashView === "min" && (runnerData?.interviewMin?.length > 0));
   // ── Academic view (T6, promoted from collapsed panel to tab 2026-07-23) ──
   const [academicMode, setAcademicMode] = useState(initialHashView === "academic" && (runnerData?.deeperMath?.length > 0));
+  // ── Cloud view (2026-07-23): concept -> AWS/GCP/Azure translation annex ──
+  const [cloudMode, setCloudMode] = useState(initialHashView === "cloud" && (runnerData?.cloudMap?.length > 0));
   const [qnaLockMsg, setQnaLockMsg] = useState(false);   // tap/hover feedback on the locked tab
   const [tabTip, setTabTip] = useState(null);            // instant hover description under the view switcher
   // 2026-07-23 fix: this scroll-reset effect MUST sit below the qnaMode
@@ -88,7 +90,7 @@ export default function FoundationsRunner({
   // referencing qnaMode above its const line threw a TDZ ("Cannot access 'T'
   // before initialization") that crashed every module open. (Fable bug,
   // introduced by widening the deps of an effect inserted above the binding.)
-  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode, minMode, academicMode]);
+  useEffect(() => { try { window.scrollTo({ top: 0 }); } catch { /* SSR */ } }, [recapMode, qnaMode, minMode, academicMode, cloudMode]);
   // View deep-link v1, write half: mirror the active view into the 4th hash
   // segment via replaceState (never pushState — view flips shouldn't mint
   // history entries, so Back still walks module → gym untouched). Guarded to
@@ -99,15 +101,15 @@ export default function FoundationsRunner({
       const h = window.location.hash || "";
       const parts = h.replace(/^#\/?/, "").split("/").filter(Boolean);
       if (parts[0] !== "concepts" || parts[1] !== gymId || parts[2] !== moduleId) return;
-      const view = qnaMode ? "qna" : academicMode ? "academic" : recapMode ? "recap" : minMode ? "min" : "";
+      const view = qnaMode ? "qna" : academicMode ? "academic" : recapMode ? "recap" : minMode ? "min" : cloudMode ? "cloud" : "";
       const target = "#concepts/" + gymId + "/" + moduleId + (view ? "/" + view : "");
       if (h !== target) window.history.replaceState(null, "", target);
     } catch {}
-  }, [recapMode, qnaMode, minMode, academicMode, gymId, moduleId]);
+  }, [recapMode, qnaMode, minMode, academicMode, cloudMode, gymId, moduleId]);
   const [qnaPulse, setQnaPulse] = useState(false);       // one-shot nudge when completion unlocks it
   const [tab, setTab]             = useState("lesson"); // "lesson" | "code"
 
-  const { scenario, groundUp, explanation, takeaway, keyPoints, recap, deeperMath, interviewMin } = runnerData;
+  const { scenario, groundUp, explanation, takeaway, keyPoints, recap, deeperMath, interviewMin, cloudMap } = runnerData;
 
   // ── "Your takeaway" (Q3 Wave A item 2, 2026-07-23) — user-writable box
   // shown atop the recap tab. Same pageKey formula as HighlightPopover.jsx /
@@ -194,7 +196,7 @@ export default function FoundationsRunner({
   return (
     <div className="max-w-3xl mx-auto px-6 py-8" ref={contentRef} data-own-highlighter="1">
       {/* v1.6: sticky notes on this view are bucketed per module (structural bleed fix) */}
-      <StickyScope id={"m:" + moduleId + (qnaMode ? ":qna" : academicMode ? ":academic" : recapMode ? ":recap" : minMode ? ":min" : "")} />
+      <StickyScope id={"m:" + moduleId + (qnaMode ? ":qna" : academicMode ? ":academic" : recapMode ? ":recap" : minMode ? ":min" : cloudMode ? ":cloud" : "")} />
       <HighlightPopover
         containerRef={contentRef}
         moduleId={moduleId}
@@ -229,18 +231,18 @@ export default function FoundationsRunner({
 
         <div className="mt-4 relative inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
           <button
-            onClick={() => { setRecapMode(false); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
+            onClick={() => { setRecapMode(false); setQnaMode(false); setMinMode(false); setAcademicMode(false); setCloudMode(false); }}
             onMouseEnter={() => setTabTip("Full — the complete lesson: teaching, worked examples, key points")}
             onMouseLeave={() => setTabTip(null)}
             className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
-              !recapMode && !qnaMode && !minMode && !academicMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              !recapMode && !qnaMode && !minMode && !academicMode && !cloudMode ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             Full
           </button>
           {deeperMath?.length > 0 && (
             <button
-              onClick={() => { setAcademicMode(true); setRecapMode(false); setQnaMode(false); setMinMode(false); }}
+              onClick={() => { setAcademicMode(true); setRecapMode(false); setQnaMode(false); setMinMode(false); setCloudMode(false); }}
               onMouseEnter={() => setTabTip("Academic — formal setup and derivations: the math behind the lesson, with primary sources")}
               onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
@@ -252,7 +254,7 @@ export default function FoundationsRunner({
           )}
           {recap && (
             <button
-              onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
+              onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); setAcademicMode(false); setCloudMode(false); }}
               onMouseEnter={() => setTabTip("Quick recap — compressed refresher of what this module taught")}
               onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
@@ -264,7 +266,7 @@ export default function FoundationsRunner({
           )}
           {interviewMin?.length > 0 && (
             <button
-              onClick={() => { setMinMode(true); setRecapMode(false); setQnaMode(false); setAcademicMode(false); }}
+              onClick={() => { setMinMode(true); setRecapMode(false); setQnaMode(false); setAcademicMode(false); setCloudMode(false); }}
               onMouseEnter={() => setTabTip("20:80 — the interview minimum: the 20% of this module that carries 80% of interview asks")}
               onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
@@ -274,6 +276,18 @@ export default function FoundationsRunner({
               20:80
             </button>
           )}
+          {cloudMap?.length > 0 && (
+            <button
+              onClick={() => { setCloudMode(true); setRecapMode(false); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
+              onMouseEnter={() => setTabTip("Cloud — this concept in AWS / GCP / Azure: names, deltas, costs, and vendor-lock interview answers")}
+              onMouseLeave={() => setTabTip(null)}
+              className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
+                cloudMode ? "bg-sky-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Cloud
+            </button>
+          )}
           <button
             onClick={() => {
               if (!alreadyDone) {
@@ -281,7 +295,7 @@ export default function FoundationsRunner({
                 setTimeout(() => setQnaLockMsg(false), 2400);
                 return;
               }
-              setQnaMode(true); setRecapMode(false); setMinMode(false); setAcademicMode(false);
+              setQnaMode(true); setRecapMode(false); setMinMode(false); setAcademicMode(false); setCloudMode(false);
             }}
             onMouseEnter={() => { if (!alreadyDone) setQnaLockMsg(true); else setTabTip("Interview QnA — real interview questions with graded answers for this module"); }}
             onMouseLeave={() => { setQnaLockMsg(false); setTabTip(null); }}
@@ -310,7 +324,7 @@ export default function FoundationsRunner({
         </div>
 
         {/* ── Lesson / Code tab bar (only when the module carries code) ── */}
-        {hasCode && !recapMode && !qnaMode && !minMode && !academicMode && (
+        {hasCode && !recapMode && !qnaMode && !minMode && !academicMode && !cloudMode && (
           <div className="mt-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
             <button
               onClick={() => setTab("lesson")}
@@ -350,6 +364,14 @@ export default function FoundationsRunner({
             <AnnexBlocks items={interviewMin} moduleId={moduleId} accent="emerald" />
           </div>
           <p className="text-[11px] text-zinc-600">This is the floor, not the ceiling — the Full view and Interview QnA carry the rest.</p>
+        </section>
+      ) : cloudMode && cloudMap?.length > 0 ? (
+        <section className="space-y-4">
+          <SectionRule label="Cloud — the concept in AWS / GCP / Azure" />
+          <div className="mt-4 rounded-xl border border-sky-900/40 bg-sky-950/10 p-5">
+            <AnnexBlocks items={cloudMap} moduleId={moduleId} accent="sky" />
+          </div>
+          <p className="text-[11px] text-zinc-600">Service names churn; the primitives don't — anchor on the primitive, then speak whichever vendor the interviewer runs.</p>
         </section>
       ) : hasCode && tab === "code" && !recapMode ? (
         <section className="space-y-6">
@@ -579,7 +601,7 @@ function normalizeCode(code) {
 // equation block | {list:[...]} bullet group | {type:"illustration"} |
 // {type:"scene"}. Plain strings stay supported so old-style arrays still render.
 function AnnexBlocks({ items, moduleId, accent = "amber" }) {
-  const headColor = accent === "emerald" ? "text-emerald-400/90" : "text-amber-400/90";
+  const headColor = accent === "emerald" ? "text-emerald-400/90" : accent === "sky" ? "text-sky-400/90" : "text-amber-400/90";
   return (
     <div className="space-y-4">
       {items.map((item, i) => {
