@@ -252,16 +252,16 @@ export default function FoundationsRunner({
               Academic
             </button>
           )}
-          {recap && (
+          {cloudMap?.length > 0 && (
             <button
-              onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); setAcademicMode(false); setCloudMode(false); }}
-              onMouseEnter={() => setTabTip("Quick recap — compressed refresher of what this module taught")}
+              onClick={() => { setCloudMode(true); setRecapMode(false); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
+              onMouseEnter={() => setTabTip("Cloud — this concept in AWS / GCP / Azure: names, deltas, costs, and vendor-lock interview answers")}
               onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
-                recapMode && !qnaMode ? "bg-violet-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+                cloudMode ? "bg-sky-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              ⚡ Quick recap
+              Cloud
             </button>
           )}
           {interviewMin?.length > 0 && (
@@ -276,16 +276,16 @@ export default function FoundationsRunner({
               20:80
             </button>
           )}
-          {cloudMap?.length > 0 && (
+          {recap && (
             <button
-              onClick={() => { setCloudMode(true); setRecapMode(false); setQnaMode(false); setMinMode(false); setAcademicMode(false); }}
-              onMouseEnter={() => setTabTip("Cloud — this concept in AWS / GCP / Azure: names, deltas, costs, and vendor-lock interview answers")}
+              onClick={() => { setRecapMode(true); setQnaMode(false); setMinMode(false); setAcademicMode(false); setCloudMode(false); }}
+              onMouseEnter={() => setTabTip("Quick recap — compressed refresher of what this module taught")}
               onMouseLeave={() => setTabTip(null)}
               className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-colors ${
-                cloudMode ? "bg-sky-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+                recapMode && !qnaMode ? "bg-violet-700 text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              Cloud
+              ⚡ Quick recap
             </button>
           )}
           <button
