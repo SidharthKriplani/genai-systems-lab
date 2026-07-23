@@ -449,6 +449,32 @@ export default function FoundationsRunner({
               if (typeof item === "string") {
                 return <p key={i} className="text-sm text-zinc-200 leading-relaxed"><InlineMd text={item} /></p>;
               }
+              {/* Typography blocks in MAIN lesson text (H0, 2026-07-23): the same
+                  {h}/{eq}/{list} shapes the annex tabs use, violet lesson accent —
+                  formulas get display lines, numbered pointers get real bullets,
+                  per labs/_plan/TYPOGRAPHY-RULES-2026-07.md. */}
+              if (item?.h) {
+                return <p key={i} className="pt-3 text-[11px] font-mono font-bold uppercase tracking-widest text-violet-400/90">{item.h}</p>;
+              }
+              if (item?.eq) {
+                return (
+                  <div key={i} className="rounded-lg border border-zinc-800 bg-zinc-950/80 border-l-2 border-l-violet-500/60 px-4 py-3 overflow-x-auto">
+                    <pre className="text-[13px] font-mono text-zinc-100 leading-relaxed whitespace-pre">{item.eq}</pre>
+                  </div>
+                );
+              }
+              if (item?.list) {
+                return (
+                  <ul key={i} className="space-y-2.5">
+                    {item.list.map((li, j) => (
+                      <li key={j} className="flex gap-3 text-sm text-zinc-200 leading-relaxed">
+                        <span className="text-violet-400 shrink-0 mt-0.5">{"\u25b8"}</span>
+                        <span><InlineMd text={li} /></span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
               if (item?.type === "illustration") {
                 return (
                   <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 mt-2">
