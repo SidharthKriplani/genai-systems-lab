@@ -298,13 +298,15 @@ The two rules the budget encodes:
       "The scenario is the central lesson of voice agents: ==strong ASR plus strong TTS does not make a good agent — the hard problem is the **conversation layer** between them: turn-taking, error recovery, and dialogue management.==\n\nComponent benchmarks measure ASR word accuracy and TTS naturalness on isolated clips. Neither measures whether the agent *knows when to speak*, *lets itself be interrupted*, or *recovers from a mis-heard word*. Those are properties of the orchestration layer, and they're exactly what make an agent feel human versus robotic.\n\nThat's why the pilot's components look great and the calls feel broken — the failures live in a layer the component metrics never touch.",
       "**Turn-taking** is the first hard problem, and it has three parts that separate human-feeling agents from robotic ones.\n\n**Endpointing** — deciding the user is done so the agent can respond (too eager cuts them off; too slow feels sluggish). **Barge-in** — letting the user interrupt: when they start talking, the agent must cancel its in-flight TTS and yield the floor. **Backchannels** — the little 'mm-hmm' / 'right' acknowledgments humans use to signal 'I'm listening' without taking the turn.\n\n==Get turn-taking wrong and no amount of ASR/TTS quality saves you: the agent talks over people (no barge-in) or leaves dead air (bad endpointing), which is precisely the pilot's 'talks over people' complaint.== Turn-taking is the make-or-break of felt naturalness.",
       "The next design fork is the **orchestration architecture: cascaded vs. speech-to-speech**, and it's a genuine tradeoff, not a clear winner.\n\n**Cascaded** runs ASR → LLM → TTS as separate services. You get **full control and inspectability at each stage** — you can log the transcript, guardrail the LLM's text, swap the voice, and (critically) do reliable **tool calling** on structured LLM output. The cost is **latency** (three hops) and **lost prosody/emotion** (the caller's tone is flattened to text and never reaches the LLM).\n\n**Speech-to-speech** (native-audio models) takes audio in and emits audio out in one model. You get the **lowest latency, natural prosody, and preserved emotion/tone** — but it's **harder to inspect and guardrail**, and **tool-calling is still maturing**. ==The rule: cascaded when you need control, logging, and reliable tool use (most enterprise phone support today); speech-to-speech when latency and prosody dominate and your tool needs are light.==",
-      { type: "illustration", label: "Cascaded vs speech-to-speech — the real tradeoff", content: `CASCADED (ASR -> LLM -> TTS)          SPEECH-TO-SPEECH (native audio)
+      { type: "illustration", label: "Cascaded vs speech-to-speech — the real tradeoff", content: `CASCADED (ASR -> LLM -> TTS)              SPEECH-TO-SPEECH (native audio)
   + control + inspectable at each stage   + lowest latency (one model, no hops)
   + reliable tool-calling on text output  + natural prosody, preserves tone/emotion
   + easy to log / guardrail / swap voice  + no ASR->text->LLM information loss
   - higher latency (3 service hops)       - harder to inspect / guardrail
-  - loses caller prosody/emotion (-> text) - tool-calling still maturing
-  - error surface: ASR mistakes propagate  - errors are opaque (audio in, audio out)
+  - loses caller prosody/emotion          - tool-calling still maturing
+    (-> text)
+  - error surface: ASR mistakes           - errors are opaque (audio in, audio out)
+    propagate
 
 Pick from requirements, not hype:
   need audit logs, guardrails, robust tool-calls -> CASCADED (most phone support)
