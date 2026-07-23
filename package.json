@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/labcheck.mjs",
     "dev": "vite",
     "build": "npm run prerender && vite build",
     "prerender": "node scripts/prerender-gt.js && node scripts/prerender-modules.js && node scripts/prerender-companies.js",
