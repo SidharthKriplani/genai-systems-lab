@@ -15,6 +15,7 @@ import { upsertLeaderboardRow } from "./leaderboardUtils";
 import { ALL_SCENARIOS, SCENARIO_DIMENSIONS, SCORE_TIERS, lookupResult, gradeChallenge } from "./ragScenarios";
 import { RAG_CORPUS } from "./ragCorpus";
 import { Icon } from './Icon.jsx';
+import BreaklabsChrome from "./components/BreaklabsChrome.jsx";
 
 // Heavy tab components — lazy-loaded on first visit to keep initial bundle small
 const GroundTruth    = lazy(() => import("./GroundTruth"));
@@ -2002,21 +2003,13 @@ export default function App() {
         </nav>
         {/* Bottom utilities */}
         <div className="px-2 pb-3 pt-2 space-y-1" style={{ borderTop: "1px solid var(--border)" }}>
-          <button onClick={() => setSearchOpen(true)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-all duration-150"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderColor: "var(--border)" }}>
-            <svg width="10" height="10" viewBox="0 0 11 11" fill="none" className="text-zinc-500 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-            <span className="text-[11px] text-zinc-500 flex-1">Search…</span>
-            <kbd className="text-[9px] border border-zinc-700/60 rounded px-1 text-zinc-500 font-mono">⌘K</kbd>
-          </button>
-          {/* Feedback surface removed (R6, 2026-07-03). */}
-          {/* About now lives in the personal strip (NAV_TRACK, Rev-2 R3) — footer row removed to
-              avoid a duplicate. Route (#about) unchanged. */}
-          {/* Footer — part of BreakLabs (slot 6) */}
-          <div className="flex items-center gap-1.5 px-3 pt-1.5 text-[10px] font-mono text-zinc-600">
-            <BrandMark variant="monogram" size={13} />
-            <span>part of BreakLabs</span>
-          </div>
+          {/* Search promoted into BreaklabsChrome top bar (D17). Footer row removed per spec. */}
+          {user && (
+            <button onClick={() => { signOut(); setUser(null); track("auth_sign_out"); }}
+              className="w-full flex items-center justify-center gap-1 text-[10px] font-mono text-zinc-600 hover:text-zinc-400 border border-zinc-800 rounded px-1.5 py-1 transition-all">
+              Sign out
+            </button>
+          )}
         </div>
       </aside>
 
@@ -2032,100 +2025,28 @@ export default function App() {
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="2" y1="3.5" x2="12" y2="3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="7" x2="12" y2="7" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="10.5" x2="12" y2="10.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </div>
           </button>
-          {/* Search bar — mobile only; desktop has sidebar search */}
-          <button onClick={() => setSearchOpen(true)}
-            aria-label="Search modules"
-            className="lg:hidden flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-left">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-zinc-500 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-            <span className="text-xs text-zinc-500 flex-1">Search modules…</span>
-            <kbd className="text-[9px] border border-zinc-700 rounded px-1 text-zinc-500 font-mono">⌘K</kbd>
-          </button>
-          {/* Right utilities */}
-          <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
-            {/* Feedback button — desktop has it in sidebar */}
-            <button onClick={() => setLeaderboardOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all"
-              style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.06) 100%)", border: "1px solid rgba(245,158,11,0.25)", color: "#fbbf24" }}
-              title="Challenge Log" aria-label="Open challenge log">
-              🏆{leaderboard.filter(e => e.passed).length > 0 && <span className="text-[10px] font-black">{leaderboard.filter(e => e.passed).length}</span>}
-            </button>
-            <button onClick={() => { setWhatsNewOpen(true); setWhatsNewSeen(true); try { localStorage.setItem("genai_whatsnew_v5","1"); } catch {} }}
-              className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black relative transition-all"
-              style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(99,102,241,0.3)", color: "#818cf8" }}>
-              NEW
-              {!whatsNewSeen && visited.size > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 animate-pulse" />}
-            </button>
-            <button onClick={() => { setNotifSeen(true); setWhatsNewOpen(true); try { localStorage.setItem("genai_notif_seen", CONTENT_VERSION); } catch {}; }}
-              className="relative p-1.5 text-zinc-500 hover:text-white transition-colors">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 1a5 5 0 00-5 5v2.5L1.5 10h13L13 8.5V6a5 5 0 00-5-5zM6.5 13a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
-              {!notifSeen && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />}
-            </button>
-            {streak >= 2 && (
-              <span className="text-[10px] font-bold text-amber-400 flex items-center gap-0.5">
-                🔥{streak}
-              </span>
-            )}
-            <button onClick={toggleTheme}
-              className="hidden lg:flex items-center justify-center w-7 h-7 rounded border border-zinc-800 hover:border-zinc-700 transition-all text-zinc-500 hover:text-zinc-300"
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              title={theme === "dark" ? "Light mode" : "Dark mode"}>
-              {theme === "dark"
-                ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-              }
-            </button>
-            {/* Sticky-note drag source: drag onto the page to drop a note (2026-07-22) */}
-            <StickyBarButton />
-            <button onClick={() => setShowShortcuts(true)} className="hidden lg:flex items-center px-2 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-all font-mono" aria-label="Keyboard shortcuts">?</button>
-            {/* ── Auth button ── */}
-            {supabase && (
-              user ? (
-                <div className="hidden lg:flex items-center gap-2">
-                  {/* Mastery Room badge — owner only */}
-                  {user.email === "claudesubscription12@gmail.com" && (
-                    <button
-                      onClick={() => navigate("study")}
-                      title="Mastery Room"
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-all ${topView === "study" ? "border-emerald-600 text-emerald-400 bg-emerald-950" : "border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300"}`}>
-                      <Icon name="brain" size={14} />
-                    </button>
-                  )}
-                  {/* Avatar/name → Profile */}
-                  <button onClick={() => navigate("profile")} className="flex items-center gap-1.5 hover:opacity-80 transition-opacity" title="Your profile">
-                    {user.user_metadata?.avatar_url
-                      ? <img src={user.user_metadata.avatar_url} alt="avatar" className="w-6 h-6 rounded-full border border-zinc-700 shrink-0" />
-                      : <div className="w-6 h-6 rounded-full bg-violet-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">{(user.user_metadata?.full_name?.[0] || user.email?.[0] || "?").toUpperCase()}</div>
-                    }
-                    <span className="text-[11px] text-zinc-400 font-medium max-w-[80px] truncate">
-                      {user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0]}
-                    </span>
-                  </button>
-                  <button onClick={() => { signOut(); setUser(null); track("auth_sign_out"); }}
-                    className="text-[10px] font-mono text-zinc-600 hover:text-zinc-400 border border-zinc-800 rounded px-1.5 py-0.5 transition-all">
-                    Sign out
-                  </button>
-                </div>
-              ) : (
-                <div className="hidden lg:flex items-center gap-1.5">
-                  <button onClick={signInWithGoogle}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-                    style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.35)", color: "#a5b4fc" }}
-                    title="Sign in with Google">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Sign in
-                  </button>
-                  <button onClick={signInWithGitHub}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-                    style={{ background: "rgba(39,39,42,0.8)", border: "1px solid rgba(63,63,70,0.8)", color: "#a1a1aa" }}
-                    title="Sign in with GitHub">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-                  </button>
-                </div>
-              )
-            )}
-          </div>
+          {/* Global chrome (D17): back + search + streak + theme + sticky tray + profile chip.
+              Mobile search bar removed — chrome's search trigger is visible on all breakpoints. */}
+          <BreaklabsChrome
+            showBack={topView === "concepts" && !!conceptsModule}
+            onBack={() => window.history.back()}
+            onSearchOpen={() => setSearchOpen(true)}
+            searchPlaceholder="Search modules…"
+            streak={streak}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            user={user}
+            supabaseEnabled={!!supabase}
+            onSignInGoogle={signInWithGoogle}
+            onSignInGitHub={signInWithGitHub}
+            onNavigateProfile={() => navigate("profile")}
+            onNavigateProgress={() => navigate("progress")}
+            onNavigatePlans={() => navigate("plans")}
+            isOwner={user?.email === "claudesubscription12@gmail.com"}
+            masteryActive={topView === "study"}
+            onOpenMastery={() => navigate("study")}
+            stickyTrayButton={<StickyBarButton />}
+          />
         </div>
         {/* Row 2: Tab navigation — desktop nav moved to left sidebar */}
       </header>
@@ -2698,18 +2619,8 @@ export default function App() {
         />
       )}
 
-      {/* QA corner link — fixed bottom-left, subtle but findable */}
-      {topView !== "qa" && (
-        <button
-          onClick={() => navigate("qa")}
-          style={{ opacity: 0.45, zIndex: 9999, position: "fixed", bottom: 12, left: 12 }}
-          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
-          onMouseLeave={e => e.currentTarget.style.opacity = "0.45"}
-          className="text-[10px] font-mono text-zinc-300 bg-zinc-800 border border-zinc-600 rounded px-2 py-1 transition-colors select-none"
-          title="Internal QA Console — or visit ?qa=1 or Cmd/Ctrl+Shift+Q">
-          qa
-        </button>
-      )}
+      {/* QA corner chip removed (D17) — route still reachable via #qa hash, ?qa=1 query
+          param, and Cmd/Ctrl+Shift+Q keyboard shortcut. */}
       {toasts.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none">
           {toasts.map(t => (
