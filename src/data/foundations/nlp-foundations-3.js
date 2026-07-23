@@ -221,7 +221,7 @@ Use LOG-probabilities (sums, not products) to avoid underflow:
   score(c) = log P(c) + Σ_w log P(w | c)
 
 Per-word log P(w|c)  (learned from the training corpus):
-   word     log P(w|POS)   log P(w|NEG)
+   word        log P(w|POS)   log P(w|NEG)
    not         -3.9           -2.1      <- "not" leans NEG
    worth       -2.8           -3.0
    the         -1.2           -1.2      (stopword: ~neutral)
