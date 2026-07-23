@@ -1353,7 +1353,6 @@ export default function App() {
       return next;
     });
   }
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState(new Set());
   const toggleGroup = (label) => setCollapsedGroups(prev => {
@@ -1433,20 +1432,6 @@ export default function App() {
     setToasts(t => [...t, { id, message, type }]);
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 2500);
   }
-  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
-  const [whatsNewSeen, setWhatsNewSeen] = useState(() => {
-    try { return localStorage.getItem("genai_whatsnew_v5") === "1"; } catch { return false; }
-  });
-  const CONTENT_VERSION = "v6"; // increment this when you add content
-  const [notifSeen, setNotifSeen] = useState(() => {
-    try { return localStorage.getItem("genai_notif_seen") === CONTENT_VERSION; } catch { return false; }
-  });
-  function dismissWhatsNew() {
-    setWhatsNewSeen(true);
-    setWhatsNewOpen(false);
-    try { localStorage.setItem("genai_whatsnew_v5", "1"); } catch {}
-  }
-
   function trackModuleVisit(tab, moduleId) {
     const key = `${tab}:${moduleId}`;
     setVisitedModules(prev => {
@@ -1555,23 +1540,21 @@ export default function App() {
       if (e.key === "Escape") {
         if (searchOpen) { setSearchOpen(false); return; }
         if (leaderboardOpen) { setLeaderboardOpen(false); return; }
-        if (whatsNewOpen) { dismissWhatsNew(); return; }
         setShowShortcuts(false);
-        setMobileMenuOpen(false);
         return;
       }
       const n = parseInt(e.key);
-      if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); setMobileMenuOpen(false); return; }
+      if (n >= 1 && n <= SHORTCUT_TABS.length) { navigate(SHORTCUT_TABS[n - 1]); return; }
       // Single-letter tab shortcuts (no modifier)
       if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const TAB_KEYS = { r:"retrieval", e:"evaluation", a:"agentshub", o:"production", f:"foundations", p:"preplab", g:"groundtruth" };
         const dest = TAB_KEYS[e.key.toLowerCase()];
-        if (dest) { e.preventDefault(); navigate(dest); setMobileMenuOpen(false); return; }
+        if (dest) { e.preventDefault(); navigate(dest); return; }
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [searchOpen, leaderboardOpen, whatsNewOpen]);
+  }, [searchOpen, leaderboardOpen]);
 
   useEffect(() => {
     checkPreviewUnlock(); // handle ?preview=CODE URL unlock
@@ -1911,66 +1894,13 @@ export default function App() {
           </div>
         </div>
       )}
-      {/* What's New modal */}
-      {whatsNewOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={dismissWhatsNew}>
-          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-white">🆕 What's New</span>
-              <button onClick={dismissWhatsNew} className="text-zinc-500 hover:text-white text-xs px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 transition-all"><Icon name="x" size={14} /> Close</button>
-            </div>
-            <div className="space-y-3">
-              {[
-                { tag: "NEW", color: "#6366f1", label: "AI Systems Readiness Assessment", desc: "20-question timed test across all topics. Get your readiness level: Junior → Staff.", tab: "fluency" },
-                { tag: "NEW", color: "#3b82f6", label: "5 new deep-dive posts", desc: "Agent evals, prompt caching ($4K→$540/mo), LLM security, vector DB selection, cost optimization.", tab: "groundtruth" },
-                { tag: "NEW", color: "#06b6d4", label: "2 new Agent Lab scenarios", desc: "Planning Agent and Reflexion pattern now interactive in the Agents tab.", tab: "agents" },
-                { tag: "NEW", color: "#22c55e", label: "Flashcard unknowns filter", desc: "Fluency flashcards now support 'Study unknowns only' mode for focused drilling.", tab: "fluency" },
-                { tag: "NEW", color: "#f59e0b", label: "URL routing + shareable links", desc: "Every tab now has its own URL. Share genai-systems-lab.vercel.app#systems directly.", tab: null },
-                { tag: "PERF", color: "#8b5cf6", label: "Score persistence", desc: "Quiz and drill scores now persist across sessions in all modules.", tab: null },
-                { tag: "FIX", color: "#ef4444", label: "25 bug fixes across 10 files", desc: "Guardrail logic, mobile SVG overflow, BudgetAllocator cap, MockInterview crash guard, and more.", tab: null },
-              ].map(({ tag, color, label, desc, tab }) => (
-                <div key={label}
-                  onClick={() => { if (tab) { navigate(tab); dismissWhatsNew(); } }}
-                  className={`flex items-start gap-3 rounded-lg p-1.5 -mx-1.5 transition-all ${tab ? "cursor-pointer hover:bg-zinc-800/60" : ""}`}>
-                  <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded mt-0.5 shrink-0"
-                    style={{ color, background: color + "22", border: `1px solid ${color}44` }}>{tag}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-white flex items-center gap-1">
-                      {label}{tab && <span className="text-zinc-500 text-[10px]">→</span>}
-                    </div>
-                    <div className="text-xs text-zinc-500">{desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button onClick={dismissWhatsNew} className="w-full py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all">
-              Got it <Icon name="check" size={14} />
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Mobile drawer */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)}>
-          <div className="absolute inset-0 bg-black/60" />
-          <div className="absolute right-0 top-0 bottom-0 w-64 bg-zinc-900 border-l border-zinc-800 p-4 overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Navigation</span>
-              <button onClick={() => setMobileMenuOpen(false)} className="text-zinc-500 hover:text-white text-sm"><Icon name="x" size={14} /></button>
-            </div>
-            <MobileFrameNav topView={topView} onNavigate={navigate} onClose={() => setMobileMenuOpen(false)} user={user} />
-            <div className="mt-3 space-y-1.5">
-              <button onClick={() => { setSearchOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-400 border border-zinc-700 rounded-lg hover:text-white hover:border-zinc-600 transition-all flex items-center justify-center gap-2">
-                <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                Search modules
-              </button>
-              <button onClick={() => { setLeaderboardOpen(true); setMobileMenuOpen(false); }} className="w-full py-2 text-xs text-zinc-500 border border-zinc-800 rounded-lg hover:text-white transition-all">
-                <Icon name="clipboard" size={14} /> Challenge Log
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* D25 item 4: orphaned What's New modal (whatsNewOpen + whatsNewSeen + notifSeen +
+          CONTENT_VERSION + dismissWhatsNew) and the unreachable mobileMenuOpen drawer (+ its
+          Challenge Log trigger) retired — see D25 report for grep receipts. The live mobile
+          drawer is mobileDrawerOpen (below, in the MOBILE NAV DRAWER block); the leaderboard
+          modal itself stays (leaderboardOpen, below) — it lost its only trigger here and is
+          intentionally left without one per the dispatch ruling ("may get a new trigger
+          later"). */}
       {/* ── LEFT SIDEBAR (desktop only) ─────────────────────────────── */}
       <aside className="hidden lg:flex flex-col w-48 shrink-0 sticky top-0 h-screen overflow-y-auto z-20"
         style={{ background: "var(--surface)", borderRight: "1px solid var(--border)" }}>
@@ -2016,12 +1946,9 @@ export default function App() {
               </div>
             );
           })}
-          {/* My Tasks — own row, under the content frames (D24). */}
-          <div className="space-y-0.5 mt-2 pt-2" style={{ borderTop: "1px solid rgba(63,63,70,0.5)" }}>
-            {NAV_AFTER_FRAMES.map(it => (
-              <SidebarRow key={it.id} item={it} active={topView === it.id} onNavigate={navigate} />
-            ))}
-          </div>
+          {/* My Tasks desktop entry moved into ProfileChip dropdown (D25 item 2) — the
+              NAV_AFTER_FRAMES array + its MobileFrameNav row stay (two-mode doctrine: mobile
+              has no profile-chip dropdown, so it keeps its own left-drawer row). */}
           {/* BY DOMAIN dissolved into Practice / Domain Labs (2026-07-03, GSL fix #3). */}
         </nav>
         {/* Bottom utilities */}
@@ -2049,7 +1976,8 @@ export default function App() {
             </div>
           </button>
           {/* Global chrome (D17): back + search + streak + theme + sticky tray + profile chip.
-              Mobile search bar removed — chrome's search trigger is visible on all breakpoints. */}
+              D25 item 3: chrome's search trigger is desktop-only again — mobile drawer's own
+              bottom search entry (below, in the MOBILE NAV DRAWER block) is the mobile path. */}
           <BreaklabsChrome
             showBack={topView === "concepts" && !!conceptsModule}
             onBack={() => window.history.back()}
@@ -2066,6 +1994,7 @@ export default function App() {
             onNavigateProgress={() => navigate("progress")}
             onNavigateReview={() => navigate("review")}
             onNavigateMyTracks={() => navigate("my-tracks")}
+            onNavigateMyTasks={() => navigate("my-tasks")}
             onNavigateLeaderboard={() => navigate("leaderboard")}
             onNavigateStartHere={() => navigate("starthere")}
             onNavigateResources={() => navigate("resources")}

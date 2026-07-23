@@ -103,7 +103,7 @@ function StreakBadge({ days }) {
 }
 
 // ─── Profile chip + dropdown ───────────────────────────────────────────────────────────────
-function ProfileChip({ user, onNavigateProfile, onNavigateProgress, onNavigateReview, onNavigateMyTracks, onNavigateLeaderboard, onNavigateStartHere, onNavigateResources, onNavigateAbout, onNavigatePlans, isOwner, masteryActive, onOpenMastery }) {
+function ProfileChip({ user, onNavigateProfile, onNavigateProgress, onNavigateReview, onNavigateMyTracks, onNavigateMyTasks, onNavigateLeaderboard, onNavigateStartHere, onNavigateResources, onNavigateAbout, onNavigatePlans, isOwner, masteryActive, onOpenMastery }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -143,6 +143,7 @@ function ProfileChip({ user, onNavigateProfile, onNavigateProgress, onNavigateRe
           {item("My Progress", onNavigateProgress)}
           {item("Review", onNavigateReview)}
           {item("My Tracks", onNavigateMyTracks)}
+          {item("My Tasks", onNavigateMyTasks)}
           {item("Leaderboard", onNavigateLeaderboard)}
           <div className="h-px my-1" style={{ background: "var(--border)" }} />
           {item("Start Here", onNavigateStartHere)}
@@ -169,7 +170,7 @@ export default function BreaklabsChrome({
   // onShowAuth (optional, D21): when provided, the signed-out slot renders ONE "Sign in" button
   // that calls it (for labs whose auth entry point is a modal, e.g. PAL/MSL), instead of the
   // two direct-OAuth buttons below. Backward-compatible — omit it and behavior is unchanged.
-  onNavigateProfile, onNavigateProgress, onNavigateReview, onNavigateMyTracks, onNavigateLeaderboard,
+  onNavigateProfile, onNavigateProgress, onNavigateReview, onNavigateMyTracks, onNavigateMyTasks, onNavigateLeaderboard,
   onNavigateStartHere, onNavigateResources, onNavigateAbout, onNavigatePlans,
   isOwner, masteryActive, onOpenMastery,
   stickyTrayButton, // ReactNode — e.g. <StickyBarButton/>; passed in so this component stays
@@ -183,8 +184,11 @@ export default function BreaklabsChrome({
           <Icon name="arrow-left" size={14} />
         </button>
       )}
+      {/* D25 item 3: desktop-only — mobile has its own search entry at the bottom of the
+          drawer (restored, matches pre-chrome placement); chrome's trigger no longer
+          duplicates it below lg. */}
       <button onClick={onSearchOpen} aria-label="Search"
-        className="flex flex-1 lg:flex-none lg:w-64 items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-left min-w-0">
+        className="hidden lg:flex lg:w-64 items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-left min-w-0">
         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-zinc-500 shrink-0"><circle cx="4.5" cy="4.5" r="3" stroke="currentColor" strokeWidth="1.3" /><line x1="7" y1="7" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
         <span className="text-xs text-zinc-500 flex-1 truncate">{searchPlaceholder}</span>
         <kbd className="hidden sm:inline text-[9px] border border-zinc-700 rounded px-1 text-zinc-500 font-mono">⌘K</kbd>
@@ -207,7 +211,7 @@ export default function BreaklabsChrome({
             <div className="hidden lg:flex items-center">
               <ProfileChip user={user}
                 onNavigateProfile={onNavigateProfile} onNavigateProgress={onNavigateProgress}
-                onNavigateReview={onNavigateReview} onNavigateMyTracks={onNavigateMyTracks} onNavigateLeaderboard={onNavigateLeaderboard}
+                onNavigateReview={onNavigateReview} onNavigateMyTracks={onNavigateMyTracks} onNavigateMyTasks={onNavigateMyTasks} onNavigateLeaderboard={onNavigateLeaderboard}
                 onNavigateStartHere={onNavigateStartHere} onNavigateResources={onNavigateResources} onNavigateAbout={onNavigateAbout}
                 onNavigatePlans={onNavigatePlans}
                 isOwner={isOwner} masteryActive={masteryActive} onOpenMastery={onOpenMastery} />
