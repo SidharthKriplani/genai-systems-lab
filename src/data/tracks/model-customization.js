@@ -98,7 +98,7 @@ Genuinely new domain / language          Continued pretraining (months, huge cor
 No consistent format or voice                  One exemplar format, consistent voice
 Duplicates and near-duplicates untouched       Deduped -> each pattern kept once
 Unfiltered for correctness or safety           Filtered for quality and safety
-Distribution is whatever you happened to scrape Reweighted to match production traffic
+Distribution is whatever you scraped           Reweighted to match production traffic
 
 RESULT:                                        RESULT:
   model memorizes noise and outliers             model generalizes the format
